@@ -179,7 +179,7 @@ export default function PortfolioView({ projects }: Props) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6 tablet:grid-cols-2">
-                    {projects.map((project) => (
+                    {projects.map((project, index) => (
                         <a
                             key={project.slug}
                             href={`/portfolio/${project.slug}`}
@@ -191,6 +191,13 @@ export default function PortfolioView({ projects }: Props) {
                                     <img
                                         src={project.thumbnail}
                                         alt=""
+                                        width={640}
+                                        height={360}
+                                        loading={index < 2 ? "eager" : "lazy"}
+                                        decoding="async"
+                                        fetchPriority={
+                                            index < 2 ? "high" : undefined
+                                        }
                                         className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                                     />
                                 ) : (
