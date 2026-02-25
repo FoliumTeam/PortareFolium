@@ -9,17 +9,38 @@ import { formatPubDateKST } from "@/lib/blog";
 
 export async function getStaticPaths() {
     try {
-        const posts = await getCollection("posts");
+        const [posts, tagsEntries] = await Promise.all([
+            getCollection("posts"),
+            getCollection("tags").catch(() => []),
+        ]);
+        const slugToTagName = new Map(
+            tagsEntries.map((t) => [t.id, t.data.name])
+        );
+        const slugToTagColor = new Map(
+            tagsEntries
+                .filter((t) => t.data.color?.trim())
+                .map((t) => [
+                    t.id,
+                    t.data.color!.trim().replace(/^['"]|['"]$/g, ""),
+                ])
+        );
         return posts.map((post) => ({
             params: { slug: post.slug },
-            props: { post },
+            props: {
+                post,
+                tagDisplay: (post.data.tags ?? []).filter(Boolean).map((s) => ({
+                    slug: s,
+                    name: slugToTagName.get(s) ?? s,
+                    color: slugToTagColor.get(s),
+                })),
+            },
         }));
     } catch {
         return [];
     }
 }
 
-const { post } = Astro.props;
+const { post, tagDisplay } = Astro.props;
 const { Content } = await post.render();
 const category = post.data.category?.trim() ?? "";
 const pageTitle = category
@@ -29,7 +50,7 @@ const pageTitle = category
 
 <BaseLayout title={pageTitle} description={post.data.description ?? ""}>
     <article class="max-w-3xl mx-auto">
-        <header class="mb-8">
+        <header class="mb-6">
             <h1
                 class="text-4xl font-bold mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1"
             >
@@ -60,6 +81,28 @@ const pageTitle = category
             >
                 {formatPubDateKST(post.data.pubDate)}
             </time>
+            {
+                tagDisplay.length > 0 && (
+                    <div class="flex flex-wrap gap-2 mt-4" aria-label="태그">
+                        {tagDisplay.map((t) => (
+                            <a
+                                href={`/blog?tag=${encodeURIComponent(t.slug)}`}
+                                class="px-2 py-1 text-xs rounded-full bg-(--color-tag-bg) text-(--color-tag-fg) hover:opacity-85 transition-opacity"
+                                style={
+                                    t.color
+                                        ? {
+                                              backgroundColor: t.color,
+                                              color: "#fff",
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {t.name}
+                            </a>
+                        ))}
+                    </div>
+                )
+            }
         </header>
         <div class="post-content prose dark:prose-invert max-w-none">
             <Content />
