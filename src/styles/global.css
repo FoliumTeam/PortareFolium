@@ -2,6 +2,9 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Prism 문법 하이라이팅 — Tailwind 문서 스타일 (깔끔, text-shadow 없음) */
+@import "prismjs/themes/prism-tomorrow.css";
+
 /* 다크모드: html.dark 클래스 기반 (light/dark/system 토글 지원) */
 @custom-variant dark (&&:where(.dark, .dark *));
 
@@ -211,14 +214,62 @@
    - 인라인 코드 배경/텍스트 컬러
    - 링크 컬러 및 hover 효과
 */
-/* 코드블록: 라이트/다크 모드 관계없이 해당 스킴의 다크모드 색상 사용 */
-.prose pre,
-.prose :where(pre):not(:where([class~="not-prose"] *)) {
+/* 코드블록: prism-tomorrow — Tailwind 문서 스타일 (text-shadow 없음, 다크 배경) */
+@import "prismjs/themes/prism-tomorrow.css";
+.prose pre[class*="language-"] {
     background-color: var(--color-code-block-bg) !important;
 }
-.prose pre code,
-.prose :where(pre code):not(:where([class~="not-prose"] *)) {
+/* Prism 미적용 블록(인라인 등): 스킴 색상 사용 */
+.prose pre:not([class*="language-"]),
+.prose
+    :where(pre):not([class*="language-"]):not(:where([class~="not-prose"] *)) {
+    background-color: var(--color-code-block-bg) !important;
+}
+.prose pre:not([class*="language-"]) code,
+.prose
+    :where(pre:not([class*="language-"]) code):not(
+        :where([class~="not-prose"] *)
+    ) {
     color: var(--color-code-block-fg) !important;
+}
+/* 다크 모드: prism-tomorrow 스타일 토큰 색상 (가독성) */
+html.dark .prose pre[class*="language-"] {
+    color: #ccc;
+}
+html.dark .prose pre[class*="language-"] code,
+html.dark .prose pre[class*="language-"] .token.comment,
+html.dark .prose pre[class*="language-"] .token.block-comment,
+html.dark .prose pre[class*="language-"] .token.prolog,
+html.dark .prose pre[class*="language-"] .token.doctype,
+html.dark .prose pre[class*="language-"] .token.cdata {
+    color: #999 !important;
+}
+html.dark .prose pre[class*="language-"] .token.punctuation {
+    color: #ccc !important;
+}
+html.dark .prose pre[class*="language-"] .token.keyword {
+    color: #cc99cd !important;
+}
+html.dark .prose pre[class*="language-"] .token.operator {
+    color: #67cdcc !important;
+}
+html.dark .prose pre[class*="language-"] .token.string {
+    color: #7ec699 !important;
+}
+html.dark .prose pre[class*="language-"] .token.number {
+    color: #f08d49 !important;
+}
+html.dark .prose pre[class*="language-"] .token.function {
+    color: #f08d49 !important;
+}
+html.dark .prose pre[class*="language-"] .token.tag .token.punctuation {
+    color: #e2777a !important;
+}
+html.dark .prose pre[class*="language-"] .token.attr-name {
+    color: #e2777a !important;
+}
+html.dark .prose pre[class*="language-"] .token.attr-value {
+    color: #7ec699 !important;
 }
 .prose :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
     /* 인라인 코드 배경/텍스트 컬러 */

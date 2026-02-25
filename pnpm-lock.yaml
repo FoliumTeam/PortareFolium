@@ -26,6 +26,9 @@ importers:
       astro:
         specifier: ^5.17.1
         version: 5.17.3(@types/node@25.3.0)(idb-keyval@6.2.2)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.57.1)(typescript@5.9.3)(yaml@2.8.2)
+      prismjs:
+        specifier: ^1.30.0
+        version: 1.30.0
       react:
         specifier: ^19.2.4
         version: 19.2.4
