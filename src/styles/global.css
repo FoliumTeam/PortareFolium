@@ -22,6 +22,7 @@
 
 /* 컬러 스킴: PUBLIC_COLOR_SCHEME env (blue | gray | beige | blackwhite) */
 /* light mode: 각 스킴에 맞는 100~200 톤의 은은한 틴트 적용 */
+/* Mermaid 다이어그램 테마와 동기화: src/lib/mermaid-themes.ts */
 
 /* blackwhite: 순수 흰/검정, 다른 색 없음 */
 [data-color-scheme="blackwhite"] {

@@ -41,6 +41,7 @@ export default function ThemeToggle() {
         }
 
         localStorage.setItem("theme", theme);
+        window.dispatchEvent(new CustomEvent("themechange"));
     }, [theme, mounted]);
 
     // 시스템 테마 변경 감지
@@ -54,6 +55,7 @@ export default function ThemeToggle() {
             } else {
                 document.documentElement.classList.remove("dark");
             }
+            window.dispatchEvent(new CustomEvent("themechange"));
         };
 
         media.addEventListener("change", handler);
