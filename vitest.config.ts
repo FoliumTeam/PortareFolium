@@ -1,12 +1,11 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
+import { getViteConfig } from "astro/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
-export default defineConfig({
-    plugins: [react()],
+export default getViteConfig({
+    // @ts-expect-error — getViteConfig 타입이 vitest의 test 속성을 포함하지 않지만, 런타임에는 정상 작동
     test: {
         environment: "jsdom",
         globals: true,

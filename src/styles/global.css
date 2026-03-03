@@ -55,20 +55,56 @@ body {
     --color-link: #059669;
 }
 [data-color-scheme="forest"].dark {
-    --color-code-block-bg: #064e3b;
+    --color-code-block-bg: #14241d;
     --color-code-block-fg: #d1fae5;
-    --color-surface: #022c22;
-    --color-surface-subtle: #064e3b;
+    --color-surface: #101c17;
+    --color-surface-subtle: #14241d;
     --color-foreground: #ecfdf5;
     --color-muted: #a1a1aa; /* zinc-400 */
-    --color-border: #065f46;
+    --color-border: #1a362b;
     --color-accent: #34d399;
     --color-on-accent: #022c22;
     --color-highlight: #6ee7b7;
-    --color-tag-bg: #064e3b;
+    --color-tag-bg: #14241d;
     --color-tag-fg: #6ee7b7;
-    --color-code-bg: #064e3b;
+    --color-code-bg: #14241d;
     --color-code-fg: #d1fae5;
+    --color-link: #6ee7b7;
+}
+
+/* forest-plain: 무채색 배경 + forest 포인트 요소 */
+[data-color-scheme="forest-plain"] {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #fafafa;
+    --color-surface-subtle: #f5f5f5;
+    --color-foreground: #064e3b; /* Replaced to match base scheme */
+    --color-muted: #525252;
+    --color-border: #e5e5e5;
+    --color-accent: #10b981;
+    --color-on-accent: #ffffff;
+    --color-highlight: #059669;
+    --color-tag-bg: #e5e5e5;
+    --color-tag-fg: #047857;
+    --color-code-bg: #f0f0f0;
+    --color-code-fg: #171717;
+    --color-link: #059669;
+}
+[data-color-scheme="forest-plain"].dark {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #171717;
+    --color-surface-subtle: #262626;
+    --color-foreground: #ecfdf5; /* Replaced to match base scheme */
+    --color-muted: #a3a3a3;
+    --color-border: #404040;
+    --color-accent: #34d399;
+    --color-on-accent: #022c22;
+    --color-highlight: #6ee7b7;
+    --color-tag-bg: #404040;
+    --color-tag-fg: #6ee7b7;
+    --color-code-bg: #262626;
+    --color-code-fg: #e5e5e5;
     --color-link: #6ee7b7;
 }
 
@@ -91,20 +127,56 @@ body {
     --color-link: #ea580c;
 }
 [data-color-scheme="sunset"].dark {
-    --color-code-block-bg: #431407;
+    --color-code-block-bg: #261a15;
     --color-code-block-fg: #ffedd5;
-    --color-surface: #1a0802;
-    --color-surface-subtle: #431407;
+    --color-surface: #1b1310;
+    --color-surface-subtle: #261a15;
     --color-foreground: #fff8f1;
     --color-muted: #a8a29e; /* stone-400 */
-    --color-border: #7c2d12;
+    --color-border: #3d241d;
     --color-accent: #fb923c;
     --color-on-accent: #1a0802;
     --color-highlight: #fdba74;
-    --color-tag-bg: #431407;
+    --color-tag-bg: #261a15;
     --color-tag-fg: #fdba74;
-    --color-code-bg: #431407;
+    --color-code-bg: #261a15;
     --color-code-fg: #ffedd5;
+    --color-link: #fdba74;
+}
+
+/* sunset-plain: 무채색 배경 + sunset 포인트 요소 */
+[data-color-scheme="sunset-plain"] {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #fafafa;
+    --color-surface-subtle: #f5f5f5;
+    --color-foreground: #431407; /* Replaced to match base scheme */
+    --color-muted: #525252;
+    --color-border: #e5e5e5;
+    --color-accent: #f97316;
+    --color-on-accent: #ffffff;
+    --color-highlight: #ea580c;
+    --color-tag-bg: #e5e5e5;
+    --color-tag-fg: #c2410c;
+    --color-code-bg: #f0f0f0;
+    --color-code-fg: #171717;
+    --color-link: #ea580c;
+}
+[data-color-scheme="sunset-plain"].dark {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #171717;
+    --color-surface-subtle: #262626;
+    --color-foreground: #fff8f1; /* Replaced to match base scheme */
+    --color-muted: #a3a3a3;
+    --color-border: #404040;
+    --color-accent: #fb923c;
+    --color-on-accent: #1a0802;
+    --color-highlight: #fdba74;
+    --color-tag-bg: #404040;
+    --color-tag-fg: #fdba74;
+    --color-code-bg: #262626;
+    --color-code-fg: #e5e5e5;
     --color-link: #fdba74;
 }
 
@@ -127,20 +199,56 @@ body {
     --color-link: #7c3aed;
 }
 [data-color-scheme="lavender"].dark {
-    --color-code-block-bg: #2e1065;
+    --color-code-block-bg: #1f1b2e;
     --color-code-block-fg: #ede9fe;
-    --color-surface: #1e1b4b;
-    --color-surface-subtle: #2e1065;
+    --color-surface: #15131f;
+    --color-surface-subtle: #1f1b2e;
     --color-foreground: #f5f3ff;
     --color-muted: #a1a1aa; /* zinc-400 */
-    --color-border: #4c1d95;
+    --color-border: #2e2445;
     --color-accent: #a78bfa;
     --color-on-accent: #1e1b4b;
     --color-highlight: #c4b5fd;
-    --color-tag-bg: #2e1065;
+    --color-tag-bg: #1f1b2e;
     --color-tag-fg: #c4b5fd;
-    --color-code-bg: #2e1065;
+    --color-code-bg: #1f1b2e;
     --color-code-fg: #ede9fe;
+    --color-link: #c4b5fd;
+}
+
+/* lavender-plain: 무채색 배경 + lavender 포인트 요소 */
+[data-color-scheme="lavender-plain"] {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #fafafa;
+    --color-surface-subtle: #f5f5f5;
+    --color-foreground: #2e1065; /* Replaced to match base scheme */
+    --color-muted: #525252;
+    --color-border: #e5e5e5;
+    --color-accent: #8b5cf6;
+    --color-on-accent: #ffffff;
+    --color-highlight: #7c3aed;
+    --color-tag-bg: #e5e5e5;
+    --color-tag-fg: #6d28d9;
+    --color-code-bg: #f0f0f0;
+    --color-code-fg: #171717;
+    --color-link: #7c3aed;
+}
+[data-color-scheme="lavender-plain"].dark {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #171717;
+    --color-surface-subtle: #262626;
+    --color-foreground: #f5f3ff; /* Replaced to match base scheme */
+    --color-muted: #a3a3a3;
+    --color-border: #404040;
+    --color-accent: #a78bfa;
+    --color-on-accent: #1e1b4b;
+    --color-highlight: #c4b5fd;
+    --color-tag-bg: #404040;
+    --color-tag-fg: #c4b5fd;
+    --color-code-bg: #262626;
+    --color-code-fg: #e5e5e5;
     --color-link: #c4b5fd;
 }
 
@@ -237,20 +345,56 @@ body {
     --color-link: #2563eb;
 }
 [data-color-scheme="blue"].dark {
-    --color-code-block-bg: #1e293b;
+    --color-code-block-bg: #181f29;
     --color-code-block-fg: #e2e8f0;
-    --color-surface: #0f172a;
-    --color-surface-subtle: #1e293b;
+    --color-surface: #10141a;
+    --color-surface-subtle: #181f29;
     --color-foreground: #f1f5f9;
     --color-muted: #94a3b8;
-    --color-border: #334155;
+    --color-border: #273040;
     --color-accent: #60a5fa;
     --color-on-accent: #0f172a;
     --color-highlight: #93c5fd;
-    --color-tag-bg: #1e3a5f;
+    --color-tag-bg: #1e2838;
     --color-tag-fg: #93c5fd;
-    --color-code-bg: #1e293b;
+    --color-code-bg: #181f29;
     --color-code-fg: #e2e8f0;
+    --color-link: #93c5fd;
+}
+
+/* blue-plain: 무채색 배경 + blue 포인트 요소 */
+[data-color-scheme="blue-plain"] {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #fafafa;
+    --color-surface-subtle: #f5f5f5;
+    --color-foreground: #0f172a; /* Replaced to match base scheme */
+    --color-muted: #525252;
+    --color-border: #e5e5e5;
+    --color-accent: #3b82f6;
+    --color-on-accent: #ffffff;
+    --color-highlight: #2563eb;
+    --color-tag-bg: #e5e5e5;
+    --color-tag-fg: #1d4ed8;
+    --color-code-bg: #f0f0f0;
+    --color-code-fg: #171717;
+    --color-link: #2563eb;
+}
+[data-color-scheme="blue-plain"].dark {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #171717;
+    --color-surface-subtle: #262626;
+    --color-foreground: #f1f5f9; /* Replaced to match base scheme */
+    --color-muted: #a3a3a3;
+    --color-border: #404040;
+    --color-accent: #60a5fa;
+    --color-on-accent: #0f172a;
+    --color-highlight: #93c5fd;
+    --color-tag-bg: #404040;
+    --color-tag-fg: #93c5fd;
+    --color-code-bg: #262626;
+    --color-code-fg: #e5e5e5;
     --color-link: #93c5fd;
 }
 
@@ -273,20 +417,56 @@ body {
     --color-link: #b45309;
 }
 [data-color-scheme="beige"].dark {
-    --color-code-block-bg: #292524;
+    --color-code-block-bg: #242220;
     --color-code-block-fg: #e7e5e4;
-    --color-surface: #1c1917;
-    --color-surface-subtle: #292524;
+    --color-surface: #1a1917;
+    --color-surface-subtle: #242220;
     --color-foreground: #fafaf9;
     --color-muted: #a8a29e;
-    --color-border: #44403c;
+    --color-border: #36322e;
     --color-accent: #f59e0b;
     --color-on-accent: #1c1917;
     --color-highlight: #fcd34d;
-    --color-tag-bg: #451a03;
+    --color-tag-bg: #321c10;
     --color-tag-fg: #fcd34d;
-    --color-code-bg: #292524;
+    --color-code-bg: #242220;
     --color-code-fg: #e7e5e4;
+    --color-link: #fcd34d;
+}
+
+/* beige-plain: 무채색 배경 + beige 포인트 요소 */
+[data-color-scheme="beige-plain"] {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #fafafa;
+    --color-surface-subtle: #f5f5f5;
+    --color-foreground: #1c1917; /* Replaced to match base scheme */
+    --color-muted: #525252;
+    --color-border: #e5e5e5;
+    --color-accent: #d97706;
+    --color-on-accent: #ffffff;
+    --color-highlight: #b45309;
+    --color-tag-bg: #e5e5e5;
+    --color-tag-fg: #b45309;
+    --color-code-bg: #f0f0f0;
+    --color-code-fg: #171717;
+    --color-link: #b45309;
+}
+[data-color-scheme="beige-plain"].dark {
+    --color-code-block-bg: #262626;
+    --color-code-block-fg: #e5e5e5;
+    --color-surface: #171717;
+    --color-surface-subtle: #262626;
+    --color-foreground: #fafaf9; /* Replaced to match base scheme */
+    --color-muted: #a3a3a3;
+    --color-border: #404040;
+    --color-accent: #f59e0b;
+    --color-on-accent: #1c1917;
+    --color-highlight: #fcd34d;
+    --color-tag-bg: #404040;
+    --color-tag-fg: #fcd34d;
+    --color-code-bg: #262626;
+    --color-code-fg: #e5e5e5;
     --color-link: #fcd34d;
 }
 

@@ -291,6 +291,7 @@ export default function PortfolioPanel() {
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
                         placeholder="파일 업로드 또는 URL 입력"
+                        folderPath={`portfolio/${form.slug || "untitled"}`}
                     />
 
                     <div className="grid grid-cols-2 gap-4">
@@ -351,6 +352,7 @@ export default function PortfolioPanel() {
                                         }))
                                     }
                                     placeholder="비워두면 썸네일 혹은 전역 설정이 사용됩니다"
+                                    folderPath={`portfolio/${form.slug || "untitled"}`}
                                 />
                             </div>
                         </div>
@@ -366,6 +368,7 @@ export default function PortfolioPanel() {
                                 setForm((f) => ({ ...f, content: c }))
                             }
                             placeholder="본문을 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
+                            folderPath={`portfolio/${form.slug || "untitled"}`}
                         />
                     </div>
 
@@ -483,7 +486,7 @@ export default function PortfolioPanel() {
                             <div className="flex shrink-0 items-center gap-2">
                                 <button
                                     onClick={() => toggleFeatured(item)}
-                                    className="rounded border border-(--color-border) px-2 py-1 text-sm text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
                                 >
                                     {item.featured
                                         ? "featured 해제"
@@ -491,13 +494,13 @@ export default function PortfolioPanel() {
                                 </button>
                                 <button
                                     onClick={() => openEdit(item)}
-                                    className="rounded border border-(--color-border) px-2 py-1 text-sm text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                                    className="rounded-lg border border-(--color-border) bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
                                 >
                                     편집
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="rounded border border-red-200 px-2 py-1 text-sm text-red-400 transition-colors hover:border-red-400 hover:text-red-600"
+                                    className="rounded-lg border border-(--color-border) bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                                 >
                                     삭제
                                 </button>

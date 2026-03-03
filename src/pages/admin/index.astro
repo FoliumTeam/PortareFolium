@@ -9,9 +9,24 @@
 import "@/styles/global.css";
 import AuthGuard from "@/components/admin/AuthGuard";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import ThemeLoader from "@/components/ThemeLoader";
+import { serverClient } from "@/lib/supabase";
 
-const colorScheme = (import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray") as string;
+let colorSchemeToUse = import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray";
+
+if (serverClient) {
+    const { data } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "color_scheme")
+        .single();
+    if (data?.value) {
+        let raw = data.value;
+        if (typeof raw === "string" && raw.startsWith('"')) {
+            raw = JSON.parse(raw);
+        }
+        colorSchemeToUse = raw;
+    }
+}
 const validScheme = [
     "blue",
     "gray",
@@ -20,8 +35,8 @@ const validScheme = [
     "forest",
     "sunset",
     "lavender",
-].includes(colorScheme)
-    ? colorScheme
+].includes(colorSchemeToUse as string)
+    ? colorSchemeToUse
     : "gray";
 ---
 
@@ -43,11 +58,17 @@ const validScheme = [
                 if (theme === "dark" || (theme === "system" && systemDark)) {
                     document.documentElement.classList.add("dark");
                 }
+                const savedScheme = localStorage.getItem("folium_color_scheme");
+                if (savedScheme) {
+                    document.documentElement.setAttribute(
+                        "data-color-scheme",
+                        savedScheme
+                    );
+                }
             })();
         </script>
     </head>
     <body class="min-h-screen bg-(--color-surface) text-(--color-foreground)">
-        <ThemeLoader client:load />
         <AuthGuard client:load>
             <AdminDashboard client:load />
         </AuthGuard>

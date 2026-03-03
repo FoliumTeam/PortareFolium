@@ -30,6 +30,7 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
                 <div class="resume-profile-image">
                     <img
                         src={
+                            basics.image.startsWith("http") ||
                             basics.image.startsWith("/")
                                 ? basics.image
                                 : `/${basics.image}`
@@ -443,10 +444,7 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
         max-width: 1000px;
         margin: 0 auto;
         padding: 2rem;
-        font-family:
-            system-ui,
-            -apple-system,
-            sans-serif;
+        font-family: inherit;
         color: var(--color-foreground);
         background: var(--color-surface);
     }

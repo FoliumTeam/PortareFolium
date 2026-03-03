@@ -51,6 +51,7 @@ interface RichMarkdownEditorProps {
     onChange: (value: string) => void;
     placeholder?: string;
     disabled?: boolean;
+    folderPath?: string;
 }
 
 // YouTube directive: ::youtube[]{id="xxx"} — 16:9 미리보기
@@ -387,6 +388,7 @@ export default function RichMarkdownEditor({
     onChange,
     placeholder = "본문을 작성하세요...",
     disabled = false,
+    folderPath,
 }: RichMarkdownEditorProps) {
     const [mounted, setMounted] = useState(false);
     const [isDark, setIsDark] = useState(false);
@@ -418,9 +420,9 @@ export default function RichMarkdownEditor({
 
     const imageUploadHandler = useCallback(
         async (file: File): Promise<string> => {
-            return uploadImageToSupabase(file);
+            return uploadImageToSupabase(file, folderPath);
         },
-        []
+        [folderPath]
     );
 
     if (!mounted) {

@@ -49,23 +49,40 @@ export async function toWebPBlob(
 }
 
 /** 고유 파일 경로 생성 */
-export function getStoragePath(): string {
+export function getStoragePath(
+    folderPath?: string,
+    ext: string = "webp"
+): string {
+    const uuid = crypto.randomUUID();
+    if (folderPath) {
+        return `${folderPath}/${uuid}.${ext}`;
+    }
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, "0");
-    return `${y}/${m}/${crypto.randomUUID()}.webp`;
+    return `misc/${y}/${m}/${uuid}.${ext}`;
 }
 
 /** Supabase Storage에 업로드, public URL 반환 */
-export async function uploadImageToSupabase(file: File): Promise<string> {
-    const blob = file.type === "image/webp" ? file : await toWebPBlob(file);
-    const path = getStoragePath();
+export async function uploadImageToSupabase(
+    file: File,
+    folderPath?: string
+): Promise<string> {
+    const isGif =
+        file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
+    const blob =
+        file.type === "image/webp" || isGif ? file : await toWebPBlob(file);
+    const ext = isGif ? "gif" : "webp";
+    const path = getStoragePath(folderPath, ext);
 
     if (!browserClient) throw new Error("Supabase가 설정되지 않았습니다.");
 
     const { error } = await browserClient.storage
         .from(BUCKET)
-        .upload(path, blob, { contentType: "image/webp", upsert: false });
+        .upload(path, blob, {
+            contentType: isGif ? "image/gif" : "image/webp",
+            upsert: false,
+        });
 
     if (error) throw error;
 

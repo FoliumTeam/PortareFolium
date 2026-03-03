@@ -10,7 +10,7 @@
  *
  * 로그아웃 버튼은 헤더에 위치한다.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { browserClient } from "@/lib/supabase";
 import ThemeToggle from "@/components/ThemeToggle";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
@@ -33,7 +33,39 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<TabId>("posts");
+    const [activeTab, setActiveTab] = useState<TabId>(() => {
+        if (typeof window !== "undefined") {
+            const hash = window.location.hash.replace("#", "");
+            if (hash && TABS.some((t) => t.id === hash)) {
+                return hash as TabId;
+            }
+        }
+        return "posts";
+    });
+
+    const [tabKey, setTabKey] = useState(0);
+
+    useEffect(() => {
+        window.history.replaceState(null, "", `#${activeTab}`);
+
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace("#", "");
+            if (hash && TABS.some((t) => t.id === hash)) {
+                setActiveTab(hash as TabId);
+            }
+        };
+        window.addEventListener("hashchange", handleHashChange);
+        return () => window.removeEventListener("hashchange", handleHashChange);
+    }, [activeTab]);
+
+    const handleTabClick = (tabId: TabId) => {
+        if (activeTab === tabId) {
+            setTabKey((prev) => prev + 1); // 이미 활성화된 탭 클릭 시 리마운트(목록뷰 복귀)
+        } else {
+            setActiveTab(tabId);
+            setTabKey(0);
+        }
+    };
 
     /** 로그아웃 처리 */
     const handleLogout = async () => {
@@ -75,7 +107,7 @@ export default function AdminDashboard() {
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => handleTabClick(tab.id)}
                             className={[
                                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-base font-medium transition-colors",
                                 activeTab === tab.id
@@ -90,12 +122,24 @@ export default function AdminDashboard() {
                 </nav>
 
                 <main className="flex-1 overflow-y-auto p-6">
-                    {activeTab === "posts" && <PostsPanel />}
-                    {activeTab === "portfolio" && <PortfolioPanel />}
-                    {activeTab === "tags" && <TagsPanel />}
-                    {activeTab === "about" && <AboutPanel />}
-                    {activeTab === "resume" && <ResumePanel />}
-                    {activeTab === "config" && <SiteConfigPanel />}
+                    {activeTab === "posts" && (
+                        <PostsPanel key={`posts-${tabKey}`} />
+                    )}
+                    {activeTab === "portfolio" && (
+                        <PortfolioPanel key={`portfolio-${tabKey}`} />
+                    )}
+                    {activeTab === "tags" && (
+                        <TagsPanel key={`tags-${tabKey}`} />
+                    )}
+                    {activeTab === "about" && (
+                        <AboutPanel key={`about-${tabKey}`} />
+                    )}
+                    {activeTab === "resume" && (
+                        <ResumePanel key={`resume-${tabKey}`} />
+                    )}
+                    {activeTab === "config" && (
+                        <SiteConfigPanel key={`config-${tabKey}`} />
+                    )}
                 </main>
             </div>
         </div>

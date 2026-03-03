@@ -269,7 +269,7 @@ export default function TagsPanel() {
                                 <button
                                     type="button"
                                     onClick={() => openEdit(tag)}
-                                    className="rounded-lg border border-(--color-border) bg-blue-500 px-3 py-2 text-base text-white transition-colors hover:border-(--color-accent) hover:bg-blue-400 hover:text-(--color-foreground)"
+                                    className="rounded-lg border border-(--color-border) bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
                                 >
                                     수정
                                 </button>
@@ -277,7 +277,7 @@ export default function TagsPanel() {
                                     type="button"
                                     onClick={() => handleDelete(tag.slug)}
                                     disabled={saving}
-                                    className="rounded-lg border border-(--color-border) bg-red-500 px-3 py-2 text-base text-white transition-colors hover:border-(--color-accent) hover:bg-red-400 hover:text-(--color-foreground)"
+                                    className="rounded-lg border border-(--color-border) bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                                 >
                                     삭제
                                 </button>

@@ -17,21 +17,58 @@ type ColorScheme =
     | "blackwhite"
     | "forest"
     | "sunset"
-    | "lavender";
+    | "lavender"
+    | "blue-plain"
+    | "beige-plain"
+    | "forest-plain"
+    | "sunset-plain"
+    | "lavender-plain";
 type JobField = "web" | "game";
 
 const COLOR_OPTIONS: { value: ColorScheme; label: string; desc: string }[] = [
     { value: "gray", label: "Gray", desc: "중립 회색" },
-    { value: "blue", label: "Blue", desc: "파란톤 액센트" },
-    { value: "beige", label: "Beige", desc: "따뜻한 베이지" },
-    { value: "forest", label: "Forest", desc: "깊은 숲의 그린" },
-    { value: "sunset", label: "Sunset", desc: "따뜻한 석양 (오렌지)" },
-    { value: "lavender", label: "Lavender", desc: "차분한 보라" },
     { value: "blackwhite", label: "Black & White", desc: "순수 흑백" },
+    { value: "blue", label: "Blue", desc: "파란톤 액센트" },
+    {
+        value: "blue-plain",
+        label: "Blue (Plain)",
+        desc: "포인트 배경 없는 파란톤",
+    },
+    { value: "beige", label: "Beige", desc: "따뜻한 베이지" },
+    {
+        value: "beige-plain",
+        label: "Beige (Plain)",
+        desc: "포인트 배경 없는 베이지",
+    },
+    { value: "forest", label: "Forest", desc: "깊은 숲의 그린" },
+    {
+        value: "forest-plain",
+        label: "Forest (Plain)",
+        desc: "포인트 배경 없는 그린",
+    },
+    { value: "sunset", label: "Sunset", desc: "따뜻한 석양 (오렌지)" },
+    {
+        value: "sunset-plain",
+        label: "Sunset (Plain)",
+        desc: "포인트 배경 없는 오렌지",
+    },
+    { value: "lavender", label: "Lavender", desc: "차분한 보라" },
+    {
+        value: "lavender-plain",
+        label: "Lavender (Plain)",
+        desc: "포인트 배경 없는 보라",
+    },
 ];
 
 export default function SiteConfigPanel() {
-    const [colorScheme, setColorScheme] = useState<ColorScheme>("gray");
+    const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
+        if (typeof document !== "undefined") {
+            const attr =
+                document.documentElement.getAttribute("data-color-scheme");
+            if (attr) return attr as ColorScheme;
+        }
+        return "gray";
+    });
     const [jobField, setJobField] = useState<JobField>("game");
     const [seoConfig, setSeoConfig] = useState({
         defaultTitle: "FoliumOnline",
@@ -61,6 +98,7 @@ export default function SiteConfigPanel() {
                             : row.value;
                     if (row.key === "color_scheme") {
                         setColorScheme(v as ColorScheme);
+                        localStorage.setItem("folium_color_scheme", v);
                         // Apply immediately on load in the admin panel if it differs
                         document.documentElement.setAttribute(
                             "data-color-scheme",
@@ -103,6 +141,10 @@ export default function SiteConfigPanel() {
         const { error } = await browserClient
             .from("site_config")
             .upsert(rows, { onConflict: "key" });
+
+        if (!error) {
+            localStorage.setItem("folium_color_scheme", colorScheme);
+        }
 
         setSaving(false);
         setStatus(

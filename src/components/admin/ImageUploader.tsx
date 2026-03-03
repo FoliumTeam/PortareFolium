@@ -62,23 +62,26 @@ async function toWebPBlob(
     });
 }
 
-/** 고유 파일 경로 생성: YYYY/MM/uuid.webp */
-function getStoragePath(): string {
+/** 고유 파일 경로 생성 */
+function getStoragePath(folderPath?: string): string {
+    const uuid = crypto.randomUUID();
+    if (folderPath) return `${folderPath}/${uuid}.webp`;
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, "0");
-    const uuid = crypto.randomUUID();
-    return `${y}/${m}/${uuid}.webp`;
+    return `misc/${y}/${m}/${uuid}.webp`;
 }
 
 interface ImageUploaderProps {
     onInsert: (markdown: string) => void;
     onClose: () => void;
+    folderPath?: string;
 }
 
 export default function ImageUploader({
     onInsert,
     onClose,
+    folderPath,
 }: ImageUploaderProps) {
     const [mode, setMode] = useState<Mode>("upload");
     const [file, setFile] = useState<File | null>(null);
@@ -146,7 +149,7 @@ export default function ImageUploader({
         try {
             // CORS 허용 시: fetch → WebP 변환 → Supabase 업로드
             const converted = await toWebPBlob(url);
-            const path = getStoragePath();
+            const path = getStoragePath(folderPath);
 
             if (!browserClient) {
                 // Supabase 미설정 시 URL 그대로 삽입
@@ -201,7 +204,7 @@ export default function ImageUploader({
                 blob = await toWebPBlob(file);
             }
 
-            const path = getStoragePath();
+            const path = getStoragePath(folderPath);
 
             if (!browserClient) {
                 setError("Supabase가 설정되지 않았습니다.");

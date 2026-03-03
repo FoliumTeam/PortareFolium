@@ -14,12 +14,14 @@ interface ThumbnailUploadFieldProps {
     value: string;
     onChange: (url: string) => void;
     placeholder?: string;
+    folderPath?: string;
 }
 
 export default function ThumbnailUploadField({
     value,
     onChange,
     placeholder = "파일 업로드 또는 URL 입력",
+    folderPath,
 }: ThumbnailUploadFieldProps) {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function ThumbnailUploadField({
         setUploadError(null);
         setUploading(true);
         try {
-            const url = await uploadImageToSupabase(file);
+            const url = await uploadImageToSupabase(file, folderPath);
             onChange(url);
         } catch (err) {
             setUploadError(

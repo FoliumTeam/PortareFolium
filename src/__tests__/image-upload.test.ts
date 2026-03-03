@@ -80,9 +80,16 @@ describe("이미지 업로드 및 변환 (Image Upload & Conversion)", () => {
     });
 
     describe("getStoragePath", () => {
-        it("현재 날짜를 기반으로 고유한 저장소 경로를 생성", () => {
+        it("folderPath가 없으면 misc/YYYY/MM 경로를 접두어로 생성", () => {
             const path = getStoragePath();
-            expect(path).toMatch(/^[0-9]{4}\/[0-9]{2}\/[a-z0-9-]+\.webp$/);
+            expect(path).toMatch(
+                /^misc\/[0-9]{4}\/[0-9]{2}\/[a-f0-9-]+\.webp$/
+            );
+        });
+
+        it("folderPath가 있으면 지정된 경로를 접두어로 생성", () => {
+            const path = getStoragePath("blog/my-post");
+            expect(path).toMatch(/^blog\/my-post\/[a-f0-9-]+\.webp$/);
         });
     });
 

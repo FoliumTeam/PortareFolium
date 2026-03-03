@@ -7,8 +7,8 @@
  */
 import "@/styles/global.css";
 import Header from "@/components/Header.astro";
-import ThemeLoader from "@/components/ThemeLoader";
 import SEO from "@/components/SEO.astro";
+import { serverClient } from "@/lib/supabase";
 
 interface Props {
     title?: string;
@@ -18,9 +18,24 @@ interface Props {
 
 const { title, description, image } = Astro.props;
 
-// PUBLIC_COLOR_SCHEME env (blue | gray | beige | blackwhite | forest | sunset | lavender), 기본 gray
-const colorScheme = (import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray") as string;
-const validScheme = [
+let colorSchemeToUse = import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray";
+
+if (serverClient) {
+    const { data } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "color_scheme")
+        .single();
+    if (data?.value) {
+        let raw = data.value;
+        if (typeof raw === "string" && raw.startsWith('"')) {
+            raw = JSON.parse(raw);
+        }
+        colorSchemeToUse = raw;
+    }
+}
+
+const VALID_SCHEMES = [
     "blue",
     "gray",
     "beige",
@@ -28,8 +43,15 @@ const validScheme = [
     "forest",
     "sunset",
     "lavender",
-].includes(colorScheme)
-    ? colorScheme
+    "blue-plain",
+    "beige-plain",
+    "forest-plain",
+    "sunset-plain",
+    "lavender-plain",
+];
+
+const validScheme = VALID_SCHEMES.includes(colorSchemeToUse as string)
+    ? colorSchemeToUse
     : "gray";
 ---
 
@@ -54,16 +76,19 @@ const validScheme = [
                 } else {
                     document.documentElement.classList.remove("dark");
                 }
+                const savedScheme = localStorage.getItem("folium_color_scheme");
+                if (savedScheme) {
+                    document.documentElement.setAttribute(
+                        "data-color-scheme",
+                        savedScheme
+                    );
+                }
             })();
         </script>
     </head>
     <body
         class="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors"
     >
-        {
-            /* 런타임 컬러 스킴 반영: Supabase site_config에서 color_scheme을 읽어 data-color-scheme 갱신 */
-        }
-        <ThemeLoader client:load />
         <Header />
 
         <main class="container mx-auto px-4 py-8">
