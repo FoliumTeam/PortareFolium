@@ -25,7 +25,7 @@ git merge $UPSTREAM_REMOTE/$MAIN_BRANCH --no-edit
 if [ $? -eq 0 ]; then
     # 4. 내 프라이빗 저장소(origin)의 main도 최신화
     echo "🚀 원격 프라이빗 저장소(origin) main 업데이트 중..."
-    git push origin $MAIN_BRANCH
+    git push origin $MAIN_BRANCH --force
     echo "✨ [완료] 로컬 및 원격(origin)의 main 브랜치가 Upstream과 동기화되었습니다."
 else
     echo "❌ [오류] 병합 중 충돌이 발생했습니다. 수동으로 충돌을 해결해 주세요."
