@@ -197,11 +197,11 @@ export default function BlogPage({
                 <button
                     type="button"
                     onClick={() => setSidebarOpen((o) => !o)}
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-2 text-(--color-foreground)"
+                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-2.5 text-(--color-foreground) transition-colors hover:border-(--color-accent)"
                     aria-label="Toggle filters"
                 >
                     <svg
-                        className="h-6 w-6"
+                        className="h-5 w-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -214,7 +214,7 @@ export default function BlogPage({
                         />
                     </svg>
                 </button>
-                <h1 className="flex-1 text-2xl font-bold text-(--color-foreground)">
+                <h1 className="flex-1 text-2xl font-black tracking-tight text-(--color-foreground)">
                     Blog
                 </h1>
                 {showWritePost && (
@@ -222,7 +222,7 @@ export default function BlogPage({
                         href="/keystatic"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+                        className="shrink-0 rounded-full bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
                         Write post
                     </a>
@@ -231,13 +231,13 @@ export default function BlogPage({
 
             {/* Sidebar: categories + tags */}
             <aside
-                className={`tablet:w-56 tablet:block flex w-full shrink-0 flex-col gap-6 ${sidebarOpen ? "block" : "hidden"} `}
+                className={`tablet:sticky tablet:top-20 tablet:w-52 tablet:block tablet:self-start flex w-full shrink-0 flex-col gap-6 ${sidebarOpen ? "block" : "hidden"}`}
             >
                 <div className="space-y-2">
-                    <h2 className="text-sm font-semibold tracking-wider text-(--color-muted) uppercase">
+                    <h2 className="text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
                         Categories
                     </h2>
-                    <ul className="space-y-1">
+                    <ul className="space-y-0.5">
                         <li>
                             <button
                                 type="button"
@@ -245,7 +245,7 @@ export default function BlogPage({
                                     setSelectedCategory(ALL_CATEGORY);
                                     setSidebarOpen(false);
                                 }}
-                                className={`w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
                                     selectedCategory === ALL_CATEGORY
                                         ? "bg-(--color-accent) text-(--color-on-accent)"
                                         : "text-(--color-foreground) hover:bg-(--color-surface-subtle)"
@@ -262,7 +262,7 @@ export default function BlogPage({
                                         setSelectedCategory(name);
                                         setSidebarOpen(false);
                                     }}
-                                    className={`w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
+                                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
                                         selectedCategory === name
                                             ? "bg-(--color-accent) text-(--color-on-accent)"
                                             : "text-(--color-foreground) hover:bg-(--color-surface-subtle)"
@@ -275,41 +275,43 @@ export default function BlogPage({
                     </ul>
                 </div>
 
-                <div className="tablet:mt-6 mt-4 space-y-2">
-                    <h2 className="text-sm font-semibold tracking-wider text-(--color-muted) uppercase">
-                        Tags
-                    </h2>
-                    <div className="flex flex-wrap gap-1.5">
-                        {tags.map(({ slug, name, count }) => {
-                            const value = slug ?? name;
-                            return (
-                                <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedTag(
-                                            selectedTag === value ? null : value
-                                        );
-                                        setSidebarOpen(false);
-                                    }}
-                                    className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
-                                        selectedTag === value
-                                            ? "bg-(--color-accent) text-(--color-on-accent)"
-                                            : "border border-(--color-border) text-(--color-foreground) hover:bg-(--color-surface-subtle)"
-                                    }`}
-                                >
-                                    {name} ({count})
-                                </button>
-                            );
-                        })}
+                {tags.length > 0 && (
+                    <div className="space-y-2">
+                        <h2 className="text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
+                            Tags
+                        </h2>
+                        <div className="flex flex-wrap gap-1.5">
+                            {tags.map(({ slug, name, count }) => {
+                                const value = slug ?? name;
+                                return (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedTag(
+                                                selectedTag === value ? null : value
+                                            );
+                                            setSidebarOpen(false);
+                                        }}
+                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                            selectedTag === value
+                                                ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                : "border border-(--color-border) text-(--color-foreground) hover:border-(--color-accent) hover:text-(--color-accent)"
+                                        }`}
+                                    >
+                                        {name} ({count})
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                )}
             </aside>
 
             {/* Main: post list */}
             <div className="min-w-0 flex-1">
-                <div className="tablet:flex tablet:items-center tablet:justify-between tablet:gap-4 mb-6 hidden">
-                    <h1 className="text-3xl font-bold text-(--color-foreground)">
+                <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 mb-8 hidden">
+                    <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
                         Blog
                     </h1>
                     {showWritePost && (
@@ -317,7 +319,7 @@ export default function BlogPage({
                             href="/admin"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+                            className="shrink-0 rounded-full bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
                             Write post
                         </a>
@@ -328,116 +330,79 @@ export default function BlogPage({
                         No posts match the current filters.
                     </p>
                 ) : (
-                    <ul className="space-y-6">
+                    <ul className="space-y-4">
                         {filteredPosts.map((post) => (
                             <li key={post.slug}>
                                 <a
                                     href={`/blog/${post.slug}`}
-                                    className="group tablet:flex-row flex flex-col gap-4 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4 transition-opacity hover:opacity-95"
+                                    className="card-lift group tablet:flex-row flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                                 >
                                     <div className="tablet:order-1 order-2 min-w-0 flex-1">
-                                        <h2 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-lg font-semibold text-(--color-foreground) group-hover:underline">
-                                            {post.category && (
-                                                <span className="text-lg font-semibold text-(--color-highlight)">
-                                                    {post.category}
-                                                </span>
-                                            )}
-                                            {post.category && (
-                                                <span
-                                                    className="text-(--color-muted)"
-                                                    aria-hidden
-                                                >
-                                                    |
-                                                </span>
-                                            )}
-                                            <span>{post.title}</span>
+                                        {post.category && (
+                                            <p className="mb-1.5 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
+                                                {post.category}
+                                            </p>
+                                        )}
+                                        <h2 className="mb-1.5 text-base font-bold leading-snug text-(--color-foreground) group-hover:text-(--color-accent) transition-colors">
+                                            {post.title}
                                         </h2>
-                                        <p className="mt-1 line-clamp-2 text-sm text-(--color-muted)">
+                                        <p className="mb-3 line-clamp-2 text-sm text-(--color-muted)">
                                             {post.displayDescription}
                                         </p>
-                                        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <div className="flex flex-wrap items-center gap-1.5">
                                             {post.tagsDisplay &&
-                                                post.tagsDisplay.length > 0 && (
-                                                    <>
-                                                        {post.tagsDisplay.map(
-                                                            (tag) => {
-                                                                const safeColor =
-                                                                    tag.color &&
-                                                                    isSafeCssColor(
-                                                                        tag.color
-                                                                    )
-                                                                        ? tag.color
-                                                                        : undefined;
-                                                                const bgColor =
+                                                post.tagsDisplay.length > 0 &&
+                                                post.tagsDisplay.map((tag) => {
+                                                    const safeColor =
+                                                        tag.color &&
+                                                        isSafeCssColor(tag.color)
+                                                            ? tag.color
+                                                            : undefined;
+                                                    const bgColor = safeColor
+                                                        ? /^#[0-9A-Fa-f]{6}$/.test(
+                                                              safeColor
+                                                          )
+                                                            ? safeColor
+                                                            : /^#[0-9A-Fa-f]{8}$/.test(
                                                                     safeColor
-                                                                        ? /^#[0-9A-Fa-f]{6}$/.test(
-                                                                              safeColor
-                                                                          )
-                                                                            ? safeColor
-                                                                            : /^#[0-9A-Fa-f]{8}$/.test(
-                                                                                    safeColor
-                                                                                )
-                                                                              ? `#${safeColor.slice(
-                                                                                    1,
-                                                                                    7
-                                                                                )}`
-                                                                              : safeColor
-                                                                        : undefined;
-                                                                const textColor =
-                                                                    bgColor
-                                                                        ? getContrastTextColor(
-                                                                              bgColor
-                                                                          )
-                                                                        : "#ffffff";
-                                                                return (
-                                                                    <span
-                                                                        key={
-                                                                            tag.name
-                                                                        }
-                                                                        className={`rounded border px-1.5 py-0.5 text-xs ${
-                                                                            !bgColor
-                                                                                ? "bg-(--color-accent)"
-                                                                                : ""
-                                                                        }`}
-                                                                        style={
-                                                                            bgColor
-                                                                                ? {
-                                                                                      backgroundColor:
-                                                                                          bgColor,
-                                                                                      borderColor:
-                                                                                          bgColor,
-                                                                                      color: textColor,
-                                                                                  }
-                                                                                : {
-                                                                                      borderColor:
-                                                                                          "var(--color-accent)",
-                                                                                      color: textColor,
-                                                                                  }
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            tag.name
-                                                                        }
-                                                                    </span>
-                                                                );
+                                                                )
+                                                              ? `#${safeColor.slice(1, 7)}`
+                                                              : safeColor
+                                                        : undefined;
+                                                    const textColor = bgColor
+                                                        ? getContrastTextColor(bgColor)
+                                                        : "#ffffff";
+                                                    return (
+                                                        <span
+                                                            key={tag.name}
+                                                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${!bgColor ? "bg-(--color-accent) text-(--color-on-accent)" : ""}`}
+                                                            style={
+                                                                bgColor
+                                                                    ? {
+                                                                          backgroundColor: bgColor,
+                                                                          color: textColor,
+                                                                      }
+                                                                    : undefined
                                                             }
-                                                        )}
-                                                    </>
-                                                )}
+                                                        >
+                                                            {tag.name}
+                                                        </span>
+                                                    );
+                                                })}
+                                            <time
+                                                className="ml-auto text-xs text-(--color-muted)"
+                                                dateTime={post.pubDateIso}
+                                            >
+                                                {post.pubDateFormatted}
+                                            </time>
                                         </div>
-                                        <time
-                                            className="mt-2 block text-xs text-(--color-muted)"
-                                            dateTime={post.pubDateIso}
-                                        >
-                                            {post.pubDateFormatted}
-                                        </time>
                                     </div>
                                     {post.thumbnailUrl && (
-                                        <div className="tablet:w-40 tablet:h-24 tablet:order-2 order-1 h-28 w-full shrink-0 overflow-hidden rounded-md bg-(--color-surface)">
+                                        <div className="tablet:w-36 tablet:h-24 tablet:order-2 tablet:shrink-0 order-1 aspect-video w-full overflow-hidden rounded-xl bg-(--color-surface)">
                                             <img
                                                 src={post.thumbnailUrl}
                                                 alt=""
-                                                className="h-full w-full object-cover"
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                                             />
                                         </div>
                                     )}

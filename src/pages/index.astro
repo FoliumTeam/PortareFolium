@@ -102,49 +102,83 @@ const isDev = import.meta.env.DEV;
     description={heroDesc}
 >
     <!-- ── Hero ──────────────────────────────────────────────── -->
-    <section class="tablet:py-24 mx-auto max-w-4xl py-16 text-center">
+    <section class="tablet:py-36 relative mx-auto max-w-4xl py-24 text-center">
+        {/* 배경 글로우 */}
+        <div
+            aria-hidden="true"
+            class="tablet:w-[36rem] tablet:h-[36rem] pointer-events-none absolute left-1/2 top-1/3 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.12] blur-3xl bg-(--color-accent)"
+        ></div>
+
+        {/* 아이브로우 */}
         <p
-            class="mb-4 text-sm font-semibold tracking-widest text-(--color-accent) uppercase"
+            class="animate-fade-in mb-6 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase"
         >
             포트폴리오 & 기술 블로그
         </p>
+
+        {/* 디스플레이 타이틀 */}
         <h1
-            class="tablet:text-6xl mb-4 text-4xl leading-tight font-black text-(--color-foreground)"
+            class="tablet:text-7xl animate-fade-in-up stagger-1 mb-6 text-5xl font-black leading-[1.05] tracking-tight text-(--color-foreground)"
         >
             {heroName}
         </h1>
+
+        {/* 설명 */}
         <p
-            class="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-(--color-muted)"
+            class="animate-fade-in-up stagger-2 mx-auto mb-10 max-w-xl text-lg leading-relaxed text-(--color-muted)"
         >
             {heroDesc}
         </p>
-        <div class="flex flex-wrap justify-center gap-3">
+
+        {/* CTA 버튼 */}
+        <div class="animate-fade-in-up stagger-3 flex flex-wrap justify-center gap-4">
             <a
                 href="/portfolio"
-                class="rounded-lg bg-(--color-accent) px-6 py-3 text-sm font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90"
+                class="rounded-full bg-(--color-accent) px-7 py-3.5 text-sm font-semibold text-(--color-on-accent) transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
             >
                 Portfolio 보기
             </a>
             <a
                 href="/resume"
-                class="rounded-lg border border-(--color-border) px-6 py-3 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+                class="rounded-full border-2 border-(--color-border) px-7 py-3.5 text-sm font-semibold text-(--color-foreground) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--color-accent) hover:text-(--color-accent)"
             >
                 Resume 보기
             </a>
+        </div>
+
+        {/* 스크롤 인디케이터 */}
+        <div class="animate-fade-in stagger-5 mt-20 flex justify-center">
+            <div class="flex flex-col items-center gap-1.5 text-(--color-muted)">
+                <span class="text-[10px] font-semibold tracking-[0.2em] uppercase">Scroll</span>
+                <svg
+                    class="h-4 w-4 animate-bounce"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                    ></path>
+                </svg>
+            </div>
         </div>
     </section>
 
     <!-- ── About 미리보기 ──────────────────────────────────────── -->
     {
         about.name && (
-            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-12">
-                <h2 class="mb-6 text-2xl font-bold text-(--color-foreground)">
+            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <p class="mb-3 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
                     About me
-                </h2>
-                <div class="tablet:flex-row tablet:items-start tablet:gap-8 flex flex-col gap-4">
-                    <div class="flex-1">
+                </p>
+                <div class="tablet:flex-row tablet:items-end tablet:justify-between flex flex-col gap-6">
+                    <div class="tablet:max-w-xl border-l-2 border-(--color-accent) pl-5">
                         {about.description && (
-                            <p class="mb-3 leading-relaxed text-(--color-foreground)">
+                            <p class="mb-3 text-lg leading-relaxed text-(--color-foreground)">
                                 {about.description}
                             </p>
                         )}
@@ -153,26 +187,16 @@ const isDev = import.meta.env.DEV;
                                 {about.descriptionSub}
                             </p>
                         )}
-                        <a
-                            href="/about"
-                            class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-(--color-accent) hover:underline"
-                        >
-                            소개 전체 보기
-                            <svg
-                                class="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M9 5l7 7-7 7"
-                                />
-                            </svg>
-                        </a>
                     </div>
+                    <a
+                        href="/about"
+                        class="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-all duration-200 hover:border-(--color-accent) hover:text-(--color-accent)"
+                    >
+                        소개 전체 보기
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
                 </div>
             </section>
         )
@@ -181,71 +205,115 @@ const isDev = import.meta.env.DEV;
     <!-- ── Portfolio Featured ─────────────────────────────────── -->
     {
         featuredItems.length > 0 && (
-            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-12">
-                <div class="mb-6 flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-(--color-foreground)">
-                        Portfolio
-                    </h2>
+            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <div class="mb-8 flex items-end justify-between">
+                    <div>
+                        <p class="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                            Featured Work
+                        </p>
+                        <h2 class="text-3xl font-black tracking-tight text-(--color-foreground)">
+                            Portfolio
+                        </h2>
+                    </div>
                     <a
                         href="/portfolio"
-                        class="inline-flex items-center gap-1 text-sm font-medium text-(--color-accent) hover:underline"
+                        class="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
                         전체 보기
-                        <svg
-                            class="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M9 5l7 7-7 7"
-                            />
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </a>
                 </div>
-                <div class="tablet:grid-cols-2 tablet:gap-6 grid grid-cols-1 gap-4">
-                    {featuredItems.map((item) => (
-                        <a
-                            href={`/portfolio/${item.slug}`}
-                            class="group block overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle) transition-colors hover:border-(--color-accent)"
-                        >
-                            {item.thumbnail && (
-                                <div class="aspect-video overflow-hidden bg-(--color-border)">
+
+                {/* 첫 번째 항목: 풀 너비 피처드 카드 */}
+                {featuredItems[0] && (
+                    <a
+                        href={`/portfolio/${featuredItems[0].slug}`}
+                        class="card-lift group mb-4 block overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
+                    >
+                        <div class="tablet:flex-row flex flex-col">
+                            {featuredItems[0].thumbnail && (
+                                <div class="tablet:w-1/2 aspect-video overflow-hidden bg-(--color-border)">
                                     <img
-                                        src={item.thumbnail}
+                                        src={featuredItems[0].thumbnail}
                                         alt=""
-                                        width={480}
-                                        height={270}
-                                        loading="lazy"
-                                        class="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                        width={640}
+                                        height={360}
+                                        loading="eager"
+                                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                     />
                                 </div>
                             )}
-                            <div class="p-5">
-                                <h3 class="mb-2 font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                    {item.title}
+                            <div class="tablet:w-1/2 flex flex-col justify-center p-7">
+                                <span class="mb-3 inline-flex w-fit items-center rounded-full bg-(--color-accent) px-3 py-1 text-xs font-semibold text-(--color-on-accent)">
+                                    Featured
+                                </span>
+                                <h3 class="mb-3 text-xl font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                    {featuredItems[0].title}
                                 </h3>
-                                {item.description && (
-                                    <p class="mb-3 line-clamp-2 text-sm text-(--color-muted)">
-                                        {item.description}
+                                {featuredItems[0].description && (
+                                    <p class="mb-4 line-clamp-3 text-sm leading-relaxed text-(--color-muted)">
+                                        {featuredItems[0].description}
                                     </p>
                                 )}
-                                {item.tags && item.tags.length > 0 && (
+                                {featuredItems[0].tags && featuredItems[0].tags.length > 0 && (
                                     <div class="flex flex-wrap gap-1.5">
-                                        {item.tags.slice(0, 4).map((t) => (
-                                            <span class="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)">
+                                        {featuredItems[0].tags.slice(0, 4).map((t) => (
+                                            <span class="rounded-full bg-(--color-tag-bg) px-2.5 py-0.5 text-xs font-medium text-(--color-tag-fg)">
                                                 {t}
                                             </span>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                        </a>
-                    ))}
-                </div>
+                        </div>
+                    </a>
+                )}
+
+                {/* 나머지 항목: 2열 그리드 */}
+                {featuredItems.length > 1 && (
+                    <div class="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                        {featuredItems.slice(1).map((item) => (
+                            <a
+                                href={`/portfolio/${item.slug}`}
+                                class="card-lift group block overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
+                            >
+                                {item.thumbnail && (
+                                    <div class="aspect-video overflow-hidden bg-(--color-border)">
+                                        <img
+                                            src={item.thumbnail}
+                                            alt=""
+                                            width={480}
+                                            height={270}
+                                            loading="lazy"
+                                            class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                                        />
+                                    </div>
+                                )}
+                                <div class="p-5">
+                                    <h3 class="mb-2 font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                        {item.title}
+                                    </h3>
+                                    {item.description && (
+                                        <p class="mb-3 line-clamp-2 text-sm text-(--color-muted)">
+                                            {item.description}
+                                        </p>
+                                    )}
+                                    {item.tags && item.tags.length > 0 && (
+                                        <div class="flex flex-wrap gap-1.5">
+                                            {item.tags.slice(0, 4).map((t) => (
+                                                <span class="rounded-full bg-(--color-tag-bg) px-2.5 py-0.5 text-xs font-medium text-(--color-tag-fg)">
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                )}
             </section>
         )
     }
@@ -253,82 +321,74 @@ const isDev = import.meta.env.DEV;
     <!-- ── Blog 최신 글 ────────────────────────────────────────── -->
     {
         latestPosts.length > 0 && (
-            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-12">
-                <div class="mb-6 flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-(--color-foreground)">
-                        Blog
-                    </h2>
+            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <div class="mb-8 flex items-end justify-between">
+                    <div>
+                        <p class="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                            Latest Posts
+                        </p>
+                        <h2 class="text-3xl font-black tracking-tight text-(--color-foreground)">
+                            Blog
+                        </h2>
+                    </div>
                     <a
                         href="/blog"
-                        class="inline-flex items-center gap-1 text-sm font-medium text-(--color-accent) hover:underline"
+                        class="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
                         전체 보기
-                        <svg
-                            class="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M9 5l7 7-7 7"
-                            />
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </a>
                 </div>
 
-                {/* 최신 2개 — 큰 카드 블록 */}
-                <div class="tablet:grid-cols-2 tablet:gap-6 mb-6 grid grid-cols-1 gap-4">
-                    {latestPosts.slice(0, 2).map((post) => (
-                        <a
-                            href={`/blog/${post.slug}`}
-                            class="group block overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle) transition-colors hover:border-(--color-accent)"
-                        >
-                            {post.thumbnailUrl && (
-                                <div class="aspect-video overflow-hidden bg-(--color-border)">
+                {/* 첫 번째 포스트: 피처드 와이드 카드 */}
+                {latestPosts[0] && (
+                    <a
+                        href={`/blog/${latestPosts[0].slug}`}
+                        class="card-lift group mb-4 block overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
+                    >
+                        <div class="tablet:flex-row flex flex-col">
+                            {latestPosts[0].thumbnailUrl && (
+                                <div class="tablet:w-2/5 aspect-video overflow-hidden bg-(--color-border)">
                                     <img
-                                        src={post.thumbnailUrl}
+                                        src={latestPosts[0].thumbnailUrl}
                                         alt=""
-                                        width={480}
-                                        height={270}
+                                        width={560}
+                                        height={315}
                                         loading="lazy"
-                                        class="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                     />
                                 </div>
                             )}
-                            <div class="p-5">
-                                {post.category && (
-                                    <p class="mb-1 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
-                                        {post.category}
+                            <div class={`flex flex-col justify-center p-7 ${latestPosts[0].thumbnailUrl ? "tablet:w-3/5" : "w-full"}`}>
+                                {latestPosts[0].category && (
+                                    <p class="mb-2 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
+                                        {latestPosts[0].category}
                                     </p>
                                 )}
-                                <h3 class="mb-2 line-clamp-2 font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                    {post.title}
+                                <h3 class="mb-3 text-xl font-bold leading-snug text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                    {latestPosts[0].title}
                                 </h3>
-                                <p class="mb-3 line-clamp-2 text-sm text-(--color-muted)">
-                                    {post.displayDescription}
+                                <p class="mb-4 line-clamp-2 text-sm leading-relaxed text-(--color-muted)">
+                                    {latestPosts[0].displayDescription}
                                 </p>
-                                <time
-                                    datetime={post.pubDateIso}
-                                    class="text-xs text-(--color-muted)"
-                                >
-                                    {post.pubDateFormatted}
+                                <time datetime={latestPosts[0].pubDateIso} class="text-xs text-(--color-muted)">
+                                    {latestPosts[0].pubDateFormatted}
                                 </time>
                             </div>
-                        </a>
-                    ))}
-                </div>
+                        </div>
+                    </a>
+                )}
 
-                {/* 다음 3개 — 컴팩트 리스트 */}
-                {latestPosts.length > 2 && (
-                    <ul class="divide-y divide-(--color-border) overflow-hidden rounded-xl border border-(--color-border)">
-                        {latestPosts.slice(2).map((post) => (
+                {/* 나머지 포스트: 컴팩트 리스트 */}
+                {latestPosts.length > 1 && (
+                    <ul class="divide-y divide-(--color-border) overflow-hidden rounded-2xl border border-(--color-border)">
+                        {latestPosts.slice(1).map((post) => (
                             <li>
                                 <a
                                     href={`/blog/${post.slug}`}
-                                    class="group flex items-start gap-4 bg-(--color-surface-subtle) px-5 py-4 transition-colors hover:bg-(--color-surface)"
+                                    class="group flex items-center gap-4 bg-(--color-surface-subtle) px-5 py-4 transition-colors hover:bg-(--color-surface)"
                                 >
                                     <div class="min-w-0 flex-1">
                                         {post.category && (
@@ -342,7 +402,7 @@ const isDev = import.meta.env.DEV;
                                     </div>
                                     <time
                                         datetime={post.pubDateIso}
-                                        class="mt-0.5 shrink-0 text-xs text-(--color-muted)"
+                                        class="shrink-0 text-xs text-(--color-muted)"
                                     >
                                         {post.pubDateFormatted}
                                     </time>

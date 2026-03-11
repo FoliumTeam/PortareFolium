@@ -10,17 +10,18 @@ const isDev = import.meta.env.DEV;
 ---
 
 <header
-    class="sticky top-0 z-50 border-b border-(--color-border) bg-(--color-surface) backdrop-blur-sm"
+    class="sticky top-0 z-50 border-b border-(--color-border) bg-(--color-surface)/90 backdrop-blur-md transition-shadow"
     id="site-header"
 >
     <nav
-        class="container mx-auto flex items-center justify-between gap-4 px-4 py-4"
+        class="container mx-auto flex items-center justify-between gap-4 px-4 py-3.5"
     >
         <a
             href="/"
-            class="text-xl font-bold text-(--color-foreground) transition-opacity hover:opacity-80"
+            class="flex items-center gap-2 font-black tracking-tight text-(--color-foreground) transition-opacity hover:opacity-80"
         >
-            FoliumOnline
+            <span class="h-2 w-2 rounded-full bg-(--color-accent)" aria-hidden="true"></span>
+            <span class="text-lg">FoliumOnline</span>
         </a>
 
         {/* 햄버거: 모바일만 */}
@@ -68,25 +69,25 @@ const isDev = import.meta.env.DEV;
         >
             <a
                 href="/about"
-                class="rounded-md px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                class="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
             >
                 About me
             </a>
             <a
                 href="/resume"
-                class="rounded-md px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                class="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
             >
                 Resume
             </a>
             <a
                 href="/portfolio"
-                class="rounded-md px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                class="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
             >
                 Portfolio
             </a>
             <a
                 href="/blog"
-                class="rounded-md px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                class="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
             >
                 Blog
             </a>
@@ -94,7 +95,7 @@ const isDev = import.meta.env.DEV;
                 isDev && (
                     <a
                         href="/admin"
-                        class="rounded-md px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                        class="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
                         Admin
                     </a>
@@ -104,7 +105,7 @@ const isDev = import.meta.env.DEV;
                 href="https://github.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground) hover:opacity-80"
+                class="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                 aria-label="GitHub"
             >
                 <svg
@@ -174,5 +175,15 @@ const isDev = import.meta.env.DEV;
         mq.addEventListener("change", (e) => {
             if (e.matches) setOpen(false);
         });
+
+        // 스크롤 시 헤더 그림자 추가
+        const header = document.getElementById("site-header");
+        function onScroll() {
+            if (header) {
+                header.classList.toggle("scrolled", window.scrollY > 8);
+            }
+        }
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
     })();
 </script>

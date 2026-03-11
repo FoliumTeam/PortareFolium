@@ -106,28 +106,35 @@ export default function AboutView() {
     );
 
     return (
-        <article className="mx-auto max-w-7xl py-12">
-            <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
-                About me
-            </h1>
+        <article className="mx-auto max-w-4xl py-12">
+            {/* 프로필 섹션 */}
+            <div className="tablet:flex-row tablet:items-start tablet:gap-12 flex flex-col gap-8">
+                {/* 프로필 이미지 */}
+                <div className="shrink-0">
+                    <div className="relative h-36 w-36">
+                        <div className="absolute inset-0 rounded-full bg-(--color-accent) opacity-20 blur-xl" aria-hidden="true" />
+                        <img
+                            src={profileImage}
+                            alt="프로필 사진"
+                            width={144}
+                            height={144}
+                            className="relative h-36 w-36 rounded-full object-cover ring-4 ring-(--color-accent)/30"
+                        />
+                    </div>
+                </div>
 
-            <div className="tablet:flex-row flex flex-col items-start gap-8">
-                <img
-                    src={profileImage}
-                    alt="프로필 사진"
-                    width={160}
-                    height={160}
-                    className="h-40 w-40 shrink-0 rounded-full border-2 border-(--color-border) object-cover"
-                />
-
+                {/* 이름 + 소개 */}
                 <div className="min-w-0 flex-1">
+                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                        About me
+                    </p>
                     {data.name && (
-                        <h2 className="mb-3 text-xl font-semibold text-(--color-foreground)">
+                        <h1 className="mb-4 text-4xl font-black tracking-tight text-(--color-foreground)">
                             {data.name}
-                        </h2>
+                        </h1>
                     )}
                     {data.description && (
-                        <p className="mb-4 leading-relaxed text-(--color-foreground)">
+                        <p className="mb-3 text-lg leading-relaxed text-(--color-foreground)">
                             {data.description}
                         </p>
                     )}
@@ -137,141 +144,95 @@ export default function AboutView() {
                         </p>
                     )}
 
+                    {/* 연락처 */}
                     {contactEntries.length > 0 && (
-                        <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 border-t border-(--color-border) pt-6 text-sm">
-                            {contactEntries.map(({ label, value, href }) => (
-                                <>
-                                    <dt
-                                        key={`dt-${label}`}
-                                        className="font-medium text-(--color-muted)"
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {contactEntries.map(({ label, value, href }) =>
+                                href ? (
+                                    <a
+                                        key={label}
+                                        href={href}
+                                        className="inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+                                        target={href.startsWith("http") ? "_blank" : undefined}
+                                        rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
                                     >
-                                        {label}
-                                    </dt>
-                                    <dd key={`dd-${label}`}>
-                                        {href ? (
-                                            <a
-                                                href={href}
-                                                className="text-(--color-link) hover:underline"
-                                                target={
-                                                    href.startsWith("http")
-                                                        ? "_blank"
-                                                        : undefined
-                                                }
-                                                rel={
-                                                    href.startsWith("http")
-                                                        ? "noopener noreferrer"
-                                                        : undefined
-                                                }
-                                            >
-                                                {value}
-                                            </a>
-                                        ) : (
-                                            value
-                                        )}
-                                    </dd>
-                                </>
-                            ))}
-                        </dl>
+                                        <span className="text-xs font-bold text-(--color-muted)">{label}</span>
+                                        <span>{value}</span>
+                                    </a>
+                                ) : (
+                                    <span
+                                        key={label}
+                                        className="inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-foreground)"
+                                    >
+                                        <span className="text-xs font-bold text-(--color-muted)">{label}</span>
+                                        <span>{value}</span>
+                                    </span>
+                                )
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* 경험 유형별 테이블 */}
+            {/* 경험 유형별 섹션 */}
             {sectionEntries.length > 0 && (
-                <div className="mt-12 border-t border-(--color-border) pt-8">
-                    <h2 className="mb-4 text-xl font-semibold text-(--color-foreground)">
+                <div className="mt-14 border-t border-(--color-border) pt-10">
+                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                        Experience
+                    </p>
+                    <h2 className="mb-7 text-2xl font-black tracking-tight text-(--color-foreground)">
                         경험 유형별 리스트
                     </h2>
-                    <div className="overflow-x-auto rounded-lg border border-(--color-border)">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b border-(--color-border) bg-(--color-surface-subtle) font-medium text-(--color-muted)">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        className="w-40 shrink-0 px-4 py-3"
-                                    >
-                                        구분
-                                    </th>
-                                    <th scope="col" className="px-4 py-3">
-                                        내용
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-(--color-foreground)">
-                                {sectionEntries.map(([category, items]) => (
-                                    <tr
-                                        key={category}
-                                        className="border-b border-(--color-border) last:border-b-0"
-                                    >
-                                        <td className="px-4 py-3 align-top font-medium text-(--color-muted)">
-                                            {category}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <ul className="list-inside list-disc space-y-2">
-                                                {items.map((item, i) => (
-                                                    <li
-                                                        key={i}
-                                                        className="whitespace-pre-line"
-                                                    >
-                                                        {item}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="space-y-4">
+                        {sectionEntries.map(([category, items]) => (
+                            <div
+                                key={category}
+                                className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                            >
+                                <h3 className="mb-4 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                                    {category}
+                                </h3>
+                                <ul className="space-y-2">
+                                    {items.map((item, i) => (
+                                        <li key={i} className="flex items-start gap-2.5 text-sm text-(--color-foreground)">
+                                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)" aria-hidden="true" />
+                                            <span className="whitespace-pre-line leading-relaxed">{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
 
-            {/* 역량 키워드별 테이블 */}
+            {/* 역량 키워드별 섹션 */}
             {competencyEntries.length > 0 && (
-                <div className="mt-12 border-t border-(--color-border) pt-8">
-                    <h2 className="mb-4 text-xl font-semibold text-(--color-foreground)">
+                <div className="mt-14 border-t border-(--color-border) pt-10">
+                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                        Competencies
+                    </p>
+                    <h2 className="mb-7 text-2xl font-black tracking-tight text-(--color-foreground)">
                         역량 키워드별 리스트
                     </h2>
-                    <div className="overflow-x-auto rounded-lg border border-(--color-border)">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b border-(--color-border) bg-(--color-surface-subtle) font-medium text-(--color-muted)">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        className="w-40 shrink-0 px-4 py-3"
-                                    >
-                                        구분
-                                    </th>
-                                    <th scope="col" className="px-4 py-3">
-                                        내용
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-(--color-foreground)">
-                                {competencyEntries.map(([category, items]) => (
-                                    <tr
-                                        key={category}
-                                        className="border-b border-(--color-border) last:border-b-0"
-                                    >
-                                        <td className="px-4 py-3 align-top font-medium text-(--color-muted)">
-                                            {category}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <ul className="list-inside list-disc space-y-2">
-                                                {items.map((item, i) => (
-                                                    <li
-                                                        key={i}
-                                                        className="whitespace-pre-line"
-                                                    >
-                                                        {item}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="space-y-6">
+                        {competencyEntries.map(([category, items]) => (
+                            <div key={category}>
+                                <h3 className="mb-3 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                                    {category}
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {items.map((item, i) => (
+                                        <span
+                                            key={i}
+                                            className="rounded-full bg-(--color-tag-bg) px-4 py-1.5 text-sm font-medium text-(--color-tag-fg)"
+                                        >
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
