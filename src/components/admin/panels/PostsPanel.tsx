@@ -5,12 +5,14 @@
  * - 목록 화면과 편집 화면을 같은 패널 내에서 전환한다.
  * - 마크다운 편집 시 좌측 에디터 + 우측 라이브 미리보기 (Keystatic/Notion 스타일).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import TagSelector from "@/components/admin/TagSelector";
 import CategorySelect from "@/components/admin/CategorySelect";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
+import { useAutoSave, getAutoSaveDraft } from "@/lib/hooks/useAutoSave";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -79,6 +81,25 @@ export default function PostsPanel() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+
+    const initialFormRef = useRef<PostForm>(EMPTY_FORM);
+
+    // auto-save key 계산
+    const autoSaveKey =
+        editTarget === null
+            ? "__none__"
+            : editTarget === "new"
+              ? "admin_autosave_post_new"
+              : `admin_autosave_post_${(editTarget as Post).id}`;
+
+    // dirty 상태
+    const isDirty =
+        editTarget !== null &&
+        JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
+
+    const { savedAt, clear } = useAutoSave(autoSaveKey, form, editTarget !== null);
+    const { confirmLeave } = useUnsavedWarning(isDirty);
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
     const loadPosts = async () => {
@@ -101,7 +122,7 @@ export default function PostsPanel() {
 
     // 편집 화면 열기
     const openEdit = (post: Post) => {
-        setForm({
+        const f: PostForm = {
             slug: post.slug,
             title: post.title,
             description: post.description ?? "",
@@ -114,18 +135,23 @@ export default function PostsPanel() {
             meta_title: post.meta_title ?? "",
             meta_description: post.meta_description ?? "",
             og_image: post.og_image ?? "",
-        });
+        };
+        initialFormRef.current = f;
+        setForm(f);
         setEditTarget(post);
         setError(null);
         setSuccess(null);
+        setShowRestoreBanner(!!localStorage.getItem(`admin_autosave_post_${post.id}`));
     };
 
     // 신규 생성 화면 열기
     const openNew = () => {
+        initialFormRef.current = EMPTY_FORM;
         setForm(EMPTY_FORM);
         setEditTarget("new");
         setError(null);
         setSuccess(null);
+        setShowRestoreBanner(!!localStorage.getItem("admin_autosave_post_new"));
     };
 
     // 저장 (신규 insert / 수정 update)
@@ -172,10 +198,33 @@ export default function PostsPanel() {
             setError(err.message);
         } else {
             setSuccess("저장됐습니다.");
+            clear();
+            initialFormRef.current = form;
             loadPosts();
             // 새 글이면 목록으로 돌아감, 수정이면 유지
             if (editTarget === "new") setEditTarget(null);
         }
+    };
+
+    // 목록으로 이탈 (dirty 확인 포함)
+    const handleBack = () => {
+        if (confirmLeave()) {
+            setEditTarget(null);
+            setShowRestoreBanner(false);
+        }
+    };
+
+    // 임시 저장본 복원
+    const handleRestore = () => {
+        const draft = getAutoSaveDraft<PostForm>(autoSaveKey);
+        if (draft) setForm(draft);
+        setShowRestoreBanner(false);
+    };
+
+    // 임시 저장본 무시
+    const handleDiscardDraft = () => {
+        clear();
+        setShowRestoreBanner(false);
     };
 
     // 삭제
@@ -203,8 +252,28 @@ export default function PostsPanel() {
     if (editTarget !== null) {
         return (
             <div className="w-full max-w-6xl">
+                {showRestoreBanner && (
+                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                        <span className="flex-1">
+                            저장되지 않은 임시 저장본이 있습니다.
+                            복원하시겠습니까?
+                        </span>
+                        <button
+                            onClick={handleRestore}
+                            className="font-semibold underline"
+                        >
+                            복원
+                        </button>
+                        <button
+                            onClick={handleDiscardDraft}
+                            className="text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            무시
+                        </button>
+                    </div>
+                )}
                 <button
-                    onClick={() => setEditTarget(null)}
+                    onClick={handleBack}
                     className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                 >
                     ← 목록
@@ -448,7 +517,7 @@ export default function PostsPanel() {
                     )}
 
                     {/* 저장 버튼 */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex items-center gap-3 pt-2">
                         <button
                             onClick={handleSave}
                             disabled={saving}
@@ -457,11 +526,20 @@ export default function PostsPanel() {
                             {saving ? "저장 중..." : "저장"}
                         </button>
                         <button
-                            onClick={() => setEditTarget(null)}
+                            onClick={handleBack}
                             className="rounded-lg border border-(--color-border) px-5 py-2 text-base font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                         >
                             취소
                         </button>
+                        {savedAt && (
+                            <span className="text-sm text-(--color-muted)">
+                                자동 저장:{" "}
+                                {savedAt.toLocaleTimeString("ko-KR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

@@ -4,10 +4,12 @@
  * 포트폴리오 아이템 목록 조회, 생성, 편집, 삭제,
  * featured 토글 및 발행/초안 전환을 담당한다.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
+import { useAutoSave, getAutoSaveDraft } from "@/lib/hooks/useAutoSave";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 interface PortfolioItem {
     id: string;
@@ -119,6 +121,25 @@ export default function PortfolioPanel() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+
+    const initialFormRef = useRef<ItemForm>(EMPTY_FORM);
+
+    // auto-save key 계산
+    const autoSaveKey =
+        editTarget === null
+            ? "__none__"
+            : editTarget === "new"
+              ? "admin_autosave_portfolio_new"
+              : `admin_autosave_portfolio_${(editTarget as PortfolioItem).id}`;
+
+    // dirty 상태
+    const isDirty =
+        editTarget !== null &&
+        JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
+
+    const { savedAt, clear } = useAutoSave(autoSaveKey, form, editTarget !== null);
+    const { confirmLeave } = useUnsavedWarning(isDirty);
 
     const loadItems = async () => {
         if (!browserClient) return;
@@ -137,17 +158,23 @@ export default function PortfolioPanel() {
     }, []);
 
     const openEdit = (item: PortfolioItem) => {
-        setForm(itemToForm(item));
+        const f = itemToForm(item);
+        initialFormRef.current = f;
+        setForm(f);
         setEditTarget(item);
         setError(null);
         setSuccess(null);
+        setShowRestoreBanner(!!localStorage.getItem(`admin_autosave_portfolio_${item.id}`));
     };
 
     const openNew = () => {
-        setForm({ ...EMPTY_FORM, order_idx: items.length });
+        const f = { ...EMPTY_FORM, order_idx: items.length };
+        initialFormRef.current = f;
+        setForm(f);
         setEditTarget("new");
         setError(null);
         setSuccess(null);
+        setShowRestoreBanner(!!localStorage.getItem("admin_autosave_portfolio_new"));
     };
 
     const handleSave = async () => {
@@ -203,9 +230,32 @@ export default function PortfolioPanel() {
             setError(err.message);
         } else {
             setSuccess("저장됐습니다.");
+            clear();
+            initialFormRef.current = form;
             loadItems();
             if (editTarget === "new") setEditTarget(null);
         }
+    };
+
+    // 목록으로 이탈 (dirty 확인 포함)
+    const handleBack = () => {
+        if (confirmLeave()) {
+            setEditTarget(null);
+            setShowRestoreBanner(false);
+        }
+    };
+
+    // 임시 저장본 복원
+    const handleRestore = () => {
+        const draft = getAutoSaveDraft<ItemForm>(autoSaveKey);
+        if (draft) setForm(draft);
+        setShowRestoreBanner(false);
+    };
+
+    // 임시 저장본 무시
+    const handleDiscardDraft = () => {
+        clear();
+        setShowRestoreBanner(false);
     };
 
     const handleDelete = async (id: string) => {
@@ -265,8 +315,28 @@ export default function PortfolioPanel() {
 
         return (
             <div className="w-full max-w-5xl">
+                {showRestoreBanner && (
+                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                        <span className="flex-1">
+                            저장되지 않은 임시 저장본이 있습니다.
+                            복원하시겠습니까?
+                        </span>
+                        <button
+                            onClick={handleRestore}
+                            className="font-semibold underline"
+                        >
+                            복원
+                        </button>
+                        <button
+                            onClick={handleDiscardDraft}
+                            className="text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            무시
+                        </button>
+                    </div>
+                )}
                 <button
-                    onClick={() => setEditTarget(null)}
+                    onClick={handleBack}
                     className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                 >
                     ← 목록
@@ -418,7 +488,7 @@ export default function PortfolioPanel() {
                         </p>
                     )}
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex items-center gap-3 pt-2">
                         <button
                             onClick={handleSave}
                             disabled={saving}
@@ -427,11 +497,20 @@ export default function PortfolioPanel() {
                             {saving ? "저장 중..." : "저장"}
                         </button>
                         <button
-                            onClick={() => setEditTarget(null)}
+                            onClick={handleBack}
                             className="rounded-lg border border-(--color-border) px-5 py-2 text-base font-medium text-(--color-muted) hover:text-(--color-foreground)"
                         >
                             취소
                         </button>
+                        {savedAt && (
+                            <span className="text-sm text-(--color-muted)">
+                                자동 저장:{" "}
+                                {savedAt.toLocaleTimeString("ko-KR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

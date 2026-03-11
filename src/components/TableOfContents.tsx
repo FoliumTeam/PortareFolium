@@ -68,70 +68,58 @@ export default function TableOfContents({
 
     return (
         <nav
-            className={`desktop:block sticky top-24 hidden max-h-[calc(100vh-8rem)] shrink-0 self-start overflow-y-auto overscroll-contain ${className} tablet:w-52 desktop:w-64`}
+            className={`desktop:block sticky top-24 hidden max-h-[calc(100vh-8rem)] w-52 shrink-0 self-start overflow-y-auto overscroll-contain ${className}`}
             aria-label="목차"
         >
-            <h2 className="mb-3 text-xs font-semibold tracking-wider text-(--color-muted) uppercase">
+            <p className="mb-4 text-xs font-bold tracking-[0.15em] text-(--color-muted) uppercase">
                 On this page
-            </h2>
-            <ul className="space-y-1 text-sm">
-                {entries.map((entry, i) => (
-                    <li key={i}>
-                        <a
-                            href={`#${entry.slug}`}
-                            className={`block py-1 text-base text-(--color-muted) transition-all duration-200 hover:text-(--color-foreground) ${
-                                activeSection === `#${entry.slug}`
-                                    ? "text-lg font-bold"
-                                    : ""
-                            }`}
-                            style={
-                                activeSection === `#${entry.slug}`
-                                    ? { color: "var(--color-accent)" }
-                                    : undefined
-                            }
-                            aria-current={
-                                activeSection === `#${entry.slug}`
-                                    ? "location"
-                                    : undefined
-                            }
-                        >
-                            {entry.text}
-                        </a>
-                        {entry.children.length > 0 && (
-                            <ul className="mt-0.5 ml-3 space-y-0.5 border-l border-(--color-border)">
-                                {entry.children.map((child, j) => (
-                                    <li key={j}>
-                                        <a
-                                            href={`#${child.slug}`}
-                                            className={`-ml-px block border-l-2 border-transparent py-0.5 pl-2 text-base text-(--color-muted) transition-all duration-200 hover:border-(--color-accent) hover:text-(--color-foreground) ${
-                                                activeSection ===
-                                                `#${child.slug}`
-                                                    ? "border-(--color-accent) text-lg font-bold"
-                                                    : ""
-                                            }`}
-                                            style={
-                                                activeSection ===
-                                                `#${child.slug}`
-                                                    ? {
-                                                          color: "var(--color-accent)",
-                                                      }
-                                                    : undefined
-                                            }
-                                            aria-current={
-                                                activeSection ===
-                                                `#${child.slug}`
-                                                    ? "location"
-                                                    : undefined
-                                            }
-                                        >
-                                            {child.text}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </li>
-                ))}
+            </p>
+            <ul className="space-y-0.5 text-sm">
+                {entries.map((entry, i) => {
+                    const isActive = activeSection === `#${entry.slug}`;
+                    return (
+                        <li key={i}>
+                            <a
+                                href={`#${entry.slug}`}
+                                className={`-ml-px block border-l-2 py-1.5 pl-3 text-sm transition-colors duration-150 ${
+                                    isActive
+                                        ? "border-(--color-accent) font-semibold text-(--color-accent)"
+                                        : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
+                                }`}
+                                aria-current={isActive ? "location" : undefined}
+                            >
+                                {entry.text}
+                            </a>
+                            {entry.children.length > 0 && (
+                                <ul className="space-y-0.5">
+                                    {entry.children.map((child, j) => {
+                                        const isChildActive =
+                                            activeSection === `#${child.slug}`;
+                                        return (
+                                            <li key={j}>
+                                                <a
+                                                    href={`#${child.slug}`}
+                                                    className={`-ml-px block border-l-2 py-1 pl-6 text-sm transition-colors duration-150 ${
+                                                        isChildActive
+                                                            ? "border-(--color-accent) font-semibold text-(--color-accent)"
+                                                            : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
+                                                    }`}
+                                                    aria-current={
+                                                        isChildActive
+                                                            ? "location"
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {child.text}
+                                                </a>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </li>
+                    );
+                })}
             </ul>
         </nav>
     );

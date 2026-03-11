@@ -521,6 +521,60 @@ body {
     opacity: 0.85;
 }
 
+/* prose 헤딩: 강한 타이포그래피 계층 */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+}
+.prose h2 {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    margin-top: 2.5rem;
+}
+
+/* prose blockquote: accent border + 서브틀 배경 */
+.prose blockquote {
+    border-left: 3px solid var(--color-accent);
+    background: var(--color-surface-subtle);
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 1rem 1.25rem;
+    font-style: normal;
+    color: var(--color-foreground);
+}
+.prose blockquote p {
+    margin: 0;
+    color: var(--color-foreground);
+}
+.prose blockquote p::before,
+.prose blockquote p::after {
+    content: none;
+}
+
+/* prose hr: 여백 확대 */
+.prose hr {
+    border-color: var(--color-border);
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+}
+
+/* prose table: border 정돈 */
+.prose table {
+    font-size: 0.9rem;
+    border-collapse: collapse;
+}
+.prose thead {
+    background: var(--color-surface-subtle);
+}
+.prose th,
+.prose td {
+    border: 1px solid var(--color-border);
+    padding: 0.6rem 0.875rem;
+    color: var(--color-foreground);
+}
+
 /* TOC 앵커 스크롤: 스티키 헤더 높이만큼 여백 (클릭 시 제목이 헤더에 가려지지 않도록) */
 .prose h1[id],
 .prose h2[id],

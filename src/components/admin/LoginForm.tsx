@@ -36,81 +36,98 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-(--color-surface) px-4">
-            <div className="w-full max-w-sm">
-                {/* 헤더 */}
-                <div className="mb-8 text-center">
-                    <p className="mb-2 text-base font-medium tracking-widest text-(--color-muted) uppercase">
-                        FoliumOnline
-                    </p>
-                    <h1 className="text-3xl font-bold text-(--color-foreground)">
-                        어드민 로그인
+        <div className="relative flex min-h-screen items-center justify-center bg-(--color-surface) px-4">
+            {/* 배경 글로우 */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08] blur-3xl bg-(--color-accent)"
+            />
+
+            <div className="relative w-full max-w-sm">
+                {/* 워드마크 */}
+                <div className="mb-10 flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-(--color-accent)" aria-hidden="true" />
+                        <span className="text-lg font-black tracking-tight text-(--color-foreground)">
+                            FoliumOnline
+                        </span>
+                    </div>
+                    <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
+                        Admin 로그인
                     </h1>
+                    <p className="text-sm text-(--color-muted)">
+                        관리자 계정으로 로그인하세요
+                    </p>
                 </div>
 
-                {/* 로그인 폼 */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label
-                            htmlFor="email"
-                            className="mb-1.5 block text-base font-medium text-(--color-muted)"
+                {/* 로그인 카드 */}
+                <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-7">
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label
+                                htmlFor="email"
+                                className="mb-2 block text-sm font-semibold text-(--color-foreground)"
+                            >
+                                이메일
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                autoComplete="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                placeholder="admin@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="password"
+                                className="mb-2 block text-sm font-semibold text-(--color-foreground)"
+                            >
+                                패스워드
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                autoComplete="current-password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                placeholder="••••••••"
+                            />
+                        </div>
+
+                        {/* 에러 메시지 */}
+                        {error && (
+                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+                                {error}
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full rounded-full bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0"
                         >
-                            이메일
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5 text-base text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                            placeholder="admin@example.com"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="mb-1.5 block text-base font-medium text-(--color-muted)"
-                        >
-                            패스워드
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5 text-base text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    {/* 에러 메시지 */}
-                    {error && (
-                        <p className="rounded-lg bg-red-50 px-3 py-2 text-base text-red-500 dark:bg-red-950/30">
-                            {error}
-                        </p>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full rounded-lg bg-(--color-accent) py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {loading ? "로그인 중..." : "로그인"}
-                    </button>
-                </form>
+                            {loading ? "로그인 중..." : "로그인"}
+                        </button>
+                    </form>
+                </div>
 
                 {/* 홈으로 돌아가기 */}
                 <p className="mt-6 text-center">
                     <a
                         href="/"
-                        className="text-base text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                        className="inline-flex items-center gap-1.5 text-sm text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
-                        ← 사이트로 돌아가기
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        사이트로 돌아가기
                     </a>
                 </p>
             </div>

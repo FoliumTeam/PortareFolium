@@ -73,63 +73,94 @@ const pageImage = post.og_image || post.thumbnail || "";
 <BaseLayout title={pageTitle} description={pageDesc} image={pageImage}>
     <div class="mx-auto flex max-w-5xl gap-12">
         <article class="max-w-3xl min-w-0 flex-1">
-            <header class="mb-6">
-                <h1
-                    class="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-4xl font-bold"
-                >
-                    {
-                        category ? (
-                            <>
-                                <span class="text-4xl font-bold text-(--color-highlight)">
-                                    {category}
-                                </span>
-                                <span class="text-(--color-muted)" aria-hidden>
-                                    |
-                                </span>
-                            </>
-                        ) : null
-                    }
-                    <span>{post.title}</span>
+
+            {/* 뒤로가기 */}
+            <a
+                href="/blog"
+                class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+            >
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Blog 목록
+            </a>
+
+            {/* 썸네일 히어로 */}
+            {
+                post.thumbnail && (
+                    <div class="mb-10 aspect-video overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)">
+                        <img
+                            src={post.thumbnail}
+                            alt=""
+                            width={768}
+                            height={432}
+                            loading="eager"
+                            decoding="async"
+                            class="h-full w-full object-cover"
+                        />
+                    </div>
+                )
+            }
+
+            {/* 헤더 */}
+            <header class="mb-10">
+                {/* 카테고리 pill */}
+                {
+                    category && (
+                        <span class="mb-4 inline-flex items-center rounded-full bg-(--color-accent) px-3 py-1 text-xs font-semibold text-(--color-on-accent)">
+                            {category}
+                        </span>
+                    )
+                }
+
+                <h1 class="tablet:text-5xl mb-4 text-4xl font-black leading-[1.1] tracking-tight text-(--color-foreground)">
+                    {post.title}
                 </h1>
+
                 {
                     post.description && (
-                        <p class="text-lg text-(--color-muted)">
+                        <p class="mb-6 text-xl leading-relaxed text-(--color-muted)">
                             {post.description}
                         </p>
                     )
                 }
-                <time
-                    class="mt-2 block text-sm text-(--color-muted)"
-                    datetime={pubDate.toISOString()}
-                >
-                    {formatPubDateKST(pubDate)}
-                </time>
-                {
-                    tagDisplay.length > 0 && (
-                        <div
-                            class="mt-4 flex flex-wrap gap-2"
-                            aria-label="태그"
-                        >
-                            {tagDisplay.map((t) => (
-                                <a
-                                    href={`/blog?tag=${encodeURIComponent(t.slug)}`}
-                                    class="rounded-full bg-(--color-tag-bg) px-2 py-1 text-xs text-(--color-tag-fg) transition-opacity hover:opacity-85"
-                                    style={
-                                        t.color
-                                            ? {
-                                                  backgroundColor: t.color,
-                                                  color: "#fff",
-                                              }
-                                            : undefined
-                                    }
-                                >
-                                    {t.name}
-                                </a>
-                            ))}
-                        </div>
-                    )
-                }
+
+                {/* 날짜 + 태그 메타 행 */}
+                <div class="flex flex-wrap items-center gap-3">
+                    <time
+                        class="text-sm font-medium text-(--color-muted)"
+                        datetime={pubDate.toISOString()}
+                    >
+                        {formatPubDateKST(pubDate)}
+                    </time>
+                    {
+                        tagDisplay.length > 0 && (
+                            <>
+                                <span class="h-4 w-px bg-(--color-border)" aria-hidden="true"></span>
+                                <div class="flex flex-wrap gap-1.5" aria-label="태그">
+                                    {tagDisplay.map((t) => (
+                                        <a
+                                            href={`/blog?tag=${encodeURIComponent(t.slug)}`}
+                                            class="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg) transition-opacity hover:opacity-80"
+                                            style={
+                                                t.color
+                                                    ? { backgroundColor: t.color, color: "#fff" }
+                                                    : undefined
+                                            }
+                                        >
+                                            {t.name}
+                                        </a>
+                                    ))}
+                                </div>
+                            </>
+                        )
+                    }
+                </div>
             </header>
+
+            {/* 본문 구분선 */}
+            <div class="mb-10 h-px bg-(--color-border)"></div>
+
             <div
                 class="post-content prose dark:prose-invert max-w-none"
                 data-content="true"
