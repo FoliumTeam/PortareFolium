@@ -5,8 +5,24 @@
  * - 태블릿 이상: 로고 + 전체 네비(About, Resume, Portfolio, Blog, Admin(dev), GitHub, 테마)
  */
 import ThemeToggle from "@/components/ThemeToggle";
+import { serverClient } from "@/lib/supabase";
 
 const isDev = import.meta.env.DEV;
+
+// site_name fetch
+let siteName = "";
+if (serverClient) {
+    const { data } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "site_name")
+        .single();
+    if (data?.value) {
+        let v = data.value;
+        if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
+        if (typeof v === "string") siteName = v;
+    }
+}
 ---
 
 <header
@@ -20,8 +36,10 @@ const isDev = import.meta.env.DEV;
             href="/"
             class="flex items-center gap-2 font-black tracking-tight text-(--color-foreground) transition-opacity hover:opacity-80"
         >
-            <span class="h-2 w-2 rounded-full bg-(--color-accent)" aria-hidden="true"></span>
-            <span class="text-lg">FoliumOnline</span>
+            <span
+                class="h-2 w-2 rounded-full bg-(--color-accent)"
+                aria-hidden="true"></span>
+            <span class="text-lg">{siteName}</span>
         </a>
 
         {/* 햄버거: 모바일만 */}

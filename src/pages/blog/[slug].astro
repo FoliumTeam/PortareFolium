@@ -62,10 +62,7 @@ const tagDisplay = tagSlugs.filter(Boolean).map((s) => ({
 }));
 const pubDate = new Date(post.pub_date);
 const pageTitle =
-    post.meta_title ||
-    (category
-        ? `${category} | ${post.title} - FoliumOnline`
-        : `${post.title} - FoliumOnline`);
+    post.meta_title || (category ? `${category} | ${post.title}` : post.title);
 const pageDesc = post.meta_description || post.description || "";
 const pageImage = post.og_image || post.thumbnail || "";
 ---
@@ -73,14 +70,23 @@ const pageImage = post.og_image || post.thumbnail || "";
 <BaseLayout title={pageTitle} description={pageDesc} image={pageImage}>
     <div class="mx-auto flex max-w-5xl gap-12">
         <article class="max-w-3xl min-w-0 flex-1">
-
             {/* 뒤로가기 */}
             <a
                 href="/blog"
                 class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
             >
-                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                <svg
+                    class="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"></path>
                 </svg>
                 Blog 목록
             </a>
@@ -113,7 +119,9 @@ const pageImage = post.og_image || post.thumbnail || "";
                     )
                 }
 
-                <h1 class="tablet:text-5xl mb-4 text-4xl font-black leading-[1.1] tracking-tight text-(--color-foreground)">
+                <h1
+                    class="tablet:text-5xl mb-4 text-4xl leading-[1.1] font-black tracking-tight text-(--color-foreground)"
+                >
                     {post.title}
                 </h1>
 
@@ -136,15 +144,25 @@ const pageImage = post.og_image || post.thumbnail || "";
                     {
                         tagDisplay.length > 0 && (
                             <>
-                                <span class="h-4 w-px bg-(--color-border)" aria-hidden="true"></span>
-                                <div class="flex flex-wrap gap-1.5" aria-label="태그">
+                                <span
+                                    class="h-4 w-px bg-(--color-border)"
+                                    aria-hidden="true"
+                                />
+                                <div
+                                    class="flex flex-wrap gap-1.5"
+                                    aria-label="태그"
+                                >
                                     {tagDisplay.map((t) => (
                                         <a
                                             href={`/blog?tag=${encodeURIComponent(t.slug)}`}
                                             class="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg) transition-opacity hover:opacity-80"
                                             style={
                                                 t.color
-                                                    ? { backgroundColor: t.color, color: "#fff" }
+                                                    ? {
+                                                          backgroundColor:
+                                                              t.color,
+                                                          color: "#fff",
+                                                      }
                                                     : undefined
                                             }
                                         >

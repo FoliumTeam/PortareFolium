@@ -12,19 +12,21 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import { serverClient } from "@/lib/supabase";
 
 let colorSchemeToUse = import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray";
+let siteName = "";
 
 if (serverClient) {
-    const { data } = await serverClient
+    const { data: rows } = await serverClient
         .from("site_config")
-        .select("value")
-        .eq("key", "color_scheme")
-        .single();
-    if (data?.value) {
-        let raw = data.value;
-        if (typeof raw === "string" && raw.startsWith('"')) {
-            raw = JSON.parse(raw);
+        .select("key, value")
+        .in("key", ["color_scheme", "site_name"]);
+    if (rows) {
+        for (const row of rows) {
+            let v = row.value;
+            if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
+            if (row.key === "color_scheme") colorSchemeToUse = v;
+            else if (row.key === "site_name" && typeof v === "string")
+                siteName = v;
         }
-        colorSchemeToUse = raw;
     }
 }
 const validScheme = [
@@ -45,7 +47,7 @@ const validScheme = [
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Admin — FoliumOnline</title>
+        <title>Admin — {siteName}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon-admin.svg" />
         <meta name="robots" content="noindex, nofollow" />
         {/* 다크모드 깜빡임 방지 */}

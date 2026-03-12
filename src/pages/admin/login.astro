@@ -5,6 +5,7 @@
  */
 import "@/styles/global.css";
 import LoginForm from "@/components/admin/LoginForm";
+import { serverClient } from "@/lib/supabase";
 
 // 컬러 스킴 적용 (BaseLayout 없이 단독 페이지)
 const colorScheme = (import.meta.env.PUBLIC_COLOR_SCHEME ?? "gray") as string;
@@ -13,6 +14,20 @@ const validScheme = ["blue", "gray", "beige", "blackwhite"].includes(
 )
     ? colorScheme
     : "gray";
+
+let siteName = "";
+if (serverClient) {
+    const { data } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "site_name")
+        .single();
+    if (data?.value) {
+        let v = data.value;
+        if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
+        if (typeof v === "string") siteName = v;
+    }
+}
 ---
 
 <!doctype html>
@@ -20,7 +35,7 @@ const validScheme = ["blue", "gray", "beige", "blackwhite"].includes(
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Admin Login — FoliumOnline</title>
+        <title>Admin Login — {siteName}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon-admin.svg" />
         {/* robots: 검색 엔진이 어드민 페이지를 인덱싱하지 않도록 */}
         <meta name="robots" content="noindex, nofollow" />
@@ -48,6 +63,6 @@ const validScheme = ["blue", "gray", "beige", "blackwhite"].includes(
         </script>
     </head>
     <body class="bg-(--color-surface) text-(--color-foreground)">
-        <LoginForm client:load />
+        <LoginForm siteName={siteName} client:load />
     </body>
 </html>

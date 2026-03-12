@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase";
 
-export default function LoginForm() {
+export default function LoginForm({ siteName = "" }: { siteName?: string }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -40,16 +40,19 @@ export default function LoginForm() {
             {/* 배경 글로우 */}
             <div
                 aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08] blur-3xl bg-(--color-accent)"
+                className="pointer-events-none absolute top-1/3 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--color-accent) opacity-[0.08] blur-3xl"
             />
 
             <div className="relative w-full max-w-sm">
                 {/* 워드마크 */}
                 <div className="mb-10 flex flex-col items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-(--color-accent)" aria-hidden="true" />
+                        <span
+                            className="h-2.5 w-2.5 rounded-full bg-(--color-accent)"
+                            aria-hidden="true"
+                        />
                         <span className="text-lg font-black tracking-tight text-(--color-foreground)">
-                            FoliumOnline
+                            {siteName}
                         </span>
                     </div>
                     <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
@@ -111,7 +114,7 @@ export default function LoginForm() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full rounded-full bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0"
+                            className="w-full rounded-full bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
@@ -124,8 +127,19 @@ export default function LoginForm() {
                         href="/"
                         className="inline-flex items-center gap-1.5 text-sm text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                            />
                         </svg>
                         사이트로 돌아가기
                     </a>

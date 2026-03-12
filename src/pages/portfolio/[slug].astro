@@ -54,8 +54,7 @@ const project: PortfolioProject = {
 // 마크다운 → HTML 변환 (Markdoc + Shiki, 빌드 타임)
 const contentHtml = await renderMarkdown(item.content ?? "");
 const tocEntries = extractTocFromHtml(contentHtml);
-const pageTitle =
-    item.meta_title || `${project.title} - Portfolio | FoliumOnline`;
+const pageTitle = item.meta_title || `${project.title} - Portfolio`;
 const pageDesc = item.meta_description || project.description || "";
 const pageImage = item.og_image || project.thumbnail || "";
 ---
@@ -63,14 +62,23 @@ const pageImage = item.og_image || project.thumbnail || "";
 <BaseLayout title={pageTitle} description={pageDesc} image={pageImage}>
     <div class="mx-auto flex max-w-5xl gap-12">
         <article class="max-w-3xl min-w-0 flex-1">
-
             {/* 뒤로가기 */}
             <a
                 href="/portfolio"
                 class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
             >
-                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                <svg
+                    class="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"></path>
                 </svg>
                 Portfolio 목록
             </a>
@@ -94,7 +102,9 @@ const pageImage = item.og_image || project.thumbnail || "";
 
             {/* 헤더 */}
             <header class="mb-8">
-                <h1 class="tablet:text-4xl mb-4 text-3xl font-black tracking-tight text-(--color-foreground)">
+                <h1
+                    class="tablet:text-4xl mb-4 text-3xl font-black tracking-tight text-(--color-foreground)"
+                >
                     {project.title}
                 </h1>
                 <p class="mb-5 text-lg leading-relaxed text-(--color-muted)">
@@ -115,26 +125,54 @@ const pageImage = item.og_image || project.thumbnail || "";
 
             {/* 프로젝트 메타 */}
             <dl class="tablet:grid-cols-3 mb-8 grid grid-cols-2 gap-3">
-                <div class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                    <dt class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">기간</dt>
+                <div
+                    class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                >
+                    <dt
+                        class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase"
+                    >
+                        기간
+                    </dt>
                     <dd class="text-sm font-semibold text-(--color-foreground)">
                         {project.startDate} — {project.endDate}
                     </dd>
                 </div>
-                <div class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                    <dt class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">역할</dt>
-                    <dd class="text-sm font-semibold text-(--color-foreground)">{project.role}</dd>
+                <div
+                    class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                >
+                    <dt
+                        class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase"
+                    >
+                        역할
+                    </dt>
+                    <dd class="text-sm font-semibold text-(--color-foreground)">
+                        {project.role}
+                    </dd>
                 </div>
-                <div class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                    <dt class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">참여 인원</dt>
-                    <dd class="text-sm font-semibold text-(--color-foreground)">{project.teamSize}명</dd>
+                <div
+                    class="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                >
+                    <dt
+                        class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase"
+                    >
+                        참여 인원
+                    </dt>
+                    <dd class="text-sm font-semibold text-(--color-foreground)">
+                        {project.teamSize}명
+                    </dd>
                 </div>
-                {project.goal && (
-                    <div class="tablet:col-span-3 col-span-2 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                        <dt class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">목표</dt>
-                        <dd class="text-sm font-semibold text-(--color-foreground)">{project.goal}</dd>
-                    </div>
-                )}
+                {
+                    project.goal && (
+                        <div class="tablet:col-span-3 col-span-2 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                            <dt class="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                                목표
+                            </dt>
+                            <dd class="text-sm font-semibold text-(--color-foreground)">
+                                {project.goal}
+                            </dd>
+                        </div>
+                    )
+                }
             </dl>
 
             {/* 성과 */}
@@ -147,7 +185,10 @@ const pageImage = item.og_image || project.thumbnail || "";
                         <ul class="space-y-2.5">
                             {project.accomplishments.map((a) => (
                                 <li class="flex items-start gap-2.5 text-sm text-(--color-foreground)">
-                                    <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)" aria-hidden="true"></span>
+                                    <span
+                                        class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
                                     <span class="leading-relaxed">{a}</span>
                                 </li>
                             ))}
@@ -166,7 +207,10 @@ const pageImage = item.og_image || project.thumbnail || "";
                         <div class="flex flex-wrap gap-2">
                             {project.badges.map((b) => (
                                 <span class="inline-flex items-center gap-1.5 rounded-full border border-(--color-border) bg-(--color-surface-subtle) px-4 py-2 text-sm font-medium text-(--color-foreground)">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-(--color-accent)" aria-hidden="true"></span>
+                                    <span
+                                        class="h-1.5 w-1.5 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
                                     {b.text}
                                 </span>
                             ))}
@@ -184,19 +228,39 @@ const pageImage = item.og_image || project.thumbnail || "";
                         rel="noopener noreferrer"
                         class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                     >
-                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+                        <svg
+                            class="h-4 w-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                                clip-rule="evenodd"
+                            />
                         </svg>
                         GitHub 저장소
-                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        <svg
+                            class="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
                         </svg>
                     </a>
                 ) : null
             }
 
             {/* 본문 구분선 */}
-            {contentHtml && <div class="mb-10 h-px bg-(--color-border)"></div>}
+            {contentHtml && <div class="mb-10 h-px bg-(--color-border)" />}
 
             <div
                 class="portfolio-markdoc-body prose max-w-none text-(--color-foreground)"

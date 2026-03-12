@@ -71,7 +71,7 @@ export default function SiteConfigPanel() {
     });
     const [jobField, setJobField] = useState<JobField>("game");
     const [seoConfig, setSeoConfig] = useState({
-        defaultTitle: "FoliumOnline",
+        defaultTitle: "",
         defaultDescription: "포트폴리오 & 기술 블로그",
         defaultOgImage: "",
     });
@@ -88,10 +88,14 @@ export default function SiteConfigPanel() {
         browserClient
             .from("site_config")
             .select("key, value")
-            .in("key", ["color_scheme", "job_field", "seo_config"])
+            .in("key", ["color_scheme", "job_field", "site_name", "seo_config"])
             .then(({ data }) => {
                 if (!data) return;
-                for (const row of data) {
+                // site_name을 먼저 읽어두고 seo_config로 덮어쓰지 않도록 순서 정렬
+                const ordered = [...data].sort((a) =>
+                    a.key === "site_name" ? -1 : 1
+                );
+                for (const row of ordered) {
                     const v =
                         typeof row.value === "string"
                             ? JSON.parse(row.value)
@@ -99,21 +103,24 @@ export default function SiteConfigPanel() {
                     if (row.key === "color_scheme") {
                         setColorScheme(v as ColorScheme);
                         localStorage.setItem("folium_color_scheme", v);
-                        // Apply immediately on load in the admin panel if it differs
                         document.documentElement.setAttribute(
                             "data-color-scheme",
                             v as ColorScheme
                         );
                     }
                     if (row.key === "job_field") setJobField(v as JobField);
+                    // site_name이 사이트명의 단일 출처
+                    if (row.key === "site_name" && typeof v === "string") {
+                        setSeoConfig((prev) => ({ ...prev, defaultTitle: v }));
+                    }
                     if (row.key === "seo_config") {
-                        setSeoConfig({
-                            defaultTitle: v.default_title || "FoliumOnline",
+                        setSeoConfig((prev) => ({
+                            ...prev,
                             defaultDescription:
                                 v.default_description ||
                                 "포트폴리오 & 기술 블로그",
                             defaultOgImage: v.default_og_image || "",
-                        });
+                        }));
                     }
                 }
             });
@@ -128,10 +135,11 @@ export default function SiteConfigPanel() {
         const rows = [
             { key: "color_scheme", value: JSON.stringify(colorScheme) },
             { key: "job_field", value: JSON.stringify(jobField) },
+            // site_name: 사이트명 단일 출처 (SEO.astro, Header 등에서 참조)
+            { key: "site_name", value: JSON.stringify(seoConfig.defaultTitle) },
             {
                 key: "seo_config",
                 value: {
-                    default_title: seoConfig.defaultTitle,
                     default_description: seoConfig.defaultDescription,
                     default_og_image: seoConfig.defaultOgImage,
                 },

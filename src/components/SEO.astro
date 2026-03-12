@@ -15,26 +15,33 @@ export interface Props {
 const { title, description, image } = Astro.props;
 
 // 기본 설정
-let defaultTitle = "FoliumOnline";
+let defaultTitle = "";
 let defaultDescription = "포트폴리오 & 기술 블로그";
 let defaultImage = "";
 
-// DB에서 전역 SEO 기본 설정 로드
+// DB에서 site_name + seo_config 로드
 if (serverClient) {
-    const { data: config } = await serverClient
+    const { data: rows } = await serverClient
         .from("site_config")
-        .select("value")
-        .eq("key", "seo_config")
-        .single();
-    if (config?.value) {
-        const parsed =
-            typeof config.value === "string"
-                ? JSON.parse(config.value)
-                : config.value;
-        if (parsed.default_title) defaultTitle = parsed.default_title;
-        if (parsed.default_description)
-            defaultDescription = parsed.default_description;
-        if (parsed.default_og_image) defaultImage = parsed.default_og_image;
+        .select("key, value")
+        .in("key", ["site_name", "seo_config"]);
+    if (rows) {
+        for (const row of rows) {
+            if (row.key === "site_name") {
+                let v = row.value;
+                if (typeof v === "string" && v.startsWith('"'))
+                    v = JSON.parse(v);
+                if (typeof v === "string" && v) defaultTitle = v;
+            } else if (row.key === "seo_config") {
+                const v =
+                    typeof row.value === "string"
+                        ? JSON.parse(row.value)
+                        : row.value;
+                if (v?.default_description)
+                    defaultDescription = v.default_description;
+                if (v?.default_og_image) defaultImage = v.default_og_image;
+            }
+        }
     }
 }
 
