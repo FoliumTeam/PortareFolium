@@ -53,7 +53,7 @@ function filterByJobField<T extends { jobField?: string | string[] }>(
 ): T[] {
     return items.filter((item) => {
         const jf = item.jobField;
-        if (jf == null) return true;
+        if (jf == null || (Array.isArray(jf) && jf.length === 0)) return false;
         if (Array.isArray(jf)) return jf.includes(jobField);
         return jf === jobField;
     });

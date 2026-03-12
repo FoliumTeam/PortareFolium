@@ -71,6 +71,57 @@ function TextAreaField({
 
 type ResumeLayout = "classic" | "modern" | "minimal";
 
+type JobFieldItem = { id: string; name: string; emoji?: string };
+
+function JobFieldSelector({
+    value,
+    fields,
+    onChange,
+}: {
+    value: string | string[] | undefined;
+    fields: JobFieldItem[];
+    onChange: (v: string[]) => void;
+}) {
+    const selected =
+        value == null ? [] : Array.isArray(value) ? value : [value];
+    return (
+        <div className="flex flex-col space-y-1">
+            <label className="text-sm font-medium text-(--color-muted)">
+                직무 분야
+            </label>
+            <div className="flex flex-wrap gap-2">
+                {fields.map((f) => {
+                    const checked = selected.includes(f.id);
+                    return (
+                        <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => {
+                                const next = checked
+                                    ? selected.filter((id) => id !== f.id)
+                                    : [...selected, f.id];
+                                onChange(next);
+                            }}
+                            className={`rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-opacity ${
+                                checked
+                                    ? "bg-(--color-accent) text-(--color-on-accent)"
+                                    : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                            }`}
+                        >
+                            {f.emoji} {f.name}
+                        </button>
+                    );
+                })}
+                {fields.length === 0 && (
+                    <span className="text-sm text-(--color-muted)">
+                        등록된 직무 분야 없음
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -81,6 +132,7 @@ export default function ResumePanel() {
         msg: string;
     } | null>(null);
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
+    const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
 
     // Edit states for arrays
     const [editingWork, setEditingWork] = useState<number | null>(null);
@@ -107,40 +159,53 @@ export default function ResumePanel() {
                 .select("value")
                 .eq("key", "resume_layout")
                 .single(),
-        ]).then(([{ data: row, error }, { data: layoutRow }]) => {
-            const defaultResume: Resume = {
-                basics: {
-                    name: "",
-                    label: "",
-                    image: "",
-                    summary: "",
-                    email: "",
-                    phone: "",
-                    url: "",
-                },
-                work: [],
-                projects: [],
-                education: [],
-                skills: [],
-                languages: [],
-            };
-            if (!error && row) {
-                setRowId(row.id);
-                setResumeData({ ...defaultResume, ...(row.data as Resume) });
-                setJsonInput(
-                    JSON.stringify(
-                        { ...defaultResume, ...(row.data as Resume) },
-                        null,
-                        2
-                    )
-                );
-            } else {
-                setResumeData(defaultResume);
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_fields")
+                .single(),
+        ]).then(
+            ([{ data: row, error }, { data: layoutRow }, { data: jfRow }]) => {
+                const defaultResume: Resume = {
+                    basics: {
+                        name: "",
+                        label: "",
+                        image: "",
+                        summary: "",
+                        email: "",
+                        phone: "",
+                        url: "",
+                    },
+                    work: [],
+                    projects: [],
+                    education: [],
+                    skills: [],
+                    languages: [],
+                };
+                if (!error && row) {
+                    setRowId(row.id);
+                    setResumeData({
+                        ...defaultResume,
+                        ...(row.data as Resume),
+                    });
+                    setJsonInput(
+                        JSON.stringify(
+                            { ...defaultResume, ...(row.data as Resume) },
+                            null,
+                            2
+                        )
+                    );
+                } else {
+                    setResumeData(defaultResume);
+                }
+                if (layoutRow?.value) {
+                    setResumeLayout(layoutRow.value as ResumeLayout);
+                }
+                if (Array.isArray(jfRow?.value)) {
+                    setJobFields(jfRow.value as JobFieldItem[]);
+                }
             }
-            if (layoutRow?.value) {
-                setResumeLayout(layoutRow.value as ResumeLayout);
-            }
-        });
+        );
     }, []);
 
     const handleSave = async () => {
@@ -450,6 +515,18 @@ export default function ResumePanel() {
                                         }}
                                         rows={4}
                                     />
+                                    <JobFieldSelector
+                                        value={work.jobField}
+                                        fields={jobFields}
+                                        onChange={(v) => {
+                                            const w = [...resumeData.work!];
+                                            w[idx].jobField = v;
+                                            setResumeData({
+                                                ...resumeData,
+                                                work: w,
+                                            });
+                                        }}
+                                    />
                                     <div className="flex justify-end gap-2 pt-2">
                                         <button
                                             onClick={() => {
@@ -474,14 +551,36 @@ export default function ResumePanel() {
                                 </div>
                             ) : (
                                 <div className="flex items-start justify-between">
-                                    <div>
+                                    <div className="mr-12">
                                         <h4 className="font-semibold text-(--color-foreground)">
-                                            {work.position} at {work.name}
+                                            {work.position} @ {work.name}
                                         </h4>
                                         <p className="text-sm text-(--color-muted)">
                                             {work.startDate} ~{" "}
                                             {work.endDate || "현재"}
                                         </p>
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                            {(Array.isArray(work.jobField)
+                                                ? work.jobField
+                                                : work.jobField
+                                                  ? [work.jobField]
+                                                  : []
+                                            ).map((id) => {
+                                                const f = jobFields.find(
+                                                    (jf) => jf.id === id
+                                                );
+                                                return (
+                                                    <span
+                                                        key={id}
+                                                        className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
+                                                    >
+                                                        {f
+                                                            ? `${f.emoji} ${f.name}`
+                                                            : id}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
@@ -528,6 +627,7 @@ export default function ResumePanel() {
                     </h3>
                     <button
                         onClick={() => {
+                            setBackupData(resumeData);
                             const newProj: ResumeProject = {
                                 name: "",
                                 description: "",
@@ -642,11 +742,34 @@ export default function ResumePanel() {
                                         }}
                                         rows={4}
                                     />
+                                    <JobFieldSelector
+                                        value={proj.jobField}
+                                        fields={jobFields}
+                                        onChange={(v) => {
+                                            const p = [...resumeData.projects!];
+                                            p[idx].jobField = v;
+                                            setResumeData({
+                                                ...resumeData,
+                                                projects: p,
+                                            });
+                                        }}
+                                    />
                                     <div className="flex justify-end gap-2 pt-2">
                                         <button
-                                            onClick={() =>
-                                                setEditingProject(null)
-                                            }
+                                            onClick={() => {
+                                                if (backupData)
+                                                    setResumeData(backupData);
+                                                setEditingProject(null);
+                                            }}
+                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                        >
+                                            취소
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(null);
+                                                setEditingProject(null);
+                                            }}
                                             className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                         >
                                             완료
@@ -655,7 +778,7 @@ export default function ResumePanel() {
                                 </div>
                             ) : (
                                 <div className="flex items-start justify-between">
-                                    <div>
+                                    <div className="mr-12">
                                         <h4 className="font-semibold text-(--color-foreground)">
                                             {proj.name}
                                         </h4>
@@ -669,12 +792,35 @@ export default function ResumePanel() {
                                                 ? "..."
                                                 : ""}
                                         </p>
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                            {(Array.isArray(proj.jobField)
+                                                ? proj.jobField
+                                                : proj.jobField
+                                                  ? [proj.jobField]
+                                                  : []
+                                            ).map((id) => {
+                                                const f = jobFields.find(
+                                                    (jf) => jf.id === id
+                                                );
+                                                return (
+                                                    <span
+                                                        key={id}
+                                                        className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
+                                                    >
+                                                        {f
+                                                            ? `${f.emoji} ${f.name}`
+                                                            : id}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() =>
-                                                setEditingProject(idx)
-                                            }
+                                            onClick={() => {
+                                                setBackupData(resumeData);
+                                                setEditingProject(idx);
+                                            }}
                                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                         >
                                             수정
@@ -714,6 +860,7 @@ export default function ResumePanel() {
                     </h3>
                     <button
                         onClick={() => {
+                            setBackupData(resumeData);
                             const newEd: ResumeEducation = {
                                 institution: "",
                                 area: "",
@@ -816,9 +963,20 @@ export default function ResumePanel() {
                                     </div>
                                     <div className="flex justify-end gap-2 pt-2">
                                         <button
-                                            onClick={() =>
-                                                setEditingEducation(null)
-                                            }
+                                            onClick={() => {
+                                                if (backupData)
+                                                    setResumeData(backupData);
+                                                setEditingEducation(null);
+                                            }}
+                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                        >
+                                            취소
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(null);
+                                                setEditingEducation(null);
+                                            }}
                                             className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                         >
                                             완료
@@ -827,7 +985,7 @@ export default function ResumePanel() {
                                 </div>
                             ) : (
                                 <div className="flex items-start justify-between">
-                                    <div>
+                                    <div className="mr-12">
                                         <h4 className="font-semibold text-(--color-foreground)">
                                             {ed.institution}
                                         </h4>
@@ -838,9 +996,10 @@ export default function ResumePanel() {
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() =>
-                                                setEditingEducation(idx)
-                                            }
+                                            onClick={() => {
+                                                setBackupData(resumeData);
+                                                setEditingEducation(idx);
+                                            }}
                                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                         >
                                             수정
