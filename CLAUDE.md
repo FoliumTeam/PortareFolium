@@ -14,16 +14,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Language**: Answer everything in Korean.
 - **Token Efficiency**:
-  - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
-  - **Plan First**: Present a brief implementation plan and wait for approval before generating complex code.
-  - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
+    - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
+    - **Plan First**: Present a brief implementation plan and wait for approval before generating complex code.
+    - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
 - **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `USER_TASKS.md` for the user to follow.
 
 ### Coding Rules
 
 - **Simplicity**: Prioritize the minimum code that solves the problem. Avoid over-engineering or speculative flexibility.
 - **Error Handling**: Use early returns. Log format: `[FileName::FunctionName] Error Message`.
-- **Match Style**: Match existing code style, formatting, and naming conventions. Don't "improve" adjacent code.
+- **Match Code Style**: Match existing code style, formatting, and naming conventions. Don't "improve" adjacent code.
 - **Dead Code**: If your changes make imports/variables/functions unused, remove them. Mention pre-existing dead code but do not delete it unless asked.
 - **Comments**: No "deprecated" markers or "logic moved" comments. Delete unused code immediately.
 - **File Separation**: Find suitable existing files or create new ones if logic doesn't fit.
@@ -31,6 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Implementation Specifics
 
 - **Tailwind CSS**: Use Tailwind CSS for all styling unless there's a specific reason not to.
+- **Button styles**: Every buttons like for example, "add project", "edit", "delete" must have a style of a solid background color, white text, and rounded corners. The text inside those buttons must not shrink or grow, nor be transferred into the next line (nowrap).
 
 ## Documentation Requirements
 
@@ -42,20 +43,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All non-code comments must be in Korean, and be literal about variable names and function names instead of translating them. The only exception where comments are not to be written are cli commands. When writing or modifying code, you MUST adhere strictly to the following rules for comments:
 
 1. **Format Restrictions:**
-   - Use ONLY single-line `//` syntax for all comments.
-   - Absolutely NO docstrings or multi-line comments (Do not use `/** ... */`, `/*! ... */`, `///`, or `/* ... */`).
+    - Use ONLY single-line `//` syntax for all comments.
+    - Absolutely NO docstrings or multi-line comments (Do not use `/** ... */`, `/*! ... */`, `///`, or `/* ... */`).
 
 2. **Brevity & Tone:**
-   - Keep comments exceedingly plain, minimal, and straight to the point.
-   - Do NOT over-explain. Only comment on the core logic.
+    - Keep comments exceedingly plain, minimal, and straight to the point.
+    - Do NOT over-explain. Only comment on the core logic.
 
 3. **Korean Language Rules:**
-   - Write comments in Korean, but NEVER use full, polite, or formal sentence structures ending in verbs (e.g., do NOT use "~합니다", "~해요", "~이다", "~함").
-   - Instead, all comments must end minimally with a noun or noun phrase (e.g., "~ 실행", "~ 추가", "~ 파싱").
-   - Any word that are not commonly used in Korean should be written in English. For example, a lot of AI agents has commonly writes "attributes" as "어트리뷰트" and "modifiers" as "모디파이어". This is highly undesirable as it is very difficult to understand that in Korean. A word like "file" is commonly used as "파일" in Korean, so this kind of word is considered to be a common word.
+    - Write comments in Korean, but NEVER use full, polite, or formal sentence structures ending in verbs (e.g., do NOT use "~합니다", "~해요", "~이다", "~함").
+    - Instead, all comments must end minimally with a noun or noun phrase (e.g., "~ 실행", "~ 추가", "~ 파싱").
+    - Any word that are not commonly used in Korean should be written in English. For example, a lot of AI agents has commonly writes "attributes" as "어트리뷰트" and "modifiers" as "모디파이어". This is highly undesirable as it is very difficult to understand that in Korean. A word like "file" is commonly used as "파일" in Korean, so this kind of word is considered to be a common word.
+    - Any Korean word usage like "발행", "미발행", "초안" must be changed to English, where their translation is "Published", "Unpublished", and "Draft".
 
 4. **Punctuation:**
-   - Do NOT use any end punctuation. No periods (`.`), exclamation marks (`!`), or anything else at the end of the comment line.
+    - Do NOT use any end punctuation. No periods (`.`), exclamation marks (`!`), or anything else at the end of the comment line.
 
 **Examples:**
 
@@ -149,6 +151,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **Project:** `folium-online` — Astro + React 기반 개인 포트폴리오 사이트
 
 **Stack:**
+
 - Framework: Astro (SSR/SSG) + React (island)
 - Styling: Tailwind CSS v4
 - Backend/DB: Supabase (PostgreSQL + Storage)
@@ -193,6 +196,7 @@ CHANGES.md              # 변경 이력 (기능/디자인 변경 시 항상 업�
 ```
 
 **Key Conventions:**
+
 - `.astro` 파일: 정적/서버 렌더링 페이지 및 레이아웃
 - `.tsx` 파일: React island 컴포넌트 (클라이언트 인터랙션)
 - Supabase를 DB 및 이미지 스토리지로 사용
