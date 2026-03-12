@@ -6,6 +6,11 @@ import CategorySelect from "@/components/admin/CategorySelect";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import {
+    JobFieldSelector,
+    JobFieldBadges,
+    type JobFieldItem,
+} from "@/components/admin/JobFieldSelector";
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -16,6 +21,7 @@ interface Post {
     pub_date: string;
     category: string | null;
     tags: string[];
+    job_field: string[] | string | null;
     thumbnail: string | null;
     content: string;
     published: boolean;
@@ -33,6 +39,7 @@ interface PostForm {
     pub_date: string;
     category: string;
     tags: string; // 쉼표 구분 문자열로 입력받아 저장 시 배열로 변환
+    jobField: string[];
     thumbnail: string;
     content: string;
     published: boolean;
@@ -48,6 +55,7 @@ const EMPTY_FORM: PostForm = {
     pub_date: new Date().toISOString().slice(0, 16),
     category: "",
     tags: "",
+    jobField: [],
     thumbnail: "",
     content: "",
     published: false,
@@ -58,7 +66,7 @@ const EMPTY_FORM: PostForm = {
 
 // POST_SELECT_FIELDS: loadPosts 및 insert select에서 공통으로 사용할 필드
 const POST_SELECT_FIELDS =
-    "id, slug, title, description, pub_date, category, tags, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
+    "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
 
 /** slug 자동 생성: 제목에서 공백→하이픈, 영소문자/숫자/하이픈만 허용 */
 function toSlug(title: string): string {
@@ -88,6 +96,7 @@ export default function PostsPanel() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
 
     const initialFormRef = useRef<PostForm>(EMPTY_FORM);
 
@@ -113,6 +122,16 @@ export default function PostsPanel() {
 
     useEffect(() => {
         loadPosts();
+        if (browserClient) {
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_fields")
+                .single()
+                .then(({ data }) => {
+                    if (data?.value) setJobFields(data.value as JobFieldItem[]);
+                });
+        }
     }, []);
 
     // form → DB payload 변환
@@ -126,6 +145,7 @@ export default function PostsPanel() {
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
+        job_field: form.jobField.length ? form.jobField : null,
         thumbnail: form.thumbnail || null,
         content: form.content,
         published: form.published,
@@ -136,6 +156,7 @@ export default function PostsPanel() {
 
     // 편집 화면 열기
     const openEdit = (post: Post) => {
+        const jf = post.job_field;
         const f: PostForm = {
             slug: post.slug,
             title: post.title,
@@ -143,6 +164,7 @@ export default function PostsPanel() {
             pub_date: post.pub_date.slice(0, 16),
             category: post.category ?? "",
             tags: post.tags.join(", "),
+            jobField: Array.isArray(jf) ? jf : jf ? [jf] : [],
             thumbnail: post.thumbnail ?? "",
             content: post.content,
             published: post.published,
@@ -369,6 +391,15 @@ export default function PostsPanel() {
                         </div>
                     </div>
 
+                    {/* 직무 분야 */}
+                    <JobFieldSelector
+                        value={form.jobField}
+                        fields={jobFields}
+                        onChange={(v) =>
+                            setForm((f) => ({ ...f, jobField: v }))
+                        }
+                    />
+
                     {/* 요약 */}
                     <div>
                         <label className="mb-1 block text-base font-medium text-(--color-muted)">
@@ -563,8 +594,8 @@ export default function PostsPanel() {
                             key={post.id}
                             className="flex items-center gap-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 transition-colors hover:border-(--color-accent)/50"
                         >
-                            <div className="min-w-0 flex-1">
-                                <div className="mb-0.5 flex items-center gap-2">
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                                <div className="mb-0.5 flex flex-wrap items-center gap-2">
                                     <span
                                         className={`inline-block rounded-full px-2 py-0.5 text-sm font-medium ${
                                             post.published
@@ -584,11 +615,17 @@ export default function PostsPanel() {
                                     {post.title}
                                 </p>
                                 <p className="font-mono text-sm text-(--color-muted)">
-                                    {post.slug} ·{" "}
+                                    {post.slug}
+                                </p>
+                                <p className="text-sm">
                                     {new Date(post.pub_date).toLocaleDateString(
                                         "ko-KR"
                                     )}
                                 </p>
+                                <JobFieldBadges
+                                    value={post.job_field}
+                                    fields={jobFields}
+                                />
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
                                 <button

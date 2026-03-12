@@ -40,12 +40,20 @@ export interface AboutContacts {
 export type AboutSections = Record<AboutSectionKey, string[]>;
 export type AboutCompetencySections = Record<CompetencySectionKey, string[]>;
 
+// Job Field별 소개 오버라이드 항목
+export interface FieldIntroduction {
+    description: string;
+    descriptionSub: string;
+}
+
 export interface AboutData {
     profileImage?: string;
     name?: string;
     description?: string;
     descriptionSub?: string;
     contacts?: AboutContacts;
+    // Job Field ID → 소개 오버라이드
+    introductions?: Record<string, FieldIntroduction>;
     /** 경험 유형별 리스트 (테이블 1) */
     sections?: AboutSections;
     /** 역량 키워드별 리스트 (테이블 2) */

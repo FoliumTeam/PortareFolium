@@ -4,6 +4,11 @@ import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import {
+    JobFieldSelector,
+    JobFieldBadges,
+    type JobFieldItem,
+} from "@/components/admin/JobFieldSelector";
 
 interface PortfolioItem {
     id: string;
@@ -40,7 +45,7 @@ interface ItemForm {
     teamSize: string;
     github: string;
     liveUrl: string;
-    jobField: string;
+    jobField: string[];
     meta_title: string;
     meta_description: string;
     og_image: string;
@@ -63,7 +68,7 @@ const EMPTY_FORM: ItemForm = {
     teamSize: "",
     github: "",
     liveUrl: "",
-    jobField: "web",
+    jobField: [],
     meta_title: "",
     meta_description: "",
     og_image: "",
@@ -98,7 +103,11 @@ function itemToForm(item: PortfolioItem): ItemForm {
         teamSize: String(d.teamSize ?? ""),
         github: (d.github as string) ?? "",
         liveUrl: (d.liveUrl as string) ?? "",
-        jobField: (d.jobField as string) ?? "web",
+        jobField: Array.isArray(d.jobField)
+            ? (d.jobField as string[])
+            : d.jobField
+              ? [d.jobField as string]
+              : [],
         meta_title: item.meta_title ?? "",
         meta_description: item.meta_description ?? "",
         og_image: item.og_image ?? "",
@@ -125,6 +134,7 @@ export default function PortfolioPanel() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
 
     const initialFormRef = useRef<ItemForm>(EMPTY_FORM);
 
@@ -149,6 +159,16 @@ export default function PortfolioPanel() {
 
     useEffect(() => {
         loadItems();
+        if (browserClient) {
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_fields")
+                .single()
+                .then(({ data }) => {
+                    if (data?.value) setJobFields(data.value as JobFieldItem[]);
+                });
+        }
     }, []);
 
     // form → DB payload 변환
@@ -165,6 +185,7 @@ export default function PortfolioPanel() {
         featured: form.featured,
         order_idx: form.order_idx,
         published: form.published,
+        job_field: form.jobField.length ? form.jobField : null,
         data: {
             startDate: form.startDate || undefined,
             endDate: form.endDate || undefined,
@@ -173,7 +194,7 @@ export default function PortfolioPanel() {
             teamSize: form.teamSize ? Number(form.teamSize) : undefined,
             github: form.github || undefined,
             liveUrl: form.liveUrl || undefined,
-            jobField: form.jobField || "web",
+            jobField: form.jobField.length ? form.jobField : undefined,
         },
         meta_title: form.meta_title || null,
         meta_description: form.meta_description || null,
@@ -355,10 +376,14 @@ export default function PortfolioPanel() {
                             className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
                         />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {field("slug", "Slug *", { mono: true })}
-                        {field("jobField", "직무 분야 (web / game)")}
-                    </div>
+                    <div>{field("slug", "Slug *", { mono: true })}</div>
+                    <JobFieldSelector
+                        value={form.jobField}
+                        fields={jobFields}
+                        onChange={(v) =>
+                            setForm((f) => ({ ...f, jobField: v }))
+                        }
+                    />
                     {field("description", "요약", { rows: 2 })}
                     {field("tags", "키워드/태그 (쉼표 구분)", {
                         placeholder: "Next.js, React, TypeScript",
@@ -546,8 +571,8 @@ export default function PortfolioPanel() {
                             key={item.id}
                             className="flex items-center gap-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 transition-colors hover:border-(--color-accent)/50"
                         >
-                            <div className="min-w-0 flex-1">
-                                <div className="mb-0.5 flex items-center gap-2">
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                                <div className="mb-0.5 flex flex-wrap items-center gap-2">
                                     {item.featured && (
                                         <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-sm font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
                                             ★ featured
@@ -565,6 +590,16 @@ export default function PortfolioPanel() {
                                 <p className="font-mono text-sm text-(--color-muted)">
                                     {item.slug}
                                 </p>
+                                <JobFieldBadges
+                                    value={
+                                        item.data?.jobField as
+                                            | string
+                                            | string[]
+                                            | null
+                                            | undefined
+                                    }
+                                    fields={jobFields}
+                                />
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
                                 <button

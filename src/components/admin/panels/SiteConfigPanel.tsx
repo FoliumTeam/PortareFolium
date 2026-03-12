@@ -84,6 +84,7 @@ export default function SiteConfigPanel() {
     // 새 job field 추가 폼 상태
     const [newName, setNewName] = useState("");
     const [newEmoji, setNewEmoji] = useState("✨");
+    const [inheritFrom, setInheritFrom] = useState("");
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +174,116 @@ export default function SiteConfigPanel() {
         return !error;
     };
 
+    // parentId job_field를 가진 모든 항목에 newId 추가
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const addFieldToItems = (jf: any, parentId: string, newId: string): any => {
+        if (!jf) return jf;
+        if (Array.isArray(jf))
+            return jf.includes(parentId) ? [...jf, newId] : jf;
+        return jf === parentId ? [jf, newId] : jf;
+    };
+
+    // 상속 cascade: parentId를 가진 posts, portfolio_items.data, resume_data 항목에 newId 추가
+    const applyInheritance = async (parentId: string, newId: string) => {
+        if (!browserClient) return;
+
+        // posts.job_field 업데이트 (TEXT 또는 TEXT[] 모두 처리)
+        const { data: allPosts } = await browserClient
+            .from("posts")
+            .select("id, job_field");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const postsToUpdate = ((allPosts ?? []) as any[]).filter((p) => {
+            const jf = p.job_field;
+            if (!jf) return false;
+            return Array.isArray(jf) ? jf.includes(parentId) : jf === parentId;
+        });
+        if (postsToUpdate.length) {
+            await Promise.all(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                postsToUpdate.map((p: any) => {
+                    const jf = p.job_field;
+                    const existing: string[] = Array.isArray(jf)
+                        ? jf
+                        : jf
+                          ? [jf]
+                          : [];
+                    return (
+                        browserClient!
+                            .from("posts")
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            .update({ job_field: [...existing, newId] } as any)
+                            .eq("id", p.id)
+                    );
+                })
+            );
+        }
+
+        // portfolio_items.data.jobField (JSONB) 업데이트
+        const { data: portfolioData } = await browserClient
+            .from("portfolio_items")
+            .select("id, data");
+        if (portfolioData?.length) {
+            const toUpdate = (
+                portfolioData as { id: string; data: Record<string, unknown> }[]
+            ).filter((item) => {
+                const jf = item.data?.jobField;
+                if (!jf) return false;
+                if (Array.isArray(jf)) return jf.includes(parentId);
+                return jf === parentId;
+            });
+            await Promise.all(
+                toUpdate.map((item) => {
+                    const jf = item.data?.jobField;
+                    const existing: string[] = Array.isArray(jf)
+                        ? (jf as string[])
+                        : jf
+                          ? [jf as string]
+                          : [];
+                    return browserClient!
+                        .from("portfolio_items")
+                        .update({
+                            data: {
+                                ...item.data,
+                                jobField: [...existing, newId],
+                            },
+                        })
+                        .eq("id", item.id);
+                })
+            );
+        }
+
+        // resume_data work + projects (lang=ko) 업데이트
+        const { data: resumeRow } = await browserClient
+            .from("resume_data")
+            .select("id, data")
+            .eq("lang", "ko")
+            .single();
+        if (resumeRow?.data) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const resume = resumeRow.data as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updatedWork = (resume.work ?? []).map((w: any) => ({
+                ...w,
+                jobField: addFieldToItems(w.jobField, parentId, newId),
+            }));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updatedProjects = (resume.projects ?? []).map((p: any) => ({
+                ...p,
+                jobField: addFieldToItems(p.jobField, parentId, newId),
+            }));
+            await browserClient
+                .from("resume_data")
+                .update({
+                    data: {
+                        ...resume,
+                        work: updatedWork,
+                        projects: updatedProjects,
+                    },
+                })
+                .eq("id", resumeRow.id);
+        }
+    };
+
     // job field 추가
     const handleAddJobField = async () => {
         const trimmed = newName.trim();
@@ -184,30 +295,147 @@ export default function SiteConfigPanel() {
         }
         const next = [...jobFields, { id, name: trimmed, emoji: newEmoji }];
         const ok = await saveJobFields(next, activeJobField);
-        if (ok) {
-            setJobFields(next);
-            setNewName("");
-            setNewEmoji("✨");
-            setStatus({ type: "success", msg: "직무 분야가 추가됐습니다" });
-        } else {
+        if (!ok) {
             setStatus({ type: "error", msg: "저장 실패" });
+            return;
         }
+        setJobFields(next);
+        if (inheritFrom) await applyInheritance(inheritFrom, id);
+        setNewName("");
+        setNewEmoji("✨");
+        setInheritFrom("");
+        setStatus({ type: "success", msg: "직무 분야가 추가됐습니다" });
     };
 
-    // job field 삭제 + cascade 처리
+    // job field 삭제 + cascade 처리 (TEXT[] 기준)
     const handleDeleteJobField = async (id: string) => {
         if (!browserClient) return;
-        // cascade: posts, portfolio_items의 job_field가 해당 id면 null로
-        await Promise.all([
-            browserClient
-                .from("posts")
-                .update({ job_field: null })
-                .eq("job_field", id),
-            browserClient
-                .from("portfolio_items")
-                .update({ job_field: null })
-                .eq("job_field", id),
-        ]);
+
+        // posts.job_field cascade (TEXT 또는 TEXT[] 모두 처리)
+        const { data: allPosts } = await browserClient
+            .from("posts")
+            .select("id, job_field");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const postsWithField = ((allPosts ?? []) as any[]).filter((p) => {
+            const jf = p.job_field;
+            if (!jf) return false;
+            return Array.isArray(jf) ? jf.includes(id) : jf === id;
+        });
+        if (postsWithField.length) {
+            await Promise.all(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                postsWithField.map((p: any) => {
+                    const jf = p.job_field;
+                    const next = Array.isArray(jf)
+                        ? jf.filter((f: string) => f !== id)
+                        : [];
+                    return (
+                        browserClient!
+                            .from("posts")
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            .update({
+                                job_field: next.length ? next : null,
+                            } as any)
+                            .eq("id", p.id)
+                    );
+                })
+            );
+        }
+
+        // portfolio_items.job_field 컬럼 + data.jobField (JSONB) cascade
+        const { data: allPortfolio } = await browserClient
+            .from("portfolio_items")
+            .select("id, job_field, data");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const portfolioToUpdate = ((allPortfolio ?? []) as any[]).filter(
+            (p) => {
+                const col = p.job_field;
+                const jsonb = p.data?.jobField;
+                const inCol = col
+                    ? Array.isArray(col)
+                        ? col.includes(id)
+                        : col === id
+                    : false;
+                const inJsonb = jsonb
+                    ? Array.isArray(jsonb)
+                        ? jsonb.includes(id)
+                        : jsonb === id
+                    : false;
+                return inCol || inJsonb;
+            }
+        );
+        if (portfolioToUpdate.length) {
+            await Promise.all(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                portfolioToUpdate.map((p: any) => {
+                    const col = p.job_field;
+                    const nextCol = Array.isArray(col)
+                        ? col.filter((f: string) => f !== id)
+                        : [];
+                    const jf = p.data?.jobField;
+                    const nextJf = Array.isArray(jf)
+                        ? jf.filter((f: string) => f !== id)
+                        : jf === id
+                          ? []
+                          : jf;
+                    return (
+                        browserClient!
+                            .from("portfolio_items")
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            .update({
+                                job_field: nextCol.length ? nextCol : null,
+                                data: {
+                                    ...p.data,
+                                    jobField: nextJf?.length
+                                        ? nextJf
+                                        : undefined,
+                                },
+                            } as any)
+                            .eq("id", p.id)
+                    );
+                })
+            );
+        }
+
+        // resume_data work + projects (lang=ko) cascade
+        const { data: resumeRow } = await browserClient
+            .from("resume_data")
+            .select("id, data")
+            .eq("lang", "ko")
+            .single();
+        if (resumeRow?.data) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const resume = resumeRow.data as any;
+            const removeField = (jf: string | string[] | undefined) => {
+                if (!jf) return jf;
+                if (Array.isArray(jf)) {
+                    const next = jf.filter((f) => f !== id);
+                    return next.length ? next : undefined;
+                }
+                return jf === id ? undefined : jf;
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updatedWork = (resume.work ?? []).map((w: any) => ({
+                ...w,
+                jobField: removeField(w.jobField),
+            }));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updatedProjects = (resume.projects ?? []).map((p: any) => ({
+                ...p,
+                jobField: removeField(p.jobField),
+            }));
+            await browserClient
+                .from("resume_data")
+                .update({
+                    data: {
+                        ...resume,
+                        work: updatedWork,
+                        projects: updatedProjects,
+                    },
+                })
+                .eq("id", resumeRow.id);
+        }
+
         const next = jobFields.filter((f) => f.id !== id);
         const nextActive =
             activeJobField === id ? (next[0]?.id ?? "") : activeJobField;
@@ -402,50 +630,72 @@ export default function SiteConfigPanel() {
                 </div>
 
                 {/* 새 job field 추가 폼 */}
-                <div className="flex items-center gap-2 pt-1">
-                    {/* emoji picker */}
-                    <div className="relative" ref={pickerRef}>
+                <div className="space-y-2 pt-1">
+                    <div className="flex items-center gap-2">
+                        {/* emoji picker */}
+                        <div className="relative" ref={pickerRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowPicker((v) => !v)}
+                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
+                            >
+                                {newEmoji}
+                            </button>
+                            {showPicker && (
+                                <div className="absolute bottom-12 left-0 z-50">
+                                    <Picker
+                                        data={data}
+                                        onEmojiSelect={(emoji: {
+                                            native: string;
+                                        }) => {
+                                            setNewEmoji(emoji.native);
+                                            setShowPicker(false);
+                                        }}
+                                        locale="ko"
+                                        previewPosition="none"
+                                        skinTonePosition="none"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleAddJobField();
+                            }}
+                            placeholder="직무 분야 이름"
+                            className="h-10 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                        />
                         <button
-                            type="button"
-                            onClick={() => setShowPicker((v) => !v)}
-                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
+                            onClick={handleAddJobField}
+                            disabled={!newName.trim()}
+                            className="h-10 rounded-lg bg-(--color-accent) px-4 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-40"
                         >
-                            {newEmoji}
+                            추가
                         </button>
-                        {showPicker && (
-                            <div className="absolute bottom-12 left-0 z-50">
-                                <Picker
-                                    data={data}
-                                    onEmojiSelect={(emoji: {
-                                        native: string;
-                                    }) => {
-                                        setNewEmoji(emoji.native);
-                                        setShowPicker(false);
-                                    }}
-                                    locale="ko"
-                                    previewPosition="none"
-                                    skinTonePosition="none"
-                                />
-                            </div>
-                        )}
                     </div>
-                    <input
-                        type="text"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleAddJobField();
-                        }}
-                        placeholder="직무 분야 이름"
-                        className="h-10 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
-                    />
-                    <button
-                        onClick={handleAddJobField}
-                        disabled={!newName.trim()}
-                        className="h-10 rounded-lg bg-(--color-accent) px-4 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-40"
-                    >
-                        추가
-                    </button>
+                    {/* 상속 부모 선택 */}
+                    {jobFields.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <span className="shrink-0 text-sm text-(--color-muted)">
+                                상속
+                            </span>
+                            <select
+                                value={inheritFrom}
+                                onChange={(e) => setInheritFrom(e.target.value)}
+                                className="h-9 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                            >
+                                <option value="">없음</option>
+                                {jobFields.map((f) => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.emoji} {f.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
             </section>
 

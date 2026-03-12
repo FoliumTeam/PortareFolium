@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { uploadImageToSupabase } from "@/lib/image-upload";
+import {
+    JobFieldSelector,
+    JobFieldBadges,
+    type JobFieldItem,
+} from "@/components/admin/JobFieldSelector";
 import type {
     Resume,
     ResumeWork,
@@ -70,57 +75,6 @@ function TextAreaField({
 }
 
 type ResumeLayout = "classic" | "modern" | "minimal";
-
-type JobFieldItem = { id: string; name: string; emoji?: string };
-
-function JobFieldSelector({
-    value,
-    fields,
-    onChange,
-}: {
-    value: string | string[] | undefined;
-    fields: JobFieldItem[];
-    onChange: (v: string[]) => void;
-}) {
-    const selected =
-        value == null ? [] : Array.isArray(value) ? value : [value];
-    return (
-        <div className="flex flex-col space-y-1">
-            <label className="text-sm font-medium text-(--color-muted)">
-                직무 분야
-            </label>
-            <div className="flex flex-wrap gap-2">
-                {fields.map((f) => {
-                    const checked = selected.includes(f.id);
-                    return (
-                        <button
-                            key={f.id}
-                            type="button"
-                            onClick={() => {
-                                const next = checked
-                                    ? selected.filter((id) => id !== f.id)
-                                    : [...selected, f.id];
-                                onChange(next);
-                            }}
-                            className={`rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-opacity ${
-                                checked
-                                    ? "bg-(--color-accent) text-(--color-on-accent)"
-                                    : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
-                            }`}
-                        >
-                            {f.emoji} {f.name}
-                        </button>
-                    );
-                })}
-                {fields.length === 0 && (
-                    <span className="text-sm text-(--color-muted)">
-                        등록된 직무 분야 없음
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-}
 
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
@@ -562,26 +516,10 @@ export default function ResumePanel() {
                                             {work.endDate || "현재"}
                                         </p>
                                         <div className="mt-1 flex flex-wrap gap-1">
-                                            {(Array.isArray(work.jobField)
-                                                ? work.jobField
-                                                : work.jobField
-                                                  ? [work.jobField]
-                                                  : []
-                                            ).map((id) => {
-                                                const f = jobFields.find(
-                                                    (jf) => jf.id === id
-                                                );
-                                                return (
-                                                    <span
-                                                        key={id}
-                                                        className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
-                                                    >
-                                                        {f
-                                                            ? `${f.emoji} ${f.name}`
-                                                            : id}
-                                                    </span>
-                                                );
-                                            })}
+                                            <JobFieldBadges
+                                                value={work.jobField}
+                                                fields={jobFields}
+                                            />
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -795,26 +733,10 @@ export default function ResumePanel() {
                                                 : ""}
                                         </p>
                                         <div className="mt-1 flex flex-wrap gap-1">
-                                            {(Array.isArray(proj.jobField)
-                                                ? proj.jobField
-                                                : proj.jobField
-                                                  ? [proj.jobField]
-                                                  : []
-                                            ).map((id) => {
-                                                const f = jobFields.find(
-                                                    (jf) => jf.id === id
-                                                );
-                                                return (
-                                                    <span
-                                                        key={id}
-                                                        className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
-                                                    >
-                                                        {f
-                                                            ? `${f.emoji} ${f.name}`
-                                                            : id}
-                                                    </span>
-                                                );
-                                            })}
+                                            <JobFieldBadges
+                                                value={proj.jobField}
+                                                fields={jobFields}
+                                            />
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
