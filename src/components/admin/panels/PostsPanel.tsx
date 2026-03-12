@@ -1,17 +1,10 @@
-/**
- * PostsPanel
- *
- * 블로그 포스트 목록 조회, 생성, 편집, 삭제, 발행/초안 전환을 담당한다.
- * - 목록 화면과 편집 화면을 같은 패널 내에서 전환한다.
- * - 마크다운 편집 시 좌측 에디터 + 우측 라이브 미리보기 (Keystatic/Notion 스타일).
- */
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import TagSelector from "@/components/admin/TagSelector";
 import CategorySelect from "@/components/admin/CategorySelect";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
-import { useAutoSave, getAutoSaveDraft } from "@/lib/hooks/useAutoSave";
+import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 // 포스트 행 타입 (Supabase posts 테이블)
@@ -63,6 +56,10 @@ const EMPTY_FORM: PostForm = {
     og_image: "",
 };
 
+// POST_SELECT_FIELDS: loadPosts 및 insert select에서 공통으로 사용할 필드
+const POST_SELECT_FIELDS =
+    "id, slug, title, description, pub_date, category, tags, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
+
 /** slug 자동 생성: 제목에서 공백→하이픈, 영소문자/숫자/하이픈만 허용 */
 function toSlug(title: string): string {
     return title
@@ -73,6 +70,15 @@ function toSlug(title: string): string {
         .slice(0, 80);
 }
 
+// 타임스탬프 포맷 (초 단위)
+function fmtTime(d: Date): string {
+    return d.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
 export default function PostsPanel() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,28 +87,15 @@ export default function PostsPanel() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+    const [savedAt, setSavedAt] = useState<Date | null>(null);
 
     const initialFormRef = useRef<PostForm>(EMPTY_FORM);
-
-    // auto-save key 계산
-    const autoSaveKey =
-        editTarget === null
-            ? "__none__"
-            : editTarget === "new"
-              ? "admin_autosave_post_new"
-              : `admin_autosave_post_${(editTarget as Post).id}`;
 
     // dirty 상태
     const isDirty =
         editTarget !== null &&
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
-    const { savedAt, clear } = useAutoSave(
-        autoSaveKey,
-        form,
-        editTarget !== null
-    );
     const { confirmLeave } = useUnsavedWarning(isDirty);
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
@@ -111,9 +104,7 @@ export default function PostsPanel() {
         setLoading(true);
         const { data, error: err } = await browserClient
             .from("posts")
-            .select(
-                "id, slug, title, description, pub_date, category, tags, thumbnail, content, published, updated_at, meta_title, meta_description, og_image"
-            )
+            .select(POST_SELECT_FIELDS)
             .order("pub_date", { ascending: false });
         if (err) setError(err.message);
         else setPosts(data ?? []);
@@ -123,6 +114,25 @@ export default function PostsPanel() {
     useEffect(() => {
         loadPosts();
     }, []);
+
+    // form → DB payload 변환
+    const buildPayload = () => ({
+        slug: form.slug,
+        title: form.title,
+        description: form.description || null,
+        pub_date: new Date(form.pub_date).toISOString(),
+        category: form.category || null,
+        tags: form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        thumbnail: form.thumbnail || null,
+        content: form.content,
+        published: form.published,
+        meta_title: form.meta_title || null,
+        meta_description: form.meta_description || null,
+        og_image: form.og_image || null,
+    });
 
     // 편집 화면 열기
     const openEdit = (post: Post) => {
@@ -145,9 +155,7 @@ export default function PostsPanel() {
         setEditTarget(post);
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(
-            !!localStorage.getItem(`admin_autosave_post_${post.id}`)
-        );
+        setSavedAt(null);
     };
 
     // 신규 생성 화면 열기
@@ -157,10 +165,40 @@ export default function PostsPanel() {
         setEditTarget("new");
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(!!localStorage.getItem("admin_autosave_post_new"));
+        setSavedAt(null);
     };
 
-    // 저장 (신규 insert / 수정 update)
+    // 자동 저장 (DB에 직접 저장)
+    const autoSave = async () => {
+        if (!browserClient || !form.title || !form.slug) return;
+        const payload = buildPayload();
+        if (editTarget === "new") {
+            // 신규: insert 후 editTarget을 실제 post로 전환
+            const { data: newPost, error: err } = await browserClient
+                .from("posts")
+                .insert(payload)
+                .select(POST_SELECT_FIELDS)
+                .single();
+            if (!err && newPost) {
+                initialFormRef.current = form;
+                setEditTarget(newPost);
+                setSavedAt(new Date());
+            }
+        } else if (editTarget !== null) {
+            const { error: err } = await browserClient
+                .from("posts")
+                .update(payload)
+                .eq("id", editTarget.id);
+            if (!err) {
+                initialFormRef.current = form;
+                setSavedAt(new Date());
+            }
+        }
+    };
+
+    useAutoSave(isDirty, editTarget !== null, autoSave);
+
+    // 수동 저장 (신규 insert / 수정 update)
     const handleSave = async () => {
         if (!browserClient || !form.title || !form.slug) {
             setError("제목과 slug는 필수입니다.");
@@ -169,24 +207,7 @@ export default function PostsPanel() {
         setSaving(true);
         setError(null);
 
-        const payload = {
-            slug: form.slug,
-            title: form.title,
-            description: form.description || null,
-            pub_date: new Date(form.pub_date).toISOString(),
-            category: form.category || null,
-            tags: form.tags
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean),
-            thumbnail: form.thumbnail || null,
-            content: form.content,
-            published: form.published,
-            meta_title: form.meta_title || null,
-            meta_description: form.meta_description || null,
-            og_image: form.og_image || null,
-        };
-
+        const payload = buildPayload();
         let err;
         if (editTarget === "new") {
             ({ error: err } = await browserClient
@@ -203,9 +224,9 @@ export default function PostsPanel() {
         if (err) {
             setError(err.message);
         } else {
-            setSuccess("저장됐습니다.");
-            clear();
             initialFormRef.current = form;
+            setSavedAt(null);
+            setSuccess("수동 저장 완료 " + fmtTime(new Date()));
             loadPosts();
             // 새 글이면 목록으로 돌아감, 수정이면 유지
             if (editTarget === "new") setEditTarget(null);
@@ -214,23 +235,7 @@ export default function PostsPanel() {
 
     // 목록으로 이탈 (dirty 확인 포함)
     const handleBack = () => {
-        if (confirmLeave()) {
-            setEditTarget(null);
-            setShowRestoreBanner(false);
-        }
-    };
-
-    // 임시 저장본 복원
-    const handleRestore = () => {
-        const draft = getAutoSaveDraft<PostForm>(autoSaveKey);
-        if (draft) setForm(draft);
-        setShowRestoreBanner(false);
-    };
-
-    // 임시 저장본 무시
-    const handleDiscardDraft = () => {
-        clear();
-        setShowRestoreBanner(false);
+        if (confirmLeave()) setEditTarget(null);
     };
 
     // 삭제
@@ -258,26 +263,6 @@ export default function PostsPanel() {
     if (editTarget !== null) {
         return (
             <div className="w-full max-w-6xl">
-                {showRestoreBanner && (
-                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                        <span className="flex-1">
-                            저장되지 않은 임시 저장본이 있습니다.
-                            복원하시겠습니까?
-                        </span>
-                        <button
-                            onClick={handleRestore}
-                            className="font-semibold underline"
-                        >
-                            복원
-                        </button>
-                        <button
-                            onClick={handleDiscardDraft}
-                            className="text-(--color-muted) hover:text-(--color-foreground)"
-                        >
-                            무시
-                        </button>
-                    </div>
-                )}
                 <button
                     onClick={handleBack}
                     className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
@@ -521,12 +506,17 @@ export default function PostsPanel() {
                             {success}
                         </p>
                     )}
+                    {savedAt && (
+                        <p className="rounded-lg bg-green-50 px-3 py-2 text-base text-green-600 dark:bg-green-950/30">
+                            {"자동 저장 완료 " + fmtTime(savedAt)}
+                        </p>
+                    )}
 
                     {/* 저장 버튼 */}
                     <div className="flex items-center gap-3 pt-2">
                         <button
                             onClick={handleSave}
-                            disabled={saving}
+                            disabled={saving || !isDirty}
                             className="rounded-lg bg-(--color-accent) px-5 py-2 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
                             {saving ? "저장 중..." : "저장"}
@@ -537,15 +527,6 @@ export default function PostsPanel() {
                         >
                             취소
                         </button>
-                        {savedAt && (
-                            <span className="text-sm text-(--color-muted)">
-                                자동 저장:{" "}
-                                {savedAt.toLocaleTimeString("ko-KR", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                            </span>
-                        )}
                     </div>
                 </div>
             </div>

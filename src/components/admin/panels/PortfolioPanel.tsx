@@ -1,14 +1,8 @@
-/**
- * PortfolioPanel
- *
- * 포트폴리오 아이템 목록 조회, 생성, 편집, 삭제,
- * featured 토글 및 발행/초안 전환을 담당한다.
- */
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
-import { useAutoSave, getAutoSaveDraft } from "@/lib/hooks/useAutoSave";
+import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 interface PortfolioItem {
@@ -111,6 +105,15 @@ function itemToForm(item: PortfolioItem): ItemForm {
     };
 }
 
+// 타임스탬프 포맷 (초 단위)
+function fmtTime(d: Date): string {
+    return d.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
 export default function PortfolioPanel() {
     const [items, setItems] = useState<PortfolioItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -121,28 +124,15 @@ export default function PortfolioPanel() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+    const [savedAt, setSavedAt] = useState<Date | null>(null);
 
     const initialFormRef = useRef<ItemForm>(EMPTY_FORM);
-
-    // auto-save key 계산
-    const autoSaveKey =
-        editTarget === null
-            ? "__none__"
-            : editTarget === "new"
-              ? "admin_autosave_portfolio_new"
-              : `admin_autosave_portfolio_${(editTarget as PortfolioItem).id}`;
 
     // dirty 상태
     const isDirty =
         editTarget !== null &&
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
-    const { savedAt, clear } = useAutoSave(
-        autoSaveKey,
-        form,
-        editTarget !== null
-    );
     const { confirmLeave } = useUnsavedWarning(isDirty);
 
     const loadItems = async () => {
@@ -161,6 +151,35 @@ export default function PortfolioPanel() {
         loadItems();
     }, []);
 
+    // form → DB payload 변환
+    const buildPayload = () => ({
+        slug: form.slug,
+        title: form.title,
+        description: form.description || null,
+        tags: form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        thumbnail: form.thumbnail || null,
+        content: form.content,
+        featured: form.featured,
+        order_idx: form.order_idx,
+        published: form.published,
+        data: {
+            startDate: form.startDate || undefined,
+            endDate: form.endDate || undefined,
+            goal: form.goal || undefined,
+            role: form.role || undefined,
+            teamSize: form.teamSize ? Number(form.teamSize) : undefined,
+            github: form.github || undefined,
+            liveUrl: form.liveUrl || undefined,
+            jobField: form.jobField || "web",
+        },
+        meta_title: form.meta_title || null,
+        meta_description: form.meta_description || null,
+        og_image: form.og_image || null,
+    });
+
     const openEdit = (item: PortfolioItem) => {
         const f = itemToForm(item);
         initialFormRef.current = f;
@@ -168,23 +187,50 @@ export default function PortfolioPanel() {
         setEditTarget(item);
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(
-            !!localStorage.getItem(`admin_autosave_portfolio_${item.id}`)
-        );
+        setSavedAt(null);
     };
 
     const openNew = () => {
-        const f = { ...EMPTY_FORM, order_idx: items.length };
-        initialFormRef.current = f;
-        setForm(f);
+        const base = { ...EMPTY_FORM, order_idx: items.length };
+        initialFormRef.current = base;
+        setForm(base);
         setEditTarget("new");
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(
-            !!localStorage.getItem("admin_autosave_portfolio_new")
-        );
+        setSavedAt(null);
     };
 
+    // 자동 저장 (DB에 직접 저장)
+    const autoSave = async () => {
+        if (!browserClient || !form.title || !form.slug) return;
+        const payload = buildPayload();
+        if (editTarget === "new") {
+            // 신규: insert 후 editTarget을 실제 item으로 전환
+            const { data: newItem, error: err } = await browserClient
+                .from("portfolio_items")
+                .insert(payload)
+                .select("*")
+                .single();
+            if (!err && newItem) {
+                initialFormRef.current = form;
+                setEditTarget(newItem);
+                setSavedAt(new Date());
+            }
+        } else if (editTarget !== null) {
+            const { error: err } = await browserClient
+                .from("portfolio_items")
+                .update(payload)
+                .eq("id", (editTarget as PortfolioItem).id);
+            if (!err) {
+                initialFormRef.current = form;
+                setSavedAt(new Date());
+            }
+        }
+    };
+
+    useAutoSave(isDirty, editTarget !== null, autoSave);
+
+    // 수동 저장 (신규 insert / 수정 update)
     const handleSave = async () => {
         if (!browserClient || !form.title || !form.slug) {
             setError("제목과 slug는 필수입니다.");
@@ -193,34 +239,7 @@ export default function PortfolioPanel() {
         setSaving(true);
         setError(null);
 
-        const payload = {
-            slug: form.slug,
-            title: form.title,
-            description: form.description || null,
-            tags: form.tags
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean),
-            thumbnail: form.thumbnail || null,
-            content: form.content,
-            featured: form.featured,
-            order_idx: form.order_idx,
-            published: form.published,
-            data: {
-                startDate: form.startDate || undefined,
-                endDate: form.endDate || undefined,
-                goal: form.goal || undefined,
-                role: form.role || undefined,
-                teamSize: form.teamSize ? Number(form.teamSize) : undefined,
-                github: form.github || undefined,
-                liveUrl: form.liveUrl || undefined,
-                jobField: form.jobField || "web",
-            },
-            meta_title: form.meta_title || null,
-            meta_description: form.meta_description || null,
-            og_image: form.og_image || null,
-        };
-
+        const payload = buildPayload();
         let err;
         if (editTarget === "new") {
             ({ error: err } = await browserClient
@@ -237,9 +256,9 @@ export default function PortfolioPanel() {
         if (err) {
             setError(err.message);
         } else {
-            setSuccess("저장됐습니다.");
-            clear();
             initialFormRef.current = form;
+            setSavedAt(null);
+            setSuccess("수동 저장 완료 " + fmtTime(new Date()));
             loadItems();
             if (editTarget === "new") setEditTarget(null);
         }
@@ -247,23 +266,7 @@ export default function PortfolioPanel() {
 
     // 목록으로 이탈 (dirty 확인 포함)
     const handleBack = () => {
-        if (confirmLeave()) {
-            setEditTarget(null);
-            setShowRestoreBanner(false);
-        }
-    };
-
-    // 임시 저장본 복원
-    const handleRestore = () => {
-        const draft = getAutoSaveDraft<ItemForm>(autoSaveKey);
-        if (draft) setForm(draft);
-        setShowRestoreBanner(false);
-    };
-
-    // 임시 저장본 무시
-    const handleDiscardDraft = () => {
-        clear();
-        setShowRestoreBanner(false);
+        if (confirmLeave()) setEditTarget(null);
     };
 
     const handleDelete = async (id: string) => {
@@ -323,26 +326,6 @@ export default function PortfolioPanel() {
 
         return (
             <div className="w-full max-w-5xl">
-                {showRestoreBanner && (
-                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                        <span className="flex-1">
-                            저장되지 않은 임시 저장본이 있습니다.
-                            복원하시겠습니까?
-                        </span>
-                        <button
-                            onClick={handleRestore}
-                            className="font-semibold underline"
-                        >
-                            복원
-                        </button>
-                        <button
-                            onClick={handleDiscardDraft}
-                            className="text-(--color-muted) hover:text-(--color-foreground)"
-                        >
-                            무시
-                        </button>
-                    </div>
-                )}
                 <button
                     onClick={handleBack}
                     className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
@@ -354,7 +337,24 @@ export default function PortfolioPanel() {
                 </h2>
 
                 <div className="mt-6 space-y-4">
-                    {field("title", "제목 *")}
+                    <div>
+                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                            제목 *
+                        </label>
+                        <input
+                            type="text"
+                            value={form.title}
+                            onChange={(e) => {
+                                const t = e.target.value;
+                                setForm((f) => ({
+                                    ...f,
+                                    title: t,
+                                    slug: f.slug || toSlug(t),
+                                }));
+                            }}
+                            className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                        />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         {field("slug", "Slug *", { mono: true })}
                         {field("jobField", "직무 분야 (web / game)")}
@@ -495,11 +495,16 @@ export default function PortfolioPanel() {
                             {success}
                         </p>
                     )}
+                    {savedAt && (
+                        <p className="rounded-lg bg-green-50 px-3 py-2 text-base text-green-600 dark:bg-green-950/30">
+                            {"자동 저장 완료 " + fmtTime(savedAt)}
+                        </p>
+                    )}
 
                     <div className="flex items-center gap-3 pt-2">
                         <button
                             onClick={handleSave}
-                            disabled={saving}
+                            disabled={saving || !isDirty}
                             className="rounded-lg bg-(--color-accent) px-5 py-2 text-base font-semibold text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
                         >
                             {saving ? "저장 중..." : "저장"}
@@ -510,15 +515,6 @@ export default function PortfolioPanel() {
                         >
                             취소
                         </button>
-                        {savedAt && (
-                            <span className="text-sm text-(--color-muted)">
-                                자동 저장:{" "}
-                                {savedAt.toLocaleTimeString("ko-KR", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                            </span>
-                        )}
                     </div>
                 </div>
             </div>
