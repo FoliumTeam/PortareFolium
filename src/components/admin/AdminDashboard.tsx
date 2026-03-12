@@ -10,7 +10,7 @@
  *
  * 로그아웃 버튼은 헤더에 위치한다.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { browserClient } from "@/lib/supabase";
 import ThemeToggle from "@/components/ThemeToggle";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
@@ -19,6 +19,20 @@ import TagsPanel from "@/components/admin/panels/TagsPanel";
 import AboutPanel from "@/components/admin/panels/AboutPanel";
 import SiteConfigPanel from "@/components/admin/panels/SiteConfigPanel";
 import ResumePanel from "@/components/admin/panels/ResumePanel";
+
+// 비활동 제한 시간 (1시간)
+const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
+
+// 활동 감지 이벤트 목록
+const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
+
+// 남은 시간을 MM:SS 형식으로 변환
+function formatRemaining(ms: number): string {
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
 
 // 탭 정의
 const TABS = [
@@ -44,6 +58,8 @@ export default function AdminDashboard() {
     });
 
     const [tabKey, setTabKey] = useState(0);
+    const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
+    const lastActivityRef = useRef(Date.now());
 
     useEffect(() => {
         window.history.replaceState(null, "", `#${activeTab}`);
@@ -58,6 +74,36 @@ export default function AdminDashboard() {
         return () => window.removeEventListener("hashchange", handleHashChange);
     }, [activeTab]);
 
+    // 비활동 타이머: 1초마다 남은 시간 갱신, 만료 시 자동 로그아웃
+    useEffect(() => {
+        const refreshActivity = () => {
+            lastActivityRef.current = Date.now();
+        };
+        ACTIVITY_EVENTS.forEach((e) =>
+            window.addEventListener(e, refreshActivity, { passive: true })
+        );
+
+        const tick = setInterval(async () => {
+            const elapsed = Date.now() - lastActivityRef.current;
+            const remaining = INACTIVITY_LIMIT_MS - elapsed;
+            if (remaining <= 0) {
+                clearInterval(tick);
+                if (browserClient)
+                    await browserClient.auth.signOut({ scope: "global" });
+                window.location.href = "/admin/login";
+            } else {
+                setRemainingMs(remaining);
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(tick);
+            ACTIVITY_EVENTS.forEach((e) =>
+                window.removeEventListener(e, refreshActivity)
+            );
+        };
+    }, []);
+
     const handleTabClick = (tabId: TabId) => {
         if (activeTab === tabId) {
             setTabKey((prev) => prev + 1); // 이미 활성화된 탭 클릭 시 리마운트(목록뷰 복귀)
@@ -67,10 +113,10 @@ export default function AdminDashboard() {
         }
     };
 
-    /** 로그아웃 처리 */
+    // 모든 기기에서 로그아웃
     const handleLogout = async () => {
         if (!browserClient) return;
-        await browserClient.auth.signOut();
+        await browserClient.auth.signOut({ scope: "global" });
         window.location.href = "/admin/login";
     };
 
@@ -83,20 +129,48 @@ export default function AdminDashboard() {
                         href="/"
                         className="flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                            />
                         </svg>
                         사이트
                     </a>
-                    <span className="h-4 w-px bg-(--color-border)" aria-hidden="true" />
+                    <span
+                        className="h-4 w-px bg-(--color-border)"
+                        aria-hidden="true"
+                    />
                     <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-(--color-accent)" aria-hidden="true" />
+                        <span
+                            className="h-2 w-2 rounded-full bg-(--color-accent)"
+                            aria-hidden="true"
+                        />
                         <span className="text-sm font-black tracking-tight text-(--color-foreground)">
                             Admin
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    {/* 비활동 만료까지 남은 시간 */}
+                    <span
+                        className={[
+                            "font-mono text-xs tabular-nums",
+                            remainingMs <= 5 * 60 * 1000
+                                ? "text-red-500"
+                                : "text-(--color-muted)",
+                        ].join(" ")}
+                    >
+                        {formatRemaining(remainingMs)}
+                    </span>
                     <ThemeToggle />
                     <button
                         onClick={handleLogout}
@@ -124,7 +198,9 @@ export default function AdminDashboard() {
                                     : "text-(--color-muted) hover:bg-(--color-surface) hover:text-(--color-foreground)",
                             ].join(" ")}
                         >
-                            <span className="text-base leading-none">{tab.icon}</span>
+                            <span className="text-base leading-none">
+                                {tab.icon}
+                            </span>
                             <span>{tab.label}</span>
                         </button>
                     ))}

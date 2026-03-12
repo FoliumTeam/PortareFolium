@@ -1,26 +1,27 @@
 ---
-/**
- * Resume 페이지 - 네이티브 HTML 이력서 (3가지 레이아웃)
- * PUBLIC_JOB_FIELD에 따라 경력(work)·프로젝트(projects)를 필터링해 노출
- */
+// Resume 페이지 - site_config의 resume_layout에 따라 선택된 레이아웃만 렌더링
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import ResumeView from "@/components/resume/ResumeView";
 import ResumeClassic from "@/components/resume/ResumeClassic.astro";
 import ResumeModern from "@/components/resume/ResumeModern.astro";
 import ResumeMinimal from "@/components/resume/ResumeMinimal.astro";
 import type { Resume } from "@/types/resume";
 import { serverClient } from "@/lib/supabase";
 
-// site_config에서 job_field 읽기 및 resume_data 가져오기
 let jobField = import.meta.env.PUBLIC_JOB_FIELD ?? "game";
+let resumeLayout: "classic" | "modern" | "minimal" = "modern";
 let resumeDataRaw: Resume = {} as Resume;
 
 if (serverClient) {
-    const [cfgRes, resumeRes] = await Promise.all([
+    const [cfgRes, layoutRes, resumeRes] = await Promise.all([
         serverClient
             .from("site_config")
             .select("value")
             .eq("key", "job_field")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "resume_layout")
             .single(),
         serverClient
             .from("resume_data")
@@ -38,6 +39,10 @@ if (serverClient) {
         if (parsed) jobField = parsed;
     }
 
+    if (layoutRes.data?.value) {
+        resumeLayout = layoutRes.data.value as "classic" | "modern" | "minimal";
+    }
+
     if (resumeRes.data?.data) {
         resumeDataRaw = resumeRes.data.data as unknown as Resume;
     }
@@ -48,7 +53,7 @@ function filterByJobField<T extends { jobField?: string | string[] }>(
 ): T[] {
     return items.filter((item) => {
         const jf = item.jobField;
-        if (jf == null) return true;
+        if (jf == null || (Array.isArray(jf) && jf.length === 0)) return false;
         if (Array.isArray(jf)) return jf.includes(jobField);
         return jf === jobField;
     });
@@ -77,18 +82,7 @@ const description = resumeData.basics?.summary ?? "이력서";
 ---
 
 <BaseLayout title={title} description={description}>
-    <div class="resume-page-wrapper">
-        <ResumeView client:load resume={resumeData} />
-        <div class="resume-layouts-container">
-            <div id="resume-classic-container" class="resume-layout hidden">
-                <ResumeClassic resume={resumeData} />
-            </div>
-            <div id="resume-modern-container" class="resume-layout hidden">
-                <ResumeModern resume={resumeData} />
-            </div>
-            <div id="resume-minimal-container" class="resume-layout hidden">
-                <ResumeMinimal resume={resumeData} />
-            </div>
-        </div>
-    </div>
+    {resumeLayout === "classic" && <ResumeClassic resume={resumeData} />}
+    {resumeLayout === "modern" && <ResumeModern resume={resumeData} />}
+    {resumeLayout === "minimal" && <ResumeMinimal resume={resumeData} />}
 </BaseLayout>

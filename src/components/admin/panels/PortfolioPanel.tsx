@@ -138,7 +138,11 @@ export default function PortfolioPanel() {
         editTarget !== null &&
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
-    const { savedAt, clear } = useAutoSave(autoSaveKey, form, editTarget !== null);
+    const { savedAt, clear } = useAutoSave(
+        autoSaveKey,
+        form,
+        editTarget !== null
+    );
     const { confirmLeave } = useUnsavedWarning(isDirty);
 
     const loadItems = async () => {
@@ -164,7 +168,9 @@ export default function PortfolioPanel() {
         setEditTarget(item);
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(!!localStorage.getItem(`admin_autosave_portfolio_${item.id}`));
+        setShowRestoreBanner(
+            !!localStorage.getItem(`admin_autosave_portfolio_${item.id}`)
+        );
     };
 
     const openNew = () => {
@@ -174,7 +180,9 @@ export default function PortfolioPanel() {
         setEditTarget("new");
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(!!localStorage.getItem("admin_autosave_portfolio_new"));
+        setShowRestoreBanner(
+            !!localStorage.getItem("admin_autosave_portfolio_new")
+        );
     };
 
     const handleSave = async () => {
@@ -472,7 +480,7 @@ export default function PortfolioPanel() {
                                 className="h-4 w-4 accent-(--color-accent)"
                             />
                             <span className="text-base font-medium text-(--color-foreground)">
-                                발행
+                                Publish
                             </span>
                         </label>
                     </div>
@@ -552,7 +560,7 @@ export default function PortfolioPanel() {
                                     <span
                                         className={`rounded-full px-2 py-0.5 text-sm font-medium ${item.published ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"}`}
                                     >
-                                        {item.published ? "발행" : "초안"}
+                                        {item.published ? "Published" : "Draft"}
                                     </span>
                                 </div>
                                 <p className="truncate text-base font-semibold text-(--color-foreground)">
@@ -565,7 +573,7 @@ export default function PortfolioPanel() {
                             <div className="flex shrink-0 items-center gap-2">
                                 <button
                                     onClick={() => toggleFeatured(item)}
-                                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
+                                    className="rounded-lg bg-slate-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     {item.featured
                                         ? "featured 해제"
@@ -573,13 +581,13 @@ export default function PortfolioPanel() {
                                 </button>
                                 <button
                                     onClick={() => openEdit(item)}
-                                    className="rounded-lg border border-(--color-border) bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     편집
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="rounded-lg border border-(--color-border) bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     삭제
                                 </button>

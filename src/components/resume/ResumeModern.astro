@@ -237,7 +237,7 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
                     return (
                         <section class="resume-section">
                             <h2 class="resume-section-title">학력</h2>
-                            <div class="resume-education-grid">
+                            <div>
                                 {sectionValue.map((education) => (
                                     <div class="resume-education-card">
                                         {education.institution ? (
@@ -270,11 +270,19 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
                                                 )}
                                             </div>
                                         )}
-                                        {education.score && (
+                                        {education.gpa != null ? (
+                                            <div class="resume-education-score">
+                                                GPA: {education.gpa.toFixed(2)}{" "}
+                                                /{" "}
+                                                {(
+                                                    education.gpaMax ?? 4.5
+                                                ).toFixed(2)}
+                                            </div>
+                                        ) : education.score ? (
                                             <div class="resume-education-score">
                                                 GPA: {education.score}
                                             </div>
-                                        )}
+                                        ) : null}
                                         {education.courses &&
                                         education.courses.length > 0 ? (
                                             <div class="resume-education-courses">
@@ -729,7 +737,6 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
         margin-top: 0.1rem;
     }
 
-    .resume-education-grid,
     .resume-projects-grid,
     .resume-generic-grid {
         display: grid;

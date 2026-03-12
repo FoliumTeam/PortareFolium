@@ -98,7 +98,11 @@ export default function PostsPanel() {
         editTarget !== null &&
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
-    const { savedAt, clear } = useAutoSave(autoSaveKey, form, editTarget !== null);
+    const { savedAt, clear } = useAutoSave(
+        autoSaveKey,
+        form,
+        editTarget !== null
+    );
     const { confirmLeave } = useUnsavedWarning(isDirty);
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
@@ -141,7 +145,9 @@ export default function PostsPanel() {
         setEditTarget(post);
         setError(null);
         setSuccess(null);
-        setShowRestoreBanner(!!localStorage.getItem(`admin_autosave_post_${post.id}`));
+        setShowRestoreBanner(
+            !!localStorage.getItem(`admin_autosave_post_${post.id}`)
+        );
     };
 
     // 신규 생성 화면 열기
@@ -497,10 +503,10 @@ export default function PostsPanel() {
                             className="h-4 w-4 accent-(--color-accent)"
                         />
                         <span className="text-base font-medium text-(--color-foreground)">
-                            즉시 발행
+                            Publish immediately
                         </span>
                         <span className="text-sm text-(--color-muted)">
-                            (체크 해제 시 초안으로 저장)
+                            (Uncheck to save as Draft)
                         </span>
                     </label>
 
@@ -585,7 +591,7 @@ export default function PostsPanel() {
                                                 : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
                                         }`}
                                     >
-                                        {post.published ? "발행" : "초안"}
+                                        {post.published ? "Published" : "Draft"}
                                     </span>
                                     {post.category && (
                                         <span className="text-sm text-(--color-muted)">
@@ -606,19 +612,19 @@ export default function PostsPanel() {
                             <div className="flex shrink-0 items-center gap-2">
                                 <button
                                     onClick={() => togglePublish(post)}
-                                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
+                                    className="rounded-lg bg-slate-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    {post.published ? "초안으로" : "발행"}
+                                    {post.published ? "Unpublish" : "Publish"}
                                 </button>
                                 <button
                                     onClick={() => openEdit(post)}
-                                    className="rounded-lg border border-(--color-border) bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     편집
                                 </button>
                                 <button
                                     onClick={() => handleDelete(post.id)}
-                                    className="rounded-lg border border-(--color-border) bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     삭제
                                 </button>

@@ -306,7 +306,7 @@ export default function AboutPanel() {
             <button
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
             >
                 {saving ? "저장 중..." : "Supabase에 저장"}
             </button>

@@ -41,8 +41,8 @@ export interface ResumeWork {
     highlights?: string[];
     location?: string;
     description?: string;
-    /** 노출 분야: "web" | "game". 비면 모든 JOB_FIELD에서 노출. 배열이면 해당 분야들 모두에서 노출 */
-    jobField?: "web" | "game" | ("web" | "game")[];
+    // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
+    jobField?: string | string[];
 }
 
 export interface ResumeVolunteer {
@@ -63,6 +63,8 @@ export interface ResumeEducation {
     startDate?: string;
     endDate?: string;
     score?: string;
+    gpa?: number;
+    gpaMax?: 4 | 4.5;
     courses?: string[];
 }
 
@@ -120,8 +122,8 @@ export interface ResumeProject {
     roles?: string[];
     entity?: string;
     type?: string;
-    /** 노출 분야: "web" | "game". 비면 모든 JOB_FIELD에서 노출. 배열이면 해당 분야들 모두에서 노출 */
-    jobField?: "web" | "game" | ("web" | "game")[];
+    // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
+    jobField?: string | string[];
 }
 
 export interface Resume {

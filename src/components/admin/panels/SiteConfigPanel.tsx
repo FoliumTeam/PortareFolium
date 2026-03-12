@@ -1,13 +1,6 @@
-/**
- * SiteConfigPanel
- *
- * site_config 테이블을 통해 컬러 스킴, 직무 분야 등을 관리한다.
- * "게시 (빌드 트리거)" 버튼을 통해 Vercel Deploy Hook을 호출한다.
- *
- * 컬러 스킴 저장 → 즉시 반영 (브라우저가 Supabase에서 값을 읽으므로)
- * 블로그/포트폴리오 게시 → 빌드 트리거 → 약 30~60초 후 정적 HTML 갱신
- */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 import { browserClient } from "@/lib/supabase";
 
 type ColorScheme =
@@ -23,7 +16,12 @@ type ColorScheme =
     | "forest-plain"
     | "sunset-plain"
     | "lavender-plain";
-type JobField = "web" | "game";
+
+type JobFieldItem = {
+    id: string;
+    name: string;
+    emoji: string;
+};
 
 const COLOR_OPTIONS: { value: ColorScheme; label: string; desc: string }[] = [
     { value: "gray", label: "Gray", desc: "중립 회색" },
@@ -69,7 +67,8 @@ export default function SiteConfigPanel() {
         }
         return "gray";
     });
-    const [jobField, setJobField] = useState<JobField>("game");
+    const [activeJobField, setActiveJobField] = useState<string>("");
+    const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [seoConfig, setSeoConfig] = useState({
         defaultTitle: "",
         defaultDescription: "포트폴리오 & 기술 블로그",
@@ -82,17 +81,28 @@ export default function SiteConfigPanel() {
         msg: string;
     } | null>(null);
 
+    // 새 job field 추가 폼 상태
+    const [newName, setNewName] = useState("");
+    const [newEmoji, setNewEmoji] = useState("✨");
+    const [showPicker, setShowPicker] = useState(false);
+    const pickerRef = useRef<HTMLDivElement>(null);
+
     // Supabase에서 현재 설정 로드
     useEffect(() => {
         if (!browserClient) return;
         browserClient
             .from("site_config")
             .select("key, value")
-            .in("key", ["color_scheme", "job_field", "site_name", "seo_config"])
-            .then(({ data }) => {
-                if (!data) return;
-                // site_name을 먼저 읽어두고 seo_config로 덮어쓰지 않도록 순서 정렬
-                const ordered = [...data].sort((a) =>
+            .in("key", [
+                "color_scheme",
+                "job_field",
+                "job_fields",
+                "site_name",
+                "seo_config",
+            ])
+            .then(({ data: rows }) => {
+                if (!rows) return;
+                const ordered = [...rows].sort((a) =>
                     a.key === "site_name" ? -1 : 1
                 );
                 for (const row of ordered) {
@@ -108,8 +118,9 @@ export default function SiteConfigPanel() {
                             v as ColorScheme
                         );
                     }
-                    if (row.key === "job_field") setJobField(v as JobField);
-                    // site_name이 사이트명의 단일 출처
+                    if (row.key === "job_field") setActiveJobField(v as string);
+                    if (row.key === "job_fields")
+                        setJobFields(v as JobFieldItem[]);
                     if (row.key === "site_name" && typeof v === "string") {
                         setSeoConfig((prev) => ({ ...prev, defaultTitle: v }));
                     }
@@ -126,7 +137,102 @@ export default function SiteConfigPanel() {
             });
     }, []);
 
-    /** site_config upsert */
+    // picker 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (
+                pickerRef.current &&
+                !pickerRef.current.contains(e.target as Node)
+            ) {
+                setShowPicker(false);
+            }
+        };
+        if (showPicker) document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [showPicker]);
+
+    // job_fields + job_field upsert
+    const saveJobFields = async (
+        fields: JobFieldItem[],
+        active: string
+    ): Promise<boolean> => {
+        if (!browserClient) return false;
+        const { error } = await browserClient.from("site_config").upsert(
+            [
+                {
+                    key: "job_fields",
+                    value: fields,
+                },
+                {
+                    key: "job_field",
+                    value: JSON.stringify(active),
+                },
+            ],
+            { onConflict: "key" }
+        );
+        return !error;
+    };
+
+    // job field 추가
+    const handleAddJobField = async () => {
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        const id = trimmed.toLowerCase().replace(/\s+/g, "-");
+        if (jobFields.some((f) => f.id === id)) {
+            setStatus({ type: "error", msg: `"${id}" ID가 이미 존재합니다` });
+            return;
+        }
+        const next = [...jobFields, { id, name: trimmed, emoji: newEmoji }];
+        const ok = await saveJobFields(next, activeJobField);
+        if (ok) {
+            setJobFields(next);
+            setNewName("");
+            setNewEmoji("✨");
+            setStatus({ type: "success", msg: "직무 분야가 추가됐습니다" });
+        } else {
+            setStatus({ type: "error", msg: "저장 실패" });
+        }
+    };
+
+    // job field 삭제 + cascade 처리
+    const handleDeleteJobField = async (id: string) => {
+        if (!browserClient) return;
+        // cascade: posts, portfolio_items의 job_field가 해당 id면 null로
+        await Promise.all([
+            browserClient
+                .from("posts")
+                .update({ job_field: null })
+                .eq("job_field", id),
+            browserClient
+                .from("portfolio_items")
+                .update({ job_field: null })
+                .eq("job_field", id),
+        ]);
+        const next = jobFields.filter((f) => f.id !== id);
+        const nextActive =
+            activeJobField === id ? (next[0]?.id ?? "") : activeJobField;
+        const ok = await saveJobFields(next, nextActive);
+        if (ok) {
+            setJobFields(next);
+            setActiveJobField(nextActive);
+            setStatus({ type: "success", msg: "직무 분야가 삭제됐습니다" });
+        } else {
+            setStatus({ type: "error", msg: "삭제 실패" });
+        }
+    };
+
+    // active job field 변경 (즉시 저장)
+    const handleSelectJobField = async (id: string) => {
+        setActiveJobField(id);
+        if (!browserClient) return;
+        await browserClient
+            .from("site_config")
+            .upsert([{ key: "job_field", value: JSON.stringify(id) }], {
+                onConflict: "key",
+            });
+    };
+
+    // site_config upsert (색상 + SEO)
     const handleSave = async () => {
         if (!browserClient) return;
         setSaving(true);
@@ -134,8 +240,7 @@ export default function SiteConfigPanel() {
 
         const rows = [
             { key: "color_scheme", value: JSON.stringify(colorScheme) },
-            { key: "job_field", value: JSON.stringify(jobField) },
-            // site_name: 사이트명 단일 출처 (SEO.astro, Header 등에서 참조)
+            // site_name: 사이트명 단일 출처
             { key: "site_name", value: JSON.stringify(seoConfig.defaultTitle) },
             {
                 key: "seo_config",
@@ -160,12 +265,12 @@ export default function SiteConfigPanel() {
                 ? { type: "error", msg: error.message }
                 : {
                       type: "success",
-                      msg: "설정이 저장됐습니다. 변경 사항이 사이트에 반영되었습니다.",
+                      msg: "설정이 저장됐습니다. 변경 사항이 사이트에 반영됐습니다.",
                   }
         );
     };
 
-    /** Vercel Deploy Hook 호출 → 정적 빌드 재트리거 */
+    // Vercel Deploy Hook 호출
     const handleDeploy = async () => {
         const hookUrl = import.meta.env.PUBLIC_VERCEL_DEPLOY_HOOK_URL as
             | string
@@ -245,29 +350,102 @@ export default function SiteConfigPanel() {
                 </div>
             </section>
 
-            {/* 직무 분야 */}
+            {/* 직무 분야 관리 */}
             <section className="space-y-3">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     이력서 직무 분야
                 </h3>
                 <p className="text-sm text-(--color-muted)">
                     Resume / Portfolio 페이지에서 이 값으로 항목을 필터링합니다.
+                    활성 분야를 클릭해서 선택하세요.
                 </p>
-                <div className="flex gap-2">
-                    {(["web", "game"] as const).map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => setJobField(f)}
+
+                {/* job field 목록 */}
+                <div className="space-y-2">
+                    {jobFields.length === 0 && (
+                        <p className="text-sm text-(--color-muted)">
+                            등록된 직무 분야가 없습니다
+                        </p>
+                    )}
+                    {jobFields.map((field) => (
+                        <div
+                            key={field.id}
                             className={[
-                                "rounded-lg border px-5 py-2.5 text-base font-medium transition-colors",
-                                jobField === f
-                                    ? "border-(--color-accent) bg-(--color-accent)/5 text-(--color-accent)"
-                                    : "border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50",
+                                "flex items-center gap-5 rounded-lg border px-4 py-2.5",
+                                activeJobField === field.id
+                                    ? "border-(--color-accent) bg-(--color-accent)/5"
+                                    : "border-(--color-border)",
                             ].join(" ")}
                         >
-                            {f === "web" ? "🌐 Web" : "🎮 Game"}
-                        </button>
+                            <button
+                                onClick={() => handleSelectJobField(field.id)}
+                                className="flex flex-1 items-center gap-2 text-left"
+                            >
+                                <span className="text-xl">{field.emoji}</span>
+                                <span className="text-base font-medium text-(--color-foreground)">
+                                    {field.name}
+                                </span>
+                                {activeJobField === field.id && (
+                                    <span className="ml-auto text-sm font-semibold text-(--color-accent)">
+                                        활성
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => handleDeleteJobField(field.id)}
+                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white"
+                            >
+                                삭제
+                            </button>
+                        </div>
                     ))}
+                </div>
+
+                {/* 새 job field 추가 폼 */}
+                <div className="flex items-center gap-2 pt-1">
+                    {/* emoji picker */}
+                    <div className="relative" ref={pickerRef}>
+                        <button
+                            type="button"
+                            onClick={() => setShowPicker((v) => !v)}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
+                        >
+                            {newEmoji}
+                        </button>
+                        {showPicker && (
+                            <div className="absolute bottom-12 left-0 z-50">
+                                <Picker
+                                    data={data}
+                                    onEmojiSelect={(emoji: {
+                                        native: string;
+                                    }) => {
+                                        setNewEmoji(emoji.native);
+                                        setShowPicker(false);
+                                    }}
+                                    locale="ko"
+                                    previewPosition="none"
+                                    skinTonePosition="none"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddJobField();
+                        }}
+                        placeholder="직무 분야 이름"
+                        className="h-10 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                    />
+                    <button
+                        onClick={handleAddJobField}
+                        disabled={!newName.trim()}
+                        className="h-10 rounded-lg bg-(--color-accent) px-4 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-40"
+                    >
+                        추가
+                    </button>
                 </div>
             </section>
 

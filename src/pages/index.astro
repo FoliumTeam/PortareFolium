@@ -23,15 +23,38 @@ interface AboutData {
     description?: string;
     descriptionSub?: string;
 }
+interface WorkItem {
+    name?: string;
+    url?: string;
+    position?: string;
+    startDate?: string;
+    endDate?: string;
+    jobField?: string | string[];
+}
+
 let about: AboutData = {};
 let siteName = "";
+let profileImage: string | undefined;
+let workItems: WorkItem[] = [];
+
 if (serverClient) {
-    const [aboutRes, siteRes] = await Promise.all([
+    const [aboutRes, siteRes, resumeRes, jobFieldRes] = await Promise.all([
         serverClient.from("about_data").select("data").limit(1).single(),
         serverClient
             .from("site_config")
             .select("value")
             .eq("key", "site_name")
+            .single(),
+        // resume_data.basics.image + work 출처
+        serverClient
+            .from("resume_data")
+            .select("data")
+            .eq("lang", "ko")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "job_field")
             .single(),
     ]);
     if (aboutRes.data) about = aboutRes.data.data as AboutData;
@@ -39,6 +62,35 @@ if (serverClient) {
         let v = siteRes.data.value;
         if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
         if (typeof v === "string") siteName = v;
+    }
+    if (resumeRes.data?.data) {
+        const resumeFull = resumeRes.data.data as {
+            basics?: { image?: string };
+            work?: WorkItem[];
+        };
+        const img = resumeFull.basics?.image?.trim();
+        if (img) profileImage = img;
+
+        // job_field 기반 work 필터링
+        let jobField = "";
+        if (jobFieldRes.data?.value) {
+            const raw = jobFieldRes.data.value;
+            jobField =
+                typeof raw === "string" && raw.startsWith('"')
+                    ? JSON.parse(raw)
+                    : raw;
+        }
+        workItems = (resumeFull.work ?? [])
+            .filter((w) => {
+                const jf = w.jobField;
+                if (!jf || (Array.isArray(jf) && jf.length === 0)) return false;
+                if (Array.isArray(jf)) return jf.includes(jobField);
+                return jf === jobField;
+            })
+            .sort((a, b) =>
+                (b.startDate ?? "").localeCompare(a.startDate ?? "")
+            )
+            .slice(0, 4);
     }
 }
 
@@ -185,27 +237,79 @@ const isDev = import.meta.env.DEV;
     {
         about.name && (
             <section class="mx-auto max-w-4xl border-t border-(--color-border) py-14">
-                <p class="mb-3 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                <p class="mb-6 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
                     About me
                 </p>
-                <div class="tablet:flex-row tablet:items-end tablet:justify-between flex flex-col gap-6">
-                    <div class="tablet:max-w-xl border-l-2 border-(--color-accent) pl-5">
+                <div class="tablet:flex-row flex flex-col items-start gap-6">
+                    {profileImage && (
+                        <div class="shrink-0">
+                            <img
+                                src={profileImage}
+                                alt=""
+                                width={80}
+                                height={80}
+                                class="h-20 w-20 rounded-full object-cover ring-2 ring-(--color-accent)/30"
+                                loading="lazy"
+                            />
+                        </div>
+                    )}
+                    <div class="min-w-0 flex-1">
+                        <h2 class="mb-2 text-xl font-black tracking-tight text-(--color-foreground)">
+                            {about.name}
+                        </h2>
                         {about.description && (
-                            <p class="mb-3 text-lg leading-relaxed text-(--color-foreground)">
+                            <p class="mb-2 leading-relaxed text-(--color-foreground)">
                                 {about.description}
                             </p>
                         )}
                         {about.descriptionSub && (
-                            <p class="text-sm leading-relaxed text-(--color-muted)">
+                            <p class="mb-4 text-sm leading-relaxed text-(--color-muted)">
                                 {about.descriptionSub}
                             </p>
                         )}
+                        <a
+                            href="/about"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-all duration-200 hover:border-(--color-accent) hover:text-(--color-accent)"
+                        >
+                            소개 전체 보기
+                            <svg
+                                class="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        )
+    }
+
+    <!-- ── Work Experience ────────────────────────────────────── -->
+    {
+        workItems.length > 0 && (
+            <section class="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <div class="mb-8 flex items-end justify-between">
+                    <div>
+                        <p class="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                            Experience
+                        </p>
+                        <h2 class="text-3xl font-black tracking-tight text-(--color-foreground)">
+                            Work
+                        </h2>
                     </div>
                     <a
-                        href="/about"
-                        class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-all duration-200 hover:border-(--color-accent) hover:text-(--color-accent)"
+                        href="/resume"
+                        class="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
-                        소개 전체 보기
+                        전체 이력서 보기
                         <svg
                             class="h-4 w-4"
                             fill="none"
@@ -220,6 +324,48 @@ const isDev = import.meta.env.DEV;
                             />
                         </svg>
                     </a>
+                </div>
+
+                <div class="relative border-l-[3px] border-(--color-border) pl-8">
+                    {workItems.map((w) => (
+                        <div class="relative pb-10 last:pb-0">
+                            {/* accent 도트 */}
+                            <div
+                                class="absolute top-1 h-4 w-4 rounded-full border-2 border-(--color-accent) bg-(--color-accent)/15"
+                                style="left: calc(-2rem - 9.5px)"
+                            />
+                            {/* 날짜 */}
+                            {(w.startDate || w.endDate) && (
+                                <p class="mb-1 text-[0.8rem] font-bold tracking-widest text-(--color-muted) uppercase">
+                                    {w.startDate ?? ""} ~{" "}
+                                    {w.endDate ?? "Present"}
+                                </p>
+                            )}
+                            {/* 회사명 */}
+                            {w.name && (
+                                <h3 class="text-2xl leading-tight font-black text-(--color-foreground)">
+                                    {w.url ? (
+                                        <a
+                                            href={w.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="transition-colors hover:underline"
+                                        >
+                                            {w.name}
+                                        </a>
+                                    ) : (
+                                        w.name
+                                    )}
+                                </h3>
+                            )}
+                            {/* 직책 */}
+                            {w.position && (
+                                <p class="mt-0.5 text-base font-bold text-(--color-accent)">
+                                    {w.position}
+                                </p>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </section>
         )
