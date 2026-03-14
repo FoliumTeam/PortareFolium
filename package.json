@@ -1,7 +1,7 @@
 {
-    "name": "folium-online",
+    "name": "portare-folium",
     "type": "module",
-    "version": "0.0.1",
+    "version": "0.5.1",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -17,8 +17,7 @@
         "purge": "rm -rf .astro && astro sync",
         "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm install && pnpm purge",
         "upgrade-all": "pnpm update --latest",
-        "prepare": "husky || true",
-        "migrate": "tsx scripts/migrate-to-supabase.ts"
+        "prepare": "husky || true"
     },
     "dependencies": {
         "@astrojs/mdx": "^4.3.13",
