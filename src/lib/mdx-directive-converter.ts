@@ -36,9 +36,30 @@ export function jsxToDirective(content: string): string {
     return out;
 }
 
+// 코드 블록 밖 영역에서만 transform 적용
+export function transformOutsideCodeBlocks(
+    content: string,
+    transform: (text: string) => string
+): string {
+    const parts = content.split(/(```[\s\S]*?```)/g);
+    return parts
+        .map((part, i) => (i % 2 === 0 ? transform(part) : part))
+        .join("");
+}
+
+// directive 라인의 markdown 백슬래시 이스케이프 제거
+function stripDirectiveEscapes(text: string): string {
+    return text.replace(/^.*\\::[a-z-].*$/gm, (line) =>
+        line.replace(/\\([:\[\]"=])/g, "$1")
+    );
+}
+
 /** MDX Directives → JSX (저장 시) */
 export function directiveToJsx(content: string): string {
     let out = content;
+
+    // 코드 블록 밖에서만 백슬래시 이스케이프 제거
+    out = transformOutsideCodeBlocks(out, stripDirectiveEscapes);
 
     // ::youtube[]{id="xxx"} → <YouTube id="xxx" />
     out = out.replace(
@@ -52,15 +73,20 @@ export function directiveToJsx(content: string): string {
         (_, id) => `<YouTube id="${id}" />`
     );
 
+    // ::youtube{#xxx} (shorthand 형식)
+    out = out.replace(
+        /::youtube\{#([^\s}]+)\}/g,
+        (_, id) => `<YouTube id="${id}" />`
+    );
+
     // ::folium-table[]{attr="val" ...} → <FoliumTable attr={'val'} ... />
     out = out.replace(/::folium-table\[\]\{([^}]*)\}/g, (_, attrs) => {
         const parts: string[] = [];
-        const regex = /(\w+)=("(?:[^"\\]|\\.)*"|[^\s}]+)/g;
+        // lookahead로 attribute 경계 탐색 (bare quote가 값 안에 있어도 안전)
+        const regex = /(\w+)="([\s\S]*?)"(?=\s+\w+=|$)/g;
         let m: RegExpExecArray | null;
         while ((m = regex.exec(attrs)) !== null) {
-            const rawVal = m[2].startsWith('"') ? m[2].slice(1, -1) : m[2];
-            // rawVal => [\"option\", \"type\"]
-            let cleanVal = rawVal.replace(/\\"/g, '"'); // ["option", "type"]
+            let cleanVal = m[2].replace(/\\"/g, '"');
             cleanVal = cleanVal.replace(/'/g, "\\'");
             parts.push(`${m[1]}={'${cleanVal}'}`);
         }
