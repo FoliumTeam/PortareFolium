@@ -37,6 +37,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Add brief docstrings in Korean for newly created functions.
 - Concisely document what changes you have done in the CHANGES.md file. This is to keep track of changes at a glance.
+- Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change.
+- Only update the 1st (major) and 2nd (minor) version numbers if explicitly requested by the user.
 
 ### Comment Formatting Constraints
 
