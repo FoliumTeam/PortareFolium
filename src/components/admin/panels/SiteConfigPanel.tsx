@@ -540,10 +540,10 @@ export default function SiteConfigPanel() {
                 사이트 설정
             </h2>
 
-            {/* 컬러 스킴 */}
+            {/* Color Scheme */}
             <section className="space-y-3">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
-                    컬러 스킴
+                    Color Scheme
                 </h3>
                 <p className="text-sm text-(--color-muted)">
                     새로운 테마를 선택하면 대시보드 화면에 즉시 반영되며, '설정

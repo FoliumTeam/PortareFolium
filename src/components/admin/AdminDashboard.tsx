@@ -6,7 +6,7 @@
  *   - 포스트: 블로그 글 CRUD
  *   - 포트폴리오: 포트폴리오 아이템 CRUD
  *   - About: about_data 편집 및 Supabase 저장
- *   - 사이트 설정: 컬러 스킴 등 site_config 관리 + 빌드 트리거
+ *   - 사이트 설정: Color Scheme 등 site_config 관리 + 빌드 트리거
  *
  * 로그아웃 버튼은 헤더에 위치한다.
  */
