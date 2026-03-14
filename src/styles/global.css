@@ -601,7 +601,6 @@ body {
 /* ── FoliumTable ──────────────────────────────────────────────────── */
 /* renderMarkdown()이 생성한 HTML에 적용 (FoliumTable.astro scoped 스타일 대체) */
 .folium-table-wrapper {
-    border-radius: 12px;
     overflow: hidden;
     background: var(--color-surface);
 }
@@ -609,6 +608,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 1.125rem;
+    margin: 0;
 }
 .folium-table th,
 .folium-table td {
@@ -635,7 +635,7 @@ body {
     color: var(--pt-text) !important;
 }
 .folium-table tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: 1px solid var(--color-border);
 }
 .folium-table.has-col-colors tbody tr:hover td {
     filter: brightness(0.97);
@@ -900,8 +900,12 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 }
 
 @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* 애니메이션 클래스 */
@@ -914,11 +918,21 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 }
 
 /* 스태거 딜레이 */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.15s; }
-.stagger-3 { animation-delay: 0.25s; }
-.stagger-4 { animation-delay: 0.35s; }
-.stagger-5 { animation-delay: 0.5s; }
+.stagger-1 {
+    animation-delay: 0.05s;
+}
+.stagger-2 {
+    animation-delay: 0.15s;
+}
+.stagger-3 {
+    animation-delay: 0.25s;
+}
+.stagger-4 {
+    animation-delay: 0.35s;
+}
+.stagger-5 {
+    animation-delay: 0.5s;
+}
 
 /* Nav link 언더라인 슬라이드 애니메이션 */
 .nav-link {
@@ -926,14 +940,16 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
     padding-bottom: 2px;
 }
 .nav-link::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -1px;
     left: 50%;
     width: 0;
     height: 2px;
     background: var(--color-accent);
-    transition: width 0.25s ease, left 0.25s ease;
+    transition:
+        width 0.25s ease,
+        left 0.25s ease;
     border-radius: 1px;
 }
 .nav-link:hover::after {
@@ -951,7 +967,9 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 
 /* 카드 hover 리프트 효과 */
 .card-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 .card-lift:hover {
     transform: translateY(-3px);
