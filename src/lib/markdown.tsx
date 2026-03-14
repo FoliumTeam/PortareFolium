@@ -7,6 +7,10 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import React from "react";
 import { visit } from "unist-util-visit";
 import { tailwindToHex, isLightBackground } from "@/lib/tailwind-colors";
+import {
+    directiveToJsx,
+    transformOutsideCodeBlocks,
+} from "@/lib/mdx-directive-converter";
 
 function YouTube({ id }: { id?: string }) {
     if (!id) return null;
@@ -201,9 +205,27 @@ const components = {
     Mermaid,
 };
 
+// 코드 블록 밖의 홀로 남은 { } 를 라인 단위로 이스케이프
+function escapeStrayCurlyBraces(chunk: string): string {
+    return chunk
+        .split("\n")
+        .map((line) => {
+            // JSX 태그 라인은 건드리지 않음
+            if (/<\w+[\s/>]/.test(line)) return line;
+            return line
+                .replace(/(?<!\{)\{(?!\{|\/\*|`)/g, "\\{")
+                .replace(/(?<!\})\}(?!\})/g, "\\}");
+        })
+        .join("\n");
+}
+
 export async function renderMarkdown(content: string): Promise<string> {
     try {
-        const { default: MDXContent } = await evaluate(content, {
+        // directive → JSX 변환 + 남은 {} 이스케이프
+        let mdx = directiveToJsx(content);
+        mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
+
+        const { default: MDXContent } = await evaluate(mdx, {
             ...(runtime as any),
             remarkPlugins: [remarkMermaid],
             rehypePlugins: [
