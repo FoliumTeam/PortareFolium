@@ -67,7 +67,7 @@ export function JobFieldBadges({
                 return (
                     <span
                         key={id}
-                        className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
+                        className="rounded bg-(--color-tag-bg) px-1.5 py-0.5 text-xs text-(--color-muted)"
                     >
                         {f ? `${f.emoji} ${f.name}` : id}
                     </span>

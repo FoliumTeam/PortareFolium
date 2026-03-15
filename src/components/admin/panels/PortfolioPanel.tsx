@@ -307,6 +307,7 @@ export default function PortfolioPanel() {
 
     // ── 편집 화면 ─────────────────────────────────────────────
     if (editTarget !== null) {
+        // 인풋/textarea 공통 렌더 헬퍼
         const field = (
             key: keyof ItemForm,
             label: string,
@@ -345,126 +346,186 @@ export default function PortfolioPanel() {
             </div>
         );
 
-        return (
-            <div className="w-full max-w-5xl">
+        // 토글 스위치 헬퍼
+        const toggle = (
+            key: "published" | "featured",
+            label: string,
+            description: [string, string]
+        ) => (
+            <div className="flex items-center justify-between rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3">
+                <div>
+                    <p className="text-base font-medium text-(--color-foreground)">
+                        {label}
+                    </p>
+                    <p className="text-sm text-(--color-muted)">
+                        {form[key] ? description[0] : description[1]}
+                    </p>
+                </div>
                 <button
-                    onClick={handleBack}
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                    type="button"
+                    role="switch"
+                    aria-checked={form[key]}
+                    onClick={() => setForm((f) => ({ ...f, [key]: !f[key] }))}
+                    className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none ${
+                        form[key] ? "bg-green-500" : "bg-(--color-border)"
+                    }`}
                 >
-                    ← 목록
+                    <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            form[key] ? "translate-x-5" : "translate-x-0"
+                        }`}
+                    />
                 </button>
-                <h2 className="mt-6 text-3xl font-bold text-(--color-foreground)">
-                    {editTarget === "new" ? "새 포트폴리오" : "포트폴리오 편집"}
-                </h2>
+            </div>
+        );
 
-                <div className="mt-6 space-y-4">
-                    <div>
-                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                            제목 *
-                        </label>
-                        <input
-                            type="text"
-                            value={form.title}
-                            onChange={(e) => {
-                                const t = e.target.value;
-                                setForm((f) => ({
-                                    ...f,
-                                    title: t,
-                                    slug: f.slug || toSlug(t),
-                                }));
-                            }}
-                            className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                        />
-                    </div>
-                    <div>{field("slug", "Slug *", { mono: true })}</div>
-                    <JobFieldSelector
-                        value={form.jobField}
-                        fields={jobFields}
-                        onChange={(v) =>
-                            setForm((f) => ({ ...f, jobField: v }))
-                        }
-                    />
-                    {field("description", "요약", { rows: 2 })}
-                    {field("tags", "키워드/태그 (쉼표 구분)", {
-                        placeholder: "Next.js, React, TypeScript",
-                    })}
-                    <ThumbnailUploadField
-                        value={form.thumbnail}
-                        onChange={(url) =>
-                            setForm((f) => ({ ...f, thumbnail: url }))
-                        }
-                        placeholder="파일 업로드 또는 URL 입력"
-                        folderPath={`portfolio/${form.slug || "untitled"}`}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        {field("startDate", "시작일", {
-                            placeholder: "2024-01-01",
-                        })}
-                        {field("endDate", "종료일", {
-                            placeholder: "2024-06-01 (진행 중이면 비워두세요)",
-                        })}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {field("role", "역할", {
-                            placeholder: "풀스택 개발 (리드)",
-                        })}
-                        {field("teamSize", "팀 규모", {
-                            type: "number",
-                            placeholder: "1",
-                        })}
-                    </div>
-                    {field("goal", "목표/기획 의도", { rows: 2 })}
-                    <div className="grid grid-cols-2 gap-4">
-                        {field("github", "GitHub URL", { mono: true })}
-                        {field("liveUrl", "라이브 URL", { mono: true })}
-                    </div>
-
-                    {/* SEO 설정 (선택사항) */}
-                    <details className="group rounded-lg border border-(--color-border) bg-(--color-surface-subtle) open:bg-(--color-surface)">
-                        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)">
-                            <span>SEO 설정 (선택사항)</span>
-                            <span className="text-(--color-muted) transition-transform group-open:rotate-180">
-                                ▼
+        return (
+            <div className="w-full max-w-5xl pb-24">
+                {/* 헤더 */}
+                <div className="mb-6 flex items-center justify-between">
+                    <button
+                        onClick={handleBack}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent)/30 hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                    >
+                        ← 목록
+                    </button>
+                    <h2 className="text-3xl font-bold text-(--color-foreground)">
+                        {editTarget === "new"
+                            ? "새 포트폴리오"
+                            : "포트폴리오 편집"}
+                    </h2>
+                    <div className="text-sm">
+                        {savedAt && (
+                            <span className="text-green-600">
+                                자동 저장 완료 {fmtTime(savedAt)}
                             </span>
-                        </summary>
-                        <div className="space-y-4 border-t border-(--color-border) p-4">
-                            {field("meta_title", "SEO 제목 (Meta Title)", {
-                                placeholder:
-                                    "비워두면 프로젝트 제목이 사용됩니다",
-                            })}
-                            {field(
-                                "meta_description",
-                                "SEO 설명 (Meta Description)",
-                                {
-                                    rows: 2,
-                                    placeholder:
-                                        "비워두면 프로젝트 요약이 사용됩니다",
-                                }
-                            )}
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                                    소셜 공유 이미지 (OG Image)
-                                </label>
-                                <ThumbnailUploadField
-                                    value={form.og_image}
-                                    onChange={(url) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            og_image: url,
-                                        }))
-                                    }
-                                    placeholder="비워두면 썸네일 혹은 전역 설정이 사용됩니다"
-                                    folderPath={`portfolio/${form.slug || "untitled"}`}
-                                />
-                            </div>
-                        </div>
-                    </details>
+                        )}
+                    </div>
+                </div>
 
-                    <div>
-                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                            본문 (Markdown)
-                        </label>
+                <div className="space-y-6">
+                    {/* 섹션 1: 기본 정보 */}
+                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                1
+                            </span>
+                            기본 정보
+                        </h3>
+
+                        {/* 제목 */}
+                        <div>
+                            <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                                제목 <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={form.title}
+                                onChange={(e) => {
+                                    const t = e.target.value;
+                                    setForm((f) => ({
+                                        ...f,
+                                        title: t,
+                                        slug: f.slug || toSlug(t),
+                                    }));
+                                }}
+                                placeholder="프로젝트 이름을 입력하세요"
+                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                            />
+                        </div>
+
+                        {/* Slug */}
+                        <div>
+                            <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                                Slug <span className="text-red-500">*</span>
+                                <span className="ml-1 text-xs font-normal text-(--color-muted)">
+                                    URL 경로
+                                </span>
+                            </label>
+                            <input
+                                type="text"
+                                value={form.slug}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        slug: e.target.value,
+                                    }))
+                                }
+                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 font-mono text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                            />
+                        </div>
+
+                        {/* 직무 분야 */}
+                        <JobFieldSelector
+                            value={form.jobField}
+                            fields={jobFields}
+                            onChange={(v) =>
+                                setForm((f) => ({ ...f, jobField: v }))
+                            }
+                        />
+
+                        {/* 요약 + 태그 */}
+                        {field("description", "요약", {
+                            rows: 2,
+                            placeholder: "프로젝트를 한 두 줄로 소개하세요",
+                        })}
+                        {field("tags", "키워드/태그 (쉼표 구분)", {
+                            placeholder: "Next.js, React, TypeScript",
+                        })}
+
+                        {/* 썸네일 */}
+                        <ThumbnailUploadField
+                            value={form.thumbnail}
+                            onChange={(url) =>
+                                setForm((f) => ({ ...f, thumbnail: url }))
+                            }
+                            placeholder="파일 업로드 또는 URL 입력"
+                            folderPath={`portfolio/${form.slug || "untitled"}`}
+                        />
+                    </section>
+
+                    {/* 섹션 2: 프로젝트 상세 */}
+                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                2
+                            </span>
+                            프로젝트 상세
+                        </h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {field("startDate", "시작일", {
+                                placeholder: "2024-01-01",
+                            })}
+                            {field("endDate", "종료일", {
+                                placeholder:
+                                    "2024-06-01 (진행 중이면 비워두세요)",
+                            })}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            {field("role", "역할", {
+                                placeholder: "풀스택 개발 (리드)",
+                            })}
+                            {field("teamSize", "팀 규모", {
+                                type: "number",
+                                placeholder: "1",
+                            })}
+                        </div>
+                        {field("goal", "목표/기획 의도", { rows: 2 })}
+                        <div className="grid grid-cols-2 gap-4">
+                            {field("github", "GitHub URL", { mono: true })}
+                            {field("liveUrl", "라이브 URL", { mono: true })}
+                        </div>
+                    </section>
+
+                    {/* 섹션 3: 본문 */}
+                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                3
+                            </span>
+                            본문
+                        </h3>
                         <RichMarkdownEditor
                             value={form.content}
                             onChange={(c) =>
@@ -473,73 +534,110 @@ export default function PortfolioPanel() {
                             placeholder="본문을 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
                             folderPath={`portfolio/${form.slug || "untitled"}`}
                         />
-                    </div>
+                    </section>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={form.featured}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        featured: e.target.checked,
-                                    }))
-                                }
-                                className="h-4 w-4 accent-(--color-accent)"
-                            />
-                            <span className="text-base font-medium text-(--color-foreground)">
-                                랜딩 페이지에 노출 (featured)
+                    {/* 섹션 4: 발행 설정 */}
+                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                4
                             </span>
-                        </label>
-                        <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={form.published}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        published: e.target.checked,
-                                    }))
-                                }
-                                className="h-4 w-4 accent-(--color-accent)"
-                            />
-                            <span className="text-base font-medium text-(--color-foreground)">
-                                Publish
-                            </span>
-                        </label>
-                    </div>
+                            발행 설정
+                        </h3>
 
-                    {error && (
-                        <p className="rounded-lg bg-red-50 px-3 py-2 text-base text-red-500 dark:bg-red-950/30">
-                            {error}
-                        </p>
-                    )}
-                    {success && (
-                        <p className="rounded-lg bg-green-50 px-3 py-2 text-base text-green-600 dark:bg-green-950/30">
-                            {success}
-                        </p>
-                    )}
-                    {savedAt && (
-                        <p className="rounded-lg bg-green-50 px-3 py-2 text-base text-green-600 dark:bg-green-950/30">
-                            {"자동 저장 완료 " + fmtTime(savedAt)}
-                        </p>
-                    )}
+                        {toggle(
+                            "published",
+                            form.published ? "Published" : "Draft",
+                            [
+                                "저장 시 즉시 공개됩니다",
+                                "저장해도 공개되지 않습니다",
+                            ]
+                        )}
+                        {toggle("featured", "Featured", [
+                            "랜딩 페이지에 노출됩니다",
+                            "랜딩 페이지에 노출되지 않습니다",
+                        ])}
 
-                    <div className="flex items-center gap-3 pt-2">
-                        <button
-                            onClick={handleSave}
-                            disabled={saving || !isDirty}
-                            className="rounded-lg bg-(--color-accent) px-5 py-2 text-base font-semibold text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
-                        >
-                            {saving ? "저장 중..." : "저장"}
-                        </button>
-                        <button
-                            onClick={handleBack}
-                            className="rounded-lg border border-(--color-border) px-5 py-2 text-base font-medium text-(--color-muted) hover:text-(--color-foreground)"
-                        >
-                            취소
-                        </button>
+                        {/* SEO 설정 */}
+                        <details className="group rounded-lg border border-(--color-border) bg-(--color-surface-subtle) open:bg-(--color-surface)">
+                            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)">
+                                <span>SEO 설정 (선택사항)</span>
+                                <span className="text-(--color-muted) transition-transform group-open:rotate-180">
+                                    ▼
+                                </span>
+                            </summary>
+                            <div className="space-y-4 border-t border-(--color-border) p-4">
+                                {field("meta_title", "SEO 제목 (Meta Title)", {
+                                    placeholder:
+                                        "비워두면 프로젝트 제목이 사용됩니다",
+                                })}
+                                {field(
+                                    "meta_description",
+                                    "SEO 설명 (Meta Description)",
+                                    {
+                                        rows: 2,
+                                        placeholder:
+                                            "비워두면 프로젝트 요약이 사용됩니다",
+                                    }
+                                )}
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                                        소셜 공유 이미지 (OG Image)
+                                    </label>
+                                    <ThumbnailUploadField
+                                        value={form.og_image}
+                                        onChange={(url) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                og_image: url,
+                                            }))
+                                        }
+                                        placeholder="비워두면 썸네일 혹은 전역 설정이 사용됩니다"
+                                        folderPath={`portfolio/${form.slug || "untitled"}`}
+                                    />
+                                </div>
+                            </div>
+                        </details>
+                    </section>
+                </div>
+
+                {/* 피드백 */}
+                {error && (
+                    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-base text-red-500 dark:bg-red-950/30">
+                        {error}
+                    </p>
+                )}
+                {success && (
+                    <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-base text-green-600 dark:bg-green-950/30">
+                        {success}
+                    </p>
+                )}
+
+                {/* Sticky 저장 바 */}
+                <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+                    <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
+                        <div className="text-sm text-(--color-muted)">
+                            {savedAt && (
+                                <span className="text-green-600">
+                                    자동 저장 완료 {fmtTime(savedAt)}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleBack}
+                                className="rounded-lg border border-(--color-border) px-5 py-2 text-base font-medium whitespace-nowrap text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving || !isDirty}
+                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                            >
+                                {saving ? "저장 중..." : "저장"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -569,7 +667,7 @@ export default function PortfolioPanel() {
                     {items.map((item) => (
                         <div
                             key={item.id}
-                            className="flex items-center gap-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 transition-colors hover:border-(--color-accent)/50"
+                            className="hover:border-(--color-accent)/30/50 flex items-center gap-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 transition-colors"
                         >
                             <div className="min-w-0 flex-1 space-y-1.5">
                                 <div className="mb-0.5 flex flex-wrap items-center gap-2">
