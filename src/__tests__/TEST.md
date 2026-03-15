@@ -1,6 +1,6 @@
 # Vitest 테스트 스위트 문서 (Testing Suite Documentation)
 
-이 문서는 `folium-online` 프로젝트에 구성된 Vitest 테스트 스위트의 범위와 역할을 설명합니다.
+이 문서는 `portare-folium` 프로젝트에 구성된 Vitest 테스트 스위트의 범위와 역할을 설명합니다.
 
 ## 코어 설정 (Core Setup)
 

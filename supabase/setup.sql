@@ -1,6 +1,6 @@
 -- ============================================================
 -- setup.sql
--- FoliumOnline 포트폴리오 전체 스키마 초기화
+-- PortareFolium 포트폴리오 전체 스키마 초기화
 --
 -- 실행: Supabase 대시보드 → SQL Editor → 이 파일 내용 붙여넣기 후 실행
 -- ============================================================
@@ -212,9 +212,9 @@ USING (bucket_id = 'images');
 
 INSERT INTO site_config (key, value) VALUES
     ('color_scheme',    '"blue"'),
-    ('site_name',       '"FoliumOnline"'),
+    ('site_name',       '"PortareFolium"'),
     ('job_field',       '"game"'),
     ('job_fields',      '[{"id":"web","name":"Web","emoji":"🌐"},{"id":"game","name":"Game","emoji":"🎮"}]'),
-    ('seo_config',      '{"default_title":"FoliumOnline","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
+    ('seo_config',      '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
     ('resume_layout',   '"modern"')
 ON CONFLICT (key) DO NOTHING;

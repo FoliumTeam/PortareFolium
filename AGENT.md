@@ -150,7 +150,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-**Project:** `folium-online` — Astro + React 기반 개인 포트폴리오 사이트
+**Project:** `portare-folium` — Astro + React 기반 개인 포트폴리오 사이트
 
 **Stack:**
 

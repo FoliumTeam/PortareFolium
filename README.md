@@ -1,4 +1,4 @@
-# FoliumOnline
+# PortareFolium
 
 Astro 5 + Supabase 기반 포트폴리오 & 기술 블로그 템플릿. Admin 대시보드에서 블로그, 포트폴리오, About me 콘텐츠를 직접 관리함.
 
