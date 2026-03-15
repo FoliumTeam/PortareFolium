@@ -21,6 +21,11 @@ export default function TagsPanel() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    // OKLCH Picker 상태
+    const [showPicker, setShowPicker] = useState(false);
+    const [oklchL, setOklchL] = useState(0.6);
+    const [oklchC, setOklchC] = useState(0.15);
+    const [oklchH, setOklchH] = useState(250);
 
     const loadTags = async () => {
         if (!browserClient) return;
@@ -46,11 +51,34 @@ export default function TagsPanel() {
             .replace(/-+/g, "-")
             .slice(0, 80);
 
+    // oklch(L C H) 문자열 파싱
+    const parseOklch = (s: string) => {
+        const m = s.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+        if (!m) return null;
+        return {
+            l: parseFloat(m[1]),
+            c: parseFloat(m[2]),
+            h: parseFloat(m[3]),
+        };
+    };
+
+    // 슬라이더 변경 시 oklch 상태 + form.color 동기화
+    const applyOklch = (l: number, c: number, h: number) => {
+        setOklchL(l);
+        setOklchC(c);
+        setOklchH(h);
+        setForm((f) => ({
+            ...f,
+            color: `oklch(${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(0)})`,
+        }));
+    };
+
     const openNew = () => {
         setForm({ slug: "", name: "", color: "" });
         setEditSlug("new");
         setError(null);
         setSuccess(null);
+        setShowPicker(false);
     };
 
     const openEdit = (tag: Tag) => {
@@ -62,6 +90,14 @@ export default function TagsPanel() {
         setEditSlug(tag.slug);
         setError(null);
         setSuccess(null);
+        setShowPicker(false);
+        // 기존 색상이 oklch면 슬라이더 동기화
+        const parsed = parseOklch(tag.color ?? "");
+        if (parsed) {
+            setOklchL(parsed.l);
+            setOklchC(parsed.c);
+            setOklchH(parsed.h);
+        }
     };
 
     const handleSave = async () => {
@@ -198,20 +234,34 @@ export default function TagsPanel() {
                         />
                     </div>
                     <div>
-                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                            색상 (hex, rgb 등)
-                        </label>
+                        <div className="mb-1 flex items-center justify-between">
+                            <label className="text-base font-medium text-(--color-muted)">
+                                색상 (oklch, hex, rgb 등)
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => setShowPicker((p) => !p)}
+                                className="rounded px-2 py-0.5 text-sm font-medium text-(--color-accent) hover:underline"
+                            >
+                                {showPicker ? "Picker 닫기" : "OKLCH Picker"}
+                            </button>
+                        </div>
                         <div className="flex items-center gap-2">
                             <input
                                 type="text"
                                 value={form.color}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        color: e.target.value,
-                                    }))
-                                }
-                                placeholder="#3b82f6"
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    setForm((f) => ({ ...f, color: v }));
+                                    // oklch 입력 시 슬라이더 동기화
+                                    const p = parseOklch(v);
+                                    if (p) {
+                                        setOklchL(p.l);
+                                        setOklchC(p.c);
+                                        setOklchH(p.h);
+                                    }
+                                }}
+                                placeholder="oklch(0.600 0.150 250)"
                                 className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
                             />
                             {form.color && (
@@ -222,6 +272,86 @@ export default function TagsPanel() {
                                 />
                             )}
                         </div>
+                        {showPicker && (
+                            // OKLCH 슬라이더 Picker
+                            <div className="mt-3 space-y-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
+                                <div>
+                                    <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                        <span>Lightness</span>
+                                        <span>{oklchL.toFixed(3)}</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={1}
+                                        step={0.001}
+                                        value={oklchL}
+                                        onChange={(e) =>
+                                            applyOklch(
+                                                parseFloat(e.target.value),
+                                                oklchC,
+                                                oklchH
+                                            )
+                                        }
+                                        className="w-full cursor-pointer"
+                                        style={{
+                                            background: `linear-gradient(to right, oklch(0 0 ${oklchH}), oklch(1 0 ${oklchH}))`,
+                                            accentColor: "var(--color-accent)",
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                        <span>Chroma</span>
+                                        <span>{oklchC.toFixed(3)}</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={0.4}
+                                        step={0.001}
+                                        value={oklchC}
+                                        onChange={(e) =>
+                                            applyOklch(
+                                                oklchL,
+                                                parseFloat(e.target.value),
+                                                oklchH
+                                            )
+                                        }
+                                        className="w-full cursor-pointer"
+                                        style={{
+                                            background: `linear-gradient(to right, oklch(${oklchL} 0 ${oklchH}), oklch(${oklchL} 0.4 ${oklchH}))`,
+                                            accentColor: "var(--color-accent)",
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                        <span>Hue</span>
+                                        <span>{oklchH.toFixed(0)}°</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={360}
+                                        step={1}
+                                        value={oklchH}
+                                        onChange={(e) =>
+                                            applyOklch(
+                                                oklchL,
+                                                oklchC,
+                                                parseFloat(e.target.value)
+                                            )
+                                        }
+                                        className="w-full cursor-pointer"
+                                        style={{
+                                            background: `linear-gradient(to right, oklch(${oklchL} ${oklchC} 0), oklch(${oklchL} ${oklchC} 60), oklch(${oklchL} ${oklchC} 120), oklch(${oklchL} ${oklchC} 180), oklch(${oklchL} ${oklchC} 240), oklch(${oklchL} ${oklchC} 300), oklch(${oklchL} ${oklchC} 360))`,
+                                            accentColor: "var(--color-accent)",
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex gap-2">
                         <button
