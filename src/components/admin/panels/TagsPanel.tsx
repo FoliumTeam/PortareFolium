@@ -201,18 +201,27 @@ export default function TagsPanel() {
                         <label className="mb-1 block text-base font-medium text-(--color-muted)">
                             색상 (hex, rgb 등)
                         </label>
-                        <input
-                            type="text"
-                            value={form.color}
-                            onChange={(e) =>
-                                setForm((f) => ({
-                                    ...f,
-                                    color: e.target.value,
-                                }))
-                            }
-                            placeholder="#3b82f6"
-                            className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
-                        />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                value={form.color}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        color: e.target.value,
+                                    }))
+                                }
+                                placeholder="#3b82f6"
+                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
+                            />
+                            {form.color && (
+                                // 색상 preview swatch
+                                <span
+                                    className="h-9 w-9 flex-shrink-0 rounded-lg border border-(--color-border)"
+                                    style={{ backgroundColor: form.color }}
+                                />
+                            )}
+                        </div>
                     </div>
                     <div className="flex gap-2">
                         <button
