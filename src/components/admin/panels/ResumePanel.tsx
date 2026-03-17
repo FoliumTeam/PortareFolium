@@ -88,6 +88,137 @@ function fmtTime(d: Date): string {
     });
 }
 
+// 월(Month) 선택 캘린더 UI
+function MonthPicker({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    // 현재 값에서 연/월 파싱
+    const parsedYear = value ? parseInt(value.slice(0, 4)) : NaN;
+    const parsedMonth = value ? parseInt(value.slice(5, 7)) : NaN;
+    const [pickerYear, setPickerYear] = useState(() =>
+        !isNaN(parsedYear) ? parsedYear : new Date().getFullYear()
+    );
+
+    // 팝업 열릴 때 연도 동기화
+    useEffect(() => {
+        if (open) {
+            const y = value ? parseInt(value.slice(0, 4)) : NaN;
+            setPickerYear(!isNaN(y) ? y : new Date().getFullYear());
+        }
+    }, [open, value]);
+
+    // 외부 클릭 시 닫기
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node))
+                setOpen(false);
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [open]);
+
+    const MONTHS = [
+        "1월",
+        "2월",
+        "3월",
+        "4월",
+        "5월",
+        "6월",
+        "7월",
+        "8월",
+        "9월",
+        "10월",
+        "11월",
+        "12월",
+    ];
+
+    return (
+        <div ref={ref} className="relative flex flex-col space-y-1">
+            <label className="text-sm font-medium text-(--color-muted)">
+                {label}
+            </label>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-left text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+            >
+                {value || <span className="text-(--color-muted)">YYYY-MM</span>}
+            </button>
+            {open && (
+                <div className="absolute top-full left-0 z-50 mt-1 min-w-[200px] rounded-lg border border-(--color-border) bg-(--color-surface) p-3 shadow-lg">
+                    {/* 연도 네비게이션 */}
+                    <div className="mb-2 flex items-center justify-between">
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear((y) => y - 1)}
+                            className="rounded px-2 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            ‹
+                        </button>
+                        <span className="text-sm font-semibold text-(--color-foreground)">
+                            {pickerYear}년
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear((y) => y + 1)}
+                            className="rounded px-2 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            ›
+                        </button>
+                    </div>
+                    {/* 12개월 그리드 */}
+                    <div className="grid grid-cols-4 gap-1">
+                        {MONTHS.map((m, i) => {
+                            const mNum = i + 1;
+                            const selected =
+                                parsedYear === pickerYear &&
+                                parsedMonth === mNum;
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(
+                                            `${pickerYear}-${String(mNum).padStart(2, "0")}`
+                                        );
+                                        setOpen(false);
+                                    }}
+                                    className={`rounded px-1 py-1.5 text-xs font-medium transition-colors ${selected ? "bg-(--color-accent) text-(--color-on-accent)" : "text-(--color-muted) hover:bg-(--color-border) hover:text-(--color-foreground)"}`}
+                                >
+                                    {m}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {/* 지우기 */}
+                    {value && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onChange("");
+                                setOpen(false);
+                            }}
+                            className="mt-2 w-full text-center text-xs text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            지우기
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // 직무 분야 필터 매칭
 function matchesJobField(
     jobField: string | string[] | undefined,
@@ -586,8 +717,8 @@ export default function ResumePanel() {
                                                     });
                                                 }}
                                             />
-                                            <InputField
-                                                label="시작일 (YYYY-MM)"
+                                            <MonthPicker
+                                                label="시작일"
                                                 value={work.startDate || ""}
                                                 onChange={(v) => {
                                                     const w = [
@@ -600,7 +731,7 @@ export default function ResumePanel() {
                                                     });
                                                 }}
                                             />
-                                            <InputField
+                                            <MonthPicker
                                                 label="종료일 (비워두면 '현재')"
                                                 value={work.endDate || ""}
                                                 onChange={(v) => {
@@ -938,7 +1069,7 @@ export default function ResumePanel() {
                                                     });
                                                 }}
                                             />
-                                            <InputField
+                                            <MonthPicker
                                                 label="시작일"
                                                 value={proj.startDate || ""}
                                                 onChange={(v) => {
@@ -952,7 +1083,7 @@ export default function ResumePanel() {
                                                     });
                                                 }}
                                             />
-                                            <InputField
+                                            <MonthPicker
                                                 label="종료일"
                                                 value={proj.endDate || ""}
                                                 onChange={(v) => {
@@ -1479,7 +1610,7 @@ export default function ResumePanel() {
                                                 });
                                             }}
                                         />
-                                        <InputField
+                                        <MonthPicker
                                             label="시작일"
                                             value={ed.startDate || ""}
                                             onChange={(v) => {
@@ -1493,7 +1624,7 @@ export default function ResumePanel() {
                                                 });
                                             }}
                                         />
-                                        <InputField
+                                        <MonthPicker
                                             label="종료일"
                                             value={ed.endDate || ""}
                                             onChange={(v) => {
