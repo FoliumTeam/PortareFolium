@@ -581,6 +581,25 @@ export default function ResumePanel() {
                                         />
                                         날짜에서 일(Day) 숨기기
                                     </label>
+                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                        <input
+                                            type="checkbox"
+                                            checked={work.markdown || false}
+                                            onChange={(e) => {
+                                                const w = [...resumeData.work!];
+                                                w[idx] = {
+                                                    ...w[idx],
+                                                    markdown: e.target.checked,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: w,
+                                                });
+                                            }}
+                                            className="accent-(--color-accent)"
+                                        />
+                                        요약/성과를 마크다운으로 렌더링
+                                    </label>
                                     <TextAreaField
                                         label="요약 (Summary)"
                                         value={work.summary || ""}
@@ -1015,6 +1034,49 @@ export default function ResumePanel() {
                                                         }}
                                                         className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                                     />
+                                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                sec.markdown ||
+                                                                false
+                                                            }
+                                                            onChange={(e) => {
+                                                                const p = [
+                                                                    ...resumeData.projects!,
+                                                                ];
+                                                                const sections =
+                                                                    p[
+                                                                        idx
+                                                                    ].sections!.map(
+                                                                        (
+                                                                            s,
+                                                                            i
+                                                                        ) =>
+                                                                            i ===
+                                                                            sIdx
+                                                                                ? {
+                                                                                      ...s,
+                                                                                      markdown:
+                                                                                          e
+                                                                                              .target
+                                                                                              .checked,
+                                                                                  }
+                                                                                : s
+                                                                    );
+                                                                p[idx] = {
+                                                                    ...p[idx],
+                                                                    sections,
+                                                                };
+                                                                setResumeData({
+                                                                    ...resumeData,
+                                                                    projects: p,
+                                                                });
+                                                            }}
+                                                            className="accent-(--color-accent)"
+                                                        />
+                                                        마크다운으로 렌더링
+                                                    </label>
                                                 </div>
                                             )
                                         )}

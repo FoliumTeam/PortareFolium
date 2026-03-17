@@ -43,6 +43,8 @@ export interface ResumeWork {
     description?: string;
     // 날짜에서 일(Day) 숨기고 월(Month)만 표시
     hideDays?: boolean;
+    // 요약/성과를 마크다운으로 렌더링
+    markdown?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
 }
@@ -119,6 +121,8 @@ export interface ResumeReference {
 export interface ResumeProjectSection {
     title: string;
     content: string;
+    // 내용을 마크다운으로 렌더링
+    markdown?: boolean;
 }
 
 export interface ResumeProject {

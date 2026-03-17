@@ -3,6 +3,7 @@
  * Modern 레이아웃: 한 컬럼, 섹션별 구분 명확
  */
 import type { Resume } from "@/types/resume";
+import { renderMarkdown } from "@/lib/markdown";
 
 interface Props {
     resume: Resume;
@@ -35,6 +36,30 @@ const getLabel = (key: string) =>
     (resume.sectionLabels ?? {})[key] ||
     defaultSectionLabels[key] ||
     key.charAt(0).toUpperCase() + key.slice(1);
+
+// 경력 마크다운 사전 렌더링
+const workMarkdown = await Promise.all(
+    (resume.work || []).map(async (w) => {
+        if (!w.markdown) return { summary: null, highlights: null };
+        return {
+            summary: w.summary ? await renderMarkdown(w.summary) : null,
+            highlights: w.highlights
+                ? await Promise.all(w.highlights.map((h) => renderMarkdown(h)))
+                : null,
+        };
+    })
+);
+// 프로젝트 섹션 마크다운 사전 렌더링
+const projectsMarkdown = await Promise.all(
+    (resume.projects || []).map(async (proj) => {
+        if (!proj.sections) return [] as (string | null)[];
+        return Promise.all(
+            proj.sections.map(async (sec) =>
+                sec.markdown ? renderMarkdown(sec.content) : null
+            )
+        );
+    })
+);
 
 // 날짜 범위 포맷팅 헬퍼 함수
 const formatDateRange = (
@@ -189,7 +214,7 @@ const formatDateRange = (
                                 {getLabel("work")}
                             </h2>
                             <div class="resume-timeline">
-                                {sectionValue.map((workItem) => (
+                                {sectionValue.map((workItem, wIdx: number) => (
                                     <div class="resume-timeline-item">
                                         {/* accent 색 도트 */}
                                         <div class="resume-timeline-dot" />
@@ -229,16 +254,29 @@ const formatDateRange = (
                                             ) : null}
                                             {/* 요약 */}
                                             {workItem.summary ? (
-                                                <p class="resume-timeline-summary">
-                                                    {workItem.summary}
-                                                </p>
+                                                workMarkdown[wIdx]?.summary ? (
+                                                    <div
+                                                        class="resume-timeline-summary resume-markdown"
+                                                        set:html={
+                                                            workMarkdown[wIdx]
+                                                                .summary
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <p class="resume-timeline-summary">
+                                                        {workItem.summary}
+                                                    </p>
+                                                )
                                             ) : null}
                                             {/* 하이라이트 불릿 */}
                                             {workItem.highlights &&
                                             workItem.highlights.length > 0 ? (
                                                 <ul class="resume-timeline-highlights">
                                                     {workItem.highlights.map(
-                                                        (highlight: string) => (
+                                                        (
+                                                            highlight: string,
+                                                            hIdx: number
+                                                        ) => (
                                                             <li>
                                                                 <span
                                                                     class="resume-bullet"
@@ -246,9 +284,29 @@ const formatDateRange = (
                                                                 >
                                                                     ◆
                                                                 </span>
-                                                                <span>
-                                                                    {highlight}
-                                                                </span>
+                                                                {workMarkdown[
+                                                                    wIdx
+                                                                ]?.highlights?.[
+                                                                    hIdx
+                                                                ] ? (
+                                                                    <span
+                                                                        class="resume-markdown"
+                                                                        set:html={
+                                                                            workMarkdown[
+                                                                                wIdx
+                                                                            ]
+                                                                                .highlights![
+                                                                                hIdx
+                                                                            ]
+                                                                        }
+                                                                    />
+                                                                ) : (
+                                                                    <span>
+                                                                        {
+                                                                            highlight
+                                                                        }
+                                                                    </span>
+                                                                )}
                                                             </li>
                                                         )
                                                     )}
@@ -342,7 +400,7 @@ const formatDateRange = (
                                 {getLabel("projects")}
                             </h2>
                             <div class="resume-projects-grid">
-                                {sectionValue.map((project) => (
+                                {sectionValue.map((project, pIdx: number) => (
                                     <div class="resume-project-card">
                                         {project.name ? (
                                             <h3 class="resume-project-name">
@@ -372,19 +430,36 @@ const formatDateRange = (
                                         {project.sections &&
                                         project.sections.length > 0 ? (
                                             project.sections.map(
-                                                (sec: {
-                                                    title: string;
-                                                    content: string;
-                                                }) => (
+                                                (
+                                                    sec: {
+                                                        title: string;
+                                                        content: string;
+                                                        markdown?: boolean;
+                                                    },
+                                                    sIdx: number
+                                                ) => (
                                                     <div class="resume-project-section">
                                                         {sec.title ? (
                                                             <p class="resume-project-section-title">
                                                                 {sec.title}
                                                             </p>
                                                         ) : null}
-                                                        <p class="resume-project-description">
-                                                            {sec.content}
-                                                        </p>
+                                                        {projectsMarkdown[
+                                                            pIdx
+                                                        ]?.[sIdx] ? (
+                                                            <div
+                                                                class="resume-project-description resume-markdown"
+                                                                set:html={
+                                                                    projectsMarkdown[
+                                                                        pIdx
+                                                                    ][sIdx]
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <p class="resume-project-description">
+                                                                {sec.content}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 )
                                             )
