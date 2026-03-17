@@ -19,6 +19,7 @@ import TagsPanel from "@/components/admin/panels/TagsPanel";
 import AboutPanel from "@/components/admin/panels/AboutPanel";
 import SiteConfigPanel from "@/components/admin/panels/SiteConfigPanel";
 import ResumePanel from "@/components/admin/panels/ResumePanel";
+import MigrationsPanel from "@/components/admin/panels/MigrationsPanel";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
@@ -42,6 +43,7 @@ const TABS = [
     { id: "about", label: "About", icon: "👤" },
     { id: "resume", label: "이력서", icon: "📄" },
     { id: "config", label: "사이트 설정", icon: "⚙️" },
+    { id: "migrations", label: "DB 마이그레이션", icon: "🗄️" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -224,6 +226,9 @@ export default function AdminDashboard() {
                     )}
                     {activeTab === "config" && (
                         <SiteConfigPanel key={`config-${tabKey}`} />
+                    )}
+                    {activeTab === "migrations" && (
+                        <MigrationsPanel key={`migrations-${tabKey}`} />
                     )}
                 </main>
             </div>
