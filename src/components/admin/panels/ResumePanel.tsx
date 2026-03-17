@@ -344,6 +344,45 @@ export default function ResumePanel() {
                 </div>
             </section>
 
+            {/* 섹션 제목 커스텀 */}
+            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                <h3 className="text-xl font-bold text-(--color-foreground)">
+                    섹션 제목 커스텀
+                </h3>
+                <p className="text-sm text-(--color-muted)">
+                    섹션 제목 앞에 이모지를 추가하거나 원하는 텍스트로 변경할 수
+                    있습니다. 비워두면 기본값을 사용합니다.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {[
+                        { key: "work", defaultLabel: "경력" },
+                        { key: "projects", defaultLabel: "프로젝트" },
+                        { key: "education", defaultLabel: "학력" },
+                        { key: "skills", defaultLabel: "기술" },
+                        { key: "languages", defaultLabel: "언어" },
+                        { key: "awards", defaultLabel: "수상" },
+                        { key: "volunteer", defaultLabel: "봉사 활동" },
+                        { key: "certificates", defaultLabel: "자격증" },
+                    ].map(({ key, defaultLabel }) => (
+                        <InputField
+                            key={key}
+                            label={defaultLabel}
+                            value={resumeData.sectionLabels?.[key] || ""}
+                            onChange={(v) => {
+                                setResumeData({
+                                    ...resumeData,
+                                    sectionLabels: {
+                                        ...resumeData.sectionLabels,
+                                        [key]: v,
+                                    },
+                                });
+                            }}
+                            placeholder={`예: 💼 ${defaultLabel}`}
+                        />
+                    ))}
+                </div>
+            </section>
+
             {/* 기본 정보 */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <h3 className="text-xl font-bold text-(--color-foreground)">

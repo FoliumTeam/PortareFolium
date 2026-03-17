@@ -16,6 +16,25 @@ const sections = Object.entries(resume).filter(
     ([key]) => key !== "basics" && key !== "$schema"
 );
 
+// 섹션 기본 제목 맵
+const defaultSectionLabels: Record<string, string> = {
+    work: "경력",
+    skills: "기술",
+    education: "학력",
+    projects: "프로젝트",
+    volunteer: "봉사 활동",
+    awards: "수상",
+    certificates: "자격증",
+    publications: "출판물",
+    languages: "언어",
+    interests: "관심사",
+    references: "추천인",
+};
+const getLabel = (key: string) =>
+    (resume.sectionLabels ?? {})[key] ||
+    defaultSectionLabels[key] ||
+    key.charAt(0).toUpperCase() + key.slice(1);
+
 // 날짜 범위 포맷팅 헬퍼 함수
 const formatDateRange = (
     startDate?: string,
@@ -130,7 +149,9 @@ const formatDateRange = (
                 if (sectionKey === "skills" && Array.isArray(sectionValue)) {
                     return (
                         <section class="resume-section">
-                            <h2 class="resume-section-title">기술</h2>
+                            <h2 class="resume-section-title">
+                                {getLabel("skills")}
+                            </h2>
                             <div class="resume-skills-compact">
                                 {sectionValue.map((skill, skillIndex) => (
                                     <>
@@ -155,7 +176,9 @@ const formatDateRange = (
                 if (sectionKey === "work" && Array.isArray(sectionValue)) {
                     return (
                         <section class="resume-section">
-                            <h2 class="resume-section-title">경력</h2>
+                            <h2 class="resume-section-title">
+                                {getLabel("work")}
+                            </h2>
                             {sectionValue.map((workItem) => (
                                 <div class="resume-item-compact">
                                     <div class="resume-item-header-compact">
@@ -215,7 +238,9 @@ const formatDateRange = (
                 if (sectionKey === "education" && Array.isArray(sectionValue)) {
                     return (
                         <section class="resume-section">
-                            <h2 class="resume-section-title">학력</h2>
+                            <h2 class="resume-section-title">
+                                {getLabel("education")}
+                            </h2>
                             {sectionValue.map((education) => (
                                 <div class="resume-item-compact">
                                     <div class="resume-item-header-compact">
@@ -279,7 +304,9 @@ const formatDateRange = (
                 if (sectionKey === "projects" && Array.isArray(sectionValue)) {
                     return (
                         <section class="resume-section">
-                            <h2 class="resume-section-title">프로젝트</h2>
+                            <h2 class="resume-section-title">
+                                {getLabel("projects")}
+                            </h2>
                             {sectionValue.map((project) => (
                                 <div class="resume-item-compact">
                                     <div class="resume-item-header-compact">
@@ -332,19 +359,7 @@ const formatDateRange = (
 
                 // 기타 섹션 (volunteer, awards, certificates, publications, languages, interests, references)
                 if (Array.isArray(sectionValue) && sectionValue.length > 0) {
-                    const sectionTitleMap: { [key: string]: string } = {
-                        volunteer: "봉사 활동",
-                        awards: "수상",
-                        certificates: "자격증",
-                        publications: "출판물",
-                        languages: "언어",
-                        interests: "관심사",
-                        references: "추천인",
-                    };
-                    const sectionTitle =
-                        sectionTitleMap[sectionKey] ||
-                        sectionKey.charAt(0).toUpperCase() +
-                            sectionKey.slice(1);
+                    const sectionTitle = getLabel(sectionKey);
 
                     return (
                         <section class="resume-section">
