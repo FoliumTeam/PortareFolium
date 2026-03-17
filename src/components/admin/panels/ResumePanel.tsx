@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { uploadImageToSupabase } from "@/lib/image-upload";
+import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import {
     JobFieldSelector,
     JobFieldBadges,
@@ -76,6 +77,15 @@ function TextAreaField({
 
 type ResumeLayout = "classic" | "modern" | "minimal";
 
+// 타임스탬프 포맷 (시:분:초)
+function fmtTime(d: Date): string {
+    return d.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -85,6 +95,9 @@ export default function ResumePanel() {
         type: "error" | "success";
         msg: string;
     } | null>(null);
+    const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
+    const savedDataRef = useRef<string>("");
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
 
@@ -142,17 +155,13 @@ export default function ResumePanel() {
                 };
                 if (!error && row) {
                     setRowId(row.id);
-                    setResumeData({
+                    const loaded = {
                         ...defaultResume,
                         ...(row.data as Resume),
-                    });
-                    setJsonInput(
-                        JSON.stringify(
-                            { ...defaultResume, ...(row.data as Resume) },
-                            null,
-                            2
-                        )
-                    );
+                    };
+                    savedDataRef.current = JSON.stringify(loaded);
+                    setResumeData(loaded);
+                    setJsonInput(JSON.stringify(loaded, null, 2));
                 } else {
                     setResumeData(defaultResume);
                 }
@@ -165,6 +174,30 @@ export default function ResumePanel() {
             }
         );
     }, []);
+
+    // dirty 상태 감지
+    useEffect(() => {
+        if (!resumeData || !savedDataRef.current) return;
+        setIsDirty(JSON.stringify(resumeData) !== savedDataRef.current);
+    }, [resumeData]);
+
+    // 자동 저장 (기존 row가 있을 때만)
+    const autoSave = async () => {
+        if (!browserClient || !resumeData || !rowId) return;
+        try {
+            const { error } = await browserClient
+                .from("resume_data")
+                .update({ data: resumeData as any })
+                .eq("id", rowId);
+            if (!error) {
+                savedDataRef.current = JSON.stringify(resumeData);
+                setIsDirty(false);
+                setSavedAt(new Date());
+            }
+        } catch {}
+    };
+
+    useAutoSave(isDirty, rowId !== null, autoSave);
 
     const handleSave = async () => {
         if (!browserClient || !resumeData) return;
@@ -197,6 +230,9 @@ export default function ResumePanel() {
                 .upsert({ key: "resume_layout", value: resumeLayout });
             if (layoutErr) throw layoutErr;
 
+            savedDataRef.current = JSON.stringify(resumeData);
+            setIsDirty(false);
+            setSavedAt(new Date());
             setStatus({
                 type: "success",
                 msg: "저장됐습니다. 이력서 페이지에 즉시 반영됩니다.",
@@ -258,13 +294,20 @@ export default function ResumePanel() {
                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                     이력서 편집
                 </h2>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                    {saving ? "저장 중..." : "변경사항 저장"}
-                </button>
+                <div className="flex items-center gap-3">
+                    {savedAt && (
+                        <span className="text-sm text-green-600">
+                            자동 저장 완료 {fmtTime(savedAt)}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || !isDirty}
+                        className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                        {saving ? "저장 중..." : "변경사항 저장"}
+                    </button>
+                </div>
             </div>
 
             {status && (
@@ -1388,10 +1431,15 @@ export default function ResumePanel() {
                 />
             </section>
 
-            <div className="flex justify-end border-t border-(--color-border) pt-6">
+            <div className="flex items-center justify-end gap-3 border-t border-(--color-border) pt-6">
+                {savedAt && (
+                    <span className="text-sm text-green-600">
+                        자동 저장 완료 {fmtTime(savedAt)}
+                    </span>
+                )}
                 <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !isDirty}
                     className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                     {saving ? "저장 중..." : "변경사항 저장"}
