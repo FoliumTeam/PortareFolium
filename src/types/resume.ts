@@ -121,6 +121,8 @@ export interface ResumeProject {
     startDate?: string;
     endDate?: string;
     url?: string;
+    // url에 표시할 커스텀 label (기본값: "라이브 URL")
+    urlLabel?: string;
     roles?: string[];
     entity?: string;
     type?: string;

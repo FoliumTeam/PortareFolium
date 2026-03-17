@@ -701,6 +701,36 @@ export default function ResumePanel() {
                                                 });
                                             }}
                                         />
+                                        <InputField
+                                            label="라이브 URL"
+                                            value={proj.url || ""}
+                                            onChange={(v) => {
+                                                const p = [
+                                                    ...resumeData.projects!,
+                                                ];
+                                                p[idx].url = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    projects: p,
+                                                });
+                                            }}
+                                            placeholder="https://..."
+                                        />
+                                        <InputField
+                                            label="URL 표시 텍스트 (기본: 라이브 URL)"
+                                            value={proj.urlLabel || ""}
+                                            onChange={(v) => {
+                                                const p = [
+                                                    ...resumeData.projects!,
+                                                ];
+                                                p[idx].urlLabel = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    projects: p,
+                                                });
+                                            }}
+                                            placeholder="예: 게임 시연 영상, 발표 자료"
+                                        />
                                     </div>
                                     <TextAreaField
                                         label="설명 (Description)"
