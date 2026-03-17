@@ -73,6 +73,8 @@ export interface ResumeAward {
     date?: string;
     awarder?: string;
     summary?: string;
+    // summary를 마크다운으로 렌더링할지 여부
+    markdown?: boolean;
 }
 
 export interface ResumeCertificate {

@@ -12,6 +12,7 @@ import type {
     ResumeWork,
     ResumeProject,
     ResumeEducation,
+    ResumeAward,
     ResumeSkill,
     ResumeLanguage,
     ResumeBasics,
@@ -107,6 +108,7 @@ export default function ResumePanel() {
     const [editingEducation, setEditingEducation] = useState<number | null>(
         null
     );
+    const [editingAward, setEditingAward] = useState<number | null>(null);
     const [editingSkill, setEditingSkill] = useState<number | null>(null);
     const [editingSkillKeywords, setEditingSkillKeywords] =
         useState<string>("");
@@ -1060,6 +1062,225 @@ export default function ResumePanel() {
                                                     setResumeData({
                                                         ...resumeData,
                                                         education: e,
+                                                    });
+                                                }
+                                            }}
+                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* 수상 (Awards) */}
+            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-(--color-foreground)">
+                        수상 (Awards)
+                    </h3>
+                    <button
+                        onClick={() => {
+                            setBackupData(resumeData);
+                            const newAward: ResumeAward = {
+                                title: "",
+                                date: "",
+                                awarder: "",
+                                summary: "",
+                            };
+                            setResumeData({
+                                ...resumeData,
+                                awards: [
+                                    newAward,
+                                    ...(resumeData.awards || []),
+                                ],
+                            });
+                            setEditingAward(0);
+                        }}
+                        className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    >
+                        + 수상 추가
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    {(resumeData.awards || []).map((award, idx) => (
+                        <div
+                            key={idx}
+                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                        >
+                            {editingAward === idx ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <InputField
+                                            label="수상명"
+                                            value={award.title || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards ||
+                                                        []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    title: v,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: a,
+                                                });
+                                            }}
+                                        />
+                                        <InputField
+                                            label="수여기관"
+                                            value={award.awarder || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards ||
+                                                        []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    awarder: v,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: a,
+                                                });
+                                            }}
+                                        />
+                                        <InputField
+                                            label="날짜 (YYYY-MM)"
+                                            value={award.date || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards ||
+                                                        []),
+                                                ];
+                                                a[idx] = { ...a[idx], date: v };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: a,
+                                                });
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-(--color-muted)">
+                                                내용
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const a = [
+                                                        ...(resumeData.awards ||
+                                                            []),
+                                                    ];
+                                                    a[idx] = {
+                                                        ...a[idx],
+                                                        markdown:
+                                                            !a[idx].markdown,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        awards: a,
+                                                    });
+                                                }}
+                                                className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                                                    award.markdown
+                                                        ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                        : "border border-(--color-border) text-(--color-muted)"
+                                                }`}
+                                            >
+                                                Markdown
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            value={award.summary || ""}
+                                            onChange={(e) => {
+                                                const a = [
+                                                    ...(resumeData.awards ||
+                                                        []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    summary: e.target.value,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: a,
+                                                });
+                                            }}
+                                            rows={3}
+                                            placeholder={
+                                                award.markdown
+                                                    ? "마크다운 형식으로 작성"
+                                                    : "수상 내용"
+                                            }
+                                            className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button
+                                            onClick={() => {
+                                                if (backupData)
+                                                    setResumeData(backupData);
+                                                setEditingAward(null);
+                                            }}
+                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                        >
+                                            취소
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(null);
+                                                setEditingAward(null);
+                                            }}
+                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                        >
+                                            완료
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-start justify-between">
+                                    <div className="mr-12">
+                                        <h4 className="font-semibold text-(--color-foreground)">
+                                            {award.title}
+                                        </h4>
+                                        <p className="text-sm text-(--color-muted)">
+                                            {award.awarder}
+                                            {award.date
+                                                ? ` · ${award.date}`
+                                                : ""}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(resumeData);
+                                                setEditingAward(idx);
+                                            }}
+                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                        >
+                                            수정
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (
+                                                    confirm("삭제하시겠습니까?")
+                                                ) {
+                                                    const a = [
+                                                        ...(resumeData.awards ||
+                                                            []),
+                                                    ];
+                                                    a.splice(idx, 1);
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        awards: a,
                                                     });
                                                 }
                                             }}
