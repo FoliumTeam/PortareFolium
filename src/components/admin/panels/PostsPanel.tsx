@@ -99,6 +99,10 @@ export default function PostsPanel() {
     const [success, setSuccess] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    // slug → 목차 스타일 ('hover' | 'github' | 'both')
+    const [postTocStyles, setPostTocStyles] = useState<Record<string, string>>(
+        {}
+    );
 
     const initialFormRef = useRef<PostForm>(EMPTY_FORM);
 
@@ -133,8 +137,30 @@ export default function PostsPanel() {
                 .then(({ data }) => {
                     if (data?.value) setJobFields(data.value as JobFieldItem[]);
                 });
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "post_toc_styles")
+                .single()
+                .then(({ data }) => {
+                    if (data?.value && typeof data.value === "object")
+                        setPostTocStyles(data.value as Record<string, string>);
+                });
         }
     }, []);
+
+    // 포스트 목차 스타일 저장 (site_config upsert)
+    const saveTocStyle = async (slug: string, style: string) => {
+        if (!browserClient) return;
+        const next = { ...postTocStyles, [slug]: style };
+        setPostTocStyles(next);
+        await browserClient
+            .from("site_config")
+            .upsert(
+                { key: "post_toc_styles", value: next },
+                { onConflict: "key" }
+            );
+    };
 
     // form → DB payload 변환
     const buildPayload = () => ({
@@ -591,6 +617,44 @@ export default function PostsPanel() {
                                         folderPath={`blog/${form.slug || "untitled"}`}
                                     />
                                 </div>
+                            </div>
+                        </details>
+
+                        {/* 목차 스타일 설정 */}
+                        <details className="group rounded-lg border border-(--color-border) bg-(--color-surface-subtle) open:bg-(--color-surface)">
+                            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)">
+                                <span>목차 (TOC) 설정</span>
+                                <span className="text-(--color-muted) transition-transform group-open:rotate-180">
+                                    ▼
+                                </span>
+                            </summary>
+                            <div className="border-t border-(--color-border) p-4">
+                                <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                                    목차 표시 방식
+                                </label>
+                                <select
+                                    value={postTocStyles[form.slug] ?? "hover"}
+                                    onChange={(e) => {
+                                        if (form.slug)
+                                            saveTocStyle(
+                                                form.slug,
+                                                e.target.value
+                                            );
+                                    }}
+                                    disabled={!form.slug}
+                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                                >
+                                    <option value="hover">
+                                        호버링 사이드바 목차
+                                    </option>
+                                    <option value="github">
+                                        GitHub 형식 목차 (본문 상단)
+                                    </option>
+                                    <option value="both">둘 다 표시</option>
+                                </select>
+                                <p className="mt-1 text-xs text-(--color-muted)">
+                                    슬러그를 먼저 저장해야 적용됩니다.
+                                </p>
                             </div>
                         </details>
                     </section>

@@ -1,0 +1,103 @@
+---
+/**
+ * GitHub 마크다운 형식 목차
+ * 포스트 본문 상단에 클릭 가능한 링크 목록으로 렌더링
+ */
+import type { TocEntry } from "@/lib/toc";
+
+interface Props {
+    entries: TocEntry[];
+}
+
+const { entries } = Astro.props;
+if (!entries || entries.length === 0) return;
+---
+
+<nav class="github-toc" aria-label="목차">
+    <details open>
+        <summary class="github-toc-title">목차</summary>
+        <ol class="github-toc-list">
+            {
+                entries.map((entry) => (
+                    <li class="github-toc-item">
+                        <a href={`#${entry.slug}`} class="github-toc-link">
+                            {entry.text}
+                        </a>
+                        {entry.children.length > 0 && (
+                            <ol class="github-toc-sub">
+                                {entry.children.map((child) => (
+                                    <li>
+                                        <a
+                                            href={`#${child.slug}`}
+                                            class="github-toc-link"
+                                        >
+                                            {child.text}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
+                    </li>
+                ))
+            }
+        </ol>
+    </details>
+</nav>
+
+<style>
+    .github-toc {
+        margin-bottom: 2rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--color-surface);
+        font-size: 0.9rem;
+    }
+
+    .github-toc-title {
+        font-weight: 600;
+        color: var(--color-foreground);
+        cursor: pointer;
+        list-style: none;
+        padding: 0.25rem 0;
+    }
+
+    .github-toc-title::-webkit-details-marker {
+        display: none;
+    }
+
+    .github-toc-title::before {
+        content: "▶ ";
+        font-size: 0.7em;
+        transition: transform 0.15s;
+        display: inline-block;
+    }
+
+    details[open] .github-toc-title::before {
+        transform: rotate(90deg);
+    }
+
+    .github-toc-list {
+        margin: 0.5rem 0 0 0;
+        padding-left: 1.25rem;
+    }
+
+    .github-toc-sub {
+        margin: 0.25rem 0;
+        padding-left: 1.25rem;
+    }
+
+    .github-toc-item {
+        margin: 0.2rem 0;
+    }
+
+    .github-toc-link {
+        color: var(--color-accent);
+        text-decoration: none;
+        line-height: 1.6;
+    }
+
+    .github-toc-link:hover {
+        text-decoration: underline;
+    }
+</style>

@@ -10,6 +10,7 @@ import { formatPubDateKST } from "@/lib/blog";
 import { renderMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
+import GithubToc from "@/components/GithubToc.astro";
 
 export async function getStaticPaths() {
     if (!serverClient) return [];
@@ -52,6 +53,21 @@ if (serverClient) {
 // 마크다운 → HTML 변환 (Markdoc + Shiki, 빌드 타임)
 const contentHtml = await renderMarkdown(post.content ?? "");
 const tocEntries = extractTocFromHtml(contentHtml);
+
+// 포스트별 목차 스타일 설정 로드 ('hover' | 'github' | 'both', 기본: 'hover')
+type TocStyle = "hover" | "github" | "both";
+let tocStyle: TocStyle = "hover";
+if (serverClient) {
+    const { data: tocRow } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "post_toc_styles")
+        .single();
+    if (tocRow?.value && typeof tocRow.value === "object") {
+        const styles = tocRow.value as Record<string, TocStyle>;
+        if (slug in styles) tocStyle = styles[slug];
+    }
+}
 
 const category: string = post.category?.trim() ?? "";
 const tagSlugs: string[] = post.tags ?? [];
@@ -179,13 +195,23 @@ const pageImage = post.og_image || post.thumbnail || "";
             {/* 본문 구분선 */}
             <div class="mb-10 h-px bg-(--color-border)"></div>
 
+            {/* GitHub 형식 목차 (본문 상단) */}
+            {
+                (tocStyle === "github" || tocStyle === "both") &&
+                    tocEntries.length > 0 && <GithubToc entries={tocEntries} />
+            }
+
             <div
                 class="post-content prose dark:prose-invert max-w-none"
                 data-content="true"
                 set:html={contentHtml}
             />
         </article>
-        <TableOfContents client:visible entries={tocEntries} />
+        {
+            (tocStyle === "hover" || tocStyle === "both") && (
+                <TableOfContents client:visible entries={tocEntries} />
+            )
+        }
     </div>
 </BaseLayout>
 
