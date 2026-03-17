@@ -854,6 +854,31 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
     font-family: var(--font-sans);
 }
 
+/* Rich editor: KaTeX display mode — 기본 margin 제거 */
+.rich-markdown-editor .katex-display {
+    margin: 0 !important;
+}
+
+/* Rich editor: block directive 전후 단락 간격 축소
+ * prose-lg p { margin: 1.333em } → 0.5rem 으로 단축
+ * 원인: 본문 중간에 directive가 위치할 때 인접 단락 margin이 거대 여백을 만들어냄 */
+.rich-markdown-editor p:has(+ [data-lexical-decorator="true"]) {
+    margin-bottom: 0.5rem !important;
+}
+.rich-markdown-editor [data-lexical-decorator="true"] + p {
+    margin-top: 0.5rem !important;
+}
+
+/* Rich editor: Lexical 빈 커서 단락 축소
+ * - dir="auto" = 텍스트 없는 빈 단락 (Lexical 방향 미결정)
+ * - MDXEditor가 마지막에 자동 삽입하는 커서용 단락 포함 */
+.rich-markdown-editor [data-lexical-decorator="true"] + p[dir="auto"],
+.rich-markdown-editor [contenteditable="true"] > p[dir="auto"]:last-child {
+    line-height: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+}
+
 /* Admin RichMarkdownEditor: prose heading 스타일 보강 (MDXEditor contentEditable) */
 [contenteditable="true"][data-lexical-editor="true"].prose h1,
 [contenteditable="true"][data-lexical-editor="true"].prose h2,

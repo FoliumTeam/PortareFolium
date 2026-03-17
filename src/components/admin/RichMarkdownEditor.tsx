@@ -6,7 +6,8 @@
  * - folium-table, youtube 커스텀 directive 지원
  * - Supabase Storage 이미지 업로드 (WebP 변환)
  */
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
+import katex from "katex";
 import { basicDark } from "cm6-theme-basic-dark";
 import { basicLight } from "cm6-theme-basic-light";
 import {
@@ -36,12 +37,14 @@ import {
     UndoRedo,
     usePublisher,
     insertDirective$,
+    insertMarkdown$,
     GenericDirectiveEditor,
     useMdastNodeUpdater,
     PropertyPopover,
     type DirectiveDescriptor,
     type DirectiveEditorProps,
 } from "@mdxeditor/editor";
+import LatexEditorModal from "@/components/admin/LatexEditorModal";
 import "@mdxeditor/editor/style.css";
 import { jsxToDirective, directiveToJsx } from "@/lib/mdx-directive-converter";
 import { uploadImageToSupabase } from "@/lib/image-upload";
@@ -53,6 +56,73 @@ interface RichMarkdownEditorProps {
     disabled?: boolean;
     folderPath?: string;
 }
+
+// KaTeX 블록 렌더링
+function KatexBlock({ src }: { src: string }) {
+    const ref = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!ref.current) return;
+        try {
+            katex.render(src, ref.current, {
+                throwOnError: false,
+                displayMode: true,
+            });
+        } catch {
+            if (ref.current) ref.current.textContent = src;
+        }
+    }, [src]);
+    return <div className="py-1" ref={ref} />;
+}
+
+// LaTeX directive 에디터: ::latex{src="..."} 렌더링 + 편집
+function LatexDirectiveEditor({ mdastNode }: DirectiveEditorProps) {
+    const updateMdastNode = useMdastNodeUpdater();
+    const [editing, setEditing] = useState(false);
+    const src = (mdastNode.attributes?.src ?? "") as string;
+
+    return (
+        <div className="my-2 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-2">
+            <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-(--color-muted)">
+                    ∑ LaTeX
+                </span>
+                <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="rounded border border-(--color-border) px-2 py-0.5 text-xs text-(--color-muted) hover:bg-(--color-surface)"
+                >
+                    편집
+                </button>
+            </div>
+            {src ? (
+                <KatexBlock src={src} />
+            ) : (
+                <span className="text-sm text-(--color-muted)">수식 없음</span>
+            )}
+            {editing && (
+                <LatexEditorModal
+                    initialValue={src}
+                    onInsert={(latex) => {
+                        updateMdastNode({ attributes: { src: latex } });
+                        setEditing(false);
+                    }}
+                    onClose={() => setEditing(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+const LatexDirectiveDescriptor: DirectiveDescriptor = {
+    name: "latex",
+    testNode(node) {
+        return node.name === "latex";
+    },
+    attributes: ["src"],
+    hasChildren: false,
+    type: "leafDirective",
+    Editor: LatexDirectiveEditor,
+};
 
 // YouTube directive: ::youtube[]{id="xxx"} — 16:9 미리보기
 function YoutubeDirectiveEditor({
@@ -136,7 +206,17 @@ const FoliumTableDirectiveDescriptor: DirectiveDescriptor = {
 
 function InsertButtons() {
     const insertDirective = usePublisher(insertDirective$);
-    const [modal, setModal] = useState<"folium-table" | "youtube" | null>(null);
+    const insertMarkdown = usePublisher(insertMarkdown$);
+    const [modal, setModal] = useState<
+        "folium-table" | "youtube" | "latex" | null
+    >(null);
+
+    // LaTeX 수식 삽입 (::latex directive로 삽입 → 에디터에서 KaTeX 렌더링)
+    const handleLatexInsert = (latex: string) => {
+        const escaped = latex.replace(/"/g, '\\"');
+        insertMarkdown(`\n\n::latex{src="${escaped}"}\n\n`);
+        setModal(null);
+    };
 
     // Folium Table 폼 상태
     const [ftColumns, setFtColumns] = useState("항목, 내용");
@@ -241,6 +321,13 @@ function InsertButtons() {
                 className="rounded border border-(--color-border) px-2 py-1 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-accent)"
             >
                 📋 Folium Table
+            </button>
+            <button
+                type="button"
+                onClick={() => setModal("latex")}
+                className="rounded border border-(--color-border) px-2 py-1 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:bg-(--color-surface-subtle) hover:text-(--color-accent)"
+            >
+                ∑ LaTeX
             </button>
 
             {/* Folium Table 모달 */}
@@ -379,6 +466,13 @@ function InsertButtons() {
                     </div>
                 </div>
             )}
+            {/* LaTeX 모달 */}
+            {modal === "latex" && (
+                <LatexEditorModal
+                    onInsert={handleLatexInsert}
+                    onClose={() => setModal(null)}
+                />
+            )}
         </>
     );
 }
@@ -489,6 +583,7 @@ export default function RichMarkdownEditor({
                         directiveDescriptors: [
                             YoutubeDirectiveDescriptor,
                             FoliumTableDirectiveDescriptor,
+                            LatexDirectiveDescriptor,
                         ],
                     }),
                     diffSourcePlugin({ viewMode: "rich-text" }),

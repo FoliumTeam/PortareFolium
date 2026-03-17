@@ -10,6 +10,23 @@
 export function jsxToDirective(content: string): string {
     let out = content;
 
+    // $$ ... $$ → ::latex{src="..."} (코드 블록 제외)
+    const latexParts = out.split(/(```[\s\S]*?```)/g);
+    out = latexParts
+        .map((part, i) => {
+            if (i % 2 === 1) return part;
+            return part.replace(/\$\$([\s\S]*?)\$\$/g, (_, src) => {
+                const normalized = src
+                    .trim()
+                    .split("\n")
+                    .map((l: string) => l.trim())
+                    .filter(Boolean)
+                    .join(" ");
+                return `\n\n::latex{src="${normalized.replace(/"/g, '\\"')}"}\n\n`;
+            });
+        })
+        .join("");
+
     // <YouTube id="xxx" /> → ::youtube[]{id="xxx"}
     out = out.replace(
         /<YouTube\s+id\s*=\s*"([^"]*)"\s*\/>/g,
@@ -41,7 +58,9 @@ export function transformOutsideCodeBlocks(
     content: string,
     transform: (text: string) => string
 ): string {
-    const parts = content.split(/(```[\s\S]*?```)/g);
+    const parts = content.split(
+        /(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$(?!\$)[^\n$]+?\$)/g
+    );
     return parts
         .map((part, i) => (i % 2 === 0 ? transform(part) : part))
         .join("");
@@ -60,6 +79,12 @@ export function directiveToJsx(content: string): string {
 
     // 코드 블록 밖에서만 백슬래시 이스케이프 제거
     out = transformOutsideCodeBlocks(out, stripDirectiveEscapes);
+
+    // ::latex{src="..."} → $$...$$
+    out = out.replace(
+        /::latex\{src="((?:[^"\\]|\\.)*)"\}/g,
+        (_, escaped) => `$$${escaped.replace(/\\"/g, '"')}$$`
+    );
 
     // ::youtube[]{id="xxx"} → <YouTube id="xxx" />
     out = out.replace(
