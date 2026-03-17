@@ -11,6 +11,7 @@ import type {
     Resume,
     ResumeWork,
     ResumeProject,
+    ResumeProjectSection,
     ResumeEducation,
     ResumeAward,
     ResumeSkill,
@@ -712,7 +713,10 @@ export default function ResumePanel() {
                             setBackupData(resumeData);
                             const newProj: ResumeProject = {
                                 name: "",
-                                description: "",
+                                sections: [
+                                    { title: "설명", content: "" },
+                                    { title: "성과", content: "" },
+                                ],
                             };
                             setResumeData({
                                 ...resumeData,
@@ -869,33 +873,152 @@ export default function ResumePanel() {
                                         />
                                         날짜에서 일(Day) 숨기기
                                     </label>
-                                    <TextAreaField
-                                        label="설명 (Description)"
-                                        value={proj.description || ""}
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].description = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                    />
-                                    <TextAreaField
-                                        label="주요 기능 (Highlights, 엔터 구분)"
-                                        value={
-                                            proj.highlights?.join("\n") || ""
-                                        }
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].highlights = v.split("\n");
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                        rows={4}
-                                    />
+                                    {/* 자유 양식 섹션 목록 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-(--color-muted)">
+                                                섹션 목록
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    const sections = [
+                                                        ...(p[idx].sections ||
+                                                            []),
+                                                        {
+                                                            title: "",
+                                                            content: "",
+                                                        },
+                                                    ];
+                                                    p[idx] = {
+                                                        ...p[idx],
+                                                        sections,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                                            >
+                                                + 섹션 추가
+                                            </button>
+                                        </div>
+                                        {(proj.sections || []).map(
+                                            (sec, sIdx) => (
+                                                <div
+                                                    key={sIdx}
+                                                    className="space-y-2 rounded-lg border border-(--color-border) p-3"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={sec.title}
+                                                            placeholder="섹션 제목"
+                                                            onChange={(e) => {
+                                                                const p = [
+                                                                    ...resumeData.projects!,
+                                                                ];
+                                                                const sections =
+                                                                    p[
+                                                                        idx
+                                                                    ].sections!.map(
+                                                                        (
+                                                                            s,
+                                                                            i
+                                                                        ) =>
+                                                                            i ===
+                                                                            sIdx
+                                                                                ? {
+                                                                                      ...s,
+                                                                                      title: e
+                                                                                          .target
+                                                                                          .value,
+                                                                                  }
+                                                                                : s
+                                                                    );
+                                                                p[idx] = {
+                                                                    ...p[idx],
+                                                                    sections,
+                                                                };
+                                                                setResumeData({
+                                                                    ...resumeData,
+                                                                    projects: p,
+                                                                });
+                                                            }}
+                                                            className="flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm font-medium text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const p = [
+                                                                    ...resumeData.projects!,
+                                                                ];
+                                                                const sections =
+                                                                    p[
+                                                                        idx
+                                                                    ].sections!.filter(
+                                                                        (
+                                                                            _,
+                                                                            i
+                                                                        ) =>
+                                                                            i !==
+                                                                            sIdx
+                                                                    );
+                                                                p[idx] = {
+                                                                    ...p[idx],
+                                                                    sections,
+                                                                };
+                                                                setResumeData({
+                                                                    ...resumeData,
+                                                                    projects: p,
+                                                                });
+                                                            }}
+                                                            className="rounded-lg bg-red-600 px-2 py-1 text-xs text-white hover:opacity-90"
+                                                        >
+                                                            삭제
+                                                        </button>
+                                                    </div>
+                                                    <textarea
+                                                        value={sec.content}
+                                                        placeholder="내용"
+                                                        rows={3}
+                                                        onChange={(e) => {
+                                                            const p = [
+                                                                ...resumeData.projects!,
+                                                            ];
+                                                            const sections = p[
+                                                                idx
+                                                            ].sections!.map(
+                                                                (s, i) =>
+                                                                    i === sIdx
+                                                                        ? {
+                                                                              ...s,
+                                                                              content:
+                                                                                  e
+                                                                                      .target
+                                                                                      .value,
+                                                                          }
+                                                                        : s
+                                                            );
+                                                            p[idx] = {
+                                                                ...p[idx],
+                                                                sections,
+                                                            };
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                projects: p,
+                                                            });
+                                                        }}
+                                                        className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                    />
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                     <JobFieldSelector
                                         value={proj.jobField}
                                         fields={jobFields}
@@ -963,6 +1086,40 @@ export default function ResumePanel() {
                                         <button
                                             onClick={() => {
                                                 setBackupData(resumeData);
+                                                // sections가 없으면 기존 description/highlights로 초기화
+                                                if (
+                                                    !resumeData.projects![idx]
+                                                        .sections
+                                                ) {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx] = {
+                                                        ...p[idx],
+                                                        sections: [
+                                                            {
+                                                                title: "설명",
+                                                                content:
+                                                                    p[idx]
+                                                                        .description ||
+                                                                    "",
+                                                            },
+                                                            {
+                                                                title: "성과",
+                                                                content:
+                                                                    p[
+                                                                        idx
+                                                                    ].highlights?.join(
+                                                                        "\n"
+                                                                    ) || "",
+                                                            },
+                                                        ],
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }
                                                 setEditingProject(idx);
                                             }}
                                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"

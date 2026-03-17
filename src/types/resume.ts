@@ -115,6 +115,12 @@ export interface ResumeReference {
     reference?: string;
 }
 
+// 프로젝트 자유 양식 섹션 (제목 + 내용)
+export interface ResumeProjectSection {
+    title: string;
+    content: string;
+}
+
 export interface ResumeProject {
     name?: string;
     description?: string;
@@ -132,6 +138,8 @@ export interface ResumeProject {
     hideDays?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
+    // 자유 양식 섹션 목록. 존재하면 description/highlights 대신 렌더링
+    sections?: ResumeProjectSection[];
 }
 
 export interface Resume {

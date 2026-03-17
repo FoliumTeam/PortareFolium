@@ -336,21 +336,44 @@ const formatDateRange = (
                                             </span>
                                         )}
                                     </div>
-                                    {project.description ? (
-                                        <p class="resume-item-summary">
-                                            {project.description}
-                                        </p>
-                                    ) : null}
-                                    {project.highlights &&
-                                    project.highlights.length > 0 ? (
-                                        <ul class="resume-item-highlights">
-                                            {project.highlights.map(
-                                                (highlight: string) => (
-                                                    <li>{highlight}</li>
-                                                )
-                                            )}
-                                        </ul>
-                                    ) : null}
+                                    {project.sections &&
+                                    project.sections.length > 0 ? (
+                                        project.sections.map(
+                                            (sec: {
+                                                title: string;
+                                                content: string;
+                                            }) => (
+                                                <div class="resume-project-section">
+                                                    {sec.title ? (
+                                                        <p class="resume-project-section-title">
+                                                            {sec.title}
+                                                        </p>
+                                                    ) : null}
+                                                    <p class="resume-item-summary">
+                                                        {sec.content}
+                                                    </p>
+                                                </div>
+                                            )
+                                        )
+                                    ) : (
+                                        <>
+                                            {project.description ? (
+                                                <p class="resume-item-summary">
+                                                    {project.description}
+                                                </p>
+                                            ) : null}
+                                            {project.highlights &&
+                                            project.highlights.length > 0 ? (
+                                                <ul class="resume-item-highlights">
+                                                    {project.highlights.map(
+                                                        (highlight: string) => (
+                                                            <li>{highlight}</li>
+                                                        )
+                                                    )}
+                                                </ul>
+                                            ) : null}
+                                        </>
+                                    )}
                                 </div>
                             ))}
                         </section>
