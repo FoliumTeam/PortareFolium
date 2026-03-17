@@ -17,8 +17,13 @@ const sections = Object.entries(resume).filter(
 );
 
 // 날짜 범위 포맷팅 헬퍼 함수
-const formatDateRange = (startDate?: string, endDate?: string): string => {
-    return `${startDate || ""} ~ ${endDate || "Present"}`;
+const formatDateRange = (
+    startDate?: string,
+    endDate?: string,
+    hideDays?: boolean
+): string => {
+    const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
+    return `${fmt(startDate)} ~ ${fmt(endDate) || "Present"}`;
 };
 ---
 
@@ -179,7 +184,8 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
                                             <span class="resume-item-date">
                                                 {formatDateRange(
                                                     workItem.startDate,
-                                                    workItem.endDate
+                                                    workItem.endDate,
+                                                    workItem.hideDays
                                                 )}
                                             </span>
                                         )}
@@ -297,7 +303,8 @@ const formatDateRange = (startDate?: string, endDate?: string): string => {
                                             <span class="resume-item-date">
                                                 {formatDateRange(
                                                     project.startDate,
-                                                    project.endDate
+                                                    project.endDate,
+                                                    project.hideDays
                                                 )}
                                             </span>
                                         )}

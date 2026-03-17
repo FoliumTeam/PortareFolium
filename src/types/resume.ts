@@ -41,6 +41,8 @@ export interface ResumeWork {
     highlights?: string[];
     location?: string;
     description?: string;
+    // 날짜에서 일(Day) 숨기고 월(Month)만 표시
+    hideDays?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
 }
@@ -126,6 +128,8 @@ export interface ResumeProject {
     roles?: string[];
     entity?: string;
     type?: string;
+    // 날짜에서 일(Day) 숨기고 월(Month)만 표시
+    hideDays?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
 }

@@ -491,6 +491,25 @@ export default function ResumePanel() {
                                             }}
                                         />
                                     </div>
+                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                        <input
+                                            type="checkbox"
+                                            checked={work.hideDays || false}
+                                            onChange={(e) => {
+                                                const w = [...resumeData.work!];
+                                                w[idx] = {
+                                                    ...w[idx],
+                                                    hideDays: e.target.checked,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: w,
+                                                });
+                                            }}
+                                            className="accent-(--color-accent)"
+                                        />
+                                        날짜에서 일(Day) 숨기기
+                                    </label>
                                     <TextAreaField
                                         label="요약 (Summary)"
                                         value={work.summary || ""}
@@ -732,6 +751,27 @@ export default function ResumePanel() {
                                             placeholder="예: 게임 시연 영상, 발표 자료"
                                         />
                                     </div>
+                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                        <input
+                                            type="checkbox"
+                                            checked={proj.hideDays || false}
+                                            onChange={(e) => {
+                                                const p = [
+                                                    ...resumeData.projects!,
+                                                ];
+                                                p[idx] = {
+                                                    ...p[idx],
+                                                    hideDays: e.target.checked,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    projects: p,
+                                                });
+                                            }}
+                                            className="accent-(--color-accent)"
+                                        />
+                                        날짜에서 일(Day) 숨기기
+                                    </label>
                                     <TextAreaField
                                         label="설명 (Description)"
                                         value={proj.description || ""}
