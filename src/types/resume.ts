@@ -136,6 +136,8 @@ export interface ResumeProject {
 
 export interface Resume {
     basics?: ResumeBasics;
+    // 섹션 제목 커스텀 (이모지 포함 가능, 키: work, projects, education, skills, languages, awards, ...)
+    sectionLabels?: Partial<Record<string, string>>;
     work?: ResumeWork[];
     volunteer?: ResumeVolunteer[];
     education?: ResumeEducation[];
