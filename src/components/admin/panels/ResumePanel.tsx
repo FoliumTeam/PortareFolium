@@ -87,6 +87,14 @@ function fmtTime(d: Date): string {
     });
 }
 
+// 배열 항목 순서 변경 (불변)
+function reorderArray<T>(arr: T[], from: number, to: number): T[] {
+    const result = [...arr];
+    const [item] = result.splice(from, 1);
+    result.splice(to, 0, item);
+    return result;
+}
+
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -114,6 +122,8 @@ export default function ResumePanel() {
         useState<string>("");
     const [editingLanguage, setEditingLanguage] = useState<number | null>(null);
     const [backupData, setBackupData] = useState<any>(null);
+    // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
+    const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
     // Fallback JSON input state
     const [jsonInput, setJsonInput] = useState("");
@@ -476,6 +486,27 @@ export default function ResumePanel() {
                     {resumeData.work?.map((work, idx) => (
                         <div
                             key={idx}
+                            draggable={editingWork !== idx}
+                            onDragStart={() => {
+                                dragSrcRef.current = { type: "work", idx };
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                                if (
+                                    dragSrcRef.current?.type !== "work" ||
+                                    dragSrcRef.current.idx === idx
+                                )
+                                    return;
+                                setResumeData({
+                                    ...resumeData,
+                                    work: reorderArray(
+                                        resumeData.work!,
+                                        dragSrcRef.current.idx,
+                                        idx
+                                    ),
+                                });
+                                dragSrcRef.current = null;
+                            }}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
                         >
                             {editingWork === idx ? (
@@ -611,8 +642,14 @@ export default function ResumePanel() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-start justify-between">
-                                    <div className="mr-12">
+                                <div className="flex items-start gap-2">
+                                    <span
+                                        className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                        title="드래그로 순서 변경"
+                                    >
+                                        ⠿
+                                    </span>
+                                    <div className="mr-12 flex-1">
                                         <h4 className="font-semibold text-(--color-foreground)">
                                             {work.position} @ {work.name}
                                         </h4>
@@ -696,6 +733,27 @@ export default function ResumePanel() {
                     {resumeData.projects?.map((proj, idx) => (
                         <div
                             key={idx}
+                            draggable={editingProject !== idx}
+                            onDragStart={() => {
+                                dragSrcRef.current = { type: "project", idx };
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                                if (
+                                    dragSrcRef.current?.type !== "project" ||
+                                    dragSrcRef.current.idx === idx
+                                )
+                                    return;
+                                setResumeData({
+                                    ...resumeData,
+                                    projects: reorderArray(
+                                        resumeData.projects!,
+                                        dragSrcRef.current.idx,
+                                        idx
+                                    ),
+                                });
+                                dragSrcRef.current = null;
+                            }}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
                         >
                             {editingProject === idx ? (
@@ -873,8 +931,14 @@ export default function ResumePanel() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-start justify-between">
-                                    <div className="mr-12">
+                                <div className="flex items-start gap-2">
+                                    <span
+                                        className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                        title="드래그로 순서 변경"
+                                    >
+                                        ⠿
+                                    </span>
+                                    <div className="mr-12 flex-1">
                                         <h4 className="font-semibold text-(--color-foreground)">
                                             {proj.name}
                                         </h4>
