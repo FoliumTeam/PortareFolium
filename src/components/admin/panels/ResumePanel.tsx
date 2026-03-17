@@ -95,6 +95,8 @@ export default function ResumePanel() {
         null
     );
     const [editingSkill, setEditingSkill] = useState<number | null>(null);
+    const [editingSkillKeywords, setEditingSkillKeywords] =
+        useState<string>("");
     const [editingLanguage, setEditingLanguage] = useState<number | null>(null);
     const [backupData, setBackupData] = useState<any>(null);
 
@@ -1051,6 +1053,7 @@ export default function ResumePanel() {
                                     ...(resumeData.skills || []),
                                 ],
                             });
+                            setEditingSkillKeywords("");
                             setEditingSkill(0);
                         }}
                         className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
@@ -1099,18 +1102,8 @@ export default function ResumePanel() {
                                     </div>
                                     <TextAreaField
                                         label="키워드 (쉼표로 구분)"
-                                        value={skill.keywords?.join(", ") || ""}
-                                        onChange={(v) => {
-                                            const s = [...resumeData.skills!];
-                                            s[idx].keywords = v
-                                                .split(",")
-                                                .map((k) => k.trim())
-                                                .filter(Boolean);
-                                            setResumeData({
-                                                ...resumeData,
-                                                skills: s,
-                                            });
-                                        }}
+                                        value={editingSkillKeywords}
+                                        onChange={setEditingSkillKeywords}
                                         rows={2}
                                         placeholder="예: React, TypeScript, Node.js"
                                     />
@@ -1127,6 +1120,24 @@ export default function ResumePanel() {
                                         </button>
                                         <button
                                             onClick={() => {
+                                                // editingSkillKeywords 파싱 후 저장
+                                                const s = [
+                                                    ...resumeData.skills!,
+                                                ];
+                                                s[idx] = {
+                                                    ...s[idx],
+                                                    keywords:
+                                                        editingSkillKeywords
+                                                            .split(",")
+                                                            .map((k) =>
+                                                                k.trim()
+                                                            )
+                                                            .filter(Boolean),
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: s,
+                                                });
                                                 setBackupData(null);
                                                 setEditingSkill(null);
                                             }}
@@ -1162,6 +1173,11 @@ export default function ResumePanel() {
                                         <button
                                             onClick={() => {
                                                 setBackupData(resumeData);
+                                                setEditingSkillKeywords(
+                                                    skill.keywords?.join(
+                                                        ", "
+                                                    ) || ""
+                                                );
                                                 setEditingSkill(idx);
                                             }}
                                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
