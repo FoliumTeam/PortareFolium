@@ -88,6 +88,17 @@ function fmtTime(d: Date): string {
     });
 }
 
+// 직무 분야 필터 매칭
+function matchesJobField(
+    jobField: string | string[] | undefined,
+    filter: string
+): boolean {
+    if (!jobField) return false;
+    return Array.isArray(jobField)
+        ? jobField.includes(filter)
+        : jobField === filter;
+}
+
 // 배열 항목 순서 변경 (불변)
 function reorderArray<T>(arr: T[], from: number, to: number): T[] {
     const result = [...arr];
@@ -110,6 +121,8 @@ export default function ResumePanel() {
     const savedDataRef = useRef<string>("");
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    // 직무 분야 필터 (null = 전체)
+    const [filterJobField, setFilterJobField] = useState<string | null>(null);
 
     // Edit states for arrays
     const [editingWork, setEditingWork] = useState<number | null>(null);
@@ -483,241 +496,316 @@ export default function ResumePanel() {
                     </button>
                 </div>
 
-                <div className="space-y-4">
-                    {resumeData.work?.map((work, idx) => (
-                        <div
-                            key={idx}
-                            draggable={editingWork !== idx}
-                            onDragStart={() => {
-                                dragSrcRef.current = { type: "work", idx };
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={() => {
-                                if (
-                                    dragSrcRef.current?.type !== "work" ||
-                                    dragSrcRef.current.idx === idx
-                                )
-                                    return;
-                                setResumeData({
-                                    ...resumeData,
-                                    work: reorderArray(
-                                        resumeData.work!,
-                                        dragSrcRef.current.idx,
-                                        idx
-                                    ),
-                                });
-                                dragSrcRef.current = null;
-                            }}
-                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                {/* 직무 분야 필터 */}
+                {jobFields.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setFilterJobField(null)}
+                            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                         >
-                            {editingWork === idx ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <InputField
-                                            label="회사명"
-                                            value={work.name || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].name = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="직책"
-                                            value={work.position || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].position = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="시작일 (YYYY-MM)"
-                                            value={work.startDate || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].startDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="종료일 (비워두면 '현재')"
-                                            value={work.endDate || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].endDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
-                                        <input
-                                            type="checkbox"
-                                            checked={work.hideDays || false}
-                                            onChange={(e) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx] = {
-                                                    ...w[idx],
-                                                    hideDays: e.target.checked,
-                                                };
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                            className="accent-(--color-accent)"
-                                        />
-                                        날짜에서 일(Day) 숨기기
-                                    </label>
-                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
-                                        <input
-                                            type="checkbox"
-                                            checked={work.markdown || false}
-                                            onChange={(e) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx] = {
-                                                    ...w[idx],
-                                                    markdown: e.target.checked,
-                                                };
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                            className="accent-(--color-accent)"
-                                        />
-                                        요약/성과를 마크다운으로 렌더링
-                                    </label>
-                                    <TextAreaField
-                                        label="요약 (Summary)"
-                                        value={work.summary || ""}
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].summary = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                    />
-                                    <TextAreaField
-                                        label="주요 성과 (Highlights, 엔터로 구분)"
-                                        value={
-                                            work.highlights?.join("\n") || ""
-                                        }
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].highlights = v.split("\n");
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                        rows={4}
-                                    />
-                                    <JobFieldSelector
-                                        value={work.jobField}
-                                        fields={jobFields}
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].jobField = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                    />
-                                    <div className="flex justify-end gap-2 pt-2">
-                                        <button
-                                            onClick={() => {
-                                                if (backupData)
-                                                    setResumeData(backupData);
-                                                setEditingWork(null);
-                                            }}
-                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
-                                        >
-                                            취소
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(null);
-                                                setEditingWork(null);
-                                            }}
-                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                        >
-                                            완료
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-start gap-2">
-                                    <span
-                                        className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
-                                        title="드래그로 순서 변경"
-                                    >
-                                        ⠿
-                                    </span>
-                                    <div className="mr-12 flex-1">
-                                        <h4 className="font-semibold text-(--color-foreground)">
-                                            {work.position} @ {work.name}
-                                        </h4>
-                                        <p className="text-sm text-(--color-muted)">
-                                            {work.startDate} ~{" "}
-                                            {work.endDate || "현재"}
-                                        </p>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            <JobFieldBadges
-                                                value={work.jobField}
-                                                fields={jobFields}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(resumeData);
-                                                setEditingWork(idx);
-                                            }}
-                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            수정
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (
-                                                    confirm("삭제하시겠습니까?")
-                                                ) {
+                            전체
+                        </button>
+                        {jobFields.map((jf) => (
+                            <button
+                                key={jf.id}
+                                onClick={() =>
+                                    setFilterJobField(
+                                        filterJobField === jf.id ? null : jf.id
+                                    )
+                                }
+                                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === jf.id ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
+                            >
+                                {jf.emoji ? `${jf.emoji} ` : ""}
+                                {jf.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    {resumeData.work?.map((work, idx) => {
+                        if (
+                            filterJobField &&
+                            !matchesJobField(work.jobField, filterJobField)
+                        )
+                            return null;
+                        return (
+                            <div
+                                key={idx}
+                                draggable={editingWork !== idx}
+                                onDragStart={() => {
+                                    dragSrcRef.current = { type: "work", idx };
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                    if (
+                                        dragSrcRef.current?.type !== "work" ||
+                                        dragSrcRef.current.idx === idx
+                                    )
+                                        return;
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: reorderArray(
+                                            resumeData.work!,
+                                            dragSrcRef.current.idx,
+                                            idx
+                                        ),
+                                    });
+                                    dragSrcRef.current = null;
+                                }}
+                                className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                            >
+                                {editingWork === idx ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <InputField
+                                                label="회사명"
+                                                value={work.name || ""}
+                                                onChange={(v) => {
                                                     const w = [
                                                         ...resumeData.work!,
                                                     ];
-                                                    w.splice(idx, 1);
+                                                    w[idx].name = v;
                                                     setResumeData({
                                                         ...resumeData,
                                                         work: w,
                                                     });
-                                                }
+                                                }}
+                                            />
+                                            <InputField
+                                                label="직책"
+                                                value={work.position || ""}
+                                                onChange={(v) => {
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    w[idx].position = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="시작일 (YYYY-MM)"
+                                                value={work.startDate || ""}
+                                                onChange={(v) => {
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    w[idx].startDate = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="종료일 (비워두면 '현재')"
+                                                value={work.endDate || ""}
+                                                onChange={(v) => {
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    w[idx].endDate = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                }}
+                                            />
+                                        </div>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={work.hideDays || false}
+                                                onChange={(e) => {
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    w[idx] = {
+                                                        ...w[idx],
+                                                        hideDays:
+                                                            e.target.checked,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                }}
+                                                className="accent-(--color-accent)"
+                                            />
+                                            날짜에서 일(Day) 숨기기
+                                        </label>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={work.markdown || false}
+                                                onChange={(e) => {
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    w[idx] = {
+                                                        ...w[idx],
+                                                        markdown:
+                                                            e.target.checked,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                }}
+                                                className="accent-(--color-accent)"
+                                            />
+                                            요약/성과를 마크다운으로 렌더링
+                                        </label>
+                                        <TextAreaField
+                                            label="요약 (Summary)"
+                                            value={work.summary || ""}
+                                            onChange={(v) => {
+                                                const w = [...resumeData.work!];
+                                                w[idx].summary = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: w,
+                                                });
                                             }}
-                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            삭제
-                                        </button>
+                                        />
+                                        <TextAreaField
+                                            label="주요 성과 (Highlights, 엔터로 구분)"
+                                            value={
+                                                work.highlights?.join("\n") ||
+                                                ""
+                                            }
+                                            onChange={(v) => {
+                                                const w = [...resumeData.work!];
+                                                w[idx].highlights =
+                                                    v.split("\n");
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: w,
+                                                });
+                                            }}
+                                            rows={4}
+                                        />
+                                        <JobFieldSelector
+                                            value={work.jobField}
+                                            fields={jobFields}
+                                            onChange={(v) => {
+                                                const w = [...resumeData.work!];
+                                                w[idx].jobField = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: w,
+                                                });
+                                            }}
+                                        />
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <button
+                                                onClick={() => {
+                                                    if (backupData)
+                                                        setResumeData(
+                                                            backupData
+                                                        );
+                                                    setEditingWork(null);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(null);
+                                                    setEditingWork(null);
+                                                }}
+                                                className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                            >
+                                                완료
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                ) : (
+                                    <div className="flex items-start gap-2">
+                                        <span
+                                            className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                            title="드래그로 순서 변경"
+                                        >
+                                            ⠿
+                                        </span>
+                                        <div className="mr-12 flex-1">
+                                            <h4 className="font-semibold text-(--color-foreground)">
+                                                {work.position} @ {work.name}
+                                            </h4>
+                                            <p className="text-sm text-(--color-muted)">
+                                                {work.startDate} ~{" "}
+                                                {work.endDate || "현재"}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                <JobFieldBadges
+                                                    value={work.jobField}
+                                                    fields={jobFields}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(resumeData);
+                                                    setEditingWork(idx);
+                                                }}
+                                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                수정
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
+                                                    const w = [
+                                                        ...resumeData.work!,
+                                                    ];
+                                                    const copy = {
+                                                        ...w[idx],
+                                                        jobField: [],
+                                                    };
+                                                    w.unshift(copy);
+                                                    setBackupData(resumeData);
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: w,
+                                                    });
+                                                    setEditingWork(0);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
+                                            >
+                                                복사
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (
+                                                        confirm(
+                                                            "삭제하시겠습니까?"
+                                                        )
+                                                    ) {
+                                                        const w = [
+                                                            ...resumeData.work!,
+                                                        ];
+                                                        w.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            work: w,
+                                                        });
+                                                    }
+                                                }}
+                                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
 
@@ -752,191 +840,313 @@ export default function ResumePanel() {
                     </button>
                 </div>
 
-                <div className="space-y-4">
-                    {resumeData.projects?.map((proj, idx) => (
-                        <div
-                            key={idx}
-                            draggable={editingProject !== idx}
-                            onDragStart={() => {
-                                dragSrcRef.current = { type: "project", idx };
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={() => {
-                                if (
-                                    dragSrcRef.current?.type !== "project" ||
-                                    dragSrcRef.current.idx === idx
-                                )
-                                    return;
-                                setResumeData({
-                                    ...resumeData,
-                                    projects: reorderArray(
-                                        resumeData.projects!,
-                                        dragSrcRef.current.idx,
-                                        idx
-                                    ),
-                                });
-                                dragSrcRef.current = null;
-                            }}
-                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                {/* 직무 분야 필터 */}
+                {jobFields.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setFilterJobField(null)}
+                            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                         >
-                            {editingProject === idx ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <InputField
-                                            label="프로젝트명"
-                                            value={proj.name || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].name = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="역할 (Roles, 쉼표 구분)"
-                                            value={proj.roles?.join(", ") || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].roles = v
-                                                    .split(",")
-                                                    .map((s) => s.trim());
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="시작일"
-                                            value={proj.startDate || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].startDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="종료일"
-                                            value={proj.endDate || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].endDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="라이브 URL"
-                                            value={proj.url || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].url = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                            placeholder="https://..."
-                                        />
-                                        <InputField
-                                            label="URL 표시 텍스트 (기본: 라이브 URL)"
-                                            value={proj.urlLabel || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].urlLabel = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                            placeholder="예: 게임 시연 영상, 발표 자료"
-                                        />
-                                    </div>
-                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
-                                        <input
-                                            type="checkbox"
-                                            checked={proj.hideDays || false}
-                                            onChange={(e) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx] = {
-                                                    ...p[idx],
-                                                    hideDays: e.target.checked,
-                                                };
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                            className="accent-(--color-accent)"
-                                        />
-                                        날짜에서 일(Day) 숨기기
-                                    </label>
-                                    {/* 자유 양식 섹션 목록 */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium text-(--color-muted)">
-                                                섹션 목록
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
+                            전체
+                        </button>
+                        {jobFields.map((jf) => (
+                            <button
+                                key={jf.id}
+                                onClick={() =>
+                                    setFilterJobField(
+                                        filterJobField === jf.id ? null : jf.id
+                                    )
+                                }
+                                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === jf.id ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
+                            >
+                                {jf.emoji ? `${jf.emoji} ` : ""}
+                                {jf.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    {resumeData.projects?.map((proj, idx) => {
+                        if (
+                            filterJobField &&
+                            !matchesJobField(proj.jobField, filterJobField)
+                        )
+                            return null;
+                        return (
+                            <div
+                                key={idx}
+                                draggable={editingProject !== idx}
+                                onDragStart={() => {
+                                    dragSrcRef.current = {
+                                        type: "project",
+                                        idx,
+                                    };
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                    if (
+                                        dragSrcRef.current?.type !==
+                                            "project" ||
+                                        dragSrcRef.current.idx === idx
+                                    )
+                                        return;
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: reorderArray(
+                                            resumeData.projects!,
+                                            dragSrcRef.current.idx,
+                                            idx
+                                        ),
+                                    });
+                                    dragSrcRef.current = null;
+                                }}
+                                className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                            >
+                                {editingProject === idx ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <InputField
+                                                label="프로젝트명"
+                                                value={proj.name || ""}
+                                                onChange={(v) => {
                                                     const p = [
                                                         ...resumeData.projects!,
                                                     ];
-                                                    const sections = [
-                                                        ...(p[idx].sections ||
-                                                            []),
-                                                        {
-                                                            title: "",
-                                                            content: "",
-                                                        },
+                                                    p[idx].name = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="역할 (Roles, 쉼표 구분)"
+                                                value={
+                                                    proj.roles?.join(", ") || ""
+                                                }
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx].roles = v
+                                                        .split(",")
+                                                        .map((s) => s.trim());
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="시작일"
+                                                value={proj.startDate || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx].startDate = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="종료일"
+                                                value={proj.endDate || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx].endDate = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="라이브 URL"
+                                                value={proj.url || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx].url = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                                placeholder="https://..."
+                                            />
+                                            <InputField
+                                                label="URL 표시 텍스트 (기본: 라이브 URL)"
+                                                value={proj.urlLabel || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
+                                                    ];
+                                                    p[idx].urlLabel = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: p,
+                                                    });
+                                                }}
+                                                placeholder="예: 게임 시연 영상, 발표 자료"
+                                            />
+                                        </div>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={proj.hideDays || false}
+                                                onChange={(e) => {
+                                                    const p = [
+                                                        ...resumeData.projects!,
                                                     ];
                                                     p[idx] = {
                                                         ...p[idx],
-                                                        sections,
+                                                        hideDays:
+                                                            e.target.checked,
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
                                                         projects: p,
                                                     });
                                                 }}
-                                                className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
-                                            >
-                                                + 섹션 추가
-                                            </button>
-                                        </div>
-                                        {(proj.sections || []).map(
-                                            (sec, sIdx) => (
-                                                <div
-                                                    key={sIdx}
-                                                    className="space-y-2 rounded-lg border border-(--color-border) p-3"
+                                                className="accent-(--color-accent)"
+                                            />
+                                            날짜에서 일(Day) 숨기기
+                                        </label>
+                                        {/* 자유 양식 섹션 목록 */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-(--color-muted)">
+                                                    섹션 목록
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const p = [
+                                                            ...resumeData.projects!,
+                                                        ];
+                                                        const sections = [
+                                                            ...(p[idx]
+                                                                .sections ||
+                                                                []),
+                                                            {
+                                                                title: "",
+                                                                content: "",
+                                                            },
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            sections,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: p,
+                                                        });
+                                                    }}
+                                                    className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={sec.title}
-                                                            placeholder="섹션 제목"
+                                                    + 섹션 추가
+                                                </button>
+                                            </div>
+                                            {(proj.sections || []).map(
+                                                (sec, sIdx) => (
+                                                    <div
+                                                        key={sIdx}
+                                                        className="space-y-2 rounded-lg border border-(--color-border) p-3"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={
+                                                                    sec.title
+                                                                }
+                                                                placeholder="섹션 제목"
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    const p = [
+                                                                        ...resumeData.projects!,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.map(
+                                                                            (
+                                                                                s,
+                                                                                i
+                                                                            ) =>
+                                                                                i ===
+                                                                                sIdx
+                                                                                    ? {
+                                                                                          ...s,
+                                                                                          title: e
+                                                                                              .target
+                                                                                              .value,
+                                                                                      }
+                                                                                    : s
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                p,
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm font-medium text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const p = [
+                                                                        ...resumeData.projects!,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.filter(
+                                                                            (
+                                                                                _,
+                                                                                i
+                                                                            ) =>
+                                                                                i !==
+                                                                                sIdx
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                p,
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="rounded-lg bg-red-600 px-2 py-1 text-xs text-white hover:opacity-90"
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        </div>
+                                                        <textarea
+                                                            value={sec.content}
+                                                            placeholder="내용"
+                                                            rows={3}
                                                             onChange={(e) => {
                                                                 const p = [
                                                                     ...resumeData.projects!,
@@ -953,114 +1163,10 @@ export default function ResumePanel() {
                                                                             sIdx
                                                                                 ? {
                                                                                       ...s,
-                                                                                      title: e
-                                                                                          .target
-                                                                                          .value,
-                                                                                  }
-                                                                                : s
-                                                                    );
-                                                                p[idx] = {
-                                                                    ...p[idx],
-                                                                    sections,
-                                                                };
-                                                                setResumeData({
-                                                                    ...resumeData,
-                                                                    projects: p,
-                                                                });
-                                                            }}
-                                                            className="flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm font-medium text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const p = [
-                                                                    ...resumeData.projects!,
-                                                                ];
-                                                                const sections =
-                                                                    p[
-                                                                        idx
-                                                                    ].sections!.filter(
-                                                                        (
-                                                                            _,
-                                                                            i
-                                                                        ) =>
-                                                                            i !==
-                                                                            sIdx
-                                                                    );
-                                                                p[idx] = {
-                                                                    ...p[idx],
-                                                                    sections,
-                                                                };
-                                                                setResumeData({
-                                                                    ...resumeData,
-                                                                    projects: p,
-                                                                });
-                                                            }}
-                                                            className="rounded-lg bg-red-600 px-2 py-1 text-xs text-white hover:opacity-90"
-                                                        >
-                                                            삭제
-                                                        </button>
-                                                    </div>
-                                                    <textarea
-                                                        value={sec.content}
-                                                        placeholder="내용"
-                                                        rows={3}
-                                                        onChange={(e) => {
-                                                            const p = [
-                                                                ...resumeData.projects!,
-                                                            ];
-                                                            const sections = p[
-                                                                idx
-                                                            ].sections!.map(
-                                                                (s, i) =>
-                                                                    i === sIdx
-                                                                        ? {
-                                                                              ...s,
-                                                                              content:
-                                                                                  e
-                                                                                      .target
-                                                                                      .value,
-                                                                          }
-                                                                        : s
-                                                            );
-                                                            p[idx] = {
-                                                                ...p[idx],
-                                                                sections,
-                                                            };
-                                                            setResumeData({
-                                                                ...resumeData,
-                                                                projects: p,
-                                                            });
-                                                        }}
-                                                        className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-                                                    />
-                                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={
-                                                                sec.markdown ||
-                                                                false
-                                                            }
-                                                            onChange={(e) => {
-                                                                const p = [
-                                                                    ...resumeData.projects!,
-                                                                ];
-                                                                const sections =
-                                                                    p[
-                                                                        idx
-                                                                    ].sections!.map(
-                                                                        (
-                                                                            s,
-                                                                            i
-                                                                        ) =>
-                                                                            i ===
-                                                                            sIdx
-                                                                                ? {
-                                                                                      ...s,
-                                                                                      markdown:
+                                                                                      content:
                                                                                           e
                                                                                               .target
-                                                                                              .checked,
+                                                                                              .value,
                                                                                   }
                                                                                 : s
                                                                     );
@@ -1073,145 +1179,223 @@ export default function ResumePanel() {
                                                                     projects: p,
                                                                 });
                                                             }}
-                                                            className="accent-(--color-accent)"
+                                                            className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                                         />
-                                                        마크다운으로 렌더링
-                                                    </label>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                    <JobFieldSelector
-                                        value={proj.jobField}
-                                        fields={jobFields}
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].jobField = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                    />
-                                    <div className="flex justify-end gap-2 pt-2">
-                                        <button
-                                            onClick={() => {
-                                                if (backupData)
-                                                    setResumeData(backupData);
-                                                setEditingProject(null);
-                                            }}
-                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
-                                        >
-                                            취소
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(null);
-                                                setEditingProject(null);
-                                            }}
-                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                        >
-                                            완료
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-start gap-2">
-                                    <span
-                                        className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
-                                        title="드래그로 순서 변경"
-                                    >
-                                        ⠿
-                                    </span>
-                                    <div className="mr-12 flex-1">
-                                        <h4 className="font-semibold text-(--color-foreground)">
-                                            {proj.name}
-                                        </h4>
-                                        <p className="text-sm text-(--color-muted)">
-                                            {proj.description?.substring(
-                                                0,
-                                                100
+                                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={
+                                                                    sec.markdown ||
+                                                                    false
+                                                                }
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    const p = [
+                                                                        ...resumeData.projects!,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.map(
+                                                                            (
+                                                                                s,
+                                                                                i
+                                                                            ) =>
+                                                                                i ===
+                                                                                sIdx
+                                                                                    ? {
+                                                                                          ...s,
+                                                                                          markdown:
+                                                                                              e
+                                                                                                  .target
+                                                                                                  .checked,
+                                                                                      }
+                                                                                    : s
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                p,
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="accent-(--color-accent)"
+                                                            />
+                                                            마크다운으로 렌더링
+                                                        </label>
+                                                    </div>
+                                                )
                                             )}
-                                            {proj.description &&
-                                            proj.description.length > 100
-                                                ? "..."
-                                                : ""}
-                                        </p>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            <JobFieldBadges
-                                                value={proj.jobField}
-                                                fields={jobFields}
-                                            />
+                                        </div>
+                                        <JobFieldSelector
+                                            value={proj.jobField}
+                                            fields={jobFields}
+                                            onChange={(v) => {
+                                                const p = [
+                                                    ...resumeData.projects!,
+                                                ];
+                                                p[idx].jobField = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    projects: p,
+                                                });
+                                            }}
+                                        />
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <button
+                                                onClick={() => {
+                                                    if (backupData)
+                                                        setResumeData(
+                                                            backupData
+                                                        );
+                                                    setEditingProject(null);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(null);
+                                                    setEditingProject(null);
+                                                }}
+                                                className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                            >
+                                                완료
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(resumeData);
-                                                // sections가 없으면 기존 description/highlights로 초기화
-                                                if (
-                                                    !resumeData.projects![idx]
-                                                        .sections
-                                                ) {
+                                ) : (
+                                    <div className="flex items-start gap-2">
+                                        <span
+                                            className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                            title="드래그로 순서 변경"
+                                        >
+                                            ⠿
+                                        </span>
+                                        <div className="mr-12 flex-1">
+                                            <h4 className="font-semibold text-(--color-foreground)">
+                                                {proj.name}
+                                            </h4>
+                                            <p className="text-sm text-(--color-muted)">
+                                                {proj.description?.substring(
+                                                    0,
+                                                    100
+                                                )}
+                                                {proj.description &&
+                                                proj.description.length > 100
+                                                    ? "..."
+                                                    : ""}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                <JobFieldBadges
+                                                    value={proj.jobField}
+                                                    fields={jobFields}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(resumeData);
+                                                    // sections가 없으면 기존 description/highlights로 초기화
+                                                    if (
+                                                        !resumeData.projects![
+                                                            idx
+                                                        ].sections
+                                                    ) {
+                                                        const p = [
+                                                            ...resumeData.projects!,
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            sections: [
+                                                                {
+                                                                    title: "설명",
+                                                                    content:
+                                                                        p[idx]
+                                                                            .description ||
+                                                                        "",
+                                                                },
+                                                                {
+                                                                    title: "성과",
+                                                                    content:
+                                                                        p[
+                                                                            idx
+                                                                        ].highlights?.join(
+                                                                            "\n"
+                                                                        ) || "",
+                                                                },
+                                                            ],
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: p,
+                                                        });
+                                                    }
+                                                    setEditingProject(idx);
+                                                }}
+                                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                수정
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
                                                     const p = [
                                                         ...resumeData.projects!,
                                                     ];
-                                                    p[idx] = {
+                                                    const copy = {
                                                         ...p[idx],
-                                                        sections: [
-                                                            {
-                                                                title: "설명",
-                                                                content:
-                                                                    p[idx]
-                                                                        .description ||
-                                                                    "",
-                                                            },
-                                                            {
-                                                                title: "성과",
-                                                                content:
-                                                                    p[
-                                                                        idx
-                                                                    ].highlights?.join(
-                                                                        "\n"
-                                                                    ) || "",
-                                                            },
-                                                        ],
+                                                        jobField: [],
                                                     };
+                                                    p.unshift(copy);
+                                                    setBackupData(resumeData);
                                                     setResumeData({
                                                         ...resumeData,
                                                         projects: p,
                                                     });
-                                                }
-                                                setEditingProject(idx);
-                                            }}
-                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            수정
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (
-                                                    confirm("삭제하시겠습니까?")
-                                                ) {
-                                                    const p = [
-                                                        ...resumeData.projects!,
-                                                    ];
-                                                    p.splice(idx, 1);
-                                                    setResumeData({
-                                                        ...resumeData,
-                                                        projects: p,
-                                                    });
-                                                }
-                                            }}
-                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            삭제
-                                        </button>
+                                                    setEditingProject(0);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
+                                            >
+                                                복사
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (
+                                                        confirm(
+                                                            "삭제하시겠습니까?"
+                                                        )
+                                                    ) {
+                                                        const p = [
+                                                            ...resumeData.projects!,
+                                                        ];
+                                                        p.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: p,
+                                                        });
+                                                    }
+                                                }}
+                                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
 
