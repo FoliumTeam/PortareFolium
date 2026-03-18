@@ -1004,6 +1004,70 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
     box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.35);
 }
 
+/* ── Medium / TailwindCSS 블로그 스타일 prose 오버라이드 ───────────── */
+
+/* 본문 텍스트: 18px, 넉넉한 줄간격 */
+.post-content.prose,
+.portfolio-markdoc-body.prose {
+    font-size: 1.125rem;
+    line-height: 1.85;
+}
+
+/* 단락 간격 확대 */
+.post-content.prose p,
+.portfolio-markdoc-body.prose p {
+    margin-bottom: 1.75em;
+    color: var(--color-foreground);
+}
+
+/* 첫 단락: 리드 문단 스타일 */
+.post-content.prose > p:first-of-type {
+    font-size: 1.2rem;
+    line-height: 1.75;
+    color: var(--color-foreground);
+}
+
+/* 이미지: 둥근 모서리 + 그림자 */
+.post-content.prose img,
+.portfolio-markdoc-body.prose img {
+    border-radius: 0.75rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+/* h2: 더 큰 여백 + 구분선 강화 */
+.post-content.prose h2,
+.portfolio-markdoc-body.prose h2 {
+    font-size: 1.625rem;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* h3: 깔끔한 소제목 */
+.post-content.prose h3,
+.portfolio-markdoc-body.prose h3 {
+    font-size: 1.25rem;
+    margin-top: 2.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* 리스트: 여백 + 줄간격 */
+.post-content.prose ul,
+.post-content.prose ol,
+.portfolio-markdoc-body.prose ul,
+.portfolio-markdoc-body.prose ol {
+    margin-bottom: 1.75em;
+}
+
+.post-content.prose li,
+.portfolio-markdoc-body.prose li {
+    margin-bottom: 0.5em;
+    line-height: 1.75;
+}
+
 /* ── Admin 마크다운 미리보기: 커스텀 태그 PLACEHOLDER */
 .admin-preview-body .preview-placeholder {
     padding: 0.75rem 1rem;

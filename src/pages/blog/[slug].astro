@@ -11,6 +11,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import GithubToc from "@/components/GithubToc.astro";
+import { ArrowLeft } from "lucide-react";
 
 export async function getStaticPaths() {
     if (!serverClient) return [];
@@ -91,19 +92,7 @@ const pageImage = post.og_image || post.thumbnail || "";
                 href="/blog"
                 class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
             >
-                <svg
-                    class="h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"></path>
-                </svg>
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 Blog 목록
             </a>
 
