@@ -24,6 +24,22 @@ export interface Migration {
 
 export const MIGRATIONS: Migration[] = [
     {
+        id: "001_tags_color",
+        title: "tags.color 컬럼 추가",
+        feature: "태그 색상 (oklch 컬러 피커)",
+        sql: `alter table tags
+  add column if not exists color text;`,
+    },
+    {
+        id: "002_posts_meta_fields",
+        title: "posts SEO 메타 컬럼 추가",
+        feature: "포스트 SEO (meta_title, meta_description, og_image)",
+        sql: `alter table posts
+  add column if not exists meta_title       text,
+  add column if not exists meta_description text,
+  add column if not exists og_image         text;`,
+    },
+    {
         id: "003_site_config_table",
         title: "site_config 테이블 생성",
         feature: "사이트 설정 (색상 스킴, TOC 스타일 등)",
@@ -45,22 +61,6 @@ export const MIGRATIONS: Migration[] = [
 insert into resume (id, data)
 values ('main', '{}'::jsonb)
 on conflict (id) do nothing;`,
-    },
-    {
-        id: "001_tags_color",
-        title: "tags.color 컬럼 추가",
-        feature: "태그 색상 (oklch 컬러 피커)",
-        sql: `alter table tags
-  add column if not exists color text;`,
-    },
-    {
-        id: "002_posts_meta_fields",
-        title: "posts SEO 메타 컬럼 추가",
-        feature: "포스트 SEO (meta_title, meta_description, og_image)",
-        sql: `alter table posts
-  add column if not exists meta_title       text,
-  add column if not exists meta_description text,
-  add column if not exists og_image         text;`,
     },
     {
         id: "005_posts_category",
