@@ -49,18 +49,20 @@ export const MIGRATIONS: Migration[] = [
 );`,
     },
     {
-        id: "004_resume_table",
-        title: "resume 테이블 생성",
-        feature: "이력서 관리",
-        sql: `create table if not exists resume (
-  id         text primary key default 'main',
-  data       jsonb not null default '{}'::jsonb,
-  updated_at timestamptz default now()
+        id: "004_resume_data_table",
+        title: "resume_data 테이블 생성",
+        feature: "이력서 관리 (언어별 데이터)",
+        sql: `create table if not exists resume_data (
+  id         uuid        primary key default gen_random_uuid(),
+  lang       text        not null default 'ko',
+  data       jsonb       not null,
+  updated_at timestamptz not null default now(),
+  unique(lang)
 );
 
-insert into resume (id, data)
-values ('main', '{}'::jsonb)
-on conflict (id) do nothing;`,
+insert into resume_data (lang, data)
+values ('ko', '{}'::jsonb)
+on conflict (lang) do nothing;`,
     },
     {
         id: "005_posts_category",

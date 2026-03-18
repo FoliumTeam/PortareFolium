@@ -216,5 +216,8 @@ INSERT INTO site_config (key, value) VALUES
     ('job_field',       '"game"'),
     ('job_fields',      '[{"id":"web","name":"Web","emoji":"🌐"},{"id":"game","name":"Game","emoji":"🎮"}]'),
     ('seo_config',      '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
-    ('resume_layout',   '"modern"')
+    ('resume_layout',   '"modern"'),
+    -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 모든 마이그레이션을 완료로 표시
+    -- hash 빈 문자열 = baseline 적용(해시 불명) → 변조 경고 없음
+    ('applied_migrations', '[{"id":"001_tags_color","hash":""},{"id":"002_posts_meta_fields","hash":""},{"id":"003_site_config_table","hash":""},{"id":"004_resume_data_table","hash":""},{"id":"005_posts_category","hash":""}]')
 ON CONFLICT (key) DO NOTHING;
