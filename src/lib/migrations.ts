@@ -1,5 +1,18 @@
 // DB 마이그레이션 정의 목록
 
+// djb2 해시: SQL 내용 변경 감지용
+export function sqlHash(sql: string): string {
+    let h = 5381;
+    for (let i = 0; i < sql.length; i++) h = (h * 33) ^ sql.charCodeAt(i);
+    return (h >>> 0).toString(16);
+}
+
+// 적용 완료 기록 (id + 적용 당시 SQL 해시)
+export interface AppliedRecord {
+    id: string;
+    hash: string;
+}
+
 export interface Migration {
     id: string;
     // 설명

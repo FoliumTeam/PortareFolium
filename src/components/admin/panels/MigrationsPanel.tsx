@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
-import { MIGRATIONS } from "@/lib/migrations";
-import type { Migration } from "@/lib/migrations";
+import { MIGRATIONS, sqlHash } from "@/lib/migrations";
+import type { Migration, AppliedRecord } from "@/lib/migrations";
 
 // site_config key
 const CONFIG_KEY = "applied_migrations";
 
+// 저장값 역직렬화: 구버전(string[])과 신버전(AppliedRecord[]) 모두 처리
+function parseApplied(raw: unknown): AppliedRecord[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((item) =>
+        typeof item === "string"
+            ? { id: item, hash: "" }
+            : (item as AppliedRecord)
+    );
+}
+
 export default function MigrationsPanel() {
-    const [applied, setApplied] = useState<string[]>([]);
+    const [applied, setApplied] = useState<AppliedRecord[]>([]);
     const [copied, setCopied] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -23,19 +33,19 @@ export default function MigrationsPanel() {
             .eq("key", CONFIG_KEY)
             .single()
             .then(({ data }) => {
-                if (data?.value && Array.isArray(data.value)) {
-                    setApplied(data.value as string[]);
-                }
+                setApplied(parseApplied(data?.value));
                 setLoading(false);
             });
     }, []);
 
-    // 적용 완료 토글
-    const toggleApplied = async (id: string) => {
+    const appliedIds = new Set(applied.map((r) => r.id));
+
+    // 적용 완료 토글: 적용 시 현재 SQL 해시 저장
+    const toggleApplied = async (migration: Migration) => {
         if (!browserClient) return;
-        const next = applied.includes(id)
-            ? applied.filter((x) => x !== id)
-            : [...applied, id];
+        const next = appliedIds.has(migration.id)
+            ? applied.filter((r) => r.id !== migration.id)
+            : [...applied, { id: migration.id, hash: sqlHash(migration.sql) }];
         await browserClient.from("site_config").upsert({
             key: CONFIG_KEY,
             value: next,
@@ -50,8 +60,15 @@ export default function MigrationsPanel() {
         setTimeout(() => setCopied(null), 2000);
     };
 
-    const pending = MIGRATIONS.filter((m) => !applied.includes(m.id));
-    const done = MIGRATIONS.filter((m) => applied.includes(m.id));
+    // 적용 후 SQL이 변경된 마이그레이션 탐지
+    const isTampered = (migration: Migration): boolean => {
+        const record = applied.find((r) => r.id === migration.id);
+        if (!record || !record.hash) return false;
+        return record.hash !== sqlHash(migration.sql);
+    };
+
+    const pending = MIGRATIONS.filter((m) => !appliedIds.has(m.id));
+    const done = MIGRATIONS.filter((m) => appliedIds.has(m.id));
 
     if (loading) {
         return (
@@ -85,8 +102,9 @@ export default function MigrationsPanel() {
                                 key={m.id}
                                 migration={m}
                                 isApplied={false}
+                                isTampered={false}
                                 isCopied={copied === m.id}
-                                onToggle={() => toggleApplied(m.id)}
+                                onToggle={() => toggleApplied(m)}
                                 onCopy={() => copySql(m)}
                             />
                         ))}
@@ -112,8 +130,9 @@ export default function MigrationsPanel() {
                                 key={m.id}
                                 migration={m}
                                 isApplied={true}
+                                isTampered={isTampered(m)}
                                 isCopied={copied === m.id}
-                                onToggle={() => toggleApplied(m.id)}
+                                onToggle={() => toggleApplied(m)}
                                 onCopy={() => copySql(m)}
                             />
                         ))}
@@ -127,25 +146,29 @@ export default function MigrationsPanel() {
 function MigrationCard({
     migration,
     isApplied,
+    isTampered,
     isCopied,
     onToggle,
     onCopy,
 }: {
     migration: Migration;
     isApplied: boolean;
+    isTampered: boolean;
     isCopied: boolean;
     onToggle: () => void;
     onCopy: () => void;
 }) {
-    const [open, setOpen] = useState(!isApplied);
+    const [open, setOpen] = useState(!isApplied || isTampered);
 
     return (
         <div
             className={[
                 "rounded-xl border p-4 transition-opacity",
-                isApplied
-                    ? "border-(--color-border) opacity-50"
-                    : "border-(--color-border) bg-(--color-surface)",
+                isTampered
+                    ? "border-amber-400 bg-amber-50 opacity-100 dark:bg-amber-950/20"
+                    : isApplied
+                      ? "border-(--color-border) opacity-50"
+                      : "border-(--color-border) bg-(--color-surface)",
             ].join(" ")}
         >
             <div className="flex items-start gap-3">
@@ -181,10 +204,24 @@ function MigrationCard({
                         <span className="rounded-full bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted)">
                             {migration.id}
                         </span>
+                        {/* SQL 변경 경고 */}
+                        {isTampered && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                ⚠ SQL 변경됨
+                            </span>
+                        )}
                     </div>
                     <p className="mt-0.5 text-xs text-(--color-muted)">
                         {migration.feature}
                     </p>
+
+                    {/* SQL 변경 안내 */}
+                    {isTampered && (
+                        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+                            적용 당시와 SQL이 달라졌습니다. 변경 내용을 확인하고
+                            필요하면 새 마이그레이션을 추가하세요.
+                        </p>
+                    )}
 
                     {/* SQL 토글 */}
                     <button
