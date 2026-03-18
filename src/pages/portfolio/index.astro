@@ -9,6 +9,19 @@ import PortfolioView from "@/components/PortfolioView";
 import { serverClient } from "@/lib/supabase";
 import type { PortfolioProject } from "@/types/portfolio";
 
+// site_config에서 portfolio_view_mode 읽기
+let portfolioViewMode: "list" | "block" | undefined = undefined;
+if (serverClient) {
+    const { data: vmCfg } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "portfolio_view_mode")
+        .single();
+    if (vmCfg?.value === "list" || vmCfg?.value === "block") {
+        portfolioViewMode = vmCfg.value;
+    }
+}
+
 // site_config에서 job_field 읽기 (없으면 env → 기본값 "game")
 let jobField = import.meta.env.PUBLIC_JOB_FIELD ?? "game";
 if (serverClient) {
@@ -81,6 +94,10 @@ if (serverClient) {
             그리드로 보기입니다.
         </p>
 
-        <PortfolioView client:load projects={publicProjects} />
+        <PortfolioView
+            client:load
+            projects={publicProjects}
+            forcedViewMode={portfolioViewMode}
+        />
     </div>
 </BaseLayout>

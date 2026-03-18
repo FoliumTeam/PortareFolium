@@ -11,6 +11,7 @@ type ViewMode = "list" | "block";
 
 interface Props {
     projects: PortfolioProject[];
+    forcedViewMode?: "list" | "block";
 }
 
 /** 블록 뷰용 태그 색상 (키워드별 대응 또는 순환) */
@@ -36,12 +37,16 @@ function getStoredViewMode(): ViewMode {
     return "list";
 }
 
-export default function PortfolioView({ projects }: Props) {
-    const [viewMode, setViewMode] = useState<ViewMode>("list");
+export default function PortfolioView({ projects, forcedViewMode }: Props) {
+    const [viewMode, setViewMode] = useState<ViewMode>(
+        forcedViewMode ?? "list"
+    );
 
     useEffect(() => {
-        setViewMode(getStoredViewMode());
-    }, []);
+        if (!forcedViewMode) {
+            setViewMode(getStoredViewMode());
+        }
+    }, [forcedViewMode]);
 
     const handleSetViewMode = (mode: ViewMode) => {
         setViewMode(mode);
@@ -57,57 +62,66 @@ export default function PortfolioView({ projects }: Props) {
                 <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
                     Portfolio
                 </h1>
-                <div
-                    className="inline-flex rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-0.5"
-                    role="tablist"
-                    aria-label="포트폴리오 보기 방식"
-                >
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={viewMode === "list"}
-                        onClick={() => handleSetViewMode("list")}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                            viewMode === "list"
-                                ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
-                                : "text-(--color-muted) hover:text-(--color-foreground)"
-                        }`}
+                {!forcedViewMode && (
+                    <div
+                        className="inline-flex rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-0.5"
+                        role="tablist"
+                        aria-label="포트폴리오 보기 방식"
                     >
-                        List
-                    </button>
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={viewMode === "block"}
-                        onClick={() => handleSetViewMode("block")}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                            viewMode === "block"
-                                ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
-                                : "text-(--color-muted) hover:text-(--color-foreground)"
-                        }`}
-                    >
-                        Block
-                    </button>
-                </div>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={viewMode === "list"}
+                            onClick={() => handleSetViewMode("list")}
+                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                                viewMode === "list"
+                                    ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
+                                    : "text-(--color-muted) hover:text-(--color-foreground)"
+                            }`}
+                        >
+                            List
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={viewMode === "block"}
+                            onClick={() => handleSetViewMode("block")}
+                            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                                viewMode === "block"
+                                    ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
+                                    : "text-(--color-muted) hover:text-(--color-foreground)"
+                            }`}
+                        >
+                            Block
+                        </button>
+                    </div>
+                )}
             </div>
 
             {viewMode === "list" ? (
                 // 타임라인 리스트 뷰
                 <div className="relative space-y-0">
                     {/* 타임라인 세로선 */}
-                    <div className="absolute top-0 bottom-0 left-0 w-px bg-(--color-border)" aria-hidden="true" />
+                    <div
+                        className="absolute top-0 bottom-0 left-0 w-px bg-(--color-border)"
+                        aria-hidden="true"
+                    />
                     {projects.map((project) => (
                         <article
                             key={project.slug}
-                            className="relative pl-8 pb-10 last:pb-0"
+                            className="relative pb-10 pl-8 last:pb-0"
                         >
                             {/* 타임라인 닷 */}
-                            <div className="absolute left-0 top-7 -translate-x-1/2 h-3 w-3 rounded-full border-2 border-(--color-accent) bg-(--color-surface)" aria-hidden="true" />
+                            <div
+                                className="absolute top-7 left-0 h-3 w-3 -translate-x-1/2 rounded-full border-2 border-(--color-accent) bg-(--color-surface)"
+                                aria-hidden="true"
+                            />
                             <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6">
                                 <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <p className="mb-1 text-xs font-semibold tracking-wider text-(--color-muted) uppercase">
-                                            {project.startDate} — {project.endDate}
+                                            {project.startDate} —{" "}
+                                            {project.endDate}
                                         </p>
                                         <h2 className="tablet:text-2xl text-xl font-bold text-(--color-foreground)">
                                             {project.title}
@@ -118,11 +132,21 @@ export default function PortfolioView({ projects }: Props) {
                                             href={project.github}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+                                            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                                         >
                                             GitHub
-                                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            <svg
+                                                className="h-3.5 w-3.5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                                />
                                             </svg>
                                         </a>
                                     ) : null}
@@ -162,12 +186,20 @@ export default function PortfolioView({ projects }: Props) {
                                             성과
                                         </h3>
                                         <ul className="space-y-1.5">
-                                            {project.accomplishments.map((a, i) => (
-                                                <li key={i} className="flex items-start gap-2 text-sm text-(--color-foreground)">
-                                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)" aria-hidden="true" />
-                                                    {a}
-                                                </li>
-                                            ))}
+                                            {project.accomplishments.map(
+                                                (a, i) => (
+                                                    <li
+                                                        key={i}
+                                                        className="flex items-start gap-2 text-sm text-(--color-foreground)"
+                                                    >
+                                                        <span
+                                                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {a}
+                                                    </li>
+                                                )
+                                            )}
                                         </ul>
                                     </div>
                                 ) : null}
@@ -206,7 +238,9 @@ export default function PortfolioView({ projects }: Props) {
                                         height={360}
                                         loading={index < 2 ? "eager" : "lazy"}
                                         decoding="async"
-                                        fetchPriority={index < 2 ? "high" : undefined}
+                                        fetchPriority={
+                                            index < 2 ? "high" : undefined
+                                        }
                                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                                     />
                                 ) : (
@@ -215,7 +249,10 @@ export default function PortfolioView({ projects }: Props) {
                                     </div>
                                 )}
                                 {/* 호버 오버레이 */}
-                                <div className="absolute inset-0 bg-(--color-foreground) opacity-0 transition-opacity duration-300 group-hover:opacity-[0.06]" aria-hidden="true" />
+                                <div
+                                    className="absolute inset-0 bg-(--color-foreground) opacity-0 transition-opacity duration-300 group-hover:opacity-[0.06]"
+                                    aria-hidden="true"
+                                />
                             </div>
                             <div className="p-5">
                                 <h2 className="mb-2.5 font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">

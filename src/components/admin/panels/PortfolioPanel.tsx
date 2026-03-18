@@ -167,6 +167,9 @@ export default function PortfolioPanel() {
     const [filterJobField, setFilterJobField] = useState("");
     const [filterSearch, setFilterSearch] = useState("");
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [viewModeSetting, setViewModeSetting] = useState<
+        "list" | "block" | "user"
+    >("user");
     const [batchJobField, setBatchJobField] = useState("");
     const [batchSaving, setBatchSaving] = useState(false);
     const [showSortMenu, setShowSortMenu] = useState(false);
@@ -214,8 +217,37 @@ export default function PortfolioPanel() {
                 .then(({ data }) => {
                     if (data?.value) setJobFields(data.value as JobFieldItem[]);
                 });
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "portfolio_view_mode")
+                .single()
+                .then(({ data }) => {
+                    const v = data?.value;
+                    if (v === "list" || v === "block") setViewModeSetting(v);
+                    else setViewModeSetting("user");
+                });
         }
     }, []);
+
+    const saveViewMode = async (mode: "list" | "block" | "user") => {
+        if (!browserClient) return;
+        setViewModeSetting(mode);
+        const value = mode === "user" ? null : mode;
+        if (value) {
+            await browserClient
+                .from("site_config")
+                .upsert(
+                    { key: "portfolio_view_mode", value },
+                    { onConflict: "key" }
+                );
+        } else {
+            await browserClient
+                .from("site_config")
+                .delete()
+                .eq("key", "portfolio_view_mode");
+        }
+    };
 
     // form → DB payload 변환
     const buildPayload = () => ({
@@ -851,12 +883,37 @@ export default function PortfolioPanel() {
                                 Featured: {featuredCount}/5
                             </p>
                         </div>
-                        <button
-                            onClick={openNew}
-                            className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
-                        >
-                            + 새 항목
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {/* 보기 방식 설정 */}
+                            <div className="flex items-center gap-1 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-0.5">
+                                {(
+                                    [
+                                        { key: "list", label: "List" },
+                                        { key: "block", label: "Block" },
+                                        { key: "user", label: "User" },
+                                    ] as const
+                                ).map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => saveViewMode(key)}
+                                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                                            viewModeSetting === key
+                                                ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
+                                                : "text-(--color-muted) hover:text-(--color-foreground)"
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={openNew}
+                                className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                            >
+                                + 새 항목
+                            </button>
+                        </div>
                     </div>
 
                     {/* 필터 + 정렬 */}
