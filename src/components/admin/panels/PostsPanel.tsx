@@ -895,7 +895,7 @@ export default function PostsPanel() {
                     >
                         <option value="">직무 분야 전체</option>
                         {jobFields.map((f) => (
-                            <option key={f.slug} value={f.slug}>
+                            <option key={f.id} value={f.id}>
                                 {f.emoji} {f.name}
                             </option>
                         ))}
@@ -972,7 +972,7 @@ export default function PostsPanel() {
                             >
                                 <option value="">직무 분야 선택</option>
                                 {jobFields.map((f) => (
-                                    <option key={f.slug} value={f.slug}>
+                                    <option key={f.id} value={f.id}>
                                         {f.emoji} {f.name}
                                     </option>
                                 ))}
