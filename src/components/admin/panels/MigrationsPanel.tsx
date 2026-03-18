@@ -20,6 +20,8 @@ export default function MigrationsPanel() {
     const [applied, setApplied] = useState<AppliedRecord[]>([]);
     const [copied, setCopied] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    // 정렬 방향: newest = 내림차순(기본), oldest = 오름차순
+    const [sortDir, setSortDir] = useState<"newest" | "oldest">("newest");
 
     // applied_migrations 로드
     useEffect(() => {
@@ -67,8 +69,10 @@ export default function MigrationsPanel() {
         return record.hash !== sqlHash(migration.sql);
     };
 
-    const pending = MIGRATIONS.filter((m) => !appliedIds.has(m.id));
-    const done = MIGRATIONS.filter((m) => appliedIds.has(m.id));
+    const sorted =
+        sortDir === "newest" ? [...MIGRATIONS].reverse() : MIGRATIONS;
+    const pending = sorted.filter((m) => !appliedIds.has(m.id));
+    const done = sorted.filter((m) => appliedIds.has(m.id));
 
     if (loading) {
         return (
@@ -80,14 +84,26 @@ export default function MigrationsPanel() {
 
     return (
         <div className="mx-auto max-w-3xl space-y-8">
-            <div>
-                <h2 className="mb-1 text-2xl font-black tracking-tight text-(--color-foreground)">
-                    DB 마이그레이션
-                </h2>
-                <p className="text-sm text-(--color-muted)">
-                    아래 SQL을 Supabase SQL Editor에서 실행하고, 완료 후
-                    체크하세요.
-                </p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h2 className="mb-1 text-2xl font-black tracking-tight text-(--color-foreground)">
+                        DB 마이그레이션
+                    </h2>
+                    <p className="text-sm text-(--color-muted)">
+                        아래 SQL을 Supabase SQL Editor에서 실행하고, 완료 후
+                        체크하세요.
+                    </p>
+                </div>
+                <select
+                    value={sortDir}
+                    onChange={(e) =>
+                        setSortDir(e.target.value as "newest" | "oldest")
+                    }
+                    className="shrink-0 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                >
+                    <option value="newest">최신순</option>
+                    <option value="oldest">오래된순</option>
+                </select>
             </div>
 
             {/* 미적용 마이그레이션 */}
