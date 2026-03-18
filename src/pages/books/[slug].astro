@@ -1,0 +1,177 @@
+---
+/**
+ * 도서 리뷰 상세 페이지
+ * 빌드 타임에 Supabase books 테이블에서 fetch한다.
+ * 마크다운 본문은 Markdoc + Shiki 파이프라인으로 HTML 변환한다.
+ */
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { serverClient } from "@/lib/supabase";
+import { renderMarkdown } from "@/lib/markdown";
+import { extractTocFromHtml } from "@/lib/toc";
+import TableOfContents from "@/components/TableOfContents";
+import { ArrowLeft, Star } from "lucide-react";
+
+export async function getStaticPaths() {
+    if (!serverClient) return [];
+    const { data: books } = await serverClient
+        .from("books")
+        .select("slug")
+        .eq("published", true);
+    if (!books) return [];
+    return books.map((b) => ({ params: { slug: b.slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug || !serverClient) return Astro.redirect("/portfolio");
+
+const { data: book } = await serverClient
+    .from("books")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+if (!book) return Astro.redirect("/portfolio");
+
+const contentHtml = await renderMarkdown(book.content ?? "");
+const tocEntries = extractTocFromHtml(contentHtml);
+const pageTitle = book.meta_title || `${book.title} - Books`;
+const pageDesc = book.meta_description || book.description || "";
+const pageImage = book.og_image || book.cover_url || "";
+---
+
+<BaseLayout title={pageTitle} description={pageDesc} image={pageImage}>
+    <div class="mx-auto flex max-w-5xl gap-12">
+        <article class="max-w-3xl min-w-0 flex-1">
+            {/* 뒤로가기 */}
+            <a
+                href="/portfolio"
+                class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+            >
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                Portfolio 목록
+            </a>
+
+            {/* 도서 헤더 */}
+            <header class="mb-8 flex gap-6">
+                {
+                    book.cover_url ? (
+                        <img
+                            src={book.cover_url}
+                            alt=""
+                            width={120}
+                            height={180}
+                            loading="eager"
+                            decoding="async"
+                            class="h-44 w-[7.5rem] shrink-0 rounded-xl border border-(--color-border) object-cover shadow-md"
+                        />
+                    ) : null
+                }
+                <div class="min-w-0 flex-1">
+                    <h1
+                        class="tablet:text-4xl mb-2 text-3xl font-black tracking-tight text-(--color-foreground)"
+                    >
+                        {book.title}
+                    </h1>
+                    {
+                        book.author && (
+                            <p class="mb-4 text-base text-(--color-muted)">
+                                {book.author}
+                            </p>
+                        )
+                    }
+                    {
+                        book.rating && (
+                            <div class="mb-4 flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                        className={`h-5 w-5 ${i < book.rating! ? "fill-(--color-accent) text-(--color-accent)" : "text-(--color-border)"}`}
+                                        aria-hidden="true"
+                                    />
+                                ))}
+                                <span class="ml-1 text-sm text-(--color-muted)">
+                                    {book.rating} / 5
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        book.tags?.length > 0 && (
+                            <div class="flex flex-wrap gap-1.5">
+                                {book.tags.map((tag: string) => (
+                                    <span class="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg)">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )
+                    }
+                </div>
+            </header>
+
+            {/* 한줄 소개 */}
+            {
+                book.description && (
+                    <p class="mb-8 text-lg leading-relaxed text-(--color-muted)">
+                        {book.description}
+                    </p>
+                )
+            }
+
+            {/* 본문 구분선 */}
+            {contentHtml && <div class="mb-10 h-px bg-(--color-border)" />}
+
+            <div
+                class="book-markdoc-body prose max-w-none text-(--color-foreground)"
+                data-content="true"
+                set:html={contentHtml}
+            />
+        </article>
+        <TableOfContents
+            client:visible
+            entries={tocEntries}
+            contentSelector=".book-markdoc-body"
+        />
+    </div>
+</BaseLayout>
+
+<script>
+    import {
+        renderMermaidBlocks,
+        rerenderMermaidOnThemeChange,
+    } from "@/lib/mermaid-render";
+
+    const run = () => renderMermaidBlocks(".book-markdoc-body", "book slug");
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", run);
+    } else {
+        run();
+    }
+    window.addEventListener("themechange", () =>
+        rerenderMermaidOnThemeChange("book slug")
+    );
+</script>
+
+<style>
+    :global(.book-markdoc-body.prose),
+    :global(.book-markdoc-body.prose p),
+    :global(.book-markdoc-body.prose strong) {
+        color: var(--color-foreground);
+    }
+    :global(.book-markdoc-body.prose h1),
+    :global(.book-markdoc-body.prose h2),
+    :global(.book-markdoc-body.prose h3),
+    :global(.book-markdoc-body.prose h4) {
+        color: var(--color-foreground) !important;
+    }
+    :global(.book-markdoc-body.prose ul),
+    :global(.book-markdoc-body.prose ol),
+    :global(.book-markdoc-body.prose li) {
+        color: var(--color-foreground) !important;
+    }
+    :global(.book-markdoc-body.prose li)::marker {
+        color: var(--color-foreground) !important;
+    }
+    :global(.book-markdoc-body.prose hr) {
+        border-color: var(--color-border);
+    }
+</style>

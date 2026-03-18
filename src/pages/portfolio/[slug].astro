@@ -10,6 +10,7 @@ import type { PortfolioProject } from "@/types/portfolio";
 import { renderMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
+import { ArrowLeft, Github, ExternalLink, BookOpen, Star } from "lucide-react";
 
 export async function getStaticPaths() {
     if (!serverClient) return [];
@@ -57,6 +58,32 @@ const tocEntries = extractTocFromHtml(contentHtml);
 const pageTitle = item.meta_title || `${project.title} - Portfolio`;
 const pageDesc = item.meta_description || project.description || "";
 const pageImage = item.og_image || project.thumbnail || "";
+
+// 관련 도서: project의 job_field와 일치하는 published 도서
+const projectJobFields = Array.isArray(project.jobField)
+    ? project.jobField
+    : project.jobField
+      ? [project.jobField]
+      : [];
+
+interface BookItem {
+    slug: string;
+    title: string;
+    author: string | null;
+    cover_url: string | null;
+    description: string | null;
+    rating: number | null;
+}
+let relatedBooks: BookItem[] = [];
+if (serverClient && projectJobFields.length > 0) {
+    const { data: booksData } = await serverClient
+        .from("books")
+        .select("slug, title, author, cover_url, description, rating")
+        .eq("published", true)
+        .overlaps("job_field", projectJobFields)
+        .order("order_idx", { ascending: true });
+    if (booksData) relatedBooks = booksData;
+}
 ---
 
 <BaseLayout title={pageTitle} description={pageDesc} image={pageImage}>
@@ -67,19 +94,7 @@ const pageImage = item.og_image || project.thumbnail || "";
                 href="/portfolio"
                 class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
             >
-                <svg
-                    class="h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7"></path>
-                </svg>
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 Portfolio 목록
             </a>
 
@@ -228,33 +243,12 @@ const pageImage = item.og_image || project.thumbnail || "";
                         rel="noopener noreferrer"
                         class="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                     >
-                        <svg
-                            class="h-4 w-4"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
+                        <Github className="h-4 w-4" aria-hidden="true" />
                         GitHub 저장소
-                        <svg
-                            class="h-3.5 w-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        <ExternalLink
+                            className="h-3.5 w-3.5"
                             aria-hidden="true"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                            />
-                        </svg>
+                        />
                     </a>
                 ) : null
             }
@@ -267,6 +261,78 @@ const pageImage = item.og_image || project.thumbnail || "";
                 data-content="true"
                 set:html={contentHtml}
             />
+
+            {/* 관련 도서 섹션 */}
+            {
+                relatedBooks.length > 0 && (
+                    <>
+                        <div class="my-12 h-px bg-(--color-border)" />
+                        <section>
+                            <h2 class="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                                <BookOpen
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                                관련 도서
+                            </h2>
+                            <ul class="space-y-4">
+                                {relatedBooks.map((book) => (
+                                    <li>
+                                        <a
+                                            href={`/books/${book.slug}`}
+                                            class="group flex items-start gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 transition-colors hover:border-(--color-accent)"
+                                        >
+                                            {book.cover_url ? (
+                                                <img
+                                                    src={book.cover_url}
+                                                    alt=""
+                                                    width={56}
+                                                    height={80}
+                                                    class="h-20 w-14 shrink-0 rounded object-cover"
+                                                />
+                                            ) : (
+                                                <div class="flex h-20 w-14 shrink-0 items-center justify-center rounded bg-(--color-border)">
+                                                    <BookOpen
+                                                        className="h-6 w-6 text-(--color-muted)"
+                                                        aria-hidden="true"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div class="min-w-0 flex-1">
+                                                <p class="mb-1 font-semibold text-(--color-foreground) group-hover:text-(--color-accent)">
+                                                    {book.title}
+                                                </p>
+                                                {book.author && (
+                                                    <p class="mb-2 text-sm text-(--color-muted)">
+                                                        {book.author}
+                                                    </p>
+                                                )}
+                                                {book.rating && (
+                                                    <div class="flex items-center gap-0.5">
+                                                        {Array.from({
+                                                            length: 5,
+                                                        }).map((_, i) => (
+                                                            <Star
+                                                                className={`h-3.5 w-3.5 ${i < book.rating! ? "fill-(--color-accent) text-(--color-accent)" : "text-(--color-border)"}`}
+                                                                aria-hidden="true"
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {book.description && (
+                                                    <p class="mt-2 line-clamp-2 text-sm text-(--color-muted)">
+                                                        {book.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    </>
+                )
+            }
         </article>
         <TableOfContents
             client:visible
