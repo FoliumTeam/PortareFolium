@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
+import {
+    Eye,
+    EyeOff,
+    ArrowUpAZ,
+    ArrowDownAZ,
+    CalendarArrowDown,
+    CalendarArrowUp,
+    Pencil,
+    Trash2,
+    AlertTriangle,
+    ChevronDown,
+} from "lucide-react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import TagSelector from "@/components/admin/TagSelector";
 import CategorySelect from "@/components/admin/CategorySelect";
@@ -105,6 +117,36 @@ export default function PostsPanel() {
     );
 
     const initialFormRef = useRef<PostForm>(EMPTY_FORM);
+
+    // 정렬 + 필터 + 선택 상태
+    const [sortKey, setSortKey] = useState<string>(
+        () =>
+            (typeof window !== "undefined"
+                ? localStorage.getItem("post_sort")
+                : null) ?? "date_desc"
+    );
+    const [filterStatus, setFilterStatus] = useState<
+        "all" | "published" | "draft"
+    >("all");
+    const [filterJobField, setFilterJobField] = useState("");
+    const [filterSearch, setFilterSearch] = useState("");
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [batchJobField, setBatchJobField] = useState("");
+    const [batchSaving, setBatchSaving] = useState(false);
+    const [showSortMenu, setShowSortMenu] = useState(false);
+    // 토스트 알림
+    const [toast, setToast] = useState<string | null>(null);
+
+    const showToast = (msg: string) => {
+        setToast(msg);
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const setSortAndSave = (key: string) => {
+        setSortKey(key);
+        localStorage.setItem("post_sort", key);
+        setShowSortMenu(false);
+    };
 
     // dirty 상태
     const isDirty =
@@ -704,90 +746,407 @@ export default function PostsPanel() {
     }
 
     // ── 목록 화면 ─────────────────────────────────────────────
+
+    // 정렬 + 필터 적용
+    const displayedPosts = posts
+        .filter((p) => {
+            if (filterStatus === "published" && !p.published) return false;
+            if (filterStatus === "draft" && p.published) return false;
+            if (filterJobField) {
+                const jf = p.job_field;
+                if (!jf) return false;
+                const arr = Array.isArray(jf) ? jf : [jf];
+                if (!arr.includes(filterJobField)) return false;
+            }
+            if (filterSearch) {
+                const q = filterSearch.toLowerCase();
+                if (!p.title.toLowerCase().includes(q) && !p.slug.includes(q))
+                    return false;
+            }
+            return true;
+        })
+        .sort((a, b) => {
+            switch (sortKey) {
+                case "date_asc":
+                    return (
+                        new Date(a.pub_date).getTime() -
+                        new Date(b.pub_date).getTime()
+                    );
+                case "title_az":
+                    return a.title.localeCompare(b.title);
+                case "title_za":
+                    return b.title.localeCompare(a.title);
+                case "published_first":
+                    return (b.published ? 1 : 0) - (a.published ? 1 : 0);
+                case "draft_first":
+                    return (a.published ? 1 : 0) - (b.published ? 1 : 0);
+                default:
+                    return (
+                        new Date(b.pub_date).getTime() -
+                        new Date(a.pub_date).getTime()
+                    );
+            }
+        });
+
+    const allSelected =
+        displayedPosts.length > 0 &&
+        displayedPosts.every((p) => selected.has(p.id));
+    const someSelected = selected.size > 0;
+
+    const toggleSelect = (id: string) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (allSelected) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(displayedPosts.map((p) => p.id)));
+        }
+    };
+
+    const batchPublish = async (publish: boolean) => {
+        if (!browserClient || selected.size === 0) return;
+        setBatchSaving(true);
+        await browserClient
+            .from("posts")
+            .update({ published: publish })
+            .in("id", [...selected]);
+        setBatchSaving(false);
+        setSelected(new Set());
+        loadPosts();
+        showToast(
+            `${selected.size}개 포스트를 ${publish ? "Published" : "Draft"}로 변경했습니다.`
+        );
+    };
+
+    const batchSetJobField = async () => {
+        if (!browserClient || selected.size === 0 || !batchJobField) return;
+        setBatchSaving(true);
+        await browserClient
+            .from("posts")
+            .update({ job_field: [batchJobField] })
+            .in("id", [...selected]);
+        setBatchSaving(false);
+        setSelected(new Set());
+        setBatchJobField("");
+        loadPosts();
+        showToast(`${selected.size}개 포스트의 직무 분야를 변경했습니다.`);
+    };
+
+    const SORT_LABELS: Record<string, string> = {
+        date_desc: "최신순",
+        date_asc: "오래된순",
+        title_az: "제목 A→Z",
+        title_za: "제목 Z→A",
+        published_first: "Published 먼저",
+        draft_first: "Draft 먼저",
+    };
+
     return (
         <div>
-            <div className="mb-6 flex items-center justify-between">
+            {/* 헤더 */}
+            <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                     블로그 포스트
                 </h2>
                 <button
                     onClick={openNew}
-                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                 >
                     + 새 포스트
                 </button>
             </div>
 
+            {/* 필터 + 정렬 */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                {/* 검색 */}
+                <input
+                    type="text"
+                    value={filterSearch}
+                    onChange={(e) => setFilterSearch(e.target.value)}
+                    placeholder="제목 또는 slug 검색"
+                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                />
+                {/* 발행 상태 필터 */}
+                <select
+                    value={filterStatus}
+                    onChange={(e) =>
+                        setFilterStatus(
+                            e.target.value as "all" | "published" | "draft"
+                        )
+                    }
+                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                >
+                    <option value="all">전체</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+                {/* 직무 분야 필터 */}
+                {jobFields.length > 0 && (
+                    <select
+                        value={filterJobField}
+                        onChange={(e) => setFilterJobField(e.target.value)}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                    >
+                        <option value="">직무 분야 전체</option>
+                        {jobFields.map((f) => (
+                            <option key={f.slug} value={f.slug}>
+                                {f.emoji} {f.name}
+                            </option>
+                        ))}
+                    </select>
+                )}
+                {/* 정렬 드롭다운 */}
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => setShowSortMenu((v) => !v)}
+                        className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) hover:bg-(--color-surface-subtle)"
+                    >
+                        {sortKey.startsWith("date") ? (
+                            sortKey === "date_desc" ? (
+                                <CalendarArrowDown size={14} />
+                            ) : (
+                                <CalendarArrowUp size={14} />
+                            )
+                        ) : sortKey.includes("az") ? (
+                            <ArrowUpAZ size={14} />
+                        ) : sortKey.includes("za") ? (
+                            <ArrowDownAZ size={14} />
+                        ) : null}
+                        {SORT_LABELS[sortKey]}
+                        <ChevronDown size={14} />
+                    </button>
+                    {showSortMenu && (
+                        <div className="absolute top-full right-0 z-20 mt-1 w-40 rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
+                            {Object.entries(SORT_LABELS).map(([key, label]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setSortAndSave(key)}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-(--color-surface-subtle) ${sortKey === key ? "font-semibold text-(--color-accent)" : "text-(--color-foreground)"}`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 배치 액션 바 */}
+            {someSelected && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-(--color-accent)/30 bg-(--color-surface-subtle) px-4 py-3">
+                    <span className="text-sm font-medium text-(--color-foreground)">
+                        {selected.size}개 선택됨
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => batchPublish(true)}
+                        disabled={batchSaving}
+                        className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                        <Eye size={13} /> Publish
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => batchPublish(false)}
+                        disabled={batchSaving}
+                        className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                        <EyeOff size={13} /> Unpublish
+                    </button>
+                    {jobFields.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                            <select
+                                value={batchJobField}
+                                onChange={(e) =>
+                                    setBatchJobField(e.target.value)
+                                }
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
+                            >
+                                <option value="">직무 분야 선택</option>
+                                {jobFields.map((f) => (
+                                    <option key={f.slug} value={f.slug}>
+                                        {f.emoji} {f.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                onClick={batchSetJobField}
+                                disabled={batchSaving || !batchJobField}
+                                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
+                            >
+                                적용
+                            </button>
+                        </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setSelected(new Set())}
+                        className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                    >
+                        선택 해제
+                    </button>
+                </div>
+            )}
+
             {error && <p className="mb-4 text-base text-red-500">{error}</p>}
 
             {loading ? (
                 <p className="text-base text-(--color-muted)">불러오는 중...</p>
-            ) : posts.length === 0 ? (
+            ) : displayedPosts.length === 0 ? (
                 <p className="text-base text-(--color-muted)">
-                    포스트가 없습니다.
+                    {posts.length === 0
+                        ? "포스트가 없습니다."
+                        : "필터 조건에 맞는 포스트가 없습니다."}
                 </p>
             ) : (
                 <div className="space-y-2">
-                    {posts.map((post) => (
-                        <div
-                            key={post.id}
-                            className="hover:border-(--color-accent)/30/50 flex items-center gap-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 transition-colors"
-                        >
-                            <div className="min-w-0 flex-1 space-y-1.5">
-                                <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                                    <span
-                                        className={`inline-block rounded-full px-2 py-0.5 text-sm font-medium ${
+                    {/* 전체 선택 행 */}
+                    <div className="flex items-center gap-3 px-2 pb-1">
+                        <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleSelectAll}
+                            className="h-4 w-4 cursor-pointer rounded"
+                        />
+                        <span className="text-sm text-(--color-muted)">
+                            전체 선택 ({displayedPosts.length}개)
+                        </span>
+                    </div>
+                    {displayedPosts.map((post) => {
+                        const hasJobField =
+                            !!post.job_field &&
+                            (Array.isArray(post.job_field)
+                                ? post.job_field.length > 0
+                                : true);
+                        return (
+                            <div
+                                key={post.id}
+                                className={`flex items-center gap-3 rounded-lg border bg-(--color-surface) p-4 transition-colors ${
+                                    selected.has(post.id)
+                                        ? "border-(--color-accent)/50"
+                                        : "border-(--color-border)"
+                                }`}
+                            >
+                                {/* 체크박스 */}
+                                <input
+                                    type="checkbox"
+                                    checked={selected.has(post.id)}
+                                    onChange={() => toggleSelect(post.id)}
+                                    className="h-4 w-4 flex-shrink-0 cursor-pointer rounded"
+                                />
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span
+                                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium ${
+                                                post.published
+                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                            }`}
+                                        >
+                                            {post.published ? (
+                                                <Eye size={11} />
+                                            ) : (
+                                                <EyeOff size={11} />
+                                            )}
+                                            {post.published
+                                                ? "Published"
+                                                : "Draft"}
+                                        </span>
+                                        {!hasJobField && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                                                <AlertTriangle size={11} />
+                                                직무 분야 없음
+                                            </span>
+                                        )}
+                                        {post.category && (
+                                            <span className="text-sm text-(--color-muted)">
+                                                {post.category}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="truncate text-base font-semibold text-(--color-foreground)">
+                                        {post.title}
+                                    </p>
+                                    <p className="font-mono text-sm text-(--color-muted)">
+                                        {post.slug}
+                                    </p>
+                                    <p className="text-sm text-(--color-muted)">
+                                        {new Date(
+                                            post.pub_date
+                                        ).toLocaleDateString("ko-KR")}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <JobFieldBadges
+                                            value={post.job_field}
+                                            fields={jobFields}
+                                        />
+                                        {post.tags.slice(0, 4).map((t) => (
+                                            <span
+                                                key={t}
+                                                className="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
+                                            >
+                                                {t}
+                                            </span>
+                                        ))}
+                                        {post.tags.length > 4 && (
+                                            <span className="text-xs text-(--color-muted)">
+                                                +{post.tags.length - 4}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <button
+                                        onClick={() => togglePublish(post)}
+                                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                             post.published
-                                                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-                                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                                ? "bg-amber-500"
+                                                : "bg-green-600"
                                         }`}
                                     >
-                                        {post.published ? "Published" : "Draft"}
-                                    </span>
-                                    {post.category && (
-                                        <span className="text-sm text-(--color-muted)">
-                                            {post.category}
-                                        </span>
-                                    )}
+                                        {post.published ? (
+                                            <EyeOff size={13} />
+                                        ) : (
+                                            <Eye size={13} />
+                                        )}
+                                        {post.published
+                                            ? "Unpublish"
+                                            : "Publish"}
+                                    </button>
+                                    <button
+                                        onClick={() => openEdit(post)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        <Pencil size={13} />
+                                        편집
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(post.id)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        <Trash2 size={13} />
+                                        삭제
+                                    </button>
                                 </div>
-                                <p className="truncate text-base font-semibold text-(--color-foreground)">
-                                    {post.title}
-                                </p>
-                                <p className="font-mono text-sm text-(--color-muted)">
-                                    {post.slug}
-                                </p>
-                                <p className="text-sm">
-                                    {new Date(post.pub_date).toLocaleDateString(
-                                        "ko-KR"
-                                    )}
-                                </p>
-                                <JobFieldBadges
-                                    value={post.job_field}
-                                    fields={jobFields}
-                                />
                             </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                                <button
-                                    onClick={() => togglePublish(post)}
-                                    className="rounded-lg bg-slate-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                >
-                                    {post.published ? "Unpublish" : "Publish"}
-                                </button>
-                                <button
-                                    onClick={() => openEdit(post)}
-                                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                >
-                                    편집
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(post.id)}
-                                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                >
-                                    삭제
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* 토스트 알림 */}
+            {toast && (
+                <div className="fixed right-6 bottom-6 z-[100] rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
+                    {toast}
                 </div>
             )}
         </div>
