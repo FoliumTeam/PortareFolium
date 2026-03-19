@@ -83,6 +83,29 @@ CREATE TABLE IF NOT EXISTS tags (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 도서 리뷰
+CREATE TABLE IF NOT EXISTS books (
+    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug             TEXT        UNIQUE NOT NULL,
+    title            TEXT        NOT NULL,
+    author           TEXT,
+    cover_url        TEXT,
+    description      TEXT,
+    content          TEXT        NOT NULL DEFAULT '',
+    rating           SMALLINT    CHECK (rating >= 1 AND rating <= 5),
+    tags             TEXT[]      NOT NULL DEFAULT '{}',
+    job_field        TEXT[]      NOT NULL DEFAULT '{}',
+    published        BOOLEAN     NOT NULL DEFAULT false,
+    featured         BOOLEAN     NOT NULL DEFAULT false,
+    order_idx        INTEGER     NOT NULL DEFAULT 0,
+    data             JSONB       NOT NULL DEFAULT '{}',
+    meta_title       TEXT,
+    meta_description TEXT,
+    og_image         TEXT,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── 인덱스 ──────────────────────────────────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_posts_slug        ON posts(slug);
@@ -90,6 +113,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_published   ON posts(published, pub_date DE
 CREATE INDEX IF NOT EXISTS idx_posts_category    ON posts(category);
 CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
+CREATE INDEX IF NOT EXISTS idx_books_slug        ON books(slug);
+CREATE INDEX IF NOT EXISTS idx_books_published   ON books(published, order_idx);
 
 -- ── updated_at 자동 갱신 트리거 ─────────────────────────────
 
@@ -119,6 +144,10 @@ CREATE OR REPLACE TRIGGER trg_resume_updated_at
 
 CREATE OR REPLACE TRIGGER trg_site_config_updated_at
     BEFORE UPDATE ON site_config
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE OR REPLACE TRIGGER trg_books_updated_at
+    BEFORE UPDATE ON books
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ── Row Level Security ───────────────────────────────────────
@@ -184,6 +213,29 @@ CREATE POLICY "tags_auth_write"
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 
+-- books: published=true 인 것만 공개 읽기 / 인증된 사용자는 전체 접근
+ALTER TABLE books ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "books_public_read"
+    ON books FOR SELECT USING (published = true);
+
+CREATE POLICY "books_auth_all"
+    ON books FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+-- ── exec_sql 함수 (service_role 전용 DDL 실행) ───────────────
+
+CREATE OR REPLACE FUNCTION exec_sql(sql text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    EXECUTE sql;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION exec_sql(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION exec_sql(text) TO service_role;
+
 -- ── Storage: images 버킷 ─────────────────────────────────────
 
 INSERT INTO storage.buckets (id, name, public)
@@ -211,13 +263,12 @@ USING (bucket_id = 'images');
 -- ── 초기 site_config 데이터 ──────────────────────────────────
 
 INSERT INTO site_config (key, value) VALUES
-    ('color_scheme',    '"blue"'),
-    ('site_name',       '"PortareFolium"'),
-    ('job_field',       '"game"'),
-    ('job_fields',      '[{"id":"web","name":"Web","emoji":"🌐"},{"id":"game","name":"Game","emoji":"🎮"}]'),
-    ('seo_config',      '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
-    ('resume_layout',   '"modern"'),
-    -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 모든 마이그레이션을 완료로 표시
-    -- hash 빈 문자열 = baseline 적용(해시 불명) → 변조 경고 없음
-    ('applied_migrations', '[{"id":"001_tags_color","hash":""},{"id":"002_posts_meta_fields","hash":""},{"id":"003_site_config_table","hash":""},{"id":"004_resume_data_table","hash":""},{"id":"005_posts_category","hash":""}]')
+    ('color_scheme',       '"blue"'),
+    ('site_name',          '"PortareFolium"'),
+    ('job_field',          '"game"'),
+    ('job_fields',         '[{"id":"web","name":"Web","emoji":"🌐"},{"id":"game","name":"Game","emoji":"🎮"}]'),
+    ('seo_config',         '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
+    ('resume_layout',      '"modern"'),
+    -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 현재 버전으로 초기화
+    ('db_schema_version',  '"0.6.4"')
 ON CONFLICT (key) DO NOTHING;
