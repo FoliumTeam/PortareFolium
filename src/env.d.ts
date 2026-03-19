@@ -1,5 +1,3 @@
-/// <reference types="astro/client" />
-
 // @emoji-mart/react, @emoji-mart/data 타입 선언
 declare module "@emoji-mart/react" {
     import { ComponentType } from "react";

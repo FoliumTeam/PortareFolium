@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import {

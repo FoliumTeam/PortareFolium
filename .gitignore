@@ -3,7 +3,7 @@ node_modules/
 
 # Build output
 dist/
-.astro/
+.next/
 
 # resume.json in cwd (if any)
 resume.json

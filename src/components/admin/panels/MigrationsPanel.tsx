@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import {
@@ -14,6 +16,8 @@ export default function MigrationsPanel() {
     ); // undefined = 로딩 중, null = 없음
     const [copied, setCopied] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [applying, setApplying] = useState(false);
+    const [applyError, setApplyError] = useState<string | null>(null);
 
     const loadVersion = async () => {
         if (!browserClient) return;
@@ -35,6 +39,23 @@ export default function MigrationsPanel() {
         navigator.clipboard.writeText(migration.sql);
         setCopied(migration.version);
         setTimeout(() => setCopied(null), 2000);
+    };
+
+    const applyMigrations = async () => {
+        setApplying(true);
+        setApplyError(null);
+        try {
+            const res = await fetch("/api/run-migrations", { method: "POST" });
+            const json = await res.json();
+            if (!res.ok) {
+                setApplyError(json.error ?? "알 수 없는 오류");
+            }
+        } catch (err) {
+            setApplyError(err instanceof Error ? err.message : "네트워크 오류");
+        } finally {
+            setApplying(false);
+            await loadVersion();
+        }
     };
 
     // 로딩 중
@@ -136,10 +157,24 @@ export default function MigrationsPanel() {
                     <h3 className="mb-3 text-xs font-bold tracking-widest text-amber-600 uppercase">
                         미적용 ({pending.length})
                     </h3>
-                    <p className="mb-4 text-sm text-(--color-muted)">
-                        아래 SQL을 Supabase SQL Editor에서 순서대로 실행하세요.
-                        각 SQL 마지막에 DB 버전이 자동으로 업데이트됩니다.
-                    </p>
+                    <div className="mb-4 flex items-center gap-3">
+                        <p className="flex-1 text-sm text-(--color-muted)">
+                            아래 SQL을 Supabase SQL Editor에서 순서대로
+                            실행하거나, 자동 적용 버튼을 누르세요.
+                        </p>
+                        <button
+                            onClick={applyMigrations}
+                            disabled={applying}
+                            className="shrink-0 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                        >
+                            {applying ? "적용 중..." : "자동 적용"}
+                        </button>
+                    </div>
+                    {applyError && (
+                        <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-400">
+                            {applyError}
+                        </div>
+                    )}
                     <div className="space-y-4">
                         {pending.map((m) => (
                             <MigrationCard

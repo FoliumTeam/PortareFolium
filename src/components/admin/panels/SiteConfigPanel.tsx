@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
@@ -500,7 +502,7 @@ export default function SiteConfigPanel() {
 
     // Vercel Deploy Hook 호출
     const handleDeploy = async () => {
-        const hookUrl = import.meta.env.PUBLIC_VERCEL_DEPLOY_HOOK_URL as
+        const hookUrl = process.env.NEXT_PUBLIC_VERCEL_DEPLOY_HOOK_URL as
             | string
             | undefined;
         if (!hookUrl) {

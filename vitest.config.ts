@@ -1,11 +1,10 @@
-import { getViteConfig } from "astro/config";
+import { defineConfig } from "vitest/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
-export default getViteConfig({
-    // @ts-expect-error — getViteConfig 타입이 vitest의 test 속성을 포함하지 않지만, 런타임에는 정상 작동
+export default defineConfig({
     test: {
         environment: "jsdom",
         globals: true,
@@ -14,12 +13,7 @@ export default getViteConfig({
         coverage: {
             provider: "v8",
             include: ["src/**/*.ts", "src/**/*.tsx"],
-            exclude: [
-                "src/**/*.d.ts",
-                "src/env.d.ts",
-                "src/pages/**/*.astro",
-                "src/layouts/**/*.astro",
-            ],
+            exclude: ["src/**/*.d.ts"],
         },
         alias: {
             "@": path.resolve(__dirname, "./src"),
