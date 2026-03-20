@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { browserClient } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Trash2 } from "lucide-react";
 
 type ColorScheme =
     | "blue"
@@ -514,7 +519,7 @@ export default function SiteConfigPanel() {
                     새로운 테마를 선택하면 대시보드 화면에 즉시 반영되며, '설정
                     저장' 버튼을 누르면 다른 사용자들에게도 배포됩니다.
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                     {COLOR_OPTIONS.map((opt) => (
                         <button
                             key={opt.value}
@@ -526,22 +531,24 @@ export default function SiteConfigPanel() {
                                 );
                             }}
                             className={[
-                                "flex flex-col items-start gap-0.5 rounded-lg border px-4 py-3 text-left transition-colors",
+                                "flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
                                 colorScheme === opt.value
                                     ? "border-(--color-accent) bg-(--color-accent)/5"
                                     : "border-(--color-border) hover:border-(--color-accent)/50",
                             ].join(" ")}
                         >
-                            <span className="text-base font-semibold text-(--color-foreground)">
+                            <span className="text-sm font-semibold text-(--color-foreground)">
                                 {opt.label}
                             </span>
-                            <span className="text-sm text-(--color-muted)">
+                            <span className="text-xs text-(--color-muted)">
                                 {opt.desc}
                             </span>
                         </button>
                     ))}
                 </div>
             </section>
+
+            <Separator />
 
             {/* 직무 분야 관리 */}
             <section className="space-y-3">
@@ -554,42 +561,40 @@ export default function SiteConfigPanel() {
                 </p>
 
                 {/* job field 목록 */}
-                <div className="space-y-2">
+                <div className="divide-y divide-(--color-border)">
                     {jobFields.length === 0 && (
-                        <p className="text-sm text-(--color-muted)">
+                        <p className="py-3 text-sm text-(--color-muted)">
                             등록된 직무 분야가 없습니다
                         </p>
                     )}
                     {jobFields.map((field) => (
                         <div
                             key={field.id}
-                            className={[
-                                "flex items-center gap-5 rounded-lg border px-4 py-2.5",
-                                activeJobField === field.id
-                                    ? "border-(--color-accent) bg-(--color-accent)/5"
-                                    : "border-(--color-border)",
-                            ].join(" ")}
+                            className="group flex items-center gap-4 py-3"
                         >
                             <button
                                 onClick={() => handleSelectJobField(field.id)}
                                 className="flex flex-1 items-center gap-2 text-left"
                             >
                                 <span className="text-xl">{field.emoji}</span>
-                                <span className="text-base font-medium text-(--color-foreground)">
+                                <span className="text-sm font-medium text-(--color-foreground)">
                                     {field.name}
                                 </span>
                                 {activeJobField === field.id && (
-                                    <span className="ml-auto text-sm font-semibold text-(--color-accent)">
+                                    <span className="ml-auto text-xs font-semibold text-(--color-accent)">
                                         활성
                                     </span>
                                 )}
                             </button>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleDeleteJobField(field.id)}
-                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white"
+                                className="text-red-600 opacity-0 transition-opacity group-hover:opacity-100"
                             >
+                                <Trash2 size={13} />
                                 삭제
-                            </button>
+                            </Button>
                         </div>
                     ))}
                 </div>
@@ -602,7 +607,7 @@ export default function SiteConfigPanel() {
                             <button
                                 type="button"
                                 onClick={() => setShowPicker((v) => !v)}
-                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
                             >
                                 {newEmoji}
                             </button>
@@ -623,23 +628,22 @@ export default function SiteConfigPanel() {
                                 </div>
                             )}
                         </div>
-                        <input
-                            type="text"
+                        <Input
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") handleAddJobField();
                             }}
                             placeholder="직무 분야 이름"
-                            className="h-10 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                            className="flex-1"
                         />
-                        <button
+                        <Button
                             onClick={handleAddJobField}
                             disabled={!newName.trim()}
-                            className="h-10 rounded-lg bg-(--color-accent) px-4 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-40"
+                            size="sm"
                         >
                             추가
-                        </button>
+                        </Button>
                     </div>
                     {/* 상속 부모 선택 */}
                     {jobFields.length > 0 && (
@@ -650,7 +654,7 @@ export default function SiteConfigPanel() {
                             <select
                                 value={inheritFrom}
                                 onChange={(e) => setInheritFrom(e.target.value)}
-                                className="h-9 flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                                className="h-9 flex-1 rounded-md border border-(--color-border) bg-transparent px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                             >
                                 <option value="">없음</option>
                                 {jobFields.map((f) => (
@@ -664,6 +668,8 @@ export default function SiteConfigPanel() {
                 </div>
             </section>
 
+            <Separator />
+
             {/* 글로벌 SEO 설정 */}
             <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
@@ -675,11 +681,10 @@ export default function SiteConfigPanel() {
                 </p>
                 <div className="space-y-3">
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                        <Label className="text-sm font-medium text-(--color-muted)">
                             기본 사이트 제목 (Title)
-                        </label>
-                        <input
-                            type="text"
+                        </Label>
+                        <Input
                             value={seoConfig.defaultTitle}
                             onChange={(e) =>
                                 setSeoConfig({
@@ -687,13 +692,12 @@ export default function SiteConfigPanel() {
                                     defaultTitle: e.target.value,
                                 })
                             }
-                            className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                         />
                     </div>
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                        <Label className="text-sm font-medium text-(--color-muted)">
                             기본 사이트 설명 (Description)
-                        </label>
+                        </Label>
                         <textarea
                             value={seoConfig.defaultDescription}
                             onChange={(e) =>
@@ -703,15 +707,14 @@ export default function SiteConfigPanel() {
                                 })
                             }
                             rows={3}
-                            className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                            className="w-full rounded-md border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                         />
                     </div>
                     <div>
-                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                        <Label className="text-sm font-medium text-(--color-muted)">
                             기본 OG 이미지 URL
-                        </label>
-                        <input
-                            type="text"
+                        </Label>
+                        <Input
                             value={seoConfig.defaultOgImage}
                             onChange={(e) =>
                                 setSeoConfig({
@@ -720,31 +723,26 @@ export default function SiteConfigPanel() {
                                 })
                             }
                             placeholder="https://..."
-                            className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                         />
                     </div>
                 </div>
             </section>
 
+            <Separator />
+
             {/* 피드백 */}
             {status && (
                 <p
-                    className={`rounded-lg px-3 py-2 text-base ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
+                    className={`rounded-lg px-3 py-2 text-sm ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
                 >
                     {status.msg}
                 </p>
             )}
 
             {/* 액션 버튼 */}
-            <div className="flex gap-3">
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="rounded-lg bg-(--color-accent) px-5 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                    {saving ? "저장 중..." : "설정 저장"}
-                </button>
-            </div>
+            <Button onClick={handleSave} disabled={saving}>
+                {saving ? "저장 중..." : "설정 저장"}
+            </Button>
         </div>
     );
 }

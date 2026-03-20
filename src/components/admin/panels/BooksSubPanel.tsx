@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import {
     Eye,
@@ -14,16 +14,18 @@ import {
     Pencil,
     Trash2,
     AlertTriangle,
+    Settings,
 } from "lucide-react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
-import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
+import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 import {
-    JobFieldSelector,
     JobFieldBadges,
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
+import MetadataSheet from "@/components/admin/MetadataSheet";
+import SaveIndicator from "@/components/admin/SaveIndicator";
 
 interface BookItem {
     id: string;
@@ -109,14 +111,6 @@ function itemToForm(item: BookItem): BookForm {
     };
 }
 
-function fmtTime(d: Date): string {
-    return d.toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-    });
-}
-
 export default function BooksSubPanel({
     jobFields,
     activeJobField = "",
@@ -131,7 +125,7 @@ export default function BooksSubPanel({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [metadataOpen, setMetadataOpen] = useState(false);
 
     const initialFormRef = useRef<BookForm>(EMPTY_FORM);
 
@@ -207,7 +201,6 @@ export default function BooksSubPanel({
         setEditTarget(book);
         setError(null);
         setSuccess(null);
-        setSavedAt(null);
     };
 
     const openNew = () => {
@@ -221,7 +214,6 @@ export default function BooksSubPanel({
         setEditTarget("new");
         setError(null);
         setSuccess(null);
-        setSavedAt(null);
     };
 
     const autoSave = async () => {
@@ -237,7 +229,6 @@ export default function BooksSubPanel({
                 setBooks((prev) => [...prev, newBook]);
                 setEditTarget(newBook);
                 initialFormRef.current = form;
-                setSavedAt(new Date());
             }
         } else if (editTarget) {
             const { error: err } = await browserClient
@@ -251,14 +242,17 @@ export default function BooksSubPanel({
                     )
                 );
                 initialFormRef.current = form;
-                setSavedAt(new Date());
             }
         }
     };
 
-    useAutoSave(isDirty, true, autoSave);
+    const { savedAt: autoSavedAt, saving: autoSaving } = useAutoSave(
+        isDirty,
+        editTarget !== null,
+        autoSave
+    );
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         if (!browserClient || !form.title || !form.slug) return;
         setSaving(true);
         setError(null);
@@ -293,7 +287,7 @@ export default function BooksSubPanel({
             }
         }
         setSaving(false);
-    };
+    }, [form, editTarget]);
 
     const handleDelete = async (id: string) => {
         if (!browserClient || !confirm("도서를 삭제하시겠습니까?")) return;
@@ -351,9 +345,30 @@ export default function BooksSubPanel({
         }
     };
 
+    useKeyboardSave(handleSave);
+
+    // MetadataSheet onChange 핸들러
+    const handleMetaChange = (field: string, value: unknown) => {
+        setForm((f) => ({ ...f, [field]: value }));
+    };
+
+    // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
+    const handlePublishToggle = async (published: boolean) => {
+        if (!browserClient || editTarget === null || editTarget === "new")
+            return;
+        await browserClient
+            .from("books")
+            .update({ published })
+            .eq("id", editTarget.id);
+        setBooks((prev) =>
+            prev.map((b) => (b.id === editTarget.id ? { ...b, published } : b))
+        );
+    };
+
     const handleBack = () => {
         if (isDirty && !confirmLeave()) return;
         setEditTarget(null);
+        setMetadataOpen(false);
         setError(null);
         setSuccess(null);
     };
@@ -382,296 +397,106 @@ export default function BooksSubPanel({
             return 0;
         });
 
-    /* ── 편집 폼 ── */
+    // ── 편집 화면 (Ghost 에디터 레이아웃) ──
     if (editTarget !== null) {
-        const field = (
-            key: keyof BookForm,
-            label: string,
-            opts?: { placeholder?: string; type?: string; rows?: number }
-        ) => (
-            <div>
-                <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                    {label}
-                </label>
-                {opts?.rows ? (
-                    <textarea
-                        value={(form[key] as string) ?? ""}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, [key]: e.target.value }))
-                        }
-                        rows={opts.rows}
-                        placeholder={opts?.placeholder}
-                        className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                    />
-                ) : (
-                    <input
-                        type={opts?.type ?? "text"}
-                        value={(form[key] as string) ?? ""}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, [key]: e.target.value }))
-                        }
-                        placeholder={opts?.placeholder}
-                        className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                    />
-                )}
-            </div>
-        );
-
-        const toggle = (key: "published" | "featured", label: string) => (
-            <div className="flex items-center justify-between rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-3">
-                <span className="text-base font-medium text-(--color-foreground)">
-                    {label}
-                </span>
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={form[key]}
-                    onClick={() => setForm((f) => ({ ...f, [key]: !f[key] }))}
-                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none ${
-                        form[key] ? "bg-green-500" : "bg-(--color-border)"
-                    }`}
-                >
-                    <span
-                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            form[key] ? "translate-x-5" : "translate-x-0"
-                        }`}
-                    />
-                </button>
-            </div>
-        );
-
         return (
-            <div className="w-full max-w-5xl pb-24">
-                <div className="mb-6 flex items-center justify-between">
+            <div className="flex w-full max-w-6xl flex-col pb-20">
+                {/* 헤더 */}
+                <div className="mb-4 flex items-center justify-between">
                     <button
                         onClick={handleBack}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-lg text-(--color-muted) transition-colors hover:border-(--color-accent)/30 hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
                         ← 목록
                     </button>
-                    <h2 className="text-3xl font-bold text-(--color-foreground)">
-                        {editTarget === "new" ? "새 도서" : "도서 편집"}
-                    </h2>
-                    <div className="text-sm">
-                        {savedAt && (
-                            <span className="text-green-600">
-                                자동 저장 완료 {fmtTime(savedAt)}
-                            </span>
-                        )}
-                    </div>
+                    <button
+                        onClick={() => setMetadataOpen(true)}
+                        className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                    >
+                        <Settings size={15} />
+                        설정
+                    </button>
                 </div>
 
-                <div className="space-y-6">
-                    {/* 섹션 1: 기본 정보 */}
-                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                1
-                            </span>
-                            기본 정보
-                        </h3>
+                {/* 제목 입력 */}
+                <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => {
+                        const t = e.target.value;
+                        setForm((f) => ({
+                            ...f,
+                            title: t,
+                            slug: f.slug || toSlug(t),
+                        }));
+                    }}
+                    placeholder="도서 제목을 입력하세요"
+                    className="w-full border-none bg-transparent py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
+                />
 
-                        <div>
-                            <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                                제목 <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={form.title}
-                                onChange={(e) => {
-                                    const t = e.target.value;
-                                    setForm((f) => ({
-                                        ...f,
-                                        title: t,
-                                        slug: f.slug || toSlug(t),
-                                    }));
-                                }}
-                                placeholder="도서 제목을 입력하세요"
-                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                                Slug <span className="text-red-500">*</span>
-                                <span className="ml-1 text-xs font-normal text-(--color-muted)">
-                                    URL 경로
-                                </span>
-                            </label>
-                            <input
-                                type="text"
-                                value={form.slug}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        slug: e.target.value,
-                                    }))
-                                }
-                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 font-mono text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                            />
-                        </div>
-
-                        <JobFieldSelector
-                            value={form.jobField}
-                            fields={jobFields}
-                            onChange={(v) =>
-                                setForm((f) => ({ ...f, jobField: v }))
-                            }
-                        />
-
-                        {field("author", "저자", { placeholder: "저자명" })}
-                        {field("description", "한줄 소개", {
-                            placeholder: "도서 한줄 소개",
-                            rows: 2,
-                        })}
-                        {field("tags", "태그", {
-                            placeholder: "쉼표로 구분 (예: TypeScript, React)",
-                        })}
-                    </section>
-
-                    {/* 섹션 2: 표지 + 평점 */}
-                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                2
-                            </span>
-                            표지 &amp; 평점
-                        </h3>
-
-                        <ThumbnailUploadField
-                            value={form.cover_url}
-                            onChange={(url) =>
-                                setForm((f) => ({ ...f, cover_url: url }))
-                            }
-                            folderPath="books"
-                        />
-
-                        <div>
-                            <label className="mb-2 block text-base font-medium text-(--color-muted)">
-                                평점
-                            </label>
-                            <div className="flex items-center gap-2">
-                                {[1, 2, 3, 4, 5].map((n) => (
-                                    <button
-                                        key={n}
-                                        type="button"
-                                        onClick={() =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                rating:
-                                                    f.rating === n ? null : n,
-                                            }))
-                                        }
-                                        className="transition-transform hover:scale-110"
-                                        aria-label={`${n}점`}
-                                    >
-                                        <Star
-                                            className={`h-7 w-7 ${
-                                                form.rating !== null &&
-                                                n <= form.rating
-                                                    ? "fill-(--color-accent) text-(--color-accent)"
-                                                    : "text-(--color-border)"
-                                            }`}
-                                        />
-                                    </button>
-                                ))}
-                                {form.rating && (
-                                    <span className="ml-2 text-sm text-(--color-muted)">
-                                        {form.rating} / 5
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* 섹션 3: 본문 */}
-                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                3
-                            </span>
-                            리뷰 본문
-                        </h3>
-                        <RichMarkdownEditor
-                            value={form.content}
-                            onChange={(v) =>
-                                setForm((f) => ({ ...f, content: v }))
-                            }
-                        />
-                    </section>
-
-                    {/* 섹션 4: 발행 설정 */}
-                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                4
-                            </span>
-                            발행 설정
-                        </h3>
-                        {toggle("published", "발행")}
-                        {toggle("featured", "Featured")}
-                        <div>
-                            <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                                순서
-                            </label>
-                            <input
-                                type="number"
-                                value={form.order_idx}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        order_idx: Number(e.target.value),
-                                    }))
-                                }
-                                className="w-32 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                            />
-                        </div>
-                    </section>
-
-                    {/* 섹션 5: SEO */}
-                    <section className="space-y-4 rounded-xl border border-(--color-accent)/30 bg-(--color-surface-subtle) p-6">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-(--color-foreground)">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                5
-                            </span>
-                            SEO / OG
-                        </h3>
-                        {field("meta_title", "Meta Title")}
-                        {field("meta_description", "Meta Description", {
-                            rows: 2,
-                        })}
-                        {field("og_image", "OG Image URL")}
-                    </section>
+                {/* 본문 에디터 */}
+                <div className="min-h-[400px] flex-1">
+                    <RichMarkdownEditor
+                        value={form.content}
+                        onChange={(v) => setForm((f) => ({ ...f, content: v }))}
+                        placeholder="리뷰를 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
+                    />
                 </div>
 
-                {/* 오류 / 성공 */}
+                {/* 피드백 */}
                 {error && (
-                    <div className="mt-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">
+                    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-950/30">
                         {error}
-                    </div>
+                    </p>
                 )}
                 {success && (
-                    <div className="mt-4 rounded-lg bg-green-100 px-4 py-3 text-sm text-green-700">
+                    <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/30">
                         {success}
-                    </div>
+                    </p>
                 )}
 
-                {/* 저장 버튼 (하단 고정) */}
-                <div className="fixed right-0 bottom-0 left-0 z-40 flex justify-end border-t border-(--color-border) bg-(--color-surface) px-8 py-4 shadow-lg">
-                    <button
-                        onClick={handleBack}
-                        className="mr-3 rounded-lg border border-(--color-border) px-5 py-2.5 text-base font-medium text-(--color-muted) hover:bg-(--color-surface-subtle)"
-                    >
-                        취소
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || !form.title || !form.slug}
-                        className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
-                    >
-                        {saving ? "저장 중…" : "저장"}
-                    </button>
+                {/* Sticky 저장 바 */}
+                <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+                    <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+                        <SaveIndicator
+                            saving={autoSaving}
+                            savedAt={autoSavedAt}
+                            isDirty={isDirty}
+                        />
+                        <div className="flex items-center gap-3">
+                            {editTarget !== "new" && (
+                                <button
+                                    onClick={() =>
+                                        handleDelete(
+                                            (editTarget as BookItem).id
+                                        )
+                                    }
+                                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                >
+                                    삭제
+                                </button>
+                            )}
+                            <button
+                                onClick={handleSave}
+                                disabled={saving || !isDirty}
+                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                            >
+                                {saving ? "저장 중..." : "저장"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
+
+                {/* MetadataSheet */}
+                <MetadataSheet
+                    open={metadataOpen}
+                    onOpenChange={setMetadataOpen}
+                    type="book"
+                    form={form}
+                    onChange={handleMetaChange}
+                    onPublishToggle={handlePublishToggle}
+                    jobFields={jobFields}
+                />
             </div>
         );
     }

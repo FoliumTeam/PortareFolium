@@ -9,6 +9,8 @@ import {
     compareVersions,
 } from "@/lib/migrations";
 import type { Migration } from "@/lib/migrations";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function MigrationsPanel() {
     const [dbVersion, setDbVersion] = useState<string | null | undefined>(
@@ -78,7 +80,7 @@ export default function MigrationsPanel() {
                 </div>
                 <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
                     <p className="mb-1 font-semibold text-amber-800 dark:text-amber-300">
-                        ⚠ DB 스키마 버전 정보가 없습니다
+                        DB 스키마 버전 정보가 없습니다
                     </p>
                     <p className="text-sm text-amber-700 dark:text-amber-400">
                         다음 중 하나를 Supabase SQL Editor에서 실행하세요.
@@ -100,13 +102,14 @@ export default function MigrationsPanel() {
                     <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">
                         실행 후 아래 새로고침 버튼을 누르세요.
                     </p>
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={loadVersion}
                         disabled={refreshing}
-                        className="mt-4 rounded-lg border border-amber-400 bg-white px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-600 dark:bg-transparent dark:text-amber-300 dark:hover:bg-amber-900/20"
+                        className="mt-4"
                     >
                         {refreshing ? "새로고침 중..." : "새로고침"}
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -142,13 +145,14 @@ export default function MigrationsPanel() {
                         </span>
                     </div>
                 </div>
-                <button
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={loadVersion}
                     disabled={refreshing}
-                    className="shrink-0 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle) disabled:opacity-50"
                 >
                     {refreshing ? "새로고침 중..." : "새로고침"}
-                </button>
+                </Button>
             </div>
 
             {/* 미적용 마이그레이션 */}
@@ -162,13 +166,9 @@ export default function MigrationsPanel() {
                             아래 SQL을 Supabase SQL Editor에서 순서대로
                             실행하거나, 자동 적용 버튼을 누르세요.
                         </p>
-                        <button
-                            onClick={applyMigrations}
-                            disabled={applying}
-                            className="shrink-0 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                        >
+                        <Button onClick={applyMigrations} disabled={applying}>
                             {applying ? "적용 중..." : "자동 적용"}
-                        </button>
+                        </Button>
                     </div>
                     {applyError && (
                         <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-400">
@@ -193,7 +193,7 @@ export default function MigrationsPanel() {
             {/* 최신 상태 */}
             {isUpToDate && (
                 <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
-                    ✓ DB가 최신 상태입니다.
+                    DB가 최신 상태입니다.
                 </div>
             )}
 
@@ -246,46 +246,52 @@ function MigrationCard({
             ].join(" ")}
         >
             <div className="flex flex-wrap items-center gap-2">
-                {isApplied && (
-                    <svg
-                        className="h-4 w-4 shrink-0 text-green-500"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                    >
-                        <path d="M2 6l3 3 5-5" />
-                    </svg>
+                {isApplied ? (
+                    <Badge variant="outline" className="gap-1">
+                        <svg
+                            className="h-3 w-3 text-green-500"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                        >
+                            <path d="M2 6l3 3 5-5" />
+                        </svg>
+                        적용됨
+                    </Badge>
+                ) : (
+                    <Badge className="bg-amber-500">미적용</Badge>
                 )}
                 <span className="font-semibold text-(--color-foreground)">
                     {migration.title}
                 </span>
-                <span className="rounded-full bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted)">
-                    v{migration.version}
-                </span>
+                <Badge variant="secondary">v{migration.version}</Badge>
             </div>
             <p className="mt-0.5 text-xs text-(--color-muted)">
                 {migration.feature}
             </p>
 
-            <button
+            <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => setOpen((v) => !v)}
-                className="mt-2 text-xs font-medium text-(--color-accent) hover:underline"
+                className="mt-2 text-(--color-accent)"
             >
-                {open ? "▾ SQL 숨기기" : "▸ SQL 보기"}
-            </button>
+                {open ? "SQL 숨기기" : "SQL 보기"}
+            </Button>
 
             {open && (
                 <div className="relative mt-2">
                     <pre className="overflow-x-auto rounded-lg bg-(--color-surface-subtle) p-3 text-xs leading-relaxed text-(--color-foreground)">
                         <code>{migration.sql}</code>
                     </pre>
-                    <button
+                    <Button
+                        size="xs"
                         onClick={onCopy}
-                        className="absolute top-2 right-2 rounded-md bg-(--color-accent) px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-white transition-colors hover:opacity-90"
+                        className="absolute top-2 right-2"
                     >
-                        {isCopied ? "✓ 복사됨" : "복사"}
-                    </button>
+                        {isCopied ? "복사됨" : "복사"}
+                    </Button>
                 </div>
             )}
         </div>
