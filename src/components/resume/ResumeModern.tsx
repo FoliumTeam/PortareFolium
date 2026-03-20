@@ -225,7 +225,7 @@ export default async function ResumeModern({ resume }: Props) {
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
-                                <div className="relative flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
+                                <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
                                     {sectionValue.map(
                                         (workItem, wIdx: number) => (
                                             <div
@@ -235,7 +235,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 <div
                                                     className="absolute h-2.5 w-2.5 rounded-full border-2 border-(--color-surface) bg-(--color-accent)"
                                                     style={{
-                                                        left: "-1.625rem",
+                                                        left: "-1.825rem",
                                                         top: "0.4rem",
                                                         boxShadow:
                                                             "0 0 0 2px var(--color-accent)",
