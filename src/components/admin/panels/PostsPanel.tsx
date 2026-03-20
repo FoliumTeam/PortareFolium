@@ -113,6 +113,7 @@ export default function PostsPanel() {
     const [success, setSuccess] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [activeJobField, setActiveJobField] = useState<string>("");
     // slug → 목차 스타일 ('hover' | 'github' | 'both')
     const [postTocStyles, setPostTocStyles] = useState<Record<string, string>>(
         {}
@@ -180,6 +181,15 @@ export default function PostsPanel() {
                 .single()
                 .then(({ data }) => {
                     if (data?.value) setJobFields(data.value as JobFieldItem[]);
+                });
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_field")
+                .single()
+                .then(({ data }) => {
+                    if (data?.value && typeof data.value === "string")
+                        setActiveJobField(data.value);
                 });
             browserClient
                 .from("site_config")
@@ -254,8 +264,12 @@ export default function PostsPanel() {
 
     // 신규 생성 화면 열기
     const openNew = () => {
-        initialFormRef.current = EMPTY_FORM;
-        setForm(EMPTY_FORM);
+        const base: PostForm = {
+            ...EMPTY_FORM,
+            jobField: activeJobField ? [activeJobField] : [],
+        };
+        initialFormRef.current = base;
+        setForm(base);
         setEditTarget("new");
         setError(null);
         setSuccess(null);
