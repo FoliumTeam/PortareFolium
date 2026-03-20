@@ -10,7 +10,16 @@ import {
     Plus,
     FolderOpen,
     Tag,
+    ChevronDown,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+    Collapsible,
+    CollapsibleTrigger,
+    CollapsibleContent,
+} from "@/components/ui/collapsible";
 
 interface TagItem {
     slug: string;
@@ -41,7 +50,6 @@ export default function TagsPanel() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     // OKLCH Picker 상태
-    const [showPicker, setShowPicker] = useState(false);
     const [oklchL, setOklchL] = useState(0.6);
     const [oklchC, setOklchC] = useState(0.15);
     const [oklchH, setOklchH] = useState(250);
@@ -167,7 +175,6 @@ export default function TagsPanel() {
         setEditSlug("new");
         setError(null);
         setSuccess(null);
-        setShowPicker(false);
     };
 
     const openEdit = (tag: TagItem) => {
@@ -175,7 +182,6 @@ export default function TagsPanel() {
         setEditSlug(tag.slug);
         setError(null);
         setSuccess(null);
-        setShowPicker(false);
         const parsed = parseOklch(tag.color ?? "");
         if (parsed) {
             setOklchL(parsed.l);
@@ -322,24 +328,20 @@ export default function TagsPanel() {
                 </div>
 
                 {tab === "tags" && editSlug === null && (
-                    <button
-                        type="button"
-                        onClick={openNew}
-                        className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 font-medium whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                    >
+                    <Button onClick={openNew}>
                         <Plus size={15} />새 태그
-                    </button>
+                    </Button>
                 )}
             </div>
 
             {/* 피드백 */}
             {error && (
-                <div className="rounded-lg bg-red-100 p-3 text-base text-red-700 dark:bg-red-950/50 dark:text-red-300">
+                <div className="rounded-lg bg-red-100 p-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
                     {error}
                 </div>
             )}
             {success && (
-                <div className="rounded-lg bg-green-100 p-3 text-base text-green-700 dark:bg-green-950/50 dark:text-green-300">
+                <div className="rounded-lg bg-green-100 p-3 text-sm text-green-700 dark:bg-green-950/50 dark:text-green-300">
                     {success}
                 </div>
             )}
@@ -354,11 +356,10 @@ export default function TagsPanel() {
                                 {editSlug === "new" ? "태그 추가" : "태그 수정"}
                             </h3>
                             <div>
-                                <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                                <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                                     slug (URL/식별자)
                                 </label>
-                                <input
-                                    type="text"
+                                <Input
                                     value={form.slug}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -369,15 +370,13 @@ export default function TagsPanel() {
                                     placeholder={
                                         toSlug(form.name) || "자동 생성"
                                     }
-                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                                <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                                     표시 이름 *
                                 </label>
-                                <input
-                                    type="text"
+                                <Input
                                     value={form.name}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -389,27 +388,16 @@ export default function TagsPanel() {
                                         }))
                                     }
                                     placeholder="예: Unreal Engine 5"
-                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
                                 />
                             </div>
+
+                            {/* 색상 + OKLCH Picker (Collapsible) */}
                             <div>
-                                <div className="mb-1 flex items-center justify-between">
-                                    <label className="text-base font-medium text-(--color-muted)">
-                                        색상 (oklch, hex, rgb 등)
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPicker((p) => !p)}
-                                        className="rounded px-2 py-0.5 text-sm font-medium text-(--color-accent) hover:underline"
-                                    >
-                                        {showPicker
-                                            ? "Picker 닫기"
-                                            : "OKLCH Picker"}
-                                    </button>
-                                </div>
+                                <label className="mb-1 block text-sm font-medium text-(--color-muted)">
+                                    색상 (oklch, hex, rgb 등)
+                                </label>
                                 <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
+                                    <Input
                                         value={form.color}
                                         onChange={(e) => {
                                             const v = e.target.value;
@@ -425,7 +413,6 @@ export default function TagsPanel() {
                                             }
                                         }}
                                         placeholder="oklch(0.600 0.150 250)"
-                                        className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-(--color-foreground)"
                                     />
                                     {form.color && (
                                         <span
@@ -436,113 +423,125 @@ export default function TagsPanel() {
                                         />
                                     )}
                                 </div>
-                                {showPicker && (
-                                    <div className="mt-3 space-y-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
-                                        <div>
-                                            <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Lightness</span>
-                                                <span>{oklchL.toFixed(3)}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={1}
-                                                step={0.001}
-                                                value={oklchL}
-                                                onChange={(e) =>
-                                                    applyOklch(
-                                                        parseFloat(
-                                                            e.target.value
-                                                        ),
-                                                        oklchC,
-                                                        oklchH
-                                                    )
-                                                }
-                                                className="w-full cursor-pointer"
-                                                style={{
-                                                    background: `linear-gradient(to right, oklch(0 0 ${oklchH}), oklch(1 0 ${oklchH}))`,
-                                                    accentColor:
-                                                        "var(--color-accent)",
-                                                }}
-                                            />
-                                        </div>
-                                        <div>
-                                            <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Chroma</span>
-                                                <span>{oklchC.toFixed(3)}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={0.4}
-                                                step={0.001}
-                                                value={oklchC}
-                                                onChange={(e) =>
-                                                    applyOklch(
-                                                        oklchL,
-                                                        parseFloat(
-                                                            e.target.value
-                                                        ),
-                                                        oklchH
-                                                    )
-                                                }
-                                                className="w-full cursor-pointer"
-                                                style={{
-                                                    background: `linear-gradient(to right, oklch(${oklchL} 0 ${oklchH}), oklch(${oklchL} 0.4 ${oklchH}))`,
-                                                    accentColor:
-                                                        "var(--color-accent)",
-                                                }}
-                                            />
-                                        </div>
-                                        <div>
-                                            <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Hue</span>
-                                                <span>
-                                                    {oklchH.toFixed(0)}°
-                                                </span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={360}
-                                                step={1}
-                                                value={oklchH}
-                                                onChange={(e) =>
-                                                    applyOklch(
-                                                        oklchL,
-                                                        oklchC,
-                                                        parseFloat(
-                                                            e.target.value
+
+                                <Collapsible className="mt-3">
+                                    <CollapsibleTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="gap-1 text-(--color-accent)"
+                                        >
+                                            <ChevronDown size={14} />
+                                            OKLCH Picker
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <div className="mt-2 space-y-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
+                                            <div>
+                                                <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                                    <span>Lightness</span>
+                                                    <span>
+                                                        {oklchL.toFixed(3)}
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={1}
+                                                    step={0.001}
+                                                    value={oklchL}
+                                                    onChange={(e) =>
+                                                        applyOklch(
+                                                            parseFloat(
+                                                                e.target.value
+                                                            ),
+                                                            oklchC,
+                                                            oklchH
                                                         )
-                                                    )
-                                                }
-                                                className="w-full cursor-pointer"
-                                                style={{
-                                                    background: `linear-gradient(to right, oklch(${oklchL} ${oklchC} 0), oklch(${oklchL} ${oklchC} 60), oklch(${oklchL} ${oklchC} 120), oklch(${oklchL} ${oklchC} 180), oklch(${oklchL} ${oklchC} 240), oklch(${oklchL} ${oklchC} 300), oklch(${oklchL} ${oklchC} 360))`,
-                                                    accentColor:
-                                                        "var(--color-accent)",
-                                                }}
-                                            />
+                                                    }
+                                                    className="w-full cursor-pointer"
+                                                    style={{
+                                                        background: `linear-gradient(to right, oklch(0 0 ${oklchH}), oklch(1 0 ${oklchH}))`,
+                                                        accentColor:
+                                                            "var(--color-accent)",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                                    <span>Chroma</span>
+                                                    <span>
+                                                        {oklchC.toFixed(3)}
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={0.4}
+                                                    step={0.001}
+                                                    value={oklchC}
+                                                    onChange={(e) =>
+                                                        applyOklch(
+                                                            oklchL,
+                                                            parseFloat(
+                                                                e.target.value
+                                                            ),
+                                                            oklchH
+                                                        )
+                                                    }
+                                                    className="w-full cursor-pointer"
+                                                    style={{
+                                                        background: `linear-gradient(to right, oklch(${oklchL} 0 ${oklchH}), oklch(${oklchL} 0.4 ${oklchH}))`,
+                                                        accentColor:
+                                                            "var(--color-accent)",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
+                                                    <span>Hue</span>
+                                                    <span>
+                                                        {oklchH.toFixed(0)}°
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={360}
+                                                    step={1}
+                                                    value={oklchH}
+                                                    onChange={(e) =>
+                                                        applyOklch(
+                                                            oklchL,
+                                                            oklchC,
+                                                            parseFloat(
+                                                                e.target.value
+                                                            )
+                                                        )
+                                                    }
+                                                    className="w-full cursor-pointer"
+                                                    style={{
+                                                        background: `linear-gradient(to right, oklch(${oklchL} ${oklchC} 0), oklch(${oklchL} ${oklchC} 60), oklch(${oklchL} ${oklchC} 120), oklch(${oklchL} ${oklchC} 180), oklch(${oklchL} ${oklchC} 240), oklch(${oklchL} ${oklchC} 300), oklch(${oklchL} ${oklchC} 360))`,
+                                                        accentColor:
+                                                            "var(--color-accent)",
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    </CollapsibleContent>
+                                </Collapsible>
                             </div>
+
                             <div className="flex gap-2">
-                                <button
-                                    type="button"
+                                <Button
                                     onClick={handleSave}
                                     disabled={saving || !form.name.trim()}
-                                    className="rounded-lg bg-(--color-accent) px-4 py-2 font-medium text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
                                 >
                                     {saving ? "저장 중..." : "저장"}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={cancel}
-                                    className="rounded-lg border border-(--color-border) px-4 py-2 text-(--color-muted) hover:bg-(--color-surface-subtle)"
-                                >
+                                </Button>
+                                <Button variant="ghost" onClick={cancel}>
                                     취소
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -553,14 +552,14 @@ export default function TagsPanel() {
                             <span className="text-sm text-(--color-muted)">
                                 정렬
                             </span>
-                            <button
-                                type="button"
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() =>
                                     setTagSortAndSave(
                                         tagSort === "az" ? "za" : "az"
                                     )
                                 }
-                                className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                             >
                                 {tagSort === "az" ? (
                                     <ArrowUpAZ size={14} />
@@ -568,7 +567,7 @@ export default function TagsPanel() {
                                     <ArrowDownAZ size={14} />
                                 )}
                                 이름 {tagSort === "az" ? "A→Z" : "Z→A"}
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -580,51 +579,52 @@ export default function TagsPanel() {
                             등록된 태그가 없습니다. 새 태그를 추가하세요.
                         </p>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="divide-y divide-(--color-border)">
                             {sortedTags.map((tag) => (
                                 <li
                                     key={tag.slug}
-                                    className="flex items-center justify-between rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
+                                    className="group flex items-center justify-between py-3"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span
-                                            className="rounded-full px-2 py-1 text-sm"
-                                            style={
-                                                tag.color
-                                                    ? {
-                                                          backgroundColor:
-                                                              tag.color,
-                                                          color: "#fff",
-                                                      }
-                                                    : undefined
-                                            }
-                                        >
+                                        {/* 색상 dot */}
+                                        {tag.color ? (
+                                            <span
+                                                className="h-3 w-3 rounded-full"
+                                                style={{
+                                                    backgroundColor: tag.color,
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="h-3 w-3 rounded-full bg-(--color-border)" />
+                                        )}
+                                        <span className="font-medium text-(--color-foreground)">
                                             {tag.name}
                                         </span>
-                                        <span className="text-base text-(--color-muted)">
+                                        <Badge variant="secondary">
                                             {tag.slug}
-                                        </span>
+                                        </Badge>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
+                                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() => openEdit(tag)}
-                                            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                         >
                                             <Pencil size={13} />
                                             수정
-                                        </button>
-                                        <button
-                                            type="button"
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() =>
                                                 handleDelete(tag.slug)
                                             }
                                             disabled={saving}
-                                            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                            className="text-red-600 hover:text-red-700"
                                         >
                                             <Trash2 size={13} />
                                             삭제
-                                        </button>
+                                        </Button>
                                     </div>
                                 </li>
                             ))}
@@ -641,14 +641,14 @@ export default function TagsPanel() {
                         <span className="text-sm text-(--color-muted)">
                             정렬
                         </span>
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() =>
                                 setCatSortAndSave(
                                     catSort === "az" ? "za" : "az"
                                 )
                             }
-                            className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                         >
                             {catSort === "az" ? (
                                 <ArrowUpAZ size={14} />
@@ -656,7 +656,7 @@ export default function TagsPanel() {
                                 <ArrowDownAZ size={14} />
                             )}
                             이름 {catSort === "az" ? "A→Z" : "Z→A"}
-                        </button>
+                        </Button>
                     </div>
 
                     <p className="text-sm text-(--color-muted)">
@@ -672,22 +672,17 @@ export default function TagsPanel() {
                             사용 중인 카테고리가 없습니다.
                         </p>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="divide-y divide-(--color-border)">
                             {sortedCats.map((cat) => (
-                                <li
-                                    key={cat.name}
-                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
-                                >
+                                <li key={cat.name} className="py-3">
                                     {editCat === cat.name ? (
                                         // 이름 편집 행
                                         <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
+                                            <Input
                                                 value={catForm}
                                                 onChange={(e) =>
                                                     setCatForm(e.target.value)
                                                 }
-                                                className="flex-1 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground)"
                                                 autoFocus
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter")
@@ -698,9 +693,10 @@ export default function TagsPanel() {
                                                     if (e.key === "Escape")
                                                         cancel();
                                                 }}
+                                                className="flex-1"
                                             />
-                                            <button
-                                                type="button"
+                                            <Button
+                                                size="sm"
                                                 onClick={() =>
                                                     renameCategory(
                                                         cat.name,
@@ -710,53 +706,53 @@ export default function TagsPanel() {
                                                 disabled={
                                                     saving || !catForm.trim()
                                                 }
-                                                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
                                             >
                                                 저장
-                                            </button>
-                                            <button
-                                                type="button"
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={cancel}
-                                                className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm text-(--color-muted) hover:bg-(--color-surface)"
                                             >
                                                 취소
-                                            </button>
+                                            </Button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-between">
+                                        <div className="group flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <span className="font-medium text-(--color-foreground)">
                                                     {cat.name}
                                                 </span>
-                                                <span className="rounded-full bg-(--color-surface) px-2 py-0.5 text-xs text-(--color-muted)">
+                                                <Badge variant="secondary">
                                                     포스트 {cat.count}개
-                                                </span>
+                                                </Badge>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    type="button"
+                                            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() => {
                                                         setEditCat(cat.name);
                                                         setCatForm(cat.name);
                                                         setError(null);
                                                         setSuccess(null);
                                                     }}
-                                                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                 >
                                                     <Pencil size={13} />
                                                     이름 변경
-                                                </button>
-                                                <button
-                                                    type="button"
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() =>
                                                         deleteCategory(cat.name)
                                                     }
                                                     disabled={saving}
-                                                    className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                                    className="text-red-600 hover:text-red-700"
                                                 >
                                                     <Trash2 size={13} />
                                                     삭제
-                                                </button>
+                                                </Button>
                                             </div>
                                         </div>
                                     )}

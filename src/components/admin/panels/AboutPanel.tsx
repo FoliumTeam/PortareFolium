@@ -16,6 +16,10 @@ import {
     SECTION_PLACEHOLDERS,
     COMPETENCY_PLACEHOLDERS,
 } from "@/types/about";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Trash2 } from "lucide-react";
 
 type JobFieldItem = { id: string; name: string; emoji: string };
 
@@ -251,10 +255,8 @@ export default function AboutPanel() {
         );
     };
 
-    const inputCls =
-        "w-full px-3 py-2 rounded-lg border border-(--color-border) bg-(--color-surface) text-(--color-foreground) text-base focus:outline-none focus:ring-2 focus:ring-(--color-accent)/40";
-    const btnCls =
-        "rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50";
+    const textareaCls =
+        "w-full px-3 py-2 rounded-lg border border-(--color-border) bg-(--color-surface) text-(--color-foreground) text-sm resize-y focus:outline-none focus:ring-2 focus:ring-(--color-accent)/40";
 
     // override가 없는 job fields만 선택 목록에 표시
     const availableFields = jobFields.filter((f) => !introductions[f.id]);
@@ -266,38 +268,42 @@ export default function AboutPanel() {
             </h2>
 
             {/* 프로필 */}
-            <section className="space-y-3">
+            <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     프로필
                 </h3>
-                <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                        프로필 이미지
-                    </label>
-                    {profileImage && (
-                        <img
-                            src={profileImage}
-                            alt="프로필 미리보기"
-                            className="mb-2 h-24 w-24 rounded-full object-cover"
-                        />
-                    )}
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
+                <div className="flex items-start gap-6">
+                    {/* 이미지 미리보기 */}
+                    <div className="shrink-0">
+                        {profileImage ? (
+                            <img
+                                src={profileImage}
+                                alt="프로필 미리보기"
+                                className="h-24 w-24 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-(--color-surface-subtle) text-sm text-(--color-muted)">
+                                없음
+                            </div>
+                        )}
+                    </div>
+                    {/* 업로드 버튼 */}
+                    <div className="flex flex-col gap-2 pt-2">
+                        <Button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={imageUploading}
-                            className={btnCls}
                         >
                             {imageUploading ? "업로드 중..." : "이미지 업로드"}
-                        </button>
+                        </Button>
                         {profileImage && (
-                            <button
-                                type="button"
+                            <Button
+                                variant="destructive"
+                                size="sm"
                                 onClick={() => setProfileImage("")}
-                                className="rounded-lg bg-red-500 px-4 py-2 text-base font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
+                                <Trash2 size={13} />
                                 삭제
-                            </button>
+                            </Button>
                         )}
                     </div>
                     <input
@@ -309,21 +315,21 @@ export default function AboutPanel() {
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         이름
                     </label>
-                    <input
-                        type="text"
+                    <Input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="정호진"
-                        className={inputCls}
                     />
                 </div>
             </section>
 
+            <Separator />
+
             {/* 소개 - Default */}
-            <section className="space-y-3">
+            <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     소개 (Default)
                 </h3>
@@ -331,26 +337,28 @@ export default function AboutPanel() {
                     Job Field override가 없을 때 표시됩니다.
                 </p>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         메인 소개
                     </label>
                     <textarea
                         ref={descriptionRef}
                         rows={3}
-                        className={`${inputCls} resize-y`}
+                        className={textareaCls}
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         보조 소개
                     </label>
                     <textarea
                         ref={descriptionSubRef}
                         rows={2}
-                        className={`${inputCls} resize-y`}
+                        className={textareaCls}
                     />
                 </div>
             </section>
+
+            <Separator />
 
             {/* Job Field별 소개 */}
             <section className="space-y-4">
@@ -365,7 +373,7 @@ export default function AboutPanel() {
                     return (
                         <div
                             key={fieldId}
-                            className="space-y-3 rounded-lg border border-(--color-border) p-4"
+                            className="space-y-3 border-b border-(--color-border) pb-4"
                         >
                             <div className="flex items-center justify-between">
                                 <span className="font-medium text-(--color-foreground)">
@@ -373,13 +381,15 @@ export default function AboutPanel() {
                                         ? `${field.emoji} ${field.name}`
                                         : fieldId}
                                 </span>
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => handleRemoveIntro(fieldId)}
-                                    className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    className="text-red-600 hover:text-red-700"
                                 >
+                                    <Trash2 size={13} />
                                     삭제
-                                </button>
+                                </Button>
                             </div>
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-(--color-muted)">
@@ -395,7 +405,7 @@ export default function AboutPanel() {
                                             e.target.value
                                         )
                                     }
-                                    className={`${inputCls} resize-y`}
+                                    className={textareaCls}
                                 />
                             </div>
                             <div>
@@ -412,7 +422,7 @@ export default function AboutPanel() {
                                             e.target.value
                                         )
                                     }
-                                    className={`${inputCls} resize-y`}
+                                    className={textareaCls}
                                 />
                             </div>
                         </div>
@@ -423,7 +433,7 @@ export default function AboutPanel() {
                         <select
                             value={newIntroFieldId}
                             onChange={(e) => setNewIntroFieldId(e.target.value)}
-                            className={`${inputCls} flex-1`}
+                            className="h-9 flex-1 rounded-md border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
                         >
                             <option value="">추가할 Job Field 선택</option>
                             {availableFields.map((f) => (
@@ -432,60 +442,56 @@ export default function AboutPanel() {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            type="button"
+                        <Button
                             onClick={handleAddIntro}
                             disabled={!newIntroFieldId}
-                            className={btnCls}
                         >
                             소개 추가
-                        </button>
+                        </Button>
                     </div>
                 )}
             </section>
 
+            <Separator />
+
             {/* 연락처 */}
-            <section className="space-y-3">
+            <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     연락처
                 </h3>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         Email
                     </label>
-                    <input
-                        type="text"
+                    <Input
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={inputCls}
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         GitHub URL
                     </label>
-                    <input
-                        type="text"
+                    <Input
                         value={github}
                         onChange={(e) => setGithub(e.target.value)}
-                        className={inputCls}
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         LinkedIn URL
                     </label>
-                    <input
-                        type="text"
+                    <Input
                         value={linkedin}
                         onChange={(e) => setLinkedin(e.target.value)}
-                        className={inputCls}
                     />
                 </div>
             </section>
 
+            <Separator />
+
             {/* 경험 유형별 */}
-            <section className="space-y-3">
+            <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     경험 유형별 리스트
                 </h3>
@@ -494,7 +500,7 @@ export default function AboutPanel() {
                 </p>
                 {ABOUT_SECTION_KEYS.map((key) => (
                     <div key={key}>
-                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                             {key}
                         </label>
                         <textarea
@@ -503,20 +509,22 @@ export default function AboutPanel() {
                             }}
                             rows={4}
                             placeholder={SECTION_PLACEHOLDERS[key]}
-                            className={`${inputCls} min-h-[80px] resize-y`}
+                            className={`${textareaCls} min-h-[80px]`}
                         />
                     </div>
                 ))}
             </section>
 
+            <Separator />
+
             {/* 역량 키워드별 */}
-            <section className="space-y-3">
+            <section className="space-y-4">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     역량 키워드별 리스트
                 </h3>
                 {COMPETENCY_SECTION_KEYS.map((key) => (
                     <div key={key}>
-                        <label className="mb-1 block text-base font-medium text-(--color-muted)">
+                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                             {key}
                         </label>
                         <textarea
@@ -525,27 +533,25 @@ export default function AboutPanel() {
                             }}
                             rows={4}
                             placeholder={COMPETENCY_PLACEHOLDERS[key]}
-                            className={`${inputCls} min-h-[80px] resize-y`}
+                            className={`${textareaCls} min-h-[80px]`}
                         />
                     </div>
                 ))}
             </section>
 
+            <Separator />
+
             {/* 피드백 + 저장 */}
             {status && (
                 <p
-                    className={`rounded-lg px-3 py-2 text-base ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
+                    className={`rounded-lg px-3 py-2 text-sm ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
                 >
                     {status.msg}
                 </p>
             )}
-            <button
-                onClick={handleSave}
-                disabled={saving}
-                className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
+            <Button onClick={handleSave} disabled={saving}>
                 {saving ? "저장 중..." : "변경사항 저장"}
-            </button>
+            </Button>
         </div>
     );
 }
