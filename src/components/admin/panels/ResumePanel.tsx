@@ -281,6 +281,21 @@ export default function ResumePanel() {
         }
     };
 
+    const saveLayout = async (layout: ResumeLayout) => {
+        if (!browserClient) return;
+        const { error } = await browserClient
+            .from("site_config")
+            .upsert({ key: "resume_layout", value: layout });
+        if (error) {
+            setStatus({
+                type: "error",
+                msg: `레이아웃 저장 실패: ${error.message}`,
+            });
+        } else {
+            setSavedAt(new Date());
+        }
+    };
+
     const handleImageUpload = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -365,7 +380,10 @@ export default function ResumePanel() {
                         (l) => (
                             <button
                                 key={l}
-                                onClick={() => setResumeLayout(l)}
+                                onClick={() => {
+                                    setResumeLayout(l);
+                                    saveLayout(l);
+                                }}
                                 className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
                                     resumeLayout === l
                                         ? "bg-(--color-accent) text-(--color-on-accent)"
