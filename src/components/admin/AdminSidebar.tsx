@@ -75,7 +75,7 @@ export default function AdminSidebar({
                                 key={item.id}
                                 onClick={() => onTabClick(item.id as TabId)}
                                 className={[
-                                    "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors",
+                                    "admin-sidebar-item flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium",
                                     isActive
                                         ? "border-l-2 border-(--color-accent) bg-(--color-surface-subtle) text-(--color-foreground)"
                                         : "border-l-2 border-transparent text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)",

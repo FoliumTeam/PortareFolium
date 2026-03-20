@@ -1107,3 +1107,21 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 .admin-preview-body .preview-youtube {
     font-weight: 500;
 }
+
+/* 어드민 마이크로 애니메이션 */
+.admin-sidebar-item {
+    transition:
+        background-color 150ms ease,
+        color 150ms ease,
+        border-color 150ms ease;
+}
+
+.admin-card-hover {
+    transition:
+        transform 150ms ease,
+        box-shadow 150ms ease;
+}
+.admin-card-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.08);
+}
