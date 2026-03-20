@@ -3,6 +3,7 @@ import "@/styles/global.css";
 import "katex/dist/katex.min.css";
 import { serverClient } from "@/lib/supabase";
 import ConditionalHeader from "@/components/ConditionalHeader";
+import ConditionalMain from "@/components/ConditionalMain";
 import FoliumTableColorSync from "@/components/FoliumTableColorSync";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -76,7 +77,7 @@ export default async function RootLayout({
             </head>
             <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
                 <ConditionalHeader siteName={siteName} isDev={isDev} />
-                <main className="container mx-auto px-4 py-8">{children}</main>
+                <ConditionalMain>{children}</ConditionalMain>
                 <FoliumTableColorSync />
                 <SpeedInsights />
             </body>
