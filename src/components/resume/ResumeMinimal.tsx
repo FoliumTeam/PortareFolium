@@ -1,5 +1,6 @@
 import type { Resume } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
+import { SkillBadge, getSimpleIcon } from "@/components/resume/SkillBadge";
 
 interface Props {
     resume: Resume;
@@ -87,7 +88,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="m-0 mb-1 text-[1.75rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                    <h1 className="m-0 mb-1 text-[1.75rem] leading-[1.15] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                         {basics.name}
                     </h1>
                 ) : null}
@@ -156,7 +157,7 @@ export default async function ResumeMinimal({ resume }: Props) {
             {/* Summary */}
             {basics.summary ? (
                 <section className="mb-6">
-                    <p className="m-0 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                    <p className="m-0 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 </section>
@@ -183,19 +184,63 @@ export default async function ResumeMinimal({ resume }: Props) {
                                 </h2>
                                 <div className="text-sm leading-[1.75] text-(--color-foreground)">
                                     {sectionValue.map((skill, skillIndex) => (
-                                        <span key={skillIndex}>
+                                        <div
+                                            key={skillIndex}
+                                            className="mb-3 flex flex-wrap items-center gap-2 last:mb-0"
+                                        >
                                             {skill.name ? (
-                                                <strong>{skill.name}</strong>
+                                                <strong className="flex items-center gap-1.5">
+                                                    {skill.iconSlug &&
+                                                    getSimpleIcon(
+                                                        skill.iconSlug
+                                                    ) ? (
+                                                        <svg
+                                                            role="img"
+                                                            viewBox="0 0 24 24"
+                                                            className="h-3.5 w-3.5"
+                                                            style={{
+                                                                fill:
+                                                                    skill.iconColor ||
+                                                                    `#${getSimpleIcon(skill.iconSlug)!.hex}`,
+                                                            }}
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <title>
+                                                                {
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.title
+                                                                }
+                                                            </title>
+                                                            <path
+                                                                d={
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.path
+                                                                }
+                                                            />
+                                                        </svg>
+                                                    ) : null}
+                                                    {skill.name}
+                                                </strong>
                                             ) : null}
                                             {skill.keywords &&
-                                            skill.keywords.length > 0
-                                                ? `: ${skill.keywords.join(", ")}`
-                                                : ""}
-                                            {skillIndex <
-                                            sectionValue.length - 1
-                                                ? " \u2022 "
-                                                : ""}
-                                        </span>
+                                            skill.keywords.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {skill.keywords.map(
+                                                        (
+                                                            keyword: string,
+                                                            kIdx: number
+                                                        ) => (
+                                                            <SkillBadge
+                                                                key={kIdx}
+                                                                name={keyword}
+                                                            />
+                                                        )
+                                                    )}
+                                                </div>
+                                            ) : null}
+                                        </div>
                                     ))}
                                 </div>
                             </section>

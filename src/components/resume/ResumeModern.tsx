@@ -1,5 +1,6 @@
 import type { Resume } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
+import { SkillBadge, getSimpleIcon } from "@/components/resume/SkillBadge";
 
 interface Props {
     resume: Resume;
@@ -153,7 +154,7 @@ export default async function ResumeModern({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.summary ? (
-                    <p className="m-0 mt-3 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                    <p className="m-0 mt-3 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
@@ -185,7 +186,38 @@ export default async function ResumeModern({ resume }: Props) {
                                             className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                                         >
                                             {skill.name ? (
-                                                <div className="mb-0.5 text-sm font-bold text-(--color-foreground)">
+                                                <div className="mb-1.5 flex items-center gap-2 text-sm font-bold text-(--color-foreground)">
+                                                    {skill.iconSlug &&
+                                                    getSimpleIcon(
+                                                        skill.iconSlug
+                                                    ) ? (
+                                                        <svg
+                                                            role="img"
+                                                            viewBox="0 0 24 24"
+                                                            className="h-4 w-4"
+                                                            style={{
+                                                                fill:
+                                                                    skill.iconColor ||
+                                                                    `#${getSimpleIcon(skill.iconSlug)!.hex}`,
+                                                            }}
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <title>
+                                                                {
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.title
+                                                                }
+                                                            </title>
+                                                            <path
+                                                                d={
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.path
+                                                                }
+                                                            />
+                                                        </svg>
+                                                    ) : null}
                                                     {skill.name}
                                                 </div>
                                             ) : null}
@@ -196,18 +228,16 @@ export default async function ResumeModern({ resume }: Props) {
                                             ) : null}
                                             {skill.keywords &&
                                             skill.keywords.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1">
+                                                <div className="mt-1 flex flex-wrap gap-1.5">
                                                     {skill.keywords.map(
                                                         (
                                                             keyword: string,
                                                             kIdx: number
                                                         ) => (
-                                                            <span
+                                                            <SkillBadge
                                                                 key={kIdx}
-                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
-                                                            >
-                                                                {keyword}
-                                                            </span>
+                                                                name={keyword}
+                                                            />
                                                         )
                                                     )}
                                                 </div>

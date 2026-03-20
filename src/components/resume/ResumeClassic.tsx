@@ -1,5 +1,6 @@
 import type { Resume } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
+import { SkillBadge, getSimpleIcon } from "@/components/resume/SkillBadge";
 
 interface Props {
     resume: Resume;
@@ -87,7 +88,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="m-0 mb-1 text-[1.375rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                    <h1 className="m-0 mb-1 text-[1.375rem] leading-[1.15] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                         {basics.name}
                     </h1>
                 ) : null}
@@ -97,7 +98,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     </p>
                 ) : null}
                 {basics.summary ? (
-                    <p className="m-0 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                    <p className="m-0 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
@@ -222,7 +223,38 @@ export default async function ResumeClassic({ resume }: Props) {
                                             className="flex flex-col gap-0.5"
                                         >
                                             {skill.name ? (
-                                                <strong className="text-[0.9rem] font-bold text-(--color-foreground)">
+                                                <strong className="flex items-center gap-2 text-[0.9rem] font-bold text-(--color-foreground)">
+                                                    {skill.iconSlug &&
+                                                    getSimpleIcon(
+                                                        skill.iconSlug
+                                                    ) ? (
+                                                        <svg
+                                                            role="img"
+                                                            viewBox="0 0 24 24"
+                                                            className="h-4 w-4"
+                                                            style={{
+                                                                fill:
+                                                                    skill.iconColor ||
+                                                                    `#${getSimpleIcon(skill.iconSlug)!.hex}`,
+                                                            }}
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <title>
+                                                                {
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.title
+                                                                }
+                                                            </title>
+                                                            <path
+                                                                d={
+                                                                    getSimpleIcon(
+                                                                        skill.iconSlug
+                                                                    )!.path
+                                                                }
+                                                            />
+                                                        </svg>
+                                                    ) : null}
                                                     {skill.name}
                                                 </strong>
                                             ) : null}
@@ -233,8 +265,18 @@ export default async function ResumeClassic({ resume }: Props) {
                                             ) : null}
                                             {skill.keywords &&
                                             skill.keywords.length > 0 ? (
-                                                <div className="mt-0.5 text-[0.85rem] text-(--color-muted)">
-                                                    {skill.keywords.join(", ")}
+                                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                                    {skill.keywords.map(
+                                                        (
+                                                            keyword: string,
+                                                            kIdx: number
+                                                        ) => (
+                                                            <SkillBadge
+                                                                key={kIdx}
+                                                                name={keyword}
+                                                            />
+                                                        )
+                                                    )}
                                                 </div>
                                             ) : null}
                                         </div>

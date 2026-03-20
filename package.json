@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.6.5",
+    "version": "0.6.7",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -51,6 +51,7 @@
         "rehype-katex": "^7.0.1",
         "rehype-slug": "^6.0.0",
         "remark-math": "^6.0.0",
+        "simple-icons": "^16.12.0",
         "tailwind-merge": "^3.5.0",
         "unist-util-visit": "^5.1.0"
     },

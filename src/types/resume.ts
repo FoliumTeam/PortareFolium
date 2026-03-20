@@ -100,6 +100,9 @@ export interface ResumeSkill {
     name?: string;
     level?: string;
     keywords?: string[];
+    // 오버라이드용 커스텀 뱃지 정보
+    iconSlug?: string;
+    iconColor?: string;
 }
 
 export interface ResumeLanguage {

@@ -446,7 +446,7 @@ export default function ResumePanel() {
                         <img
                             src={resumeData.basics.image}
                             alt="Profile"
-                            className="h-24 w-24 flex-shrink-0 rounded-full border border-(--color-border) object-cover"
+                            className="h-24 w-24 shrink-0 rounded-full border border-(--color-border) object-cover"
                         />
                     )}
                     <div className="flex-1 space-y-2">
@@ -2033,6 +2033,36 @@ export default function ResumePanel() {
                                                 });
                                             }}
                                             placeholder="예: Master, Advanced"
+                                        />
+                                        <InputField
+                                            label="아이콘 오버라이드 (Slug)"
+                                            value={skill.iconSlug || ""}
+                                            onChange={(v) => {
+                                                const s = [
+                                                    ...resumeData.skills!,
+                                                ];
+                                                s[idx].iconSlug = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: s,
+                                                });
+                                            }}
+                                            placeholder="예: react, typescript (simple-icons)"
+                                        />
+                                        <InputField
+                                            label="아이콘 색상 (Hex)"
+                                            value={skill.iconColor || ""}
+                                            onChange={(v) => {
+                                                const s = [
+                                                    ...resumeData.skills!,
+                                                ];
+                                                s[idx].iconColor = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: s,
+                                                });
+                                            }}
+                                            placeholder="예: #61DAFB"
                                         />
                                     </div>
                                     <TextAreaField
