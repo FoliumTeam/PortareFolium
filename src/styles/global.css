@@ -1,6 +1,7 @@
 /* @import는 파일 최상단에 배치 (CSS 규칙) */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
 @import "tailwindcss";
+@import "./resume.css";
 
 /* 스무스 스크롤 */
 html {
