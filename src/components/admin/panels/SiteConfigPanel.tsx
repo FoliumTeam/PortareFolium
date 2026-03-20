@@ -77,7 +77,6 @@ export default function SiteConfigPanel() {
         defaultOgImage: "",
     });
     const [saving, setSaving] = useState(false);
-    const [deploying, setDeploying] = useState(false);
     const [status, setStatus] = useState<{
         type: "error" | "success";
         msg: string;
@@ -500,42 +499,6 @@ export default function SiteConfigPanel() {
         );
     };
 
-    // Vercel Deploy Hook 호출
-    const handleDeploy = async () => {
-        const hookUrl = process.env.NEXT_PUBLIC_VERCEL_DEPLOY_HOOK_URL as
-            | string
-            | undefined;
-        if (!hookUrl) {
-            setStatus({
-                type: "error",
-                msg: "VERCEL_DEPLOY_HOOK_URL이 설정되지 않았습니다. .env.local을 확인하세요.",
-            });
-            return;
-        }
-        setDeploying(true);
-        setStatus(null);
-        try {
-            const res = await fetch(hookUrl, { method: "POST" });
-            if (res.ok) {
-                setStatus({
-                    type: "success",
-                    msg: "빌드가 트리거됐습니다. 약 30~60초 후 최신 콘텐츠가 배포됩니다.",
-                });
-            } else {
-                setStatus({
-                    type: "error",
-                    msg: `빌드 트리거 실패: HTTP ${res.status}`,
-                });
-            }
-        } catch (e: unknown) {
-            setStatus({
-                type: "error",
-                msg: `네트워크 오류: ${(e as Error).message}`,
-            });
-        }
-        setDeploying(false);
-    };
-
     return (
         <div className="max-w-lg space-y-8">
             <h2 className="text-2xl font-bold text-(--color-foreground)">
@@ -781,26 +744,6 @@ export default function SiteConfigPanel() {
                 >
                     {saving ? "저장 중..." : "설정 저장"}
                 </button>
-
-                <button
-                    onClick={handleDeploy}
-                    disabled={deploying}
-                    className="rounded-lg border border-(--color-border) px-5 py-2.5 text-base font-semibold text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle) disabled:opacity-50"
-                >
-                    {deploying ? "빌드 트리거 중..." : "🚀 게시 (빌드 트리거)"}
-                </button>
-            </div>
-
-            <div className="space-y-1 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4 text-sm text-(--color-muted)">
-                <p className="font-semibold text-(--color-foreground)">
-                    빌드 트리거 동작 방식
-                </p>
-                <p>버튼을 누르면 Vercel이 새 빌드를 시작합니다.</p>
-                <p>
-                    블로그/포트폴리오에 추가·수정한 내용이 약 30~60초 후
-                    반영됩니다.
-                </p>
-                <p>About·테마 변경은 빌드 없이도 즉시 반영됩니다.</p>
             </div>
         </div>
     );
