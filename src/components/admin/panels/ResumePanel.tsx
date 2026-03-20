@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { uploadImageToSupabase } from "@/lib/image-upload";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
+import { matchesJobField } from "@/lib/job-field";
 import {
     JobFieldSelector,
     JobFieldBadges,
@@ -91,15 +92,6 @@ function fmtTime(d: Date): string {
 }
 
 // 직무 분야 필터 매칭
-function matchesJobField(
-    jobField: string | string[] | undefined,
-    filter: string
-): boolean {
-    if (!jobField) return false;
-    return Array.isArray(jobField)
-        ? jobField.includes(filter)
-        : jobField === filter;
-}
 
 // 배열 항목 순서 변경 (불변)
 function reorderArray<T>(arr: T[], from: number, to: number): T[] {
