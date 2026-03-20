@@ -75,7 +75,7 @@ export default function CommandPalette({
             title="커맨드 팔레트"
             description="패널 탐색 및 액션 검색"
             showCloseButton={false}
-            className="max-w-lg"
+            className="max-w-lg bg-(--color-surface-subtle)"
         >
             <CommandInput placeholder="명령 검색..." />
             <CommandList>
