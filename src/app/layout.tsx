@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import "@/styles/global.css";
 import "katex/dist/katex.min.css";
 import { serverClient } from "@/lib/supabase";
-import Header from "@/components/Header";
+import ConditionalHeader from "@/components/ConditionalHeader";
 import FoliumTableColorSync from "@/components/FoliumTableColorSync";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     title: "PortareFolium",
     description: "포트폴리오 & 기술 블로그",
+    icons: { icon: "/favicon.svg" },
 };
 
 const VALID_SCHEMES = [
@@ -65,7 +68,6 @@ export default async function RootLayout({
             suppressHydrationWarning
         >
             <head>
-                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `(function(){var t=localStorage.getItem("theme")||"system";var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var c=localStorage.getItem("folium_color_scheme");if(c){document.documentElement.setAttribute("data-color-scheme",c)}})();`,
@@ -73,7 +75,7 @@ export default async function RootLayout({
                 />
             </head>
             <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
-                <Header siteName={siteName} isDev={isDev} />
+                <ConditionalHeader siteName={siteName} isDev={isDev} />
                 <main className="container mx-auto px-4 py-8">{children}</main>
                 <FoliumTableColorSync />
                 <SpeedInsights />
