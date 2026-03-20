@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 .next/
+*.tsbuildinfo
 
 # resume.json in cwd (if any)
 resume.json
