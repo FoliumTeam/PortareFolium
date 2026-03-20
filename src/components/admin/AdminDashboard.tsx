@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { browserClient } from "@/lib/supabase";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
+import CommandPalette from "@/components/admin/CommandPalette";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
 import PortfolioPanel from "@/components/admin/panels/PortfolioPanel";
 import TagsPanel from "@/components/admin/panels/TagsPanel";
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
     });
 
     const [tabKey, setTabKey] = useState(0);
+    const [commandOpen, setCommandOpen] = useState(false);
     const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
     const lastActivityRef = useRef(Date.now());
 
@@ -110,7 +112,11 @@ export default function AdminDashboard() {
             <AdminSidebar activeTab={activeTab} onTabClick={handleTabClick} />
 
             <div className="flex flex-1 flex-col overflow-hidden">
-                <AdminHeader timeLeft={remainingMs} onLogout={handleLogout} />
+                <AdminHeader
+                    timeLeft={remainingMs}
+                    onLogout={handleLogout}
+                    onCommandOpen={() => setCommandOpen(true)}
+                />
 
                 <main className="flex-1 overflow-y-auto p-8">
                     {activeTab === "posts" && (
@@ -136,6 +142,12 @@ export default function AdminDashboard() {
                     )}
                 </main>
             </div>
+
+            <CommandPalette
+                open={commandOpen}
+                onOpenChange={setCommandOpen}
+                onNavigate={handleTabClick}
+            />
         </div>
     );
 }

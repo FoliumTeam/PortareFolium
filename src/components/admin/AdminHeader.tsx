@@ -1,10 +1,18 @@
 "use client";
 
+import { Search } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AdminHeaderProps {
     timeLeft: number;
     onLogout: () => void;
+    onCommandOpen?: () => void;
 }
 
 // 남은 시간을 MM:SS 형식으로 변환
@@ -16,7 +24,11 @@ function formatRemaining(ms: number): string {
 }
 
 // 어드민 헤더 (사이트 링크, 타이머, 테마 토글, 로그아웃)
-export default function AdminHeader({ timeLeft, onLogout }: AdminHeaderProps) {
+export default function AdminHeader({
+    timeLeft,
+    onLogout,
+    onCommandOpen,
+}: AdminHeaderProps) {
     return (
         <header className="flex h-14 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-6">
             <div className="flex items-center gap-4">
@@ -65,6 +77,23 @@ export default function AdminHeader({ timeLeft, onLogout }: AdminHeaderProps) {
                 >
                     {formatRemaining(timeLeft)}
                 </span>
+                {onCommandOpen && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={onCommandOpen}
+                                    className="rounded-md p-1.5 text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                                >
+                                    <Search className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>⌘K</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
                 <ThemeToggle />
                 <button
                     onClick={onLogout}
