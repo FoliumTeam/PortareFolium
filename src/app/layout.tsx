@@ -58,7 +58,12 @@ export default async function RootLayout({
     const isDev = process.env.NODE_ENV === "development";
 
     return (
-        <html lang="ko" data-color-scheme={validScheme}>
+        <html
+            lang="ko"
+            data-color-scheme={validScheme}
+            data-scroll-behavior="smooth"
+            suppressHydrationWarning
+        >
             <head>
                 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
                 <script

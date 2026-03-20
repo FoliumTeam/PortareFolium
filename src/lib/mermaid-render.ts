@@ -3,11 +3,11 @@
  * renderMarkdown 출력: div.mermaid-pending[data-mermaid-definition] (base64)
  * (Shiki가 pre>code를 변환해 기존 selector가 동작하지 않음 → mermaid는 별도 출력)
  */
+import type { MermaidConfig } from "mermaid";
 import { getMermaidConfig } from "./mermaid-themes";
 
 async function loadMermaid() {
-    const mod =
-        await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
+    const mod = await import("mermaid");
     return mod.default;
 }
 
@@ -28,7 +28,7 @@ function getMermaidInitOptions() {
         startOnLoad: false,
         theme,
         themeVariables,
-    } as { startOnLoad?: boolean; theme?: string };
+    } as MermaidConfig;
 }
 
 export async function renderMermaidBlocks(
