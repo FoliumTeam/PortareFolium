@@ -596,32 +596,52 @@ export default function BooksSubPanel({
                     도서가 없습니다.
                 </p>
             ) : (
-                <ul className="space-y-2">
+                <ul>
                     {displayedBooks.map((book) => (
                         <li
                             key={book.id}
-                            className="flex items-center gap-3 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                            className="group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle)"
                         >
                             {book.cover_url && (
                                 <img
                                     src={book.cover_url}
                                     alt=""
-                                    className="h-12 w-8 shrink-0 rounded object-cover"
+                                    className="h-10 w-7 shrink-0 rounded object-cover"
                                 />
                             )}
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="truncate font-medium text-(--color-foreground)">
-                                        {book.title}
+                            <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {book.featured && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                            <Star className="h-2.5 w-2.5" />{" "}
+                                            Featured
+                                        </span>
+                                    )}
+                                    <span
+                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            book.published
+                                                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                        }`}
+                                    >
+                                        {book.published ? (
+                                            <Eye className="h-2.5 w-2.5" />
+                                        ) : (
+                                            <EyeOff className="h-2.5 w-2.5" />
+                                        )}
+                                        {book.published ? "Published" : "Draft"}
                                     </span>
                                     {!book.job_field?.length && (
-                                        <AlertTriangle
-                                            className="h-3.5 w-3.5 shrink-0 text-amber-500"
-                                            aria-label="직무 분야 미설정"
-                                        />
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                                            <AlertTriangle className="h-2.5 w-2.5" />
+                                            직무 분야 없음
+                                        </span>
                                     )}
                                 </div>
-                                <div className="mt-0.5 flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-(--color-foreground)">
+                                    {book.title}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
                                     {book.author && (
                                         <span className="text-xs text-(--color-muted)">
                                             {book.author}
@@ -645,86 +665,54 @@ export default function BooksSubPanel({
                                             fields={jobFields}
                                         />
                                     )}
-                                    {book.tags?.slice(0, 3).map((t) => (
-                                        <span
-                                            key={t}
-                                            className="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
-                                        >
-                                            {t}
-                                        </span>
-                                    ))}
-                                    {book.tags?.length > 3 && (
-                                        <span className="text-xs text-(--color-muted)">
-                                            +{book.tags.length - 3}
-                                        </span>
-                                    )}
                                 </div>
                             </div>
-
-                            {/* 액션 버튼 */}
-                            <div className="flex shrink-0 items-center gap-1">
-                                {/* Featured 토글 */}
+                            <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                 <button
                                     onClick={() => toggleFeatured(book)}
-                                    title={
+                                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                         book.featured
-                                            ? "Featured 해제"
-                                            : "Featured 설정"
-                                    }
-                                    className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
-                                        book.featured
-                                            ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
-                                            : "border border-(--color-border) text-(--color-muted) hover:border-indigo-300 hover:text-indigo-600"
+                                            ? "bg-slate-500"
+                                            : "bg-indigo-600"
                                     }`}
                                 >
                                     {book.featured ? (
-                                        <Star className="h-3.5 w-3.5 fill-current" />
+                                        <StarOff className="h-3 w-3" />
                                     ) : (
-                                        <StarOff className="h-3.5 w-3.5" />
+                                        <Star className="h-3 w-3" />
                                     )}
+                                    {book.featured
+                                        ? "Featured 해제"
+                                        : "Featured"}
                                 </button>
-
-                                {/* 발행 토글 */}
                                 <button
                                     onClick={() => togglePublish(book)}
-                                    title={
-                                        book.published ? "발행됨" : "임시저장"
-                                    }
-                                    className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
+                                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                         book.published
-                                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                                            ? "bg-amber-500"
+                                            : "bg-green-600"
                                     }`}
                                 >
                                     {book.published ? (
-                                        <>
-                                            <EyeOff className="h-3.5 w-3.5" />
-                                            발행됨
-                                        </>
+                                        <EyeOff className="h-3 w-3" />
                                     ) : (
-                                        <>
-                                            <Eye className="h-3.5 w-3.5" />
-                                            발행
-                                        </>
+                                        <Eye className="h-3 w-3" />
                                     )}
+                                    {book.published ? "Unpublish" : "Publish"}
                                 </button>
-
-                                {/* 편집 */}
                                 <button
                                     onClick={() => openEdit(book)}
-                                    title="편집"
-                                    className="rounded-lg border border-(--color-border) p-1.5 text-(--color-muted) hover:border-(--color-accent)/50 hover:text-(--color-accent)"
+                                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    <Pencil className="h-3.5 w-3.5" />
+                                    <Pencil className="h-3 w-3" />
+                                    편집
                                 </button>
-
-                                {/* 삭제 */}
                                 <button
                                     onClick={() => handleDelete(book.id)}
-                                    title="삭제"
-                                    className="rounded-lg border border-(--color-border) p-1.5 text-(--color-muted) hover:border-red-300 hover:text-red-600"
+                                    className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-3 w-3" />
+                                    삭제
                                 </button>
                             </div>
                         </li>

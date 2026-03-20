@@ -164,9 +164,6 @@ export default function PortfolioPanel() {
     const [filterJobField, setFilterJobField] = useState("");
     const [filterSearch, setFilterSearch] = useState("");
     const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [viewModeSetting, setViewModeSetting] = useState<
-        "list" | "block" | "user"
-    >("user");
     const [batchJobField, setBatchJobField] = useState("");
     const [batchSaving, setBatchSaving] = useState(false);
     const [showSortMenu, setShowSortMenu] = useState(false);
@@ -223,37 +220,8 @@ export default function PortfolioPanel() {
                     if (data?.value && typeof data.value === "string")
                         setActiveJobField(data.value);
                 });
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "portfolio_view_mode")
-                .single()
-                .then(({ data }) => {
-                    const v = data?.value;
-                    if (v === "list" || v === "block") setViewModeSetting(v);
-                    else setViewModeSetting("user");
-                });
         }
     }, []);
-
-    const saveViewMode = async (mode: "list" | "block" | "user") => {
-        if (!browserClient) return;
-        setViewModeSetting(mode);
-        const value = mode === "user" ? null : mode;
-        if (value) {
-            await browserClient
-                .from("site_config")
-                .upsert(
-                    { key: "portfolio_view_mode", value },
-                    { onConflict: "key" }
-                );
-        } else {
-            await browserClient
-                .from("site_config")
-                .delete()
-                .eq("key", "portfolio_view_mode");
-        }
-    };
 
     // form → DB payload 변환
     const buildPayload = () => ({
@@ -693,28 +661,6 @@ export default function PortfolioPanel() {
                         </div>
                         <div className="flex items-center gap-3">
                             {/* 보기 방식 설정 */}
-                            <div className="flex items-center gap-1 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-0.5">
-                                {(
-                                    [
-                                        { key: "list", label: "List" },
-                                        { key: "block", label: "Block" },
-                                        { key: "user", label: "User" },
-                                    ] as const
-                                ).map(({ key, label }) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        onClick={() => saveViewMode(key)}
-                                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                                            viewModeSetting === key
-                                                ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
-                                                : "text-(--color-muted) hover:text-(--color-foreground)"
-                                        }`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
                             <button
                                 onClick={openNew}
                                 className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
@@ -902,10 +848,10 @@ export default function PortfolioPanel() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`flex items-center gap-3 rounded-lg border bg-(--color-surface) p-4 transition-colors ${
+                                        className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
                                             selected.has(item.id)
-                                                ? "border-(--color-accent)/50"
-                                                : "border-(--color-border)"
+                                                ? "bg-(--color-surface-subtle)"
+                                                : ""
                                         }`}
                                     >
                                         <input
@@ -916,25 +862,25 @@ export default function PortfolioPanel() {
                                             }
                                             className="h-4 w-4 flex-shrink-0 cursor-pointer rounded"
                                         />
-                                        <div className="min-w-0 flex-1 space-y-1.5">
+                                        <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 {item.featured && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-sm font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
-                                                        <Star size={11} />{" "}
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                                        <Star size={10} />{" "}
                                                         Featured
                                                     </span>
                                                 )}
                                                 <span
-                                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium ${
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
                                                         item.published
                                                             ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
                                                             : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
                                                     }`}
                                                 >
                                                     {item.published ? (
-                                                        <Eye size={11} />
+                                                        <Eye size={10} />
                                                     ) : (
-                                                        <EyeOff size={11} />
+                                                        <EyeOff size={10} />
                                                     )}
                                                     {item.published
                                                         ? "Published"
@@ -943,19 +889,19 @@ export default function PortfolioPanel() {
                                                 {!hasJobField && (
                                                     <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
                                                         <AlertTriangle
-                                                            size={11}
+                                                            size={10}
                                                         />
                                                         직무 분야 없음
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="truncate text-base font-semibold text-(--color-foreground)">
+                                            <p className="truncate text-sm font-semibold text-(--color-foreground)">
                                                 {item.title}
                                             </p>
-                                            <p className="font-mono text-sm text-(--color-muted)">
-                                                {item.slug}
-                                            </p>
                                             <div className="flex flex-wrap items-center gap-2">
+                                                <span className="font-mono text-xs text-(--color-muted)">
+                                                    {item.slug}
+                                                </span>
                                                 <JobFieldBadges
                                                     value={
                                                         jf as
@@ -966,7 +912,7 @@ export default function PortfolioPanel() {
                                                     }
                                                     fields={jobFields}
                                                 />
-                                                {tags.slice(0, 4).map((t) => (
+                                                {tags.slice(0, 3).map((t) => (
                                                     <span
                                                         key={t}
                                                         className="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
@@ -974,28 +920,28 @@ export default function PortfolioPanel() {
                                                         {t}
                                                     </span>
                                                 ))}
-                                                {tags.length > 4 && (
+                                                {tags.length > 3 && (
                                                     <span className="text-xs text-(--color-muted)">
-                                                        +{tags.length - 4}
+                                                        +{tags.length - 3}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+                                        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                             <button
                                                 onClick={() =>
                                                     toggleFeatured(item)
                                                 }
-                                                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
+                                                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                                     item.featured
                                                         ? "bg-slate-500"
                                                         : "bg-indigo-600"
                                                 }`}
                                             >
                                                 {item.featured ? (
-                                                    <StarOff size={13} />
+                                                    <StarOff size={12} />
                                                 ) : (
-                                                    <Star size={13} />
+                                                    <Star size={12} />
                                                 )}
                                                 {item.featured
                                                     ? "Featured 해제"
@@ -1005,16 +951,16 @@ export default function PortfolioPanel() {
                                                 onClick={() =>
                                                     togglePublish(item)
                                                 }
-                                                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
+                                                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                                     item.published
                                                         ? "bg-amber-500"
                                                         : "bg-green-600"
                                                 }`}
                                             >
                                                 {item.published ? (
-                                                    <EyeOff size={13} />
+                                                    <EyeOff size={12} />
                                                 ) : (
-                                                    <Eye size={13} />
+                                                    <Eye size={12} />
                                                 )}
                                                 {item.published
                                                     ? "Unpublish"
@@ -1022,18 +968,18 @@ export default function PortfolioPanel() {
                                             </button>
                                             <button
                                                 onClick={() => openEdit(item)}
-                                                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                                className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
-                                                <Pencil size={13} />
+                                                <Pencil size={12} />
                                                 편집
                                             </button>
                                             <button
                                                 onClick={() =>
                                                     handleDelete(item.id)
                                                 }
-                                                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                                className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
-                                                <Trash2 size={13} />
+                                                <Trash2 size={12} />
                                                 삭제
                                             </button>
                                         </div>

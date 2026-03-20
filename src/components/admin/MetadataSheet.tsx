@@ -130,7 +130,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-y-auto">
+            <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-x-hidden overflow-y-auto bg-(--color-surface)">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
@@ -313,7 +313,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                             </div>
                         )}
 
-                        {type !== "book" ? (
+                        {type === "post" && (
                             <div>
                                 <Label className={labelClass}>태그</Label>
                                 <TagSelector
@@ -321,7 +321,8 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     onChange={(v) => onChange("tags", v)}
                                 />
                             </div>
-                        ) : (
+                        )}
+                        {type === "book" && (
                             <div>
                                 <Label className={labelClass}>태그</Label>
                                 <input
