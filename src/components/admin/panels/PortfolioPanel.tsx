@@ -153,6 +153,7 @@ export default function PortfolioPanel() {
     const [success, setSuccess] = useState<string | null>(null);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [activeJobField, setActiveJobField] = useState<string>("");
 
     const initialFormRef = useRef<ItemForm>(EMPTY_FORM);
 
@@ -218,6 +219,15 @@ export default function PortfolioPanel() {
                 .single()
                 .then(({ data }) => {
                     if (data?.value) setJobFields(data.value as JobFieldItem[]);
+                });
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_field")
+                .single()
+                .then(({ data }) => {
+                    if (data?.value && typeof data.value === "string")
+                        setActiveJobField(data.value);
                 });
             browserClient
                 .from("site_config")
@@ -292,7 +302,11 @@ export default function PortfolioPanel() {
     };
 
     const openNew = () => {
-        const base = { ...EMPTY_FORM, order_idx: items.length };
+        const base: ItemForm = {
+            ...EMPTY_FORM,
+            order_idx: items.length,
+            jobField: activeJobField ? [activeJobField] : [],
+        };
         initialFormRef.current = base;
         setForm(base);
         setEditTarget("new");
@@ -871,7 +885,12 @@ export default function PortfolioPanel() {
                 ))}
             </div>
 
-            {tab === "books" && <BooksSubPanel jobFields={jobFields} />}
+            {tab === "books" && (
+                <BooksSubPanel
+                    jobFields={jobFields}
+                    activeJobField={activeJobField}
+                />
+            )}
 
             {tab === "portfolio" && (
                 <div>
