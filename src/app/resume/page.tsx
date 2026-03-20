@@ -4,6 +4,7 @@ import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import ResumeMinimal from "@/components/resume/ResumeMinimal";
+import { filterByJobField } from "@/lib/job-field";
 
 export const dynamic = "force-dynamic";
 
@@ -11,18 +12,6 @@ export const metadata: Metadata = {
     title: "Resume",
     description: "이력서",
 };
-
-function filterByJobField<T extends { jobField?: string | string[] }>(
-    items: T[] = [],
-    jobField: string
-): T[] {
-    return items.filter((item) => {
-        const jf = item.jobField;
-        if (jf == null || (Array.isArray(jf) && jf.length === 0)) return false;
-        if (Array.isArray(jf)) return jf.includes(jobField);
-        return jf === jobField;
-    });
-}
 
 function sortByDateDesc<T extends { startDate?: string }>(items: T[]): T[] {
     return [...items].sort((a, b) =>
