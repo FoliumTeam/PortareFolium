@@ -119,8 +119,10 @@ function fmtTime(d: Date): string {
 
 export default function BooksSubPanel({
     jobFields,
+    activeJobField = "",
 }: {
     jobFields: JobFieldItem[];
+    activeJobField?: string;
 }) {
     const [books, setBooks] = useState<BookItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -209,7 +211,11 @@ export default function BooksSubPanel({
     };
 
     const openNew = () => {
-        const base = { ...EMPTY_FORM, order_idx: books.length };
+        const base: BookForm = {
+            ...EMPTY_FORM,
+            order_idx: books.length,
+            jobField: activeJobField ? [activeJobField] : [],
+        };
         initialFormRef.current = base;
         setForm(base);
         setEditTarget("new");
