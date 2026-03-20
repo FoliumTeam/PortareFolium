@@ -123,6 +123,7 @@ export default function ResumePanel() {
     const savedDataRef = useRef<string>("");
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [activeJobField, setActiveJobField] = useState<string>("");
     // 직무 분야 필터 (null = 전체)
     const [filterJobField, setFilterJobField] = useState<string | null>(null);
 
@@ -163,8 +164,18 @@ export default function ResumePanel() {
                 .select("value")
                 .eq("key", "job_fields")
                 .single(),
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_field")
+                .single(),
         ]).then(
-            ([{ data: row, error }, { data: layoutRow }, { data: jfRow }]) => {
+            ([
+                { data: row, error },
+                { data: layoutRow },
+                { data: jfRow },
+                { data: activeJfRow },
+            ]) => {
                 const defaultResume: Resume = {
                     basics: {
                         name: "",
@@ -198,6 +209,12 @@ export default function ResumePanel() {
                 }
                 if (Array.isArray(jfRow?.value)) {
                     setJobFields(jfRow.value as JobFieldItem[]);
+                }
+                if (
+                    activeJfRow?.value &&
+                    typeof activeJfRow.value === "string"
+                ) {
+                    setActiveJobField(activeJfRow.value);
                 }
             }
         );
@@ -485,6 +502,7 @@ export default function ResumePanel() {
                                 name: "",
                                 position: "",
                                 startDate: "",
+                                jobField: activeJobField || undefined,
                             };
                             setResumeData({
                                 ...resumeData,
@@ -787,7 +805,9 @@ export default function ResumePanel() {
                                                     ];
                                                     const copy = {
                                                         ...w[idx],
-                                                        jobField: [],
+                                                        jobField:
+                                                            activeJobField ||
+                                                            undefined,
                                                     };
                                                     w.unshift(copy);
                                                     setBackupData(resumeData);
@@ -846,6 +866,7 @@ export default function ResumePanel() {
                                     { title: "설명", content: "" },
                                     { title: "성과", content: "" },
                                 ],
+                                jobField: activeJobField || undefined,
                             };
                             setResumeData({
                                 ...resumeData,
@@ -1397,7 +1418,9 @@ export default function ResumePanel() {
                                                     ];
                                                     const copy = {
                                                         ...p[idx],
-                                                        jobField: [],
+                                                        jobField:
+                                                            activeJobField ||
+                                                            undefined,
                                                     };
                                                     p.unshift(copy);
                                                     setBackupData(resumeData);
