@@ -37,6 +37,29 @@ body {
     --breakpoint-desktop: 64rem; /* 1024px */
 }
 
+/* shadcn/ui CSS 변수 → 프로젝트 토큰 매핑 */
+:root {
+    --background: var(--color-surface);
+    --foreground: var(--color-foreground);
+    --card: var(--color-surface);
+    --card-foreground: var(--color-foreground);
+    --popover: var(--color-surface);
+    --popover-foreground: var(--color-foreground);
+    --primary: var(--color-accent);
+    --primary-foreground: var(--color-on-accent);
+    --secondary: var(--color-surface-subtle);
+    --secondary-foreground: var(--color-foreground);
+    --muted: var(--color-surface-subtle);
+    --muted-foreground: var(--color-muted);
+    --accent: var(--color-surface-subtle);
+    --accent-foreground: var(--color-foreground);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: var(--color-border);
+    --input: var(--color-border);
+    --ring: var(--color-accent);
+    --radius: 0.5rem;
+}
+
 /* Color Scheme: PUBLIC_COLOR_SCHEME env (blue | gray | beige | blackwhite | forest | sunset | lavender) */
 /* light mode: 각 스킴에 맞는 100~200 톤의 은은한 틴트 적용 */
 /* Mermaid 다이어그램 테마와 동기화: src/lib/mermaid-themes.ts */
