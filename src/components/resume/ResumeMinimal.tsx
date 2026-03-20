@@ -63,10 +63,11 @@ export default async function ResumeMinimal({ resume }: Props) {
     );
 
     return (
-        <div className="resume-minimal">
-            <header className="resume-minimal-header">
+        <div className="mx-auto max-w-[680px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
+            {/* Header */}
+            <header className="mb-5 border-b-2 border-(--color-foreground) pb-4">
                 {basics.image && basics.image.trim() ? (
-                    <div className="resume-profile-image">
+                    <div className="mb-4">
                         <img
                             src={
                                 basics.image.startsWith("http") ||
@@ -75,20 +76,33 @@ export default async function ResumeMinimal({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`profile-photo profile-photo-${basics.imageStyle || "standard"}`}
+                            className={`block h-20 w-20 object-cover ${
+                                basics.imageStyle === "rounded"
+                                    ? "rounded-full"
+                                    : basics.imageStyle === "squared"
+                                      ? "rounded-none"
+                                      : "rounded-md"
+                            }`}
                         />
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="resume-name">{basics.name}</h1>
+                    <h1 className="m-0 mb-1 text-[1.75rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                        {basics.name}
+                    </h1>
                 ) : null}
                 {basics.label ? (
-                    <div className="resume-label">{basics.label}</div>
+                    <div className="mb-3 text-[1.05rem] text-(--color-muted)">
+                        {basics.label}
+                    </div>
                 ) : null}
-                <div className="resume-minimal-meta">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[0.85rem] text-(--color-foreground)">
                     {basics.email ? (
                         <span>
-                            <a href={`mailto:${basics.email}`}>
+                            <a
+                                href={`mailto:${basics.email}`}
+                                className="text-(--color-link) no-underline hover:opacity-80"
+                            >
                                 {basics.email}
                             </a>
                         </span>
@@ -100,6 +114,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                 href={basics.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="text-(--color-link) no-underline hover:opacity-80"
                             >
                                 {basics.url}
                             </a>
@@ -116,7 +131,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                         : null}
                 </div>
                 {basics.profiles && basics.profiles.length > 0 ? (
-                    <div className="resume-minimal-profiles">
+                    <div className="mt-1 text-[0.85rem] text-(--color-foreground)">
                         {basics.profiles.map((profile, index) => (
                             <span key={index}>
                                 {index > 0 ? " \u2022 " : ""}
@@ -125,6 +140,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                         href={profile.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        className="text-(--color-link) no-underline hover:opacity-80"
                                     >
                                         {profile.network}
                                     </a>
@@ -137,13 +153,17 @@ export default async function ResumeMinimal({ resume }: Props) {
                 ) : null}
             </header>
 
+            {/* Summary */}
             {basics.summary ? (
-                <section className="resume-summary-section">
-                    <p className="resume-summary">{basics.summary}</p>
+                <section className="mb-6">
+                    <p className="m-0 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                        {basics.summary}
+                    </p>
                 </section>
             ) : null}
 
-            <main className="resume-minimal-main">
+            {/* Main content */}
+            <main>
                 {sections.map(([sectionKey, sectionValue]) => {
                     if (
                         !sectionValue ||
@@ -157,14 +177,11 @@ export default async function ResumeMinimal({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
-                                <div className="resume-skills-compact">
+                                <div className="text-sm leading-[1.75] text-(--color-foreground)">
                                     {sectionValue.map((skill, skillIndex) => (
                                         <span key={skillIndex}>
                                             {skill.name ? (
@@ -187,31 +204,29 @@ export default async function ResumeMinimal({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
                                 {sectionValue.map((workItem, wIdx: number) => (
                                     <div
                                         key={wIdx}
-                                        className="resume-item-compact"
+                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
                                     >
-                                        <div className="resume-item-header-compact">
+                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                             {workItem.position ? (
-                                                <span className="resume-item-title">
+                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
                                                     {workItem.position}
                                                 </span>
                                             ) : null}
                                             {workItem.name ? (
-                                                <span className="resume-item-org">
+                                                <span className="text-sm text-(--color-muted)">
                                                     {workItem.url ? (
                                                         <a
                                                             href={workItem.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="text-(--color-link) no-underline"
                                                         >
                                                             {workItem.name}
                                                         </a>
@@ -222,7 +237,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             ) : null}
                                             {(workItem.startDate ||
                                                 workItem.endDate) && (
-                                                <span className="resume-item-date">
+                                                <span
+                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {formatDateRange(
                                                         workItem.startDate,
                                                         workItem.endDate,
@@ -234,7 +255,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                         {workItem.summary ? (
                                             workMarkdown[wIdx]?.summary ? (
                                                 <div
-                                                    className="resume-item-summary resume-markdown"
+                                                    className="resume-markdown m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)"
                                                     dangerouslySetInnerHTML={{
                                                         __html: workMarkdown[
                                                             wIdx
@@ -242,14 +263,14 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                     }}
                                                 />
                                             ) : (
-                                                <p className="resume-item-summary">
+                                                <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
                                                     {workItem.summary}
                                                 </p>
                                             )
                                         ) : null}
                                         {workItem.highlights &&
                                         workItem.highlights.length > 0 ? (
-                                            <ul className="resume-item-highlights">
+                                            <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
                                                 {workItem.highlights.map(
                                                     (
                                                         highlight: string,
@@ -261,7 +282,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                         ] ? (
                                                             <li
                                                                 key={hIdx}
-                                                                className="resume-markdown"
+                                                                className="resume-markdown mb-[0.2em]"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: workMarkdown[
                                                                         wIdx
@@ -272,7 +293,10 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <li key={hIdx}>
+                                                            <li
+                                                                key={hIdx}
+                                                                className="mb-[0.2em]"
+                                                            >
                                                                 {highlight}
                                                             </li>
                                                         )
@@ -290,26 +314,24 @@ export default async function ResumeMinimal({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
                                 {sectionValue.map((education, idx) => (
                                     <div
                                         key={idx}
-                                        className="resume-item-compact"
+                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
                                     >
-                                        <div className="resume-item-header-compact">
+                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                             {education.institution ? (
-                                                <span className="resume-item-title">
+                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
                                                     {education.url ? (
                                                         <a
                                                             href={education.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="text-inherit no-underline hover:text-(--color-link)"
                                                         >
                                                             {
                                                                 education.institution
@@ -322,13 +344,19 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             ) : null}
                                             {(education.studyType ||
                                                 education.area) && (
-                                                <span className="resume-item-org">
+                                                <span className="text-sm text-(--color-muted)">
                                                     {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
                                                 </span>
                                             )}
                                             {(education.startDate ||
                                                 education.endDate) && (
-                                                <span className="resume-item-date">
+                                                <span
+                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {formatDateRange(
                                                         education.startDate,
                                                         education.endDate
@@ -337,7 +365,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             )}
                                         </div>
                                         {education.gpa != null ? (
-                                            <div className="resume-item-meta">
+                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
                                                 GPA: {education.gpa.toFixed(2)}{" "}
                                                 /{" "}
                                                 {(
@@ -345,13 +373,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 ).toFixed(2)}
                                             </div>
                                         ) : education.score ? (
-                                            <div className="resume-item-meta">
+                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
                                                 GPA: {education.score}
                                             </div>
                                         ) : null}
                                         {education.courses &&
                                         education.courses.length > 0 ? (
-                                            <div className="resume-item-meta">
+                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
                                                 Courses:{" "}
                                                 {education.courses.join(", ")}
                                             </div>
@@ -367,26 +395,24 @@ export default async function ResumeMinimal({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
                                 {sectionValue.map((project, pIdx: number) => (
                                     <div
                                         key={pIdx}
-                                        className="resume-item-compact"
+                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
                                     >
-                                        <div className="resume-item-header-compact">
+                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                             {project.name ? (
-                                                <span className="resume-item-title">
+                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
                                                     {project.url ? (
                                                         <a
                                                             href={project.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="text-inherit no-underline hover:text-(--color-link)"
                                                         >
                                                             {project.name}
                                                         </a>
@@ -397,7 +423,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             ) : null}
                                             {(project.startDate ||
                                                 project.endDate) && (
-                                                <span className="resume-item-date">
+                                                <span
+                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {formatDateRange(
                                                         project.startDate,
                                                         project.endDate,
@@ -419,10 +451,10 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 ) => (
                                                     <div
                                                         key={sIdx}
-                                                        className="resume-project-section"
+                                                        className="mt-2"
                                                     >
                                                         {sec.title ? (
-                                                            <p className="resume-project-section-title">
+                                                            <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
                                                                 {sec.title}
                                                             </p>
                                                         ) : null}
@@ -430,7 +462,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                             pIdx
                                                         ]?.[sIdx] ? (
                                                             <div
-                                                                className="resume-item-summary resume-markdown"
+                                                                className="resume-markdown m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: projectsMarkdown[
                                                                         pIdx
@@ -438,7 +470,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="resume-item-summary">
+                                                            <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
                                                                 {sec.content}
                                                             </p>
                                                         )}
@@ -448,20 +480,23 @@ export default async function ResumeMinimal({ resume }: Props) {
                                         ) : (
                                             <>
                                                 {project.description ? (
-                                                    <p className="resume-item-summary">
+                                                    <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
                                                         {project.description}
                                                     </p>
                                                 ) : null}
                                                 {project.highlights &&
                                                 project.highlights.length >
                                                     0 ? (
-                                                    <ul className="resume-item-highlights">
+                                                    <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
                                                         {project.highlights.map(
                                                             (
                                                                 highlight: string,
                                                                 hIdx: number
                                                             ) => (
-                                                                <li key={hIdx}>
+                                                                <li
+                                                                    key={hIdx}
+                                                                    className="mb-[0.2em]"
+                                                                >
                                                                     {highlight}
                                                                 </li>
                                                             )
@@ -482,25 +517,22 @@ export default async function ResumeMinimal({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
                                 {sectionValue.map(
                                     (genericItem: any, idx: number) => (
                                         <div
                                             key={idx}
-                                            className="resume-item-compact"
+                                            className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
                                         >
-                                            <div className="resume-item-header-compact">
+                                            <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                                 {genericItem.name ||
                                                 genericItem.title ||
                                                 genericItem.organization ||
                                                 genericItem.language ? (
-                                                    <span className="resume-item-title">
+                                                    <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
                                                         {genericItem.name ||
                                                             genericItem.title ||
                                                             genericItem.organization ||
@@ -512,7 +544,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 genericItem.issuer ||
                                                 genericItem.publisher ||
                                                 genericItem.fluency ? (
-                                                    <span className="resume-item-org">
+                                                    <span className="text-sm text-(--color-muted)">
                                                         {genericItem.position ||
                                                             genericItem.awarder ||
                                                             genericItem.issuer ||
@@ -523,7 +555,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 {(genericItem.startDate ||
                                                     genericItem.date ||
                                                     genericItem.releaseDate) && (
-                                                    <span className="resume-item-date">
+                                                    <span
+                                                        className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                        style={{
+                                                            fontVariantNumeric:
+                                                                "tabular-nums",
+                                                        }}
+                                                    >
                                                         {genericItem.startDate ||
                                                             genericItem.date ||
                                                             genericItem.releaseDate}
@@ -536,7 +574,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             </div>
                                             {genericItem.summary ||
                                             genericItem.description ? (
-                                                <p className="resume-item-summary">
+                                                <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
                                                     {genericItem.summary ||
                                                         genericItem.description}
                                                 </p>
@@ -547,13 +585,16 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             ) &&
                                             genericItem.highlights.length >
                                                 0 ? (
-                                                <ul className="resume-item-highlights">
+                                                <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
                                                     {genericItem.highlights.map(
                                                         (
                                                             highlight: string,
                                                             hIdx: number
                                                         ) => (
-                                                            <li key={hIdx}>
+                                                            <li
+                                                                key={hIdx}
+                                                                className="mb-[0.2em]"
+                                                            >
                                                                 {highlight}
                                                             </li>
                                                         )
@@ -565,25 +606,26 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 genericItem.keywords
                                             ) &&
                                             genericItem.keywords.length > 0 ? (
-                                                <div className="resume-item-meta">
+                                                <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
                                                     {genericItem.keywords.join(
                                                         ", "
                                                     )}
                                                 </div>
                                             ) : null}
                                             {genericItem.url ? (
-                                                <div className="resume-item-meta">
+                                                <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
                                                     <a
                                                         href={genericItem.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
+                                                        className="text-(--color-link) no-underline hover:opacity-80"
                                                     >
                                                         {genericItem.url}
                                                     </a>
                                                 </div>
                                             ) : null}
                                             {genericItem.reference ? (
-                                                <p className="resume-item-summary">
+                                                <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
                                                     {genericItem.reference}
                                                 </p>
                                             ) : null}

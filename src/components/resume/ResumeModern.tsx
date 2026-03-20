@@ -63,10 +63,11 @@ export default async function ResumeModern({ resume }: Props) {
     );
 
     return (
-        <div className="resume-modern">
-            <header className="resume-modern-header">
+        <div className="mx-auto max-w-[760px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
+            {/* Header */}
+            <header className="mb-8 border-b-2 border-(--color-border) pb-7">
                 {basics.image && basics.image.trim() ? (
-                    <div className="resume-profile-image">
+                    <div className="mb-4">
                         <img
                             src={
                                 basics.image.startsWith("http") ||
@@ -75,27 +76,37 @@ export default async function ResumeModern({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`profile-photo profile-photo-${basics.imageStyle || "standard"}`}
+                            className={`block h-20 w-20 object-cover ${
+                                basics.imageStyle === "rounded"
+                                    ? "rounded-full"
+                                    : basics.imageStyle === "squared"
+                                      ? "rounded-none"
+                                      : "rounded-md"
+                            }`}
                         />
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="resume-name">{basics.name}</h1>
+                    <h1 className="m-0 mb-1 text-[2rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                        {basics.name}
+                    </h1>
                 ) : null}
                 {basics.label ? (
-                    <p className="resume-label">{basics.label}</p>
+                    <p className="m-0 mb-3 text-[1.05rem] text-(--color-muted)">
+                        {basics.label}
+                    </p>
                 ) : null}
-                <div className="resume-modern-contact">
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                     {basics.email ? (
                         <a
                             href={`mailto:${basics.email}`}
-                            className="resume-contact-link"
+                            className="text-sm text-(--color-link) no-underline hover:opacity-80"
                         >
                             {basics.email}
                         </a>
                     ) : null}
                     {basics.phone ? (
-                        <span className="resume-contact-link">
+                        <span className="text-sm text-(--color-link)">
                             {basics.phone}
                         </span>
                     ) : null}
@@ -104,7 +115,7 @@ export default async function ResumeModern({ resume }: Props) {
                             href={basics.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="resume-contact-link"
+                            className="text-sm text-(--color-link) no-underline hover:opacity-80"
                         >
                             {basics.url}
                         </a>
@@ -119,7 +130,7 @@ export default async function ResumeModern({ resume }: Props) {
                               .map((location, idx) => (
                                   <span
                                       key={idx}
-                                      className="resume-contact-link"
+                                      className="text-sm text-(--color-link)"
                                   >
                                       {location}
                                   </span>
@@ -127,14 +138,14 @@ export default async function ResumeModern({ resume }: Props) {
                         : null}
                 </div>
                 {basics.profiles && basics.profiles.length > 0 ? (
-                    <div className="resume-modern-profiles">
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
                         {basics.profiles.map((profile, idx) => (
                             <a
                                 key={idx}
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="resume-profile-link"
+                                className="text-sm font-medium text-(--color-link) no-underline hover:opacity-80"
                             >
                                 {profile.network}
                             </a>
@@ -142,11 +153,14 @@ export default async function ResumeModern({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.summary ? (
-                    <p className="resume-summary">{basics.summary}</p>
+                    <p className="m-0 mt-3 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                        {basics.summary}
+                    </p>
                 ) : null}
             </header>
 
-            <main className="resume-modern-main">
+            {/* Main content */}
+            <main>
                 {sections.map(([sectionKey, sectionValue]) => {
                     if (
                         !sectionValue ||
@@ -160,32 +174,29 @@ export default async function ResumeModern({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
-                                <div className="resume-skills-grid">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
                                     {sectionValue.map((skill, idx) => (
                                         <div
                                             key={idx}
-                                            className="resume-skill-card"
+                                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                                         >
                                             {skill.name ? (
-                                                <div className="resume-skill-name">
+                                                <div className="mb-0.5 text-sm font-bold text-(--color-foreground)">
                                                     {skill.name}
                                                 </div>
                                             ) : null}
                                             {skill.level ? (
-                                                <div className="resume-skill-level">
+                                                <div className="mb-1.5 text-[0.78rem] text-(--color-muted)">
                                                     {skill.level}
                                                 </div>
                                             ) : null}
                                             {skill.keywords &&
                                             skill.keywords.length > 0 ? (
-                                                <div className="resume-skill-keywords">
+                                                <div className="flex flex-wrap gap-1">
                                                     {skill.keywords.map(
                                                         (
                                                             keyword: string,
@@ -193,7 +204,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         ) => (
                                                             <span
                                                                 key={kIdx}
-                                                                className="resume-skill-tag"
+                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
                                                             >
                                                                 {keyword}
                                                             </span>
@@ -210,25 +221,36 @@ export default async function ResumeModern({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
-                                <div className="resume-timeline">
+                                <div className="relative flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
                                     {sectionValue.map(
                                         (workItem, wIdx: number) => (
                                             <div
                                                 key={wIdx}
-                                                className="resume-timeline-item"
+                                                className="relative"
                                             >
-                                                <div className="resume-timeline-dot" />
-                                                <div className="resume-timeline-body">
+                                                <div
+                                                    className="absolute h-2.5 w-2.5 rounded-full border-2 border-(--color-surface) bg-(--color-accent)"
+                                                    style={{
+                                                        left: "-1.625rem",
+                                                        top: "0.4rem",
+                                                        boxShadow:
+                                                            "0 0 0 2px var(--color-accent)",
+                                                    }}
+                                                />
+                                                <div>
                                                     {(workItem.startDate ||
                                                         workItem.endDate) && (
-                                                        <p className="resume-timeline-date">
+                                                        <p
+                                                            className="m-0 mb-0.5 text-[0.78rem] text-(--color-muted)"
+                                                            style={{
+                                                                fontVariantNumeric:
+                                                                    "tabular-nums",
+                                                            }}
+                                                        >
                                                             {formatDateRange(
                                                                 workItem.startDate,
                                                                 workItem.endDate,
@@ -237,7 +259,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         </p>
                                                     )}
                                                     {workItem.name ? (
-                                                        <h3 className="resume-timeline-org">
+                                                        <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
                                                             {workItem.url ? (
                                                                 <a
                                                                     href={
@@ -245,6 +267,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                     }
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
+                                                                    className="text-inherit no-underline hover:text-(--color-link)"
                                                                 >
                                                                     {
                                                                         workItem.name
@@ -256,7 +279,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         </h3>
                                                     ) : null}
                                                     {workItem.position ? (
-                                                        <p className="resume-timeline-position">
+                                                        <p className="m-0 mb-2 text-[0.9rem] text-(--color-muted)">
                                                             {workItem.position}
                                                         </p>
                                                     ) : null}
@@ -264,7 +287,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         workMarkdown[wIdx]
                                                             ?.summary ? (
                                                             <div
-                                                                className="resume-timeline-summary resume-markdown"
+                                                                className="resume-markdown m-0 mb-2 text-[0.9rem] text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: workMarkdown[
                                                                         wIdx
@@ -272,7 +295,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="resume-timeline-summary">
+                                                            <p className="m-0 mb-2 text-[0.9rem] text-(--color-foreground)">
                                                                 {
                                                                     workItem.summary
                                                                 }
@@ -282,7 +305,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                     {workItem.highlights &&
                                                     workItem.highlights.length >
                                                         0 ? (
-                                                        <ul className="resume-timeline-highlights">
+                                                        <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
                                                             {workItem.highlights.map(
                                                                 (
                                                                     highlight: string,
@@ -292,9 +315,10 @@ export default async function ResumeModern({ resume }: Props) {
                                                                         key={
                                                                             hIdx
                                                                         }
+                                                                        className="flex items-baseline gap-1.5 text-[0.9rem] text-(--color-foreground)"
                                                                     >
                                                                         <span
-                                                                            className="resume-bullet"
+                                                                            className="relative top-[-0.05em] shrink-0 text-[0.55rem] text-(--color-accent)"
                                                                             aria-hidden="true"
                                                                         >
                                                                             &#9670;
@@ -342,26 +366,24 @@ export default async function ResumeModern({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
                                 <div>
                                     {sectionValue.map((education, idx) => (
                                         <div
                                             key={idx}
-                                            className="resume-education-card"
+                                            className="mb-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5 last:mb-0"
                                         >
                                             {education.institution ? (
-                                                <h3 className="resume-education-institution">
+                                                <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
                                                     {education.url ? (
                                                         <a
                                                             href={education.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="text-inherit no-underline hover:text-(--color-link)"
                                                         >
                                                             {
                                                                 education.institution
@@ -374,13 +396,19 @@ export default async function ResumeModern({ resume }: Props) {
                                             ) : null}
                                             {(education.studyType ||
                                                 education.area) && (
-                                                <div className="resume-education-degree">
+                                                <div className="mb-0.5 text-[0.9rem] text-(--color-foreground)">
                                                     {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
                                                 </div>
                                             )}
                                             {(education.startDate ||
                                                 education.endDate) && (
-                                                <div className="resume-education-dates">
+                                                <div
+                                                    className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {formatDateRange(
                                                         education.startDate,
                                                         education.endDate
@@ -388,7 +416,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 </div>
                                             )}
                                             {education.gpa != null ? (
-                                                <div className="resume-education-score">
+                                                <div className="mb-1 text-[0.85rem] text-(--color-muted)">
                                                     GPA:{" "}
                                                     {education.gpa.toFixed(2)} /{" "}
                                                     {(
@@ -396,13 +424,13 @@ export default async function ResumeModern({ resume }: Props) {
                                                     ).toFixed(2)}
                                                 </div>
                                             ) : education.score ? (
-                                                <div className="resume-education-score">
+                                                <div className="mb-1 text-[0.85rem] text-(--color-muted)">
                                                     GPA: {education.score}
                                                 </div>
                                             ) : null}
                                             {education.courses &&
                                             education.courses.length > 0 ? (
-                                                <div className="resume-education-courses">
+                                                <div className="mt-2 flex flex-wrap gap-1">
                                                     {education.courses.map(
                                                         (
                                                             course: string,
@@ -410,7 +438,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         ) => (
                                                             <span
                                                                 key={cIdx}
-                                                                className="resume-course-tag"
+                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
                                                             >
                                                                 {course}
                                                             </span>
@@ -430,22 +458,19 @@ export default async function ResumeModern({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
-                                <div className="resume-projects-grid">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                                     {sectionValue.map(
                                         (project, pIdx: number) => (
                                             <div
                                                 key={pIdx}
-                                                className="resume-project-card"
+                                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
                                             >
                                                 {project.name ? (
-                                                    <h3 className="resume-project-name">
+                                                    <h3 className="m-0 mb-1 text-[1rem] font-bold text-(--color-foreground)">
                                                         {project.url ? (
                                                             <a
                                                                 href={
@@ -453,6 +478,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                 }
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
+                                                                className="text-(--color-link) no-underline hover:opacity-80"
                                                             >
                                                                 {project.name}
                                                             </a>
@@ -463,7 +489,13 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) : null}
                                                 {(project.startDate ||
                                                     project.endDate) && (
-                                                    <div className="resume-project-dates">
+                                                    <div
+                                                        className="mb-2 text-[0.78rem] text-(--color-muted)"
+                                                        style={{
+                                                            fontVariantNumeric:
+                                                                "tabular-nums",
+                                                        }}
+                                                    >
                                                         {formatDateRange(
                                                             project.startDate,
                                                             project.endDate,
@@ -484,10 +516,10 @@ export default async function ResumeModern({ resume }: Props) {
                                                         ) => (
                                                             <div
                                                                 key={sIdx}
-                                                                className="resume-project-section"
+                                                                className="mt-2"
                                                             >
                                                                 {sec.title ? (
-                                                                    <p className="resume-project-section-title">
+                                                                    <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
                                                                         {
                                                                             sec.title
                                                                         }
@@ -497,7 +529,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                     pIdx
                                                                 ]?.[sIdx] ? (
                                                                     <div
-                                                                        className="resume-project-description resume-markdown"
+                                                                        className="resume-markdown m-0 text-sm leading-[1.6] text-(--color-foreground)"
                                                                         dangerouslySetInnerHTML={{
                                                                             __html: projectsMarkdown[
                                                                                 pIdx
@@ -507,7 +539,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                         }}
                                                                     />
                                                                 ) : (
-                                                                    <p className="resume-project-description">
+                                                                    <p className="m-0 text-sm leading-[1.6] text-(--color-foreground)">
                                                                         {
                                                                             sec.content
                                                                         }
@@ -519,7 +551,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) : (
                                                     <>
                                                         {project.description ? (
-                                                            <p className="resume-project-description">
+                                                            <p className="m-0 text-sm leading-[1.6] text-(--color-foreground)">
                                                                 {
                                                                     project.description
                                                                 }
@@ -528,7 +560,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         {project.highlights &&
                                                         project.highlights
                                                             .length > 0 ? (
-                                                            <ul className="resume-project-highlights">
+                                                            <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
                                                                 {project.highlights.map(
                                                                     (
                                                                         highlight: string,
@@ -538,6 +570,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                             key={
                                                                                 hIdx
                                                                             }
+                                                                            className="mb-[0.2em]"
                                                                         >
                                                                             {
                                                                                 highlight
@@ -563,25 +596,22 @@ export default async function ResumeModern({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
-                                <div className="resume-generic-grid">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                                     {sectionValue.map(
                                         (genericItem: any, idx: number) => (
                                             <div
                                                 key={idx}
-                                                className="resume-generic-card"
+                                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                                             >
                                                 {genericItem.name ||
                                                 genericItem.title ||
                                                 genericItem.organization ||
                                                 genericItem.language ? (
-                                                    <h3>
+                                                    <h3 className="m-0 mb-0.5 text-[0.9375rem] font-bold text-(--color-foreground)">
                                                         {genericItem.name ||
                                                             genericItem.title ||
                                                             genericItem.organization ||
@@ -593,7 +623,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 genericItem.issuer ||
                                                 genericItem.publisher ||
                                                 genericItem.fluency ? (
-                                                    <div className="resume-generic-meta">
+                                                    <div className="mb-0.5 text-[0.85rem] text-(--color-muted)">
                                                         {genericItem.position ||
                                                             genericItem.awarder ||
                                                             genericItem.issuer ||
@@ -604,7 +634,13 @@ export default async function ResumeModern({ resume }: Props) {
                                                 {genericItem.startDate ||
                                                 genericItem.date ||
                                                 genericItem.releaseDate ? (
-                                                    <div className="resume-generic-date">
+                                                    <div
+                                                        className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                        style={{
+                                                            fontVariantNumeric:
+                                                                "tabular-nums",
+                                                        }}
+                                                    >
                                                         {`${genericItem.startDate || genericItem.date || genericItem.releaseDate || ""}${genericItem.endDate ? " ~ " + genericItem.endDate : ""}`}
                                                     </div>
                                                 ) : null}
@@ -640,7 +676,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) &&
                                                 genericItem.keywords.length >
                                                     0 ? (
-                                                    <div className="resume-keywords">
+                                                    <div className="mt-1.5 flex flex-wrap gap-1">
                                                         {genericItem.keywords.map(
                                                             (
                                                                 keyword: string,
@@ -648,7 +684,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                             ) => (
                                                                 <span
                                                                     key={kIdx}
-                                                                    className="resume-keyword-tag"
+                                                                    className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
                                                                 >
                                                                     {keyword}
                                                                 </span>
@@ -661,7 +697,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         href={genericItem.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="resume-link"
+                                                        className="text-sm break-all text-(--color-link) no-underline hover:opacity-80"
                                                     >
                                                         {genericItem.url}
                                                     </a>

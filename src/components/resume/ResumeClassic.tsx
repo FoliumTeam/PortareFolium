@@ -63,11 +63,11 @@ export default async function ResumeClassic({ resume }: Props) {
     );
 
     return (
-        <div className="resume-classic">
-            {/* 왼쪽 사이드바: 기본 정보 */}
-            <div className="resume-classic-sidebar">
+        <div className="max-tablet:grid-cols-1 grid min-h-full grid-cols-[220px_1fr] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
+            {/* Sidebar */}
+            <div className="max-tablet:border-r-0 max-tablet:border-b max-tablet:border-(--color-border) max-tablet:p-6 flex flex-col gap-5 border-r border-(--color-border) bg-(--color-surface-subtle) p-[2rem_1.5rem]">
                 {basics.image && basics.image.trim() ? (
-                    <div className="resume-profile-image">
+                    <div className="mb-4">
                         <img
                             src={
                                 basics.image.startsWith("http") ||
@@ -76,43 +76,68 @@ export default async function ResumeClassic({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`profile-photo profile-photo-${basics.imageStyle || "standard"}`}
+                            className={`block h-20 w-20 object-cover ${
+                                basics.imageStyle === "rounded"
+                                    ? "rounded-full"
+                                    : basics.imageStyle === "squared"
+                                      ? "rounded-none"
+                                      : "rounded-md"
+                            }`}
                         />
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="resume-name">{basics.name}</h1>
+                    <h1 className="m-0 mb-1 text-[1.375rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                        {basics.name}
+                    </h1>
                 ) : null}
                 {basics.label ? (
-                    <p className="resume-label">{basics.label}</p>
+                    <p className="m-0 text-[1.05rem] text-(--color-muted)">
+                        {basics.label}
+                    </p>
                 ) : null}
                 {basics.summary ? (
-                    <p className="resume-summary">{basics.summary}</p>
+                    <p className="m-0 text-[0.9375rem] leading-[1.65] text-(--color-foreground)">
+                        {basics.summary}
+                    </p>
                 ) : null}
 
+                {/* Contact */}
                 {basics.email || basics.phone || basics.url ? (
-                    <div className="resume-contact">
+                    <div className="flex flex-col gap-1.5">
                         {basics.email ? (
-                            <div>
-                                <strong>Email</strong>
-                                <a href={`mailto:${basics.email}`}>
+                            <div className="flex flex-col gap-0.5">
+                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                    Email
+                                </strong>
+                                <a
+                                    href={`mailto:${basics.email}`}
+                                    className="text-[0.84rem] break-all text-(--color-link) no-underline hover:opacity-80"
+                                >
                                     {basics.email}
                                 </a>
                             </div>
                         ) : null}
                         {basics.phone ? (
-                            <div>
-                                <strong>Phone</strong>
-                                <span>{basics.phone}</span>
+                            <div className="flex flex-col gap-0.5">
+                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                    Phone
+                                </strong>
+                                <span className="text-[0.84rem] break-all text-(--color-link)">
+                                    {basics.phone}
+                                </span>
                             </div>
                         ) : null}
                         {basics.url ? (
-                            <div>
-                                <strong>Website</strong>
+                            <div className="flex flex-col gap-0.5">
+                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                    Website
+                                </strong>
                                 <a
                                     href={basics.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    className="text-[0.84rem] break-all text-(--color-link) no-underline hover:opacity-80"
                                 >
                                     {basics.url}
                                 </a>
@@ -121,10 +146,13 @@ export default async function ResumeClassic({ resume }: Props) {
                     </div>
                 ) : null}
 
+                {/* Location */}
                 {basics.location ? (
-                    <div className="resume-location">
-                        <strong>Location</strong>
-                        <div>
+                    <div className="flex flex-col gap-0.5">
+                        <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                            Location
+                        </strong>
+                        <div className="text-[0.84rem] text-(--color-foreground)">
                             {[
                                 basics.location.address,
                                 basics.location.city,
@@ -138,17 +166,24 @@ export default async function ResumeClassic({ resume }: Props) {
                     </div>
                 ) : null}
 
+                {/* Profiles */}
                 {basics.profiles && basics.profiles.length > 0 ? (
-                    <div className="resume-profiles">
-                        <strong>Profiles</strong>
+                    <div className="flex flex-col gap-0.5">
+                        <strong className="mb-0.5 block text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                            Profiles
+                        </strong>
                         {basics.profiles.map((profile, idx) => (
-                            <div key={idx}>
+                            <div
+                                key={idx}
+                                className="text-[0.84rem] text-(--color-foreground)"
+                            >
                                 {profile.network}:{" "}
                                 {profile.url ? (
                                     <a
                                         href={profile.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        className="text-(--color-link) no-underline hover:opacity-80"
                                     >
                                         {profile.username || profile.url}
                                     </a>
@@ -161,8 +196,8 @@ export default async function ResumeClassic({ resume }: Props) {
                 ) : null}
             </div>
 
-            {/* 오른쪽 메인 */}
-            <div className="resume-classic-main">
+            {/* Main */}
+            <div className="max-tablet:p-6 p-[2rem_2rem_2rem_2.5rem]">
                 {sections.map(([sectionKey, sectionValue]) => {
                     if (
                         !sectionValue ||
@@ -176,30 +211,29 @@ export default async function ResumeClassic({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
-                                <div className="resume-skills">
+                                <div className="flex flex-col gap-3">
                                     {sectionValue.map((skill, idx) => (
                                         <div
                                             key={idx}
-                                            className="resume-skill-item"
+                                            className="flex flex-col gap-0.5"
                                         >
                                             {skill.name ? (
-                                                <strong>{skill.name}</strong>
+                                                <strong className="text-[0.9rem] font-bold text-(--color-foreground)">
+                                                    {skill.name}
+                                                </strong>
                                             ) : null}
                                             {skill.level ? (
-                                                <span className="resume-skill-level">
+                                                <span className="text-[0.78rem] text-(--color-muted)">
                                                     {skill.level}
                                                 </span>
                                             ) : null}
                                             {skill.keywords &&
                                             skill.keywords.length > 0 ? (
-                                                <div className="resume-skill-keywords">
+                                                <div className="mt-0.5 text-[0.85rem] text-(--color-muted)">
                                                     {skill.keywords.join(", ")}
                                                 </div>
                                             ) : null}
@@ -212,26 +246,24 @@ export default async function ResumeClassic({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
                                 {sectionValue.map((workItem, wIdx: number) => (
                                     <div
                                         key={wIdx}
-                                        className="resume-work-item"
+                                        className="mb-7 border-b border-(--color-border) pb-7 last:mb-0 last:border-b-0 last:pb-0"
                                     >
-                                        <div className="resume-work-header">
+                                        <div className="mb-2">
                                             {workItem.name ? (
-                                                <h3 className="resume-work-company">
+                                                <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
                                                     {workItem.url ? (
                                                         <a
                                                             href={workItem.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="text-inherit no-underline hover:text-(--color-link)"
                                                         >
                                                             {workItem.name}
                                                         </a>
@@ -241,13 +273,19 @@ export default async function ResumeClassic({ resume }: Props) {
                                                 </h3>
                                             ) : null}
                                             {workItem.position ? (
-                                                <div className="resume-work-position">
+                                                <div className="mb-0.5 text-[0.9rem] text-(--color-muted)">
                                                     {workItem.position}
                                                 </div>
                                             ) : null}
                                             {(workItem.startDate ||
                                                 workItem.endDate) && (
-                                                <div className="resume-work-dates">
+                                                <div
+                                                    className="text-[0.78rem] text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {formatDateRange(
                                                         workItem.startDate,
                                                         workItem.endDate,
@@ -259,7 +297,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                         {workItem.summary ? (
                                             workMarkdown[wIdx]?.summary ? (
                                                 <div
-                                                    className="resume-work-summary resume-markdown"
+                                                    className="resume-markdown my-2 text-[0.9rem] text-(--color-foreground)"
                                                     dangerouslySetInnerHTML={{
                                                         __html: workMarkdown[
                                                             wIdx
@@ -267,14 +305,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                                     }}
                                                 />
                                             ) : (
-                                                <p className="resume-work-summary">
+                                                <p className="my-2 text-[0.9rem] text-(--color-foreground)">
                                                     {workItem.summary}
                                                 </p>
                                             )
                                         ) : null}
                                         {workItem.highlights &&
                                         workItem.highlights.length > 0 ? (
-                                            <ul className="resume-work-highlights">
+                                            <ul className="mt-1.5 mb-0 pl-4.5 text-[0.9rem] text-(--color-foreground)">
                                                 {workItem.highlights.map(
                                                     (
                                                         highlight: string,
@@ -286,7 +324,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                         ] ? (
                                                             <li
                                                                 key={hIdx}
-                                                                className="resume-markdown"
+                                                                className="resume-markdown mb-[0.25em]"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: workMarkdown[
                                                                         wIdx
@@ -297,7 +335,10 @@ export default async function ResumeClassic({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <li key={hIdx}>
+                                                            <li
+                                                                key={hIdx}
+                                                                className="mb-[0.25em]"
+                                                            >
                                                                 {highlight}
                                                             </li>
                                                         )
@@ -315,25 +356,23 @@ export default async function ResumeClassic({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
                                 {sectionValue.map((education, idx) => (
                                     <div
                                         key={idx}
-                                        className="resume-education-item"
+                                        className="mb-5 border-b border-(--color-border) pb-5 last:mb-0 last:border-b-0 last:pb-0"
                                     >
                                         {education.institution ? (
-                                            <h3 className="resume-education-institution">
+                                            <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
                                                 {education.url ? (
                                                     <a
                                                         href={education.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
+                                                        className="text-inherit no-underline hover:text-(--color-link)"
                                                     >
                                                         {education.institution}
                                                     </a>
@@ -344,13 +383,19 @@ export default async function ResumeClassic({ resume }: Props) {
                                         ) : null}
                                         {(education.studyType ||
                                             education.area) && (
-                                            <div className="resume-education-degree">
+                                            <div className="mb-0.5 text-[0.9rem] text-(--color-muted)">
                                                 {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
                                             </div>
                                         )}
                                         {(education.startDate ||
                                             education.endDate) && (
-                                            <div className="resume-education-dates">
+                                            <div
+                                                className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                style={{
+                                                    fontVariantNumeric:
+                                                        "tabular-nums",
+                                                }}
+                                            >
                                                 {formatDateRange(
                                                     education.startDate,
                                                     education.endDate
@@ -358,7 +403,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             </div>
                                         )}
                                         {education.gpa != null ? (
-                                            <div className="resume-education-score">
+                                            <div className="mt-1 text-sm text-(--color-muted)">
                                                 GPA: {education.gpa.toFixed(2)}{" "}
                                                 /{" "}
                                                 {(
@@ -366,13 +411,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                                 ).toFixed(2)}
                                             </div>
                                         ) : education.score ? (
-                                            <div className="resume-education-score">
+                                            <div className="mt-1 text-sm text-(--color-muted)">
                                                 GPA: {education.score}
                                             </div>
                                         ) : null}
                                         {education.courses &&
                                         education.courses.length > 0 ? (
-                                            <div className="resume-education-courses">
+                                            <div className="mt-1 text-sm text-(--color-muted)">
                                                 Courses:{" "}
                                                 {education.courses.join(", ")}
                                             </div>
@@ -388,25 +433,23 @@ export default async function ResumeClassic({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
                                 {sectionValue.map((project, pIdx: number) => (
                                     <div
                                         key={pIdx}
-                                        className="resume-project-item"
+                                        className="mb-5 border-b border-(--color-border) pb-5 last:mb-0 last:border-b-0 last:pb-0"
                                     >
                                         {project.name ? (
-                                            <h3 className="resume-project-name">
+                                            <h3 className="m-0 mb-1 text-[1rem] font-bold text-(--color-foreground)">
                                                 {project.url ? (
                                                     <a
                                                         href={project.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
+                                                        className="text-(--color-link) no-underline hover:opacity-80"
                                                     >
                                                         {project.name}
                                                     </a>
@@ -417,7 +460,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                         ) : null}
                                         {(project.startDate ||
                                             project.endDate) && (
-                                            <div className="resume-project-dates">
+                                            <div
+                                                className="mb-2 text-[0.78rem] text-(--color-muted)"
+                                                style={{
+                                                    fontVariantNumeric:
+                                                        "tabular-nums",
+                                                }}
+                                            >
                                                 {formatDateRange(
                                                     project.startDate,
                                                     project.endDate,
@@ -438,10 +487,10 @@ export default async function ResumeClassic({ resume }: Props) {
                                                 ) => (
                                                     <div
                                                         key={sIdx}
-                                                        className="resume-project-section"
+                                                        className="mt-2"
                                                     >
                                                         {sec.title ? (
-                                                            <p className="resume-project-section-title">
+                                                            <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
                                                                 {sec.title}
                                                             </p>
                                                         ) : null}
@@ -449,7 +498,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                             pIdx
                                                         ]?.[sIdx] ? (
                                                             <div
-                                                                className="resume-project-description resume-markdown"
+                                                                className="resume-markdown my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: projectsMarkdown[
                                                                         pIdx
@@ -457,7 +506,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="resume-project-description">
+                                                            <p className="my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)">
                                                                 {sec.content}
                                                             </p>
                                                         )}
@@ -467,20 +516,23 @@ export default async function ResumeClassic({ resume }: Props) {
                                         ) : (
                                             <>
                                                 {project.description ? (
-                                                    <p className="resume-project-description">
+                                                    <p className="my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)">
                                                         {project.description}
                                                     </p>
                                                 ) : null}
                                                 {project.highlights &&
                                                 project.highlights.length >
                                                     0 ? (
-                                                    <ul className="resume-project-highlights">
+                                                    <ul className="my-2 pl-4.5 text-[0.9rem] text-(--color-foreground)">
                                                         {project.highlights.map(
                                                             (
                                                                 highlight: string,
                                                                 hIdx: number
                                                             ) => (
-                                                                <li key={hIdx}>
+                                                                <li
+                                                                    key={hIdx}
+                                                                    className="mb-[0.25em]"
+                                                                >
                                                                     {highlight}
                                                                 </li>
                                                             )
@@ -501,24 +553,21 @@ export default async function ResumeClassic({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section
-                                key={sectionKey}
-                                className="resume-section"
-                            >
-                                <h2 className="resume-section-title">
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
                                 {sectionValue.map(
                                     (genericItem: any, idx: number) => (
                                         <div
                                             key={idx}
-                                            className="resume-generic-item"
+                                            className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
                                         >
                                             {genericItem.name ||
                                             genericItem.title ||
                                             genericItem.organization ||
                                             genericItem.language ? (
-                                                <h3>
+                                                <h3 className="m-0 mb-0.5 text-[0.9375rem] font-bold text-(--color-foreground)">
                                                     {genericItem.name ||
                                                         genericItem.title ||
                                                         genericItem.organization ||
@@ -530,7 +579,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             genericItem.issuer ||
                                             genericItem.publisher ||
                                             genericItem.fluency ? (
-                                                <div className="resume-generic-meta">
+                                                <div className="mb-0.5 text-[0.85rem] text-(--color-muted)">
                                                     {genericItem.position ||
                                                         genericItem.awarder ||
                                                         genericItem.issuer ||
@@ -541,7 +590,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                             {genericItem.startDate ||
                                             genericItem.date ||
                                             genericItem.releaseDate ? (
-                                                <div className="resume-generic-date">
+                                                <div
+                                                    className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
                                                     {`${genericItem.startDate || genericItem.date || genericItem.releaseDate || ""}${genericItem.endDate ? " ~ " + genericItem.endDate : ""}`}
                                                 </div>
                                             ) : null}
@@ -587,6 +642,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                     href={genericItem.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    className="text-sm break-all text-(--color-link) no-underline hover:opacity-80"
                                                 >
                                                     {genericItem.url}
                                                 </a>
