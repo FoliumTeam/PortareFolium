@@ -31,16 +31,24 @@ const formatDateRange = (
 
 export default async function ResumeModern({ resume }: Props) {
     const basics = resume.basics ?? {};
-    const sections = Object.entries(resume).filter(
-        ([key]) => key !== "basics" && key !== "$schema"
-    );
-    const getLabel = (key: string) =>
-        (resume.sectionLabels ?? {})[key] ||
-        defaultSectionLabels[key] ||
-        key.charAt(0).toUpperCase() + key.slice(1);
+    const sections = Object.entries(resume)
+        .filter(([key]) => key !== "basics")
+        .map(
+            ([key, val]) =>
+                [key, (val as any)?.entries ?? []] as [string, any[]]
+        );
+    const getLabel = (key: string) => {
+        const sec = (resume as any)[key];
+        const emoji = sec?.emoji || "➕";
+        const label =
+            defaultSectionLabels[key] ||
+            key.charAt(0).toUpperCase() + key.slice(1);
+        const showEmoji = sec?.showEmoji === true;
+        return showEmoji ? `${emoji} ${label}` : label;
+    };
 
     const workMarkdown = await Promise.all(
-        (resume.work || []).map(async (w) => {
+        (resume.work?.entries || []).map(async (w) => {
             if (!w.markdown) return { summary: null, highlights: null };
             return {
                 summary: w.summary ? await renderMarkdown(w.summary) : null,
@@ -53,7 +61,7 @@ export default async function ResumeModern({ resume }: Props) {
         })
     );
     const projectsMarkdown = await Promise.all(
-        (resume.projects || []).map(async (proj) => {
+        (resume.projects?.entries || []).map(async (proj) => {
             if (!proj.sections) return [] as (string | null)[];
             return Promise.all(
                 proj.sections.map(async (sec) =>
@@ -68,7 +76,7 @@ export default async function ResumeModern({ resume }: Props) {
             {/* Header */}
             <header className="mb-8 border-b-2 border-(--color-border) pb-7">
                 {basics.image && basics.image.trim() ? (
-                    <div className="mb-4">
+                    <div className="mb-4 flex justify-center">
                         <img
                             src={
                                 basics.image.startsWith("http") ||
@@ -77,7 +85,7 @@ export default async function ResumeModern({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`block h-20 w-20 object-cover ${
+                            className={`block h-56 w-56 object-cover ${
                                 basics.imageStyle === "rounded"
                                     ? "rounded-full"
                                     : basics.imageStyle === "squared"
@@ -88,26 +96,26 @@ export default async function ResumeModern({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.name ? (
-                    <h1 className="m-0 mb-1 text-[2rem] leading-[1.15] font-[800] tracking-[-0.03em] text-(--color-foreground)">
+                    <h1 className="m-0 mb-1 text-center text-4xl leading-[1.15] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                         {basics.name}
                     </h1>
                 ) : null}
                 {basics.label ? (
-                    <p className="m-0 mb-3 text-[1.05rem] text-(--color-muted)">
+                    <p className="m-0 mb-3 text-center text-lg text-(--color-muted)">
                         {basics.label}
                     </p>
                 ) : null}
-                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
                     {basics.email ? (
                         <a
                             href={`mailto:${basics.email}`}
-                            className="text-sm text-(--color-link) no-underline hover:opacity-80"
+                            className="text-base text-(--color-link) no-underline hover:opacity-80"
                         >
                             {basics.email}
                         </a>
                     ) : null}
                     {basics.phone ? (
-                        <span className="text-sm text-(--color-link)">
+                        <span className="text-base text-(--color-link)">
                             {basics.phone}
                         </span>
                     ) : null}
@@ -116,7 +124,7 @@ export default async function ResumeModern({ resume }: Props) {
                             href={basics.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-(--color-link) no-underline hover:opacity-80"
+                            className="text-base text-(--color-link) no-underline hover:opacity-80"
                         >
                             {basics.url}
                         </a>
@@ -131,7 +139,7 @@ export default async function ResumeModern({ resume }: Props) {
                               .map((location, idx) => (
                                   <span
                                       key={idx}
-                                      className="text-sm text-(--color-link)"
+                                      className="text-base text-(--color-link)"
                                   >
                                       {location}
                                   </span>
@@ -139,14 +147,14 @@ export default async function ResumeModern({ resume }: Props) {
                         : null}
                 </div>
                 {basics.profiles && basics.profiles.length > 0 ? (
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                    <div className="mt-1.5 flex flex-wrap justify-center gap-x-3 gap-y-1">
                         {basics.profiles.map((profile, idx) => (
                             <a
                                 key={idx}
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-medium text-(--color-link) no-underline hover:opacity-80"
+                                className="text-base font-medium text-(--color-link) no-underline hover:opacity-80"
                             >
                                 {profile.network}
                             </a>
@@ -154,7 +162,7 @@ export default async function ResumeModern({ resume }: Props) {
                     </div>
                 ) : null}
                 {basics.summary ? (
-                    <p className="m-0 mt-3 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
+                    <p className="m-0 mt-3 text-center text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
@@ -176,7 +184,7 @@ export default async function ResumeModern({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
                                 <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
@@ -186,7 +194,7 @@ export default async function ResumeModern({ resume }: Props) {
                                             className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                                         >
                                             {skill.name ? (
-                                                <div className="mb-1.5 flex items-center gap-2 text-sm font-bold text-(--color-foreground)">
+                                                <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-(--color-foreground)">
                                                     {skill.iconSlug &&
                                                     getSimpleIcon(
                                                         skill.iconSlug
@@ -222,7 +230,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 </div>
                                             ) : null}
                                             {skill.level ? (
-                                                <div className="mb-1.5 text-[0.78rem] text-(--color-muted)">
+                                                <div className="mb-1.5 text-sm text-(--color-muted)">
                                                     {skill.level}
                                                 </div>
                                             ) : null}
@@ -252,7 +260,7 @@ export default async function ResumeModern({ resume }: Props) {
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
                                 <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
@@ -275,7 +283,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                     {(workItem.startDate ||
                                                         workItem.endDate) && (
                                                         <p
-                                                            className="m-0 mb-0.5 text-[0.78rem] text-(--color-muted)"
+                                                            className="m-0 mb-0.5 text-sm text-(--color-muted)"
                                                             style={{
                                                                 fontVariantNumeric:
                                                                     "tabular-nums",
@@ -289,7 +297,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         </p>
                                                     )}
                                                     {workItem.name ? (
-                                                        <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
+                                                        <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                             {workItem.url ? (
                                                                 <a
                                                                     href={
@@ -309,7 +317,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         </h3>
                                                     ) : null}
                                                     {workItem.position ? (
-                                                        <p className="m-0 mb-2 text-[0.9rem] text-(--color-muted)">
+                                                        <p className="m-0 mb-2 text-base text-(--color-muted)">
                                                             {workItem.position}
                                                         </p>
                                                     ) : null}
@@ -317,7 +325,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         workMarkdown[wIdx]
                                                             ?.summary ? (
                                                             <div
-                                                                className="resume-markdown m-0 mb-2 text-[0.9rem] text-(--color-foreground)"
+                                                                className="resume-markdown m-0 mb-2 text-base text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: workMarkdown[
                                                                         wIdx
@@ -325,7 +333,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="m-0 mb-2 text-[0.9rem] text-(--color-foreground)">
+                                                            <p className="m-0 mb-2 text-base text-(--color-foreground)">
                                                                 {
                                                                     workItem.summary
                                                                 }
@@ -345,14 +353,8 @@ export default async function ResumeModern({ resume }: Props) {
                                                                         key={
                                                                             hIdx
                                                                         }
-                                                                        className="flex items-baseline gap-1.5 text-[0.9rem] text-(--color-foreground)"
+                                                                        className="mb-1 text-base text-(--color-foreground)"
                                                                     >
-                                                                        <span
-                                                                            className="relative top-[-0.05em] shrink-0 text-[0.55rem] text-(--color-accent)"
-                                                                            aria-hidden="true"
-                                                                        >
-                                                                            &#9670;
-                                                                        </span>
                                                                         {workMarkdown[
                                                                             wIdx
                                                                         ]
@@ -371,11 +373,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                                 }}
                                                                             />
                                                                         ) : (
-                                                                            <span>
-                                                                                {
-                                                                                    highlight
-                                                                                }
-                                                                            </span>
+                                                                            `• ${highlight}`
                                                                         )}
                                                                     </li>
                                                                 )
@@ -397,7 +395,7 @@ export default async function ResumeModern({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
                                 <div>
@@ -407,7 +405,7 @@ export default async function ResumeModern({ resume }: Props) {
                                             className="mb-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5 last:mb-0"
                                         >
                                             {education.institution ? (
-                                                <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
+                                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                     {education.url ? (
                                                         <a
                                                             href={education.url}
@@ -426,14 +424,14 @@ export default async function ResumeModern({ resume }: Props) {
                                             ) : null}
                                             {(education.studyType ||
                                                 education.area) && (
-                                                <div className="mb-0.5 text-[0.9rem] text-(--color-foreground)">
+                                                <div className="mb-0.5 text-base text-(--color-foreground)">
                                                     {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
                                                 </div>
                                             )}
                                             {(education.startDate ||
                                                 education.endDate) && (
                                                 <div
-                                                    className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                    className="mb-1 text-sm text-(--color-muted)"
                                                     style={{
                                                         fontVariantNumeric:
                                                             "tabular-nums",
@@ -446,7 +444,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 </div>
                                             )}
                                             {education.gpa != null ? (
-                                                <div className="mb-1 text-[0.85rem] text-(--color-muted)">
+                                                <div className="mb-1 text-sm text-(--color-muted)">
                                                     GPA:{" "}
                                                     {education.gpa.toFixed(2)} /{" "}
                                                     {(
@@ -454,7 +452,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                     ).toFixed(2)}
                                                 </div>
                                             ) : education.score ? (
-                                                <div className="mb-1 text-[0.85rem] text-(--color-muted)">
+                                                <div className="mb-1 text-sm text-(--color-muted)">
                                                     GPA: {education.score}
                                                 </div>
                                             ) : null}
@@ -468,7 +466,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         ) => (
                                                             <span
                                                                 key={cIdx}
-                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
+                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
                                                             >
                                                                 {course}
                                                             </span>
@@ -489,7 +487,7 @@ export default async function ResumeModern({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
                                 <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
@@ -500,7 +498,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
                                             >
                                                 {project.name ? (
-                                                    <h3 className="m-0 mb-1 text-[1rem] font-bold text-(--color-foreground)">
+                                                    <h3 className="m-0 mb-1 text-lg font-bold text-(--color-foreground)">
                                                         {project.url ? (
                                                             <a
                                                                 href={
@@ -520,7 +518,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 {(project.startDate ||
                                                     project.endDate) && (
                                                     <div
-                                                        className="mb-2 text-[0.78rem] text-(--color-muted)"
+                                                        className="mb-2 text-sm text-(--color-muted)"
                                                         style={{
                                                             fontVariantNumeric:
                                                                 "tabular-nums",
@@ -549,7 +547,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                 className="mt-2"
                                                             >
                                                                 {sec.title ? (
-                                                                    <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
+                                                                    <p className="m-0 mb-0.5 text-base font-semibold tracking-wider text-(--color-muted) uppercase">
                                                                         {
                                                                             sec.title
                                                                         }
@@ -559,7 +557,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                     pIdx
                                                                 ]?.[sIdx] ? (
                                                                     <div
-                                                                        className="resume-markdown m-0 text-sm leading-[1.6] text-(--color-foreground)"
+                                                                        className="resume-markdown m-0 text-base leading-[1.6] text-(--color-foreground)"
                                                                         dangerouslySetInnerHTML={{
                                                                             __html: projectsMarkdown[
                                                                                 pIdx
@@ -569,7 +567,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                         }}
                                                                     />
                                                                 ) : (
-                                                                    <p className="m-0 text-sm leading-[1.6] text-(--color-foreground)">
+                                                                    <p className="m-0 text-base leading-[1.6] text-(--color-foreground)">
                                                                         {
                                                                             sec.content
                                                                         }
@@ -581,7 +579,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) : (
                                                     <>
                                                         {project.description ? (
-                                                            <p className="m-0 text-sm leading-[1.6] text-(--color-foreground)">
+                                                            <p className="m-0 text-base leading-[1.6] text-(--color-foreground)">
                                                                 {
                                                                     project.description
                                                                 }
@@ -590,7 +588,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         {project.highlights &&
                                                         project.highlights
                                                             .length > 0 ? (
-                                                            <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
+                                                            <ul className="mt-1 mb-0 pl-2 text-base text-(--color-foreground)">
                                                                 {project.highlights.map(
                                                                     (
                                                                         highlight: string,
@@ -602,9 +600,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                                             }
                                                                             className="mb-[0.2em]"
                                                                         >
-                                                                            {
-                                                                                highlight
-                                                                            }
+                                                                            {`• ${highlight}`}
                                                                         </li>
                                                                     )
                                                                 )}
@@ -627,7 +623,7 @@ export default async function ResumeModern({ resume }: Props) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
                                 <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
@@ -641,7 +637,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 genericItem.title ||
                                                 genericItem.organization ||
                                                 genericItem.language ? (
-                                                    <h3 className="m-0 mb-0.5 text-[0.9375rem] font-bold text-(--color-foreground)">
+                                                    <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                         {genericItem.name ||
                                                             genericItem.title ||
                                                             genericItem.organization ||
@@ -653,7 +649,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 genericItem.issuer ||
                                                 genericItem.publisher ||
                                                 genericItem.fluency ? (
-                                                    <div className="mb-0.5 text-[0.85rem] text-(--color-muted)">
+                                                    <div className="mb-0.5 text-base text-(--color-muted)">
                                                         {genericItem.position ||
                                                             genericItem.awarder ||
                                                             genericItem.issuer ||
@@ -665,7 +661,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 genericItem.date ||
                                                 genericItem.releaseDate ? (
                                                     <div
-                                                        className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                        className="mb-1 text-sm text-(--color-muted)"
                                                         style={{
                                                             fontVariantNumeric:
                                                                 "tabular-nums",
@@ -676,7 +672,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) : null}
                                                 {genericItem.summary ||
                                                 genericItem.description ? (
-                                                    <p>
+                                                    <p className="text-base text-(--color-foreground)">
                                                         {genericItem.summary ||
                                                             genericItem.description}
                                                     </p>
@@ -687,14 +683,14 @@ export default async function ResumeModern({ resume }: Props) {
                                                 ) &&
                                                 genericItem.highlights.length >
                                                     0 ? (
-                                                    <ul>
+                                                    <ul className="pl-2 text-base text-(--color-foreground)">
                                                         {genericItem.highlights.map(
                                                             (
                                                                 highlight: string,
                                                                 hIdx: number
                                                             ) => (
                                                                 <li key={hIdx}>
-                                                                    {highlight}
+                                                                    {`• ${highlight}`}
                                                                 </li>
                                                             )
                                                         )}
@@ -714,7 +710,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                             ) => (
                                                                 <span
                                                                     key={kIdx}
-                                                                    className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-[0.78rem] leading-[1.5] font-medium text-(--color-tag-fg)"
+                                                                    className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
                                                                 >
                                                                     {keyword}
                                                                 </span>
@@ -727,7 +723,7 @@ export default async function ResumeModern({ resume }: Props) {
                                                         href={genericItem.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-sm break-all text-(--color-link) no-underline hover:opacity-80"
+                                                        className="text-base break-all text-(--color-link) no-underline hover:text-(--color-link) hover:underline hover:opacity-80"
                                                     >
                                                         {genericItem.url}
                                                     </a>

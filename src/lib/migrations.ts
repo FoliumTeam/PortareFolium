@@ -134,6 +134,55 @@ DO $$ BEGIN
   END IF;
 END $$;`,
     },
+    {
+        version: "0.6.17",
+        title: "resume_data.data → meta 구조로 이모지 설정 이전",
+        feature:
+            "이력서 섹션별 이모지 토글 (sectionLabels, showEmojis → meta 하위)",
+        sql: `UPDATE resume_data
+SET data = (data - 'sectionLabels' - 'showEmojis') ||
+    jsonb_build_object(
+        'meta',
+        COALESCE(data->'meta', '{}'::jsonb) ||
+        jsonb_build_object(
+            'sectionLabels', COALESCE(data->'sectionLabels', '{}'::jsonb),
+            'showEmojis',    COALESCE(data->'showEmojis',    '{}'::jsonb)
+        )
+    )
+WHERE lang = 'ko';
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.6.17"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.6.17"';`,
+    },
+    {
+        version: "0.6.18",
+        title: "resume_data 섹션별 emoji/showEmoji nested 구조로 이전",
+        feature:
+            "이력서 섹션 이모지 설정 per-section 중첩 구조 (ResumeSection<T>)",
+        sql: `UPDATE resume_data
+SET data = (
+  SELECT jsonb_object_agg(
+    section_key,
+    CASE
+      WHEN section_key = 'basics' THEN section_val
+      WHEN jsonb_typeof(section_val) = 'array' THEN
+        jsonb_build_object(
+          'emoji',     COALESCE(data->'meta'->'sectionLabels'->section_key, '"✔️"'),
+          'showEmoji', COALESCE(data->'meta'->'showEmojis'->section_key, 'false'),
+          'entries',   section_val
+        )
+      ELSE section_val
+    END
+  )
+  FROM jsonb_each(data - 'meta') AS t(section_key, section_val)
+)
+WHERE lang = 'ko';
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.6.18"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.6.18"';`,
+    },
     // 향후 마이그레이션 추가 예시:
     // {
     //   version: "0.6.5",  ← package.json 버전과 동일하게

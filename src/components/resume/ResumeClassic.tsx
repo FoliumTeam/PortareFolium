@@ -31,16 +31,24 @@ const formatDateRange = (
 
 export default async function ResumeClassic({ resume }: Props) {
     const basics = resume.basics ?? {};
-    const sections = Object.entries(resume).filter(
-        ([key]) => key !== "basics" && key !== "$schema"
-    );
-    const getLabel = (key: string) =>
-        (resume.sectionLabels ?? {})[key] ||
-        defaultSectionLabels[key] ||
-        key.charAt(0).toUpperCase() + key.slice(1);
+    const sections = Object.entries(resume)
+        .filter(([key]) => key !== "basics")
+        .map(
+            ([key, val]) =>
+                [key, (val as any)?.entries ?? []] as [string, any[]]
+        );
+    const getLabel = (key: string) => {
+        const sec = (resume as any)[key];
+        const emoji = sec?.emoji || "➕";
+        const label =
+            defaultSectionLabels[key] ||
+            key.charAt(0).toUpperCase() + key.slice(1);
+        const showEmoji = sec?.showEmoji === true;
+        return showEmoji ? `${emoji} ${label}` : label;
+    };
 
     const workMarkdown = await Promise.all(
-        (resume.work || []).map(async (w) => {
+        (resume.work?.entries || []).map(async (w) => {
             if (!w.markdown) return { summary: null, highlights: null };
             return {
                 summary: w.summary ? await renderMarkdown(w.summary) : null,
@@ -53,7 +61,7 @@ export default async function ResumeClassic({ resume }: Props) {
         })
     );
     const projectsMarkdown = await Promise.all(
-        (resume.projects || []).map(async (proj) => {
+        (resume.projects?.entries || []).map(async (proj) => {
             if (!proj.sections) return [] as (string | null)[];
             return Promise.all(
                 proj.sections.map(async (sec) =>
@@ -77,7 +85,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`block h-20 w-20 object-cover ${
+                            className={`block h-48 w-48 object-cover ${
                                 basics.imageStyle === "rounded"
                                     ? "rounded-full"
                                     : basics.imageStyle === "squared"
@@ -98,7 +106,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     </p>
                 ) : null}
                 {basics.summary ? (
-                    <p className="m-0 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
+                    <p className="m-0 text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
@@ -108,12 +116,12 @@ export default async function ResumeClassic({ resume }: Props) {
                     <div className="flex flex-col gap-1.5">
                         {basics.email ? (
                             <div className="flex flex-col gap-0.5">
-                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Email
                                 </strong>
                                 <a
                                     href={`mailto:${basics.email}`}
-                                    className="text-[0.84rem] break-all text-(--color-link) no-underline hover:opacity-80"
+                                    className="text-base break-all text-(--color-link) no-underline hover:underline hover:opacity-80"
                                 >
                                     {basics.email}
                                 </a>
@@ -121,24 +129,24 @@ export default async function ResumeClassic({ resume }: Props) {
                         ) : null}
                         {basics.phone ? (
                             <div className="flex flex-col gap-0.5">
-                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Phone
                                 </strong>
-                                <span className="text-[0.84rem] break-all text-(--color-link)">
+                                <span className="text-base break-all text-(--color-link)">
                                     {basics.phone}
                                 </span>
                             </div>
                         ) : null}
                         {basics.url ? (
                             <div className="flex flex-col gap-0.5">
-                                <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                                <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Website
                                 </strong>
                                 <a
                                     href={basics.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[0.84rem] break-all text-(--color-link) no-underline hover:opacity-80"
+                                    className="text-base break-all text-(--color-link) no-underline hover:underline hover:opacity-80"
                                 >
                                     {basics.url}
                                 </a>
@@ -150,10 +158,10 @@ export default async function ResumeClassic({ resume }: Props) {
                 {/* Location */}
                 {basics.location ? (
                     <div className="flex flex-col gap-0.5">
-                        <strong className="text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                        <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                             Location
                         </strong>
-                        <div className="text-[0.84rem] text-(--color-foreground)">
+                        <div className="text-base text-(--color-foreground)">
                             {[
                                 basics.location.address,
                                 basics.location.city,
@@ -170,13 +178,13 @@ export default async function ResumeClassic({ resume }: Props) {
                 {/* Profiles */}
                 {basics.profiles && basics.profiles.length > 0 ? (
                     <div className="flex flex-col gap-0.5">
-                        <strong className="mb-0.5 block text-[0.72rem] font-semibold tracking-[0.07em] text-(--color-muted) uppercase">
+                        <strong className="mb-0.5 block text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                             Profiles
                         </strong>
                         {basics.profiles.map((profile, idx) => (
                             <div
                                 key={idx}
-                                className="text-[0.84rem] text-(--color-foreground)"
+                                className="text-base text-(--color-foreground)"
                             >
                                 {profile.network}:{" "}
                                 {profile.url ? (
@@ -184,7 +192,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                         href={profile.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-(--color-link) no-underline hover:opacity-80"
+                                        className="text-(--color-link) no-underline hover:underline hover:opacity-80"
                                     >
                                         {profile.username || profile.url}
                                     </a>
@@ -213,7 +221,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
                                 <div className="flex flex-col gap-3">
@@ -223,7 +231,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             className="flex flex-col gap-0.5"
                                         >
                                             {skill.name ? (
-                                                <strong className="flex items-center gap-2 text-[0.9rem] font-bold text-(--color-foreground)">
+                                                <strong className="flex items-center gap-2 text-base font-bold text-(--color-foreground)">
                                                     {skill.iconSlug &&
                                                     getSimpleIcon(
                                                         skill.iconSlug
@@ -259,7 +267,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                 </strong>
                                             ) : null}
                                             {skill.level ? (
-                                                <span className="text-[0.78rem] text-(--color-muted)">
+                                                <span className="text-sm text-(--color-muted)">
                                                     {skill.level}
                                                 </span>
                                             ) : null}
@@ -289,7 +297,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
                                 {sectionValue.map((workItem, wIdx: number) => (
@@ -299,13 +307,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                     >
                                         <div className="mb-2">
                                             {workItem.name ? (
-                                                <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
+                                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                     {workItem.url ? (
                                                         <a
                                                             href={workItem.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-inherit no-underline hover:text-(--color-link)"
+                                                            className="text-inherit no-underline hover:text-(--color-link) hover:underline"
                                                         >
                                                             {workItem.name}
                                                         </a>
@@ -315,14 +323,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                                 </h3>
                                             ) : null}
                                             {workItem.position ? (
-                                                <div className="mb-0.5 text-[0.9rem] text-(--color-muted)">
+                                                <div className="mb-0.5 text-base text-(--color-muted)">
                                                     {workItem.position}
                                                 </div>
                                             ) : null}
                                             {(workItem.startDate ||
                                                 workItem.endDate) && (
                                                 <div
-                                                    className="text-[0.78rem] text-(--color-muted)"
+                                                    className="text-sm text-(--color-muted)"
                                                     style={{
                                                         fontVariantNumeric:
                                                             "tabular-nums",
@@ -339,7 +347,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                         {workItem.summary ? (
                                             workMarkdown[wIdx]?.summary ? (
                                                 <div
-                                                    className="resume-markdown my-2 text-[0.9rem] text-(--color-foreground)"
+                                                    className="resume-markdown my-2 text-base text-(--color-foreground)"
                                                     dangerouslySetInnerHTML={{
                                                         __html: workMarkdown[
                                                             wIdx
@@ -347,14 +355,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                                     }}
                                                 />
                                             ) : (
-                                                <p className="my-2 text-[0.9rem] text-(--color-foreground)">
+                                                <p className="my-2 text-base text-(--color-foreground)">
                                                     {workItem.summary}
                                                 </p>
                                             )
                                         ) : null}
                                         {workItem.highlights &&
                                         workItem.highlights.length > 0 ? (
-                                            <ul className="mt-1.5 mb-0 pl-4.5 text-[0.9rem] text-(--color-foreground)">
+                                            <ul className="mt-1.5 mb-0 pl-2 text-base text-(--color-foreground)">
                                                 {workItem.highlights.map(
                                                     (
                                                         highlight: string,
@@ -381,7 +389,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                                 key={hIdx}
                                                                 className="mb-[0.25em]"
                                                             >
-                                                                {highlight}
+                                                                {`• ${highlight}`}
                                                             </li>
                                                         )
                                                 )}
@@ -399,7 +407,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
                                 {sectionValue.map((education, idx) => (
@@ -408,13 +416,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                         className="mb-5 border-b border-(--color-border) pb-5 last:mb-0 last:border-b-0 last:pb-0"
                                     >
                                         {education.institution ? (
-                                            <h3 className="m-0 mb-0.5 text-[1rem] font-bold text-(--color-foreground)">
+                                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                 {education.url ? (
                                                     <a
                                                         href={education.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-inherit no-underline hover:text-(--color-link)"
+                                                        className="text-inherit no-underline hover:text-(--color-link) hover:underline"
                                                     >
                                                         {education.institution}
                                                     </a>
@@ -425,14 +433,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                         ) : null}
                                         {(education.studyType ||
                                             education.area) && (
-                                            <div className="mb-0.5 text-[0.9rem] text-(--color-muted)">
+                                            <div className="mb-0.5 text-base text-(--color-muted)">
                                                 {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
                                             </div>
                                         )}
                                         {(education.startDate ||
                                             education.endDate) && (
                                             <div
-                                                className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                className="mb-1 text-sm text-(--color-muted)"
                                                 style={{
                                                     fontVariantNumeric:
                                                         "tabular-nums",
@@ -476,7 +484,7 @@ export default async function ResumeClassic({ resume }: Props) {
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
                                 {sectionValue.map((project, pIdx: number) => (
@@ -485,13 +493,13 @@ export default async function ResumeClassic({ resume }: Props) {
                                         className="mb-5 border-b border-(--color-border) pb-5 last:mb-0 last:border-b-0 last:pb-0"
                                     >
                                         {project.name ? (
-                                            <h3 className="m-0 mb-1 text-[1rem] font-bold text-(--color-foreground)">
+                                            <h3 className="m-0 mb-1 text-lg font-bold text-(--color-foreground)">
                                                 {project.url ? (
                                                     <a
                                                         href={project.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-(--color-link) no-underline hover:opacity-80"
+                                                        className="text-(--color-link) no-underline hover:underline hover:opacity-80"
                                                     >
                                                         {project.name}
                                                     </a>
@@ -503,7 +511,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                         {(project.startDate ||
                                             project.endDate) && (
                                             <div
-                                                className="mb-2 text-[0.78rem] text-(--color-muted)"
+                                                className="mb-2 text-sm text-(--color-muted)"
                                                 style={{
                                                     fontVariantNumeric:
                                                         "tabular-nums",
@@ -532,7 +540,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                         className="mt-2"
                                                     >
                                                         {sec.title ? (
-                                                            <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
+                                                            <p className="m-0 mb-0.5 text-base font-semibold tracking-widest text-(--color-muted) uppercase">
                                                                 {sec.title}
                                                             </p>
                                                         ) : null}
@@ -540,7 +548,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                             pIdx
                                                         ]?.[sIdx] ? (
                                                             <div
-                                                                className="resume-markdown my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)"
+                                                                className="resume-markdown my-2 text-base leading-[1.6] text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: projectsMarkdown[
                                                                         pIdx
@@ -548,7 +556,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)">
+                                                            <p className="my-2 text-base leading-[1.6] text-(--color-foreground)">
                                                                 {sec.content}
                                                             </p>
                                                         )}
@@ -558,14 +566,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                         ) : (
                                             <>
                                                 {project.description ? (
-                                                    <p className="my-2 text-[0.9rem] leading-[1.6] text-(--color-foreground)">
+                                                    <p className="my-2 text-base leading-[1.6] text-(--color-foreground)">
                                                         {project.description}
                                                     </p>
                                                 ) : null}
                                                 {project.highlights &&
                                                 project.highlights.length >
                                                     0 ? (
-                                                    <ul className="my-2 pl-4.5 text-[0.9rem] text-(--color-foreground)">
+                                                    <ul className="my-2 pl-2 text-base text-(--color-foreground)">
                                                         {project.highlights.map(
                                                             (
                                                                 highlight: string,
@@ -575,7 +583,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                                     key={hIdx}
                                                                     className="mb-[0.25em]"
                                                                 >
-                                                                    {highlight}
+                                                                    {`• ${highlight}`}
                                                                 </li>
                                                             )
                                                         )}
@@ -596,7 +604,7 @@ export default async function ResumeClassic({ resume }: Props) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-[1rem] font-bold tracking-[0.08em] text-(--color-accent) uppercase">
+                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
                                 {sectionValue.map(
@@ -609,7 +617,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             genericItem.title ||
                                             genericItem.organization ||
                                             genericItem.language ? (
-                                                <h3 className="m-0 mb-0.5 text-[0.9375rem] font-bold text-(--color-foreground)">
+                                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
                                                     {genericItem.name ||
                                                         genericItem.title ||
                                                         genericItem.organization ||
@@ -621,7 +629,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             genericItem.issuer ||
                                             genericItem.publisher ||
                                             genericItem.fluency ? (
-                                                <div className="mb-0.5 text-[0.85rem] text-(--color-muted)">
+                                                <div className="mb-0.5 text-base text-(--color-muted)">
                                                     {genericItem.position ||
                                                         genericItem.awarder ||
                                                         genericItem.issuer ||
@@ -633,7 +641,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             genericItem.date ||
                                             genericItem.releaseDate ? (
                                                 <div
-                                                    className="mb-1 text-[0.78rem] text-(--color-muted)"
+                                                    className="mb-1 text-sm text-(--color-muted)"
                                                     style={{
                                                         fontVariantNumeric:
                                                             "tabular-nums",
@@ -644,7 +652,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                             ) : null}
                                             {genericItem.summary ||
                                             genericItem.description ? (
-                                                <p>
+                                                <p className="text-base text-(--color-foreground)">
                                                     {genericItem.summary ||
                                                         genericItem.description}
                                                 </p>
@@ -655,14 +663,14 @@ export default async function ResumeClassic({ resume }: Props) {
                                             ) &&
                                             genericItem.highlights.length >
                                                 0 ? (
-                                                <ul>
+                                                <ul className="pl-2 text-base text-(--color-foreground)">
                                                     {genericItem.highlights.map(
                                                         (
                                                             highlight: string,
                                                             hIdx: number
                                                         ) => (
                                                             <li key={hIdx}>
-                                                                {highlight}
+                                                                {`• ${highlight}`}
                                                             </li>
                                                         )
                                                     )}
@@ -684,7 +692,7 @@ export default async function ResumeClassic({ resume }: Props) {
                                                     href={genericItem.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-sm break-all text-(--color-link) no-underline hover:opacity-80"
+                                                    className="text-base break-all text-(--color-link) no-underline hover:underline hover:opacity-80"
                                                 >
                                                     {genericItem.url}
                                                 </a>

@@ -21,6 +21,9 @@ import type {
     ResumeLanguage,
     ResumeBasics,
 } from "@/types/resume";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
+import { Switch } from "@/components/ui/switch";
 
 function InputField({
     label,
@@ -101,6 +104,51 @@ function reorderArray<T>(arr: T[], from: number, to: number): T[] {
     return result;
 }
 
+function SectionEmojiSelector({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    const [showPicker, setShowPicker] = useState(false);
+    return (
+        <div className="relative mr-3 inline-block">
+            <button
+                onClick={() => setShowPicker(!showPicker)}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-(--color-border) bg-(--color-surface-subtle) text-base transition-colors hover:bg-(--color-border)"
+                title="이모지 선택"
+            >
+                {value || "➕"}
+            </button>
+            {showPicker && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowPicker(false)}
+                    />
+                    <div className="absolute top-10 left-0 z-50 shadow-xl">
+                        <Picker
+                            data={data}
+                            onEmojiSelect={(e: any) => {
+                                onChange(e.native);
+                                setShowPicker(false);
+                            }}
+                            theme={
+                                document.documentElement.classList.contains(
+                                    "dark"
+                                )
+                                    ? "dark"
+                                    : "light"
+                            }
+                        />
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -133,9 +181,6 @@ export default function ResumePanel() {
     const [backupData, setBackupData] = useState<any>(null);
     // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
-
-    // Fallback JSON input state
-    const [jsonInput, setJsonInput] = useState("");
 
     useEffect(() => {
         if (!browserClient) return;
@@ -178,11 +223,6 @@ export default function ResumePanel() {
                         phone: "",
                         url: "",
                     },
-                    work: [],
-                    projects: [],
-                    education: [],
-                    skills: [],
-                    languages: [],
                 };
                 if (!error && row) {
                     setRowId(row.id);
@@ -192,7 +232,6 @@ export default function ResumePanel() {
                     };
                     savedDataRef.current = JSON.stringify(loaded);
                     setResumeData(loaded);
-                    setJsonInput(JSON.stringify(loaded, null, 2));
                 } else {
                     setResumeData(defaultResume);
                 }
@@ -341,7 +380,7 @@ export default function ResumePanel() {
         return <div className="p-4 text-(--color-muted)">Loading...</div>;
 
     return (
-        <div className="flex h-full max-w-4xl flex-col space-y-8 pb-20">
+        <div className="flex flex-col space-y-8">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                     이력서 편집
@@ -397,45 +436,6 @@ export default function ResumePanel() {
                 </div>
             </section>
 
-            {/* 섹션 제목 커스텀 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    섹션 제목 커스텀
-                </h3>
-                <p className="text-sm text-(--color-muted)">
-                    섹션 제목 앞에 이모지를 추가하거나 원하는 텍스트로 변경할 수
-                    있습니다. 비워두면 기본값을 사용합니다.
-                </p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {[
-                        { key: "work", defaultLabel: "경력" },
-                        { key: "projects", defaultLabel: "프로젝트" },
-                        { key: "education", defaultLabel: "학력" },
-                        { key: "skills", defaultLabel: "기술" },
-                        { key: "languages", defaultLabel: "언어" },
-                        { key: "awards", defaultLabel: "수상" },
-                        { key: "volunteer", defaultLabel: "봉사 활동" },
-                        { key: "certificates", defaultLabel: "자격증" },
-                    ].map(({ key, defaultLabel }) => (
-                        <InputField
-                            key={key}
-                            label={defaultLabel}
-                            value={resumeData.sectionLabels?.[key] || ""}
-                            onChange={(v) => {
-                                setResumeData({
-                                    ...resumeData,
-                                    sectionLabels: {
-                                        ...resumeData.sectionLabels,
-                                        [key]: v,
-                                    },
-                                });
-                            }}
-                            placeholder={`예: 💼 ${defaultLabel}`}
-                        />
-                    ))}
-                </div>
-            </section>
-
             {/* 기본 정보 */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <h3 className="text-xl font-bold text-(--color-foreground)">
@@ -446,10 +446,10 @@ export default function ResumePanel() {
                         <img
                             src={resumeData.basics.image}
                             alt="Profile"
-                            className="h-24 w-24 shrink-0 rounded-full border border-(--color-border) object-cover"
+                            className="h-48 w-48 shrink-0 rounded-full border border-(--color-border) object-cover"
                         />
                     )}
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1">
                         <label className="text-sm font-medium text-(--color-muted)">
                             프로필 사진 (자동 업로드)
                         </label>
@@ -458,7 +458,7 @@ export default function ResumePanel() {
                             accept="image/*"
                             onChange={handleImageUpload}
                             disabled={uploadingImage}
-                            className="block w-full cursor-pointer text-sm text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) disabled:opacity-50"
+                            className={`mt-4 block w-fit cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
                         />
                     </div>
                 </div>
@@ -502,9 +502,52 @@ export default function ResumePanel() {
             {/* 경력 (Work Experience) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        경력 (Work)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.work?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: {
+                                            ...(resumeData.work || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            경력 (Work)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-work"
+                                checked={resumeData.work?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: {
+                                            ...(resumeData.work || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-work"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -516,7 +559,17 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                work: [newWork, ...(resumeData.work || [])],
+                                work: {
+                                    ...(resumeData.work || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newWork,
+                                        ...(resumeData.work?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingWork(0);
                         }}
@@ -553,7 +606,7 @@ export default function ResumePanel() {
                 )}
 
                 <div className="space-y-4">
-                    {resumeData.work?.map((work, idx) => {
+                    {resumeData.work?.entries.map((work, idx) => {
                         if (
                             filterJobField &&
                             !matchesJobField(work.jobField, filterJobField)
@@ -575,11 +628,14 @@ export default function ResumePanel() {
                                         return;
                                     setResumeData({
                                         ...resumeData,
-                                        work: reorderArray(
-                                            resumeData.work!,
-                                            dragSrcRef.current.idx,
-                                            idx
-                                        ),
+                                        work: {
+                                            ...resumeData.work!,
+                                            entries: reorderArray(
+                                                resumeData.work!.entries,
+                                                dragSrcRef.current.idx,
+                                                idx
+                                            ),
+                                        },
                                     });
                                     dragSrcRef.current = null;
                                 }}
@@ -593,12 +649,20 @@ export default function ResumePanel() {
                                                 value={work.name || ""}
                                                 onChange={(v) => {
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
                                                     w[idx].name = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
                                                 }}
                                             />
@@ -607,12 +671,20 @@ export default function ResumePanel() {
                                                 value={work.position || ""}
                                                 onChange={(v) => {
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
                                                     w[idx].position = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
                                                 }}
                                             />
@@ -625,7 +697,8 @@ export default function ResumePanel() {
                                                     value={work.startDate || ""}
                                                     onChange={(e) => {
                                                         const w = [
-                                                            ...resumeData.work!,
+                                                            ...resumeData.work!
+                                                                .entries,
                                                         ];
                                                         w[idx] = {
                                                             ...w[idx],
@@ -634,7 +707,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            work: w,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
                                                         });
                                                     }}
                                                     className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -649,7 +729,8 @@ export default function ResumePanel() {
                                                     value={work.endDate || ""}
                                                     onChange={(e) => {
                                                         const w = [
-                                                            ...resumeData.work!,
+                                                            ...resumeData.work!
+                                                                .entries,
                                                         ];
                                                         w[idx] = {
                                                             ...w[idx],
@@ -658,7 +739,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            work: w,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
                                                         });
                                                     }}
                                                     className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -671,7 +759,8 @@ export default function ResumePanel() {
                                                 checked={work.hideDays || false}
                                                 onChange={(e) => {
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
                                                     w[idx] = {
                                                         ...w[idx],
@@ -680,7 +769,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
                                                 }}
                                                 className="accent-(--color-accent)"
@@ -693,7 +789,8 @@ export default function ResumePanel() {
                                                 checked={work.markdown || false}
                                                 onChange={(e) => {
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
                                                     w[idx] = {
                                                         ...w[idx],
@@ -702,7 +799,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
                                                 }}
                                                 className="accent-(--color-accent)"
@@ -713,11 +817,21 @@ export default function ResumePanel() {
                                             label="요약 (Summary)"
                                             value={work.summary || ""}
                                             onChange={(v) => {
-                                                const w = [...resumeData.work!];
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
                                                 w[idx].summary = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    work: w,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -728,12 +842,22 @@ export default function ResumePanel() {
                                                 ""
                                             }
                                             onChange={(v) => {
-                                                const w = [...resumeData.work!];
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
                                                 w[idx].highlights =
                                                     v.split("\n");
                                                 setResumeData({
                                                     ...resumeData,
-                                                    work: w,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
                                                 });
                                             }}
                                             rows={4}
@@ -742,11 +866,21 @@ export default function ResumePanel() {
                                             value={work.jobField}
                                             fields={jobFields}
                                             onChange={(v) => {
-                                                const w = [...resumeData.work!];
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
                                                 w[idx].jobField = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    work: w,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -811,7 +945,8 @@ export default function ResumePanel() {
                                                 onClick={() => {
                                                     // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
                                                     const copy = {
                                                         ...w[idx],
@@ -823,7 +958,14 @@ export default function ResumePanel() {
                                                     setBackupData(resumeData);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
                                                     setEditingWork(0);
                                                 }}
@@ -839,12 +981,20 @@ export default function ResumePanel() {
                                                         )
                                                     ) {
                                                         const w = [
-                                                            ...resumeData.work!,
+                                                            ...resumeData.work!
+                                                                .entries,
                                                         ];
                                                         w.splice(idx, 1);
                                                         setResumeData({
                                                             ...resumeData,
-                                                            work: w,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
                                                         });
                                                     }
                                                 }}
@@ -864,9 +1014,54 @@ export default function ResumePanel() {
             {/* 프로젝트 (Projects) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        프로젝트 (Projects)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.projects?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: {
+                                            ...(resumeData.projects || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            프로젝트 (Projects)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-projects"
+                                checked={
+                                    resumeData.projects?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: {
+                                            ...(resumeData.projects || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-projects"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -880,10 +1075,17 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                projects: [
-                                    newProj,
-                                    ...(resumeData.projects || []),
-                                ],
+                                projects: {
+                                    ...(resumeData.projects || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newProj,
+                                        ...(resumeData.projects?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingProject(0);
                         }}
@@ -920,7 +1122,7 @@ export default function ResumePanel() {
                 )}
 
                 <div className="space-y-4">
-                    {resumeData.projects?.map((proj, idx) => {
+                    {resumeData.projects?.entries.map((proj, idx) => {
                         if (
                             filterJobField &&
                             !matchesJobField(proj.jobField, filterJobField)
@@ -946,11 +1148,14 @@ export default function ResumePanel() {
                                         return;
                                     setResumeData({
                                         ...resumeData,
-                                        projects: reorderArray(
-                                            resumeData.projects!,
-                                            dragSrcRef.current.idx,
-                                            idx
-                                        ),
+                                        projects: {
+                                            ...resumeData.projects!,
+                                            entries: reorderArray(
+                                                resumeData.projects!.entries,
+                                                dragSrcRef.current.idx,
+                                                idx
+                                            ),
+                                        },
                                     });
                                     dragSrcRef.current = null;
                                 }}
@@ -964,12 +1169,20 @@ export default function ResumePanel() {
                                                 value={proj.name || ""}
                                                 onChange={(v) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     p[idx].name = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                 }}
                                             />
@@ -980,14 +1193,22 @@ export default function ResumePanel() {
                                                 }
                                                 onChange={(v) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     p[idx].roles = v
                                                         .split(",")
                                                         .map((s) => s.trim());
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                 }}
                                             />
@@ -1000,7 +1221,9 @@ export default function ResumePanel() {
                                                     value={proj.startDate || ""}
                                                     onChange={(e) => {
                                                         const p = [
-                                                            ...resumeData.projects!,
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
                                                         ];
                                                         p[idx] = {
                                                             ...p[idx],
@@ -1009,7 +1232,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            projects: p,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
                                                         });
                                                     }}
                                                     className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -1024,7 +1254,9 @@ export default function ResumePanel() {
                                                     value={proj.endDate || ""}
                                                     onChange={(e) => {
                                                         const p = [
-                                                            ...resumeData.projects!,
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
                                                         ];
                                                         p[idx] = {
                                                             ...p[idx],
@@ -1033,7 +1265,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            projects: p,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
                                                         });
                                                     }}
                                                     className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -1044,12 +1283,20 @@ export default function ResumePanel() {
                                                 value={proj.url || ""}
                                                 onChange={(v) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     p[idx].url = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                 }}
                                                 placeholder="https://..."
@@ -1059,12 +1306,20 @@ export default function ResumePanel() {
                                                 value={proj.urlLabel || ""}
                                                 onChange={(v) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     p[idx].urlLabel = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                 }}
                                                 placeholder="예: 게임 시연 영상, 발표 자료"
@@ -1076,7 +1331,8 @@ export default function ResumePanel() {
                                                 checked={proj.hideDays || false}
                                                 onChange={(e) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     p[idx] = {
                                                         ...p[idx],
@@ -1085,7 +1341,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                 }}
                                                 className="accent-(--color-accent)"
@@ -1102,7 +1365,9 @@ export default function ResumePanel() {
                                                     type="button"
                                                     onClick={() => {
                                                         const p = [
-                                                            ...resumeData.projects!,
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
                                                         ];
                                                         const sections = [
                                                             ...(p[idx]
@@ -1119,7 +1384,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            projects: p,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
                                                         });
                                                     }}
                                                     className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
@@ -1144,7 +1416,9 @@ export default function ResumePanel() {
                                                                     e
                                                                 ) => {
                                                                     const p = [
-                                                                        ...resumeData.projects!,
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
                                                                     ];
                                                                     const sections =
                                                                         p[
@@ -1174,7 +1448,11 @@ export default function ResumePanel() {
                                                                         {
                                                                             ...resumeData,
                                                                             projects:
-                                                                                p,
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
                                                                         }
                                                                     );
                                                                 }}
@@ -1184,7 +1462,9 @@ export default function ResumePanel() {
                                                                 type="button"
                                                                 onClick={() => {
                                                                     const p = [
-                                                                        ...resumeData.projects!,
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
                                                                     ];
                                                                     const sections =
                                                                         p[
@@ -1207,7 +1487,11 @@ export default function ResumePanel() {
                                                                         {
                                                                             ...resumeData,
                                                                             projects:
-                                                                                p,
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
                                                                         }
                                                                     );
                                                                 }}
@@ -1222,7 +1506,9 @@ export default function ResumePanel() {
                                                             rows={3}
                                                             onChange={(e) => {
                                                                 const p = [
-                                                                    ...resumeData.projects!,
+                                                                    ...resumeData
+                                                                        .projects!
+                                                                        .entries,
                                                                 ];
                                                                 const sections =
                                                                     p[
@@ -1249,7 +1535,16 @@ export default function ResumePanel() {
                                                                 };
                                                                 setResumeData({
                                                                     ...resumeData,
-                                                                    projects: p,
+                                                                    projects: {
+                                                                        ...(resumeData.projects || {
+                                                                            showEmoji: false,
+                                                                            emoji: "✔️",
+                                                                            entries:
+                                                                                [],
+                                                                        }),
+                                                                        entries:
+                                                                            p,
+                                                                    },
                                                                 });
                                                             }}
                                                             className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
@@ -1265,7 +1560,9 @@ export default function ResumePanel() {
                                                                     e
                                                                 ) => {
                                                                     const p = [
-                                                                        ...resumeData.projects!,
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
                                                                     ];
                                                                     const sections =
                                                                         p[
@@ -1296,7 +1593,11 @@ export default function ResumePanel() {
                                                                         {
                                                                             ...resumeData,
                                                                             projects:
-                                                                                p,
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
                                                                         }
                                                                     );
                                                                 }}
@@ -1313,12 +1614,20 @@ export default function ResumePanel() {
                                             fields={jobFields}
                                             onChange={(v) => {
                                                 const p = [
-                                                    ...resumeData.projects!,
+                                                    ...resumeData.projects!
+                                                        .entries,
                                                 ];
                                                 p[idx].jobField = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    projects: p,
+                                                    projects: {
+                                                        ...(resumeData.projects || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: p,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1381,12 +1690,14 @@ export default function ResumePanel() {
                                                     setBackupData(resumeData);
                                                     // sections가 없으면 기존 description/highlights로 초기화
                                                     if (
-                                                        !resumeData.projects![
-                                                            idx
-                                                        ].sections
+                                                        !resumeData.projects!
+                                                            .entries[idx]
+                                                            .sections
                                                     ) {
                                                         const p = [
-                                                            ...resumeData.projects!,
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
                                                         ];
                                                         p[idx] = {
                                                             ...p[idx],
@@ -1411,7 +1722,14 @@ export default function ResumePanel() {
                                                         };
                                                         setResumeData({
                                                             ...resumeData,
-                                                            projects: p,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
                                                         });
                                                     }
                                                     setEditingProject(idx);
@@ -1424,7 +1742,8 @@ export default function ResumePanel() {
                                                 onClick={() => {
                                                     // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
                                                     const copy = {
                                                         ...p[idx],
@@ -1436,7 +1755,14 @@ export default function ResumePanel() {
                                                     setBackupData(resumeData);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
                                                     setEditingProject(0);
                                                 }}
@@ -1452,12 +1778,21 @@ export default function ResumePanel() {
                                                         )
                                                     ) {
                                                         const p = [
-                                                            ...resumeData.projects!,
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
                                                         ];
                                                         p.splice(idx, 1);
                                                         setResumeData({
                                                             ...resumeData,
-                                                            projects: p,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
                                                         });
                                                     }
                                                 }}
@@ -1477,9 +1812,54 @@ export default function ResumePanel() {
             {/* 학력 (Education) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        학력 (Education)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.education?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        education: {
+                                            ...(resumeData.education || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            학력 (Education)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-education"
+                                checked={
+                                    resumeData.education?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        education: {
+                                            ...(resumeData.education || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-education"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -1490,10 +1870,18 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                education: [
-                                    newEd,
-                                    ...(resumeData.education || []),
-                                ],
+                                education: {
+                                    ...(resumeData.education || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newEd,
+                                        ...(resumeData.education?.entries ||
+                                            []),
+                                    ],
+                                },
                             });
                             setEditingEducation(0);
                         }}
@@ -1504,7 +1892,7 @@ export default function ResumePanel() {
                 </div>
 
                 <div className="space-y-4">
-                    {resumeData.education?.map((ed, idx) => (
+                    {resumeData.education?.entries.map((ed, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -1517,12 +1905,20 @@ export default function ResumePanel() {
                                             value={ed.institution || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].institution = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1531,12 +1927,20 @@ export default function ResumePanel() {
                                             value={ed.area || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].area = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1545,12 +1949,20 @@ export default function ResumePanel() {
                                             value={ed.studyType || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].studyType = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1563,7 +1975,8 @@ export default function ResumePanel() {
                                                 value={ed.startDate || ""}
                                                 onChange={(ev) => {
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e[idx] = {
                                                         ...e[idx],
@@ -1572,7 +1985,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -1587,7 +2007,8 @@ export default function ResumePanel() {
                                                 value={ed.endDate || ""}
                                                 onChange={(ev) => {
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e[idx] = {
                                                         ...e[idx],
@@ -1596,7 +2017,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -1616,7 +2044,8 @@ export default function ResumePanel() {
                                                         ev.target.value
                                                     ) as 4 | 4.5;
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     // 기존 gpa 비례 환산
                                                     if (e[idx].gpa != null) {
@@ -1634,7 +2063,14 @@ export default function ResumePanel() {
                                                     e[idx].gpaMax = newMax;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 className="rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -1660,7 +2096,8 @@ export default function ResumePanel() {
                                                     const max =
                                                         ed.gpaMax ?? 4.5;
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e[idx].gpa = isNaN(raw)
                                                         ? undefined
@@ -1670,7 +2107,14 @@ export default function ResumePanel() {
                                                           );
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 placeholder="예: 4.2"
@@ -1727,12 +2171,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -1751,9 +2203,52 @@ export default function ResumePanel() {
             {/* 수상 (Awards) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        수상 (Awards)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.awards?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        awards: {
+                                            ...(resumeData.awards || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            수상 (Awards)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-awards"
+                                checked={resumeData.awards?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        awards: {
+                                            ...(resumeData.awards || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-awards"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -1765,10 +2260,17 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                awards: [
-                                    newAward,
-                                    ...(resumeData.awards || []),
-                                ],
+                                awards: {
+                                    ...(resumeData.awards || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newAward,
+                                        ...(resumeData.awards?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingAward(0);
                         }}
@@ -1778,7 +2280,7 @@ export default function ResumePanel() {
                     </button>
                 </div>
                 <div className="space-y-4">
-                    {(resumeData.awards || []).map((award, idx) => (
+                    {(resumeData.awards?.entries || []).map((award, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -1791,8 +2293,8 @@ export default function ResumePanel() {
                                             value={award.title || ""}
                                             onChange={(v) => {
                                                 const a = [
-                                                    ...(resumeData.awards ||
-                                                        []),
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
                                                 ];
                                                 a[idx] = {
                                                     ...a[idx],
@@ -1800,7 +2302,14 @@ export default function ResumePanel() {
                                                 };
                                                 setResumeData({
                                                     ...resumeData,
-                                                    awards: a,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1809,8 +2318,8 @@ export default function ResumePanel() {
                                             value={award.awarder || ""}
                                             onChange={(v) => {
                                                 const a = [
-                                                    ...(resumeData.awards ||
-                                                        []),
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
                                                 ];
                                                 a[idx] = {
                                                     ...a[idx],
@@ -1818,7 +2327,14 @@ export default function ResumePanel() {
                                                 };
                                                 setResumeData({
                                                     ...resumeData,
-                                                    awards: a,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1827,13 +2343,20 @@ export default function ResumePanel() {
                                             value={award.date || ""}
                                             onChange={(v) => {
                                                 const a = [
-                                                    ...(resumeData.awards ||
-                                                        []),
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
                                                 ];
                                                 a[idx] = { ...a[idx], date: v };
                                                 setResumeData({
                                                     ...resumeData,
-                                                    awards: a,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1847,8 +2370,8 @@ export default function ResumePanel() {
                                                 type="button"
                                                 onClick={() => {
                                                     const a = [
-                                                        ...(resumeData.awards ||
-                                                            []),
+                                                        ...(resumeData.awards
+                                                            ?.entries || []),
                                                     ];
                                                     a[idx] = {
                                                         ...a[idx],
@@ -1857,7 +2380,14 @@ export default function ResumePanel() {
                                                     };
                                                     setResumeData({
                                                         ...resumeData,
-                                                        awards: a,
+                                                        awards: {
+                                                            ...(resumeData.awards || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: a,
+                                                        },
                                                     });
                                                 }}
                                                 className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
@@ -1873,8 +2403,8 @@ export default function ResumePanel() {
                                             value={award.summary || ""}
                                             onChange={(e) => {
                                                 const a = [
-                                                    ...(resumeData.awards ||
-                                                        []),
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
                                                 ];
                                                 a[idx] = {
                                                     ...a[idx],
@@ -1882,7 +2412,14 @@ export default function ResumePanel() {
                                                 };
                                                 setResumeData({
                                                     ...resumeData,
-                                                    awards: a,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
                                                 });
                                             }}
                                             rows={3}
@@ -1945,13 +2482,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const a = [
-                                                        ...(resumeData.awards ||
-                                                            []),
+                                                        ...(resumeData.awards
+                                                            ?.entries || []),
                                                     ];
                                                     a.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        awards: a,
+                                                        awards: {
+                                                            ...(resumeData.awards || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: a,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -1970,9 +2514,52 @@ export default function ResumePanel() {
             {/* 스킬 (Skills) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        스킬 (Skills)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.skills?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        skills: {
+                                            ...(resumeData.skills || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            스킬 (Skills)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-skills"
+                                checked={resumeData.skills?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        skills: {
+                                            ...(resumeData.skills || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-skills"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -1983,10 +2570,17 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                skills: [
-                                    newSkill,
-                                    ...(resumeData.skills || []),
-                                ],
+                                skills: {
+                                    ...(resumeData.skills || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newSkill,
+                                        ...(resumeData.skills?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingSkillKeywords("");
                             setEditingSkill(0);
@@ -1997,7 +2591,7 @@ export default function ResumePanel() {
                     </button>
                 </div>
                 <div className="space-y-4">
-                    {resumeData.skills?.map((skill, idx) => (
+                    {resumeData.skills?.entries.map((skill, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -2010,12 +2604,20 @@ export default function ResumePanel() {
                                             value={skill.name || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].name = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -2024,12 +2626,20 @@ export default function ResumePanel() {
                                             value={skill.level || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].level = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Master, Advanced"
@@ -2039,12 +2649,20 @@ export default function ResumePanel() {
                                             value={skill.iconSlug || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].iconSlug = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: react, typescript (simple-icons)"
@@ -2054,12 +2672,20 @@ export default function ResumePanel() {
                                             value={skill.iconColor || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].iconColor = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: #61DAFB"
@@ -2087,7 +2713,8 @@ export default function ResumePanel() {
                                             onClick={() => {
                                                 // editingSkillKeywords 파싱 후 저장
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx] = {
                                                     ...s[idx],
@@ -2101,7 +2728,14 @@ export default function ResumePanel() {
                                                 };
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                                 setBackupData(null);
                                                 setEditingSkill(null);
@@ -2123,11 +2757,11 @@ export default function ResumePanel() {
                                                 </span>
                                             )}
                                         </h4>
-                                        <div className="mt-1 flex flex-wrap gap-1">
+                                        <div className="mt-1 flex flex-wrap gap-2">
                                             {skill.keywords?.map((kw) => (
                                                 <span
                                                     key={kw}
-                                                    className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
+                                                    className="text-semibold rounded bg-(--color-accent) px-2 py-1 text-base text-(--color-on-accent)"
                                                 >
                                                     {kw}
                                                 </span>
@@ -2155,12 +2789,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const s = [
-                                                        ...resumeData.skills!,
+                                                        ...resumeData.skills!
+                                                            .entries,
                                                     ];
                                                     s.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        skills: s,
+                                                        skills: {
+                                                            ...(resumeData.skills || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: s,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -2179,9 +2821,54 @@ export default function ResumePanel() {
             {/* 언어 (Languages) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        언어 (Languages)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.languages?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        languages: {
+                                            ...(resumeData.languages || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            언어 (Languages)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-languages"
+                                checked={
+                                    resumeData.languages?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        languages: {
+                                            ...(resumeData.languages || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-languages"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -2191,10 +2878,18 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                languages: [
-                                    newLang,
-                                    ...(resumeData.languages || []),
-                                ],
+                                languages: {
+                                    ...(resumeData.languages || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newLang,
+                                        ...(resumeData.languages?.entries ||
+                                            []),
+                                    ],
+                                },
                             });
                             setEditingLanguage(0);
                         }}
@@ -2204,7 +2899,7 @@ export default function ResumePanel() {
                     </button>
                 </div>
                 <div className="space-y-4">
-                    {resumeData.languages?.map((lang, idx) => (
+                    {resumeData.languages?.entries.map((lang, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -2217,12 +2912,20 @@ export default function ResumePanel() {
                                             value={lang.language || ""}
                                             onChange={(v) => {
                                                 const l = [
-                                                    ...resumeData.languages!,
+                                                    ...resumeData.languages!
+                                                        .entries,
                                                 ];
                                                 l[idx].language = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    languages: l,
+                                                    languages: {
+                                                        ...(resumeData.languages || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: l,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Korean, English"
@@ -2232,12 +2935,20 @@ export default function ResumePanel() {
                                             value={lang.fluency || ""}
                                             onChange={(v) => {
                                                 const l = [
-                                                    ...resumeData.languages!,
+                                                    ...resumeData.languages!
+                                                        .entries,
                                                 ];
                                                 l[idx].fluency = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    languages: l,
+                                                    languages: {
+                                                        ...(resumeData.languages || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: l,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Native, Fluent, Intermediate"
@@ -2291,12 +3002,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const l = [
-                                                        ...resumeData.languages!,
+                                                        ...resumeData.languages!
+                                                            .entries,
                                                     ];
                                                     l.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        languages: l,
+                                                        languages: {
+                                                            ...(resumeData.languages || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: l,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -2310,47 +3029,6 @@ export default function ResumePanel() {
                         </div>
                     ))}
                 </div>
-            </section>
-
-            {/* 데이터 고급 편집 (JSONFallback) */}
-            <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            데이터 고급 편집 (JSONFallback)
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            기타 세부 정보 및 스킬, 언어 등은 JSON 편집기를 통해
-                            직접 조작할 수 있습니다.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => {
-                            try {
-                                const newD = JSON.parse(jsonInput);
-                                setResumeData(newD);
-                                setStatus({
-                                    type: "success",
-                                    msg: "JSON 데이터가 폼에 반영되었습니다.",
-                                });
-                            } catch (err: any) {
-                                setStatus({
-                                    type: "error",
-                                    msg: `JSON 파싱 에러: ${err.message}`,
-                                });
-                            }
-                        }}
-                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                    >
-                        JSON 적용
-                    </button>
-                </div>
-                <textarea
-                    value={jsonInput}
-                    onChange={(e) => setJsonInput(e.target.value)}
-                    className="h-64 w-full resize-y rounded-lg border border-(--color-border) bg-(--color-surface) p-4 font-mono text-sm leading-relaxed text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                    spellCheck={false}
-                />
             </section>
 
             <div className="flex items-center justify-end gap-3 border-t border-(--color-border) pt-6">

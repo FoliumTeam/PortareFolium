@@ -66,12 +66,26 @@ export default async function ResumePage() {
 
     const resumeData: Resume = {
         ...resumeDataRaw,
-        work: sortByDateDesc(
-            filterByJobField(resumeDataRaw.work, jobField) ?? []
-        ) as Resume["work"],
-        projects: sortByDateDesc(
-            filterByJobField(resumeDataRaw.projects, jobField) ?? []
-        ) as Resume["projects"],
+        work: resumeDataRaw.work
+            ? {
+                  ...resumeDataRaw.work,
+                  entries: sortByDateDesc(
+                      filterByJobField(resumeDataRaw.work.entries, jobField) ??
+                          []
+                  ),
+              }
+            : undefined,
+        projects: resumeDataRaw.projects
+            ? {
+                  ...resumeDataRaw.projects,
+                  entries: sortByDateDesc(
+                      filterByJobField(
+                          resumeDataRaw.projects.entries,
+                          jobField
+                      ) ?? []
+                  ),
+              }
+            : undefined,
     };
 
     return (

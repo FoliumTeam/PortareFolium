@@ -149,19 +149,24 @@ export interface ResumeProject {
     sections?: ResumeProjectSection[];
 }
 
+// 섹션별 이모지 및 entries 래퍼
+export interface ResumeSection<T> {
+    emoji: string;
+    showEmoji: boolean;
+    entries: T[];
+}
+
 export interface Resume {
     basics?: ResumeBasics;
-    // 섹션 제목 커스텀 (이모지 포함 가능, 키: work, projects, education, skills, languages, awards, ...)
-    sectionLabels?: Partial<Record<string, string>>;
-    work?: ResumeWork[];
-    volunteer?: ResumeVolunteer[];
-    education?: ResumeEducation[];
-    awards?: ResumeAward[];
-    certificates?: ResumeCertificate[];
-    publications?: ResumePublication[];
-    skills?: ResumeSkill[];
-    languages?: ResumeLanguage[];
-    interests?: ResumeInterest[];
-    references?: ResumeReference[];
-    projects?: ResumeProject[];
+    work?: ResumeSection<ResumeWork>;
+    volunteer?: ResumeSection<ResumeVolunteer>;
+    education?: ResumeSection<ResumeEducation>;
+    awards?: ResumeSection<ResumeAward>;
+    certificates?: ResumeSection<ResumeCertificate>;
+    publications?: ResumeSection<ResumePublication>;
+    skills?: ResumeSection<ResumeSkill>;
+    languages?: ResumeSection<ResumeLanguage>;
+    interests?: ResumeSection<ResumeInterest>;
+    references?: ResumeSection<ResumeReference>;
+    projects?: ResumeSection<ResumeProject>;
 }

@@ -2,9 +2,8 @@
 -- migration-whole.sql
 -- PortareFolium DB 스키마 전체 동기화
 --
--- 대상: feedback 브랜치(b07a2d6a4, 2026-03-18) 이전 또는
---       현재 DB를 가진 모든 사용자
--- 효과: 실행 후 db_schema_version = "0.6.4" 로 설정됨
+-- 대상: 모든 사용자 (최초 설치 또는 구버전 DB 보유)
+-- 효과: 실행 후 db_schema_version = "0.6.17" 로 설정됨
 -- 실행: Supabase 대시보드 → SQL Editor → 전체 내용 붙여넣기 후 실행
 -- 안전: idempotent — 이미 최신 DB에 재실행해도 에러 없음
 -- ============================================================
@@ -113,7 +112,7 @@ DO $$ BEGIN
 END $$;
 
 -- ── exec_sql 함수 (자동 마이그레이션용, service_role 전용) ────
--- Next.js 전환 후 어드민 대시보드가 자동으로 DDL을 실행할 때 사용
+-- Next.js 어드민 대시보드가 자동으로 DDL을 실행할 때 사용
 
 CREATE OR REPLACE FUNCTION exec_sql(sql text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -125,9 +124,27 @@ $$;
 REVOKE ALL ON FUNCTION exec_sql(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION exec_sql(text) TO service_role;
 
--- ── DB 스키마 버전 초기화 ─────────────────────────────────────
--- 이미 db_schema_version 이 있으면 기존 값 유지 (ON CONFLICT DO NOTHING)
+-- ── resume_data: sectionLabels/showEmojis → meta 이전 ─────────
+-- 이미 meta 구조인 경우 COALESCE로 기존 값을 보존하며 안전하게 병합
+
+UPDATE resume_data
+SET data = (data - 'sectionLabels' - 'showEmojis') ||
+    jsonb_build_object(
+        'meta',
+        COALESCE(data->'meta', '{}'::jsonb) ||
+        jsonb_build_object(
+            'sectionLabels', COALESCE(data->'sectionLabels', '{}'::jsonb),
+            'showEmojis',    COALESCE(data->'showEmojis',    '{}'::jsonb)
+        )
+    )
+WHERE lang = 'ko';
+
+-- ── DB 스키마 버전 설정 ───────────────────────────────────────
+-- 신규 설치: ON CONFLICT DO NOTHING으로 기존 값 유지
+-- 전체 재적용: 아래 줄을 주석 해제하고 위 줄을 주석 처리
+-- INSERT INTO site_config (key, value) VALUES ('db_schema_version', '"0.6.17"')
+-- ON CONFLICT (key) DO UPDATE SET value = '"0.6.17"';
 
 INSERT INTO site_config (key, value)
-VALUES ('db_schema_version', '"0.6.4"')
+VALUES ('db_schema_version', '"0.6.17"')
 ON CONFLICT (key) DO NOTHING;

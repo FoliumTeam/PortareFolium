@@ -31,16 +31,24 @@ const formatDateRange = (
 
 export default async function ResumeMinimal({ resume }: Props) {
     const basics = resume.basics ?? {};
-    const sections = Object.entries(resume).filter(
-        ([key]) => key !== "basics" && key !== "$schema"
-    );
-    const getLabel = (key: string) =>
-        (resume.sectionLabels ?? {})[key] ||
-        defaultSectionLabels[key] ||
-        key.charAt(0).toUpperCase() + key.slice(1);
+    const sections = Object.entries(resume)
+        .filter(([key]) => key !== "basics")
+        .map(
+            ([key, val]) =>
+                [key, (val as any)?.entries ?? []] as [string, any[]]
+        );
+    const getLabel = (key: string) => {
+        const sec = (resume as any)[key];
+        const emoji = sec?.emoji || "➕";
+        const label =
+            defaultSectionLabels[key] ||
+            key.charAt(0).toUpperCase() + key.slice(1);
+        const showEmoji = sec?.showEmoji === true;
+        return showEmoji ? `${emoji} ${label}` : label;
+    };
 
     const workMarkdown = await Promise.all(
-        (resume.work || []).map(async (w) => {
+        (resume.work?.entries || []).map(async (w) => {
             if (!w.markdown) return { summary: null, highlights: null };
             return {
                 summary: w.summary ? await renderMarkdown(w.summary) : null,
@@ -53,7 +61,7 @@ export default async function ResumeMinimal({ resume }: Props) {
         })
     );
     const projectsMarkdown = await Promise.all(
-        (resume.projects || []).map(async (proj) => {
+        (resume.projects?.entries || []).map(async (proj) => {
             if (!proj.sections) return [] as (string | null)[];
             return Promise.all(
                 proj.sections.map(async (sec) =>
@@ -77,7 +85,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                     : `/${basics.image}`
                             }
                             alt={basics.name || "Profile"}
-                            className={`block h-20 w-20 object-cover ${
+                            className={`block h-40 w-40 object-cover ${
                                 basics.imageStyle === "rounded"
                                     ? "rounded-full"
                                     : basics.imageStyle === "squared"
@@ -173,20 +181,127 @@ export default async function ResumeMinimal({ resume }: Props) {
                     )
                         return null;
 
+                    if (sectionKey === "work" && Array.isArray(sectionValue)) {
+                        return (
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                                    {getLabel("work")}
+                                </h2>
+                                {sectionValue.map((workItem, wIdx: number) => (
+                                    <div
+                                        key={wIdx}
+                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
+                                    >
+                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                            {workItem.position ? (
+                                                <span className="text-lg font-bold text-(--color-foreground)">
+                                                    {workItem.position}
+                                                </span>
+                                            ) : null}
+                                            {workItem.name ? (
+                                                <span className="text-base text-(--color-muted)">
+                                                    {workItem.url ? (
+                                                        <a
+                                                            href={workItem.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-(--color-link) no-underline"
+                                                        >
+                                                            {workItem.name}
+                                                        </a>
+                                                    ) : (
+                                                        workItem.name
+                                                    )}
+                                                </span>
+                                            ) : null}
+                                            {(workItem.startDate ||
+                                                workItem.endDate) && (
+                                                <span
+                                                    className="max-tablet:ml-0 ml-auto text-sm whitespace-nowrap text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
+                                                    {formatDateRange(
+                                                        workItem.startDate,
+                                                        workItem.endDate,
+                                                        workItem.hideDays
+                                                    )}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {workItem.summary ? (
+                                            workMarkdown[wIdx]?.summary ? (
+                                                <div
+                                                    className="resume-markdown m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: workMarkdown[
+                                                            wIdx
+                                                        ].summary!,
+                                                    }}
+                                                />
+                                            ) : (
+                                                <p className="m-0 mb-1 text-base leading-[1.6] text-(--color-foreground)">
+                                                    {workItem.summary}
+                                                </p>
+                                            )
+                                        ) : null}
+                                        {workItem.highlights &&
+                                        workItem.highlights.length > 0 ? (
+                                            <ul className="mt-1 mb-0 pl-2 text-base text-(--color-foreground)">
+                                                {workItem.highlights.map(
+                                                    (
+                                                        highlight: string,
+                                                        hIdx: number
+                                                    ) =>
+                                                        workMarkdown[wIdx]
+                                                            ?.highlights?.[
+                                                            hIdx
+                                                        ] ? (
+                                                            <li
+                                                                key={hIdx}
+                                                                className="resume-markdown mb-[0.2em]"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: workMarkdown[
+                                                                        wIdx
+                                                                    ]
+                                                                        .highlights![
+                                                                        hIdx
+                                                                    ],
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <li
+                                                                key={hIdx}
+                                                                className="mb-[0.2em]"
+                                                            >
+                                                                {`• ${highlight}`}
+                                                            </li>
+                                                        )
+                                                )}
+                                            </ul>
+                                        ) : null}
+                                    </div>
+                                ))}
+                            </section>
+                        );
+                    }
+
                     if (
                         sectionKey === "skills" &&
                         Array.isArray(sectionValue)
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
-                                <div className="text-sm leading-[1.75] text-(--color-foreground)">
+                                <div className="text-lg leading-[1.75] text-(--color-foreground)">
                                     {sectionValue.map((skill, skillIndex) => (
                                         <div
                                             key={skillIndex}
-                                            className="mb-3 flex flex-wrap items-center gap-2 last:mb-0"
+                                            className="mb-3 space-y-2"
                                         >
                                             {skill.name ? (
                                                 <strong className="flex items-center gap-1.5">
@@ -247,201 +362,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                         );
                     }
 
-                    if (sectionKey === "work" && Array.isArray(sectionValue)) {
-                        return (
-                            <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
-                                    {getLabel("work")}
-                                </h2>
-                                {sectionValue.map((workItem, wIdx: number) => (
-                                    <div
-                                        key={wIdx}
-                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
-                                    >
-                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                            {workItem.position ? (
-                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
-                                                    {workItem.position}
-                                                </span>
-                                            ) : null}
-                                            {workItem.name ? (
-                                                <span className="text-sm text-(--color-muted)">
-                                                    {workItem.url ? (
-                                                        <a
-                                                            href={workItem.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-(--color-link) no-underline"
-                                                        >
-                                                            {workItem.name}
-                                                        </a>
-                                                    ) : (
-                                                        workItem.name
-                                                    )}
-                                                </span>
-                                            ) : null}
-                                            {(workItem.startDate ||
-                                                workItem.endDate) && (
-                                                <span
-                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
-                                                    style={{
-                                                        fontVariantNumeric:
-                                                            "tabular-nums",
-                                                    }}
-                                                >
-                                                    {formatDateRange(
-                                                        workItem.startDate,
-                                                        workItem.endDate,
-                                                        workItem.hideDays
-                                                    )}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {workItem.summary ? (
-                                            workMarkdown[wIdx]?.summary ? (
-                                                <div
-                                                    className="resume-markdown m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: workMarkdown[
-                                                            wIdx
-                                                        ].summary!,
-                                                    }}
-                                                />
-                                            ) : (
-                                                <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
-                                                    {workItem.summary}
-                                                </p>
-                                            )
-                                        ) : null}
-                                        {workItem.highlights &&
-                                        workItem.highlights.length > 0 ? (
-                                            <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
-                                                {workItem.highlights.map(
-                                                    (
-                                                        highlight: string,
-                                                        hIdx: number
-                                                    ) =>
-                                                        workMarkdown[wIdx]
-                                                            ?.highlights?.[
-                                                            hIdx
-                                                        ] ? (
-                                                            <li
-                                                                key={hIdx}
-                                                                className="resume-markdown mb-[0.2em]"
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: workMarkdown[
-                                                                        wIdx
-                                                                    ]
-                                                                        .highlights![
-                                                                        hIdx
-                                                                    ],
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <li
-                                                                key={hIdx}
-                                                                className="mb-[0.2em]"
-                                                            >
-                                                                {highlight}
-                                                            </li>
-                                                        )
-                                                )}
-                                            </ul>
-                                        ) : null}
-                                    </div>
-                                ))}
-                            </section>
-                        );
-                    }
-
-                    if (
-                        sectionKey === "education" &&
-                        Array.isArray(sectionValue)
-                    ) {
-                        return (
-                            <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
-                                    {getLabel("education")}
-                                </h2>
-                                {sectionValue.map((education, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
-                                    >
-                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                            {education.institution ? (
-                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
-                                                    {education.url ? (
-                                                        <a
-                                                            href={education.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-inherit no-underline hover:text-(--color-link)"
-                                                        >
-                                                            {
-                                                                education.institution
-                                                            }
-                                                        </a>
-                                                    ) : (
-                                                        education.institution
-                                                    )}
-                                                </span>
-                                            ) : null}
-                                            {(education.studyType ||
-                                                education.area) && (
-                                                <span className="text-sm text-(--color-muted)">
-                                                    {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
-                                                </span>
-                                            )}
-                                            {(education.startDate ||
-                                                education.endDate) && (
-                                                <span
-                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
-                                                    style={{
-                                                        fontVariantNumeric:
-                                                            "tabular-nums",
-                                                    }}
-                                                >
-                                                    {formatDateRange(
-                                                        education.startDate,
-                                                        education.endDate
-                                                    )}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {education.gpa != null ? (
-                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
-                                                GPA: {education.gpa.toFixed(2)}{" "}
-                                                /{" "}
-                                                {(
-                                                    education.gpaMax ?? 4.5
-                                                ).toFixed(2)}
-                                            </div>
-                                        ) : education.score ? (
-                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
-                                                GPA: {education.score}
-                                            </div>
-                                        ) : null}
-                                        {education.courses &&
-                                        education.courses.length > 0 ? (
-                                            <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
-                                                Courses:{" "}
-                                                {education.courses.join(", ")}
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                ))}
-                            </section>
-                        );
-                    }
-
                     if (
                         sectionKey === "projects" &&
                         Array.isArray(sectionValue)
                     ) {
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("projects")}
                                 </h2>
                                 {sectionValue.map((project, pIdx: number) => (
@@ -451,13 +378,13 @@ export default async function ResumeMinimal({ resume }: Props) {
                                     >
                                         <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                             {project.name ? (
-                                                <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
+                                                <span className="text-lg font-bold text-(--color-foreground)">
                                                     {project.url ? (
                                                         <a
                                                             href={project.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-inherit no-underline hover:text-(--color-link)"
+                                                            className="text-inherit no-underline hover:text-(--color-link) hover:underline"
                                                         >
                                                             {project.name}
                                                         </a>
@@ -469,7 +396,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                             {(project.startDate ||
                                                 project.endDate) && (
                                                 <span
-                                                    className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                    className="max-tablet:ml-0 ml-auto text-sm whitespace-nowrap text-(--color-muted)"
                                                     style={{
                                                         fontVariantNumeric:
                                                             "tabular-nums",
@@ -499,7 +426,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                         className="mt-2"
                                                     >
                                                         {sec.title ? (
-                                                            <p className="m-0 mb-0.5 text-[0.8rem] font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
+                                                            <p className="m-0 mb-0.5 text-base font-semibold tracking-[0.05em] text-(--color-muted) uppercase">
                                                                 {sec.title}
                                                             </p>
                                                         ) : null}
@@ -507,7 +434,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                             pIdx
                                                         ]?.[sIdx] ? (
                                                             <div
-                                                                className="resume-markdown m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)"
+                                                                className="resume-markdown m-0 mb-1 text-base leading-[1.6] text-(--color-foreground)"
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: projectsMarkdown[
                                                                         pIdx
@@ -515,7 +442,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
+                                                            <p className="m-0 mb-1 text-base leading-[1.6] text-(--color-foreground)">
                                                                 {sec.content}
                                                             </p>
                                                         )}
@@ -525,14 +452,14 @@ export default async function ResumeMinimal({ resume }: Props) {
                                         ) : (
                                             <>
                                                 {project.description ? (
-                                                    <p className="m-0 mb-1 text-sm leading-[1.6] text-(--color-foreground)">
+                                                    <p className="m-0 mb-1 text-base leading-[1.6] text-(--color-foreground)">
                                                         {project.description}
                                                     </p>
                                                 ) : null}
                                                 {project.highlights &&
                                                 project.highlights.length >
                                                     0 ? (
-                                                    <ul className="mt-1 mb-0 pl-4.5 text-sm text-(--color-foreground)">
+                                                    <ul className="mt-1 mb-0 pl-4.5 text-base text-(--color-foreground)">
                                                         {project.highlights.map(
                                                             (
                                                                 highlight: string,
@@ -542,7 +469,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                                     key={hIdx}
                                                                     className="mb-[0.2em]"
                                                                 >
-                                                                    {highlight}
+                                                                    {`• ${highlight}`}
                                                                 </li>
                                                             )
                                                         )}
@@ -557,13 +484,94 @@ export default async function ResumeMinimal({ resume }: Props) {
                     }
 
                     if (
+                        sectionKey === "education" &&
+                        Array.isArray(sectionValue)
+                    ) {
+                        return (
+                            <section key={sectionKey} className="mb-10">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                                    {getLabel("education")}
+                                </h2>
+                                {sectionValue.map((education, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="mb-4 border-b border-(--color-border) pb-4 last:mb-0 last:border-b-0 last:pb-0"
+                                    >
+                                        <div className="max-tablet:flex-col max-tablet:items-start mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                            {education.institution ? (
+                                                <span className="text-lg font-bold text-(--color-foreground)">
+                                                    {education.url ? (
+                                                        <a
+                                                            href={education.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-inherit no-underline hover:text-(--color-link)"
+                                                        >
+                                                            {
+                                                                education.institution
+                                                            }
+                                                        </a>
+                                                    ) : (
+                                                        education.institution
+                                                    )}
+                                                </span>
+                                            ) : null}
+                                            {(education.studyType ||
+                                                education.area) && (
+                                                <span className="text-base text-(--color-muted)">
+                                                    {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
+                                                </span>
+                                            )}
+                                            {(education.startDate ||
+                                                education.endDate) && (
+                                                <span
+                                                    className="max-tablet:ml-0 ml-auto text-sm whitespace-nowrap text-(--color-muted)"
+                                                    style={{
+                                                        fontVariantNumeric:
+                                                            "tabular-nums",
+                                                    }}
+                                                >
+                                                    {formatDateRange(
+                                                        education.startDate,
+                                                        education.endDate
+                                                    )}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {education.courses &&
+                                        education.courses.length > 0 ? (
+                                            <div className="my-0.5 text-base text-(--color-muted)">
+                                                Courses:{" "}
+                                                {education.courses.join(", ")}
+                                            </div>
+                                        ) : null}
+                                        {education.gpa != null ? (
+                                            <div className="my-0.5 text-sm text-(--color-muted)">
+                                                GPA: {education.gpa.toFixed(2)}{" "}
+                                                /{" "}
+                                                {(
+                                                    education.gpaMax ?? 4.5
+                                                ).toFixed(2)}
+                                            </div>
+                                        ) : education.score ? (
+                                            <div className="my-0.5 text-base text-(--color-muted)">
+                                                GPA: {education.score}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                ))}
+                            </section>
+                        );
+                    }
+
+                    if (
                         Array.isArray(sectionValue) &&
                         sectionValue.length > 0
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
                             <section key={sectionKey} className="mb-10">
-                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-[0.8rem] font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>
                                 {sectionValue.map(
@@ -577,7 +585,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 genericItem.title ||
                                                 genericItem.organization ||
                                                 genericItem.language ? (
-                                                    <span className="text-[0.9375rem] font-bold text-(--color-foreground)">
+                                                    <span className="text-lg font-bold text-(--color-foreground)">
                                                         {genericItem.name ||
                                                             genericItem.title ||
                                                             genericItem.organization ||
@@ -589,7 +597,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 genericItem.issuer ||
                                                 genericItem.publisher ||
                                                 genericItem.fluency ? (
-                                                    <span className="text-sm text-(--color-muted)">
+                                                    <span className="text-base text-(--color-muted)">
                                                         {genericItem.position ||
                                                             genericItem.awarder ||
                                                             genericItem.issuer ||
@@ -601,7 +609,7 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                     genericItem.date ||
                                                     genericItem.releaseDate) && (
                                                     <span
-                                                        className="max-tablet:ml-0 ml-auto text-[0.78rem] whitespace-nowrap text-(--color-muted)"
+                                                        className="max-tablet:ml-0 ml-auto text-sm whitespace-nowrap text-(--color-muted)"
                                                         style={{
                                                             fontVariantNumeric:
                                                                 "tabular-nums",
@@ -651,14 +659,14 @@ export default async function ResumeMinimal({ resume }: Props) {
                                                 genericItem.keywords
                                             ) &&
                                             genericItem.keywords.length > 0 ? (
-                                                <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
+                                                <div className="my-0.5 text-sm text-(--color-muted)">
                                                     {genericItem.keywords.join(
                                                         ", "
                                                     )}
                                                 </div>
                                             ) : null}
                                             {genericItem.url ? (
-                                                <div className="my-0.5 text-[0.82rem] text-(--color-muted)">
+                                                <div className="my-0.5 text-sm text-(--color-muted)">
                                                     <a
                                                         href={genericItem.url}
                                                         target="_blank"
