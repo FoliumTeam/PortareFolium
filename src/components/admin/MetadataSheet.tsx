@@ -130,7 +130,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[85vh] w-full max-w-lg overflow-x-hidden overflow-y-auto bg-(--color-surface)">
+            <DialogContent className="max-h-[85vh] w-full max-w-7xl overflow-y-auto bg-(--color-surface)">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
