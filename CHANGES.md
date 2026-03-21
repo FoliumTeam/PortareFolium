@@ -2,6 +2,16 @@
 
 ## 2026-03-21
 
+### Chore: AGENTS.md Project Structure 업데이트
+
+- `AGENTS.md`: Astro 구버전 스택 설명을 Next.js 16 App Router 기준으로 전면 교체
+    - Framework, Directory Layout, Key Conventions 모두 현행 코드와 일치하도록 수정
+- `CLAUDE.md`: `AGENTS.md` 참조 지시문으로 교체
+
+### Feat: CLAUDE.md 지침 로드 프롬프트 강화
+
+- `CLAUDE.md`: Claude Code가 작업을 시작하기 전 `AGENTS.md` 파일을 반드시 스캔하도록 강제하는 지시문 추가
+
 ### Feat: 포트폴리오 페이지 하단 도서 섹션 추가 (v0.6.19)
 
 - `src/app/(frontend)/portfolio/page.tsx`: 활성 직무 분야에 맞는 published 도서를 fetch하여 포트폴리오 항목 하단에 표시
