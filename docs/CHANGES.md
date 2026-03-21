@@ -2,6 +2,21 @@
 
 ## 2026-03-21
 
+### Feat: MCP Agent API 구현 (v0.7.11)
+
+- `package.json`: `@modelcontextprotocol/sdk@1.27.1` 추가, version `0.7.11` bump
+- `src/lib/migrations.ts`: v0.7.11 마이그레이션 추가 (`ai_agent_tokens`, `content_snapshots` 테이블 + prune 트리거)
+- `src/lib/agent-token.ts`: 에이전트 토큰 유틸 신규 (`validateAgentToken`, `issueToken`, `revokeToken`, `listTokens`)
+- `src/lib/mcp-tools.ts`: MCP 툴 11개 정의 + `snapshotBefore()` + `dispatchTool()` 디스패처
+- `src/app/api/mcp/route.ts`: JSON-RPC 2.0 MCP HTTP 엔드포인트 (POST/GET)
+- `src/app/admin/actions/agent-tokens.ts`: 토큰 발급/폐기/목록 서버 액션
+- `src/app/admin/actions/snapshots.ts`: 스냅샷 목록/조회/복원 서버 액션
+- `src/components/admin/panels/AgentTokensPanel.tsx`: 토큰 발급·폐기 어드민 UI
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 스냅샷 브라우저 + 복원 UI
+- `src/components/admin/AdminSidebar.tsx`: "Agent 토큰", "스냅샷" 탭 추가
+- `src/components/admin/AdminDashboard.tsx`: 2개 신규 패널 렌더링 연결
+- `docs/ai-agent-schema.md`: AI 에이전트용 스키마 가이드 문서 신규
+
 ### Chore: AGENTS.md Project Structure 업데이트
 
 - `AGENTS.md`: Astro 구버전 스택 설명을 Next.js 16 App Router 기준으로 전면 교체
@@ -12,18 +27,18 @@
 
 - `CLAUDE.md`: Claude Code가 작업을 시작하기 전 `AGENTS.md` 파일을 반드시 스캔하도록 강제하는 지시문 추가
 
-### Feat: 포트폴리오 페이지 하단 도서 섹션 추가 (v0.6.19)
+### Feat: 포트폴리오 페이지 하단 도서 섹션 추가 (v0.7.10)
 
 - `src/app/(frontend)/portfolio/page.tsx`: 활성 직무 분야에 맞는 published 도서를 fetch하여 포트폴리오 항목 하단에 표시
 - 포트폴리오 항목과 도서 섹션 사이에 수평 구분선 추가
 - 도서 카드: 표지 이미지, 제목, 저자, 별점, 한줄 소개 표시 — `/books/{slug}` 링크 연결
 
-### Fix: Switch 컴포넌트 시각적 토글 미작동 수정 (v0.6.18)
+### Fix: Switch 컴포넌트 시각적 토글 미작동 수정 (v0.7.9)
 
 - `src/components/ui/switch.tsx`: `bg-primary`, `bg-input` 등 shadcn/ui 규칙 클래스를 Tailwind v4 CSS 변수 직접 참조 방식(`bg-(--color-accent)`, `bg-(--color-border)` 등)으로 교체
 - 원인: Tailwind v4에서 `bg-primary`는 `@theme`에 `--color-primary`가 등록되어야 동작하나, 이 프로젝트는 `:root`에 `--primary` 별칭만 있어 클래스가 무효화됨
 
-### Refactor: 이력서 섹션 구조 per-section 중첩 구조로 개편 (v0.6.18)
+### Refactor: 이력서 섹션 구조 per-section 중첩 구조로 개편 (v0.7.8)
 
 - `src/types/resume.ts`: `ResumeSection<T>` 제네릭 인터페이스 추가 (`emoji`, `showEmoji`, `entries` 포함), `Resume`의 모든 섹션 필드를 이 구조로 전환, `ResumeMeta` 및 `meta` 필드 제거
 - `ResumePanel.tsx`: JSON Fallback 에디터 섹션 완전 제거 (reactivity 버그 원인), 모든 섹션의 스프레드/배열 패턴을 새 구조(`section.entries`)에 맞게 수정
@@ -32,7 +47,7 @@
 
 ## 2026-03-20
 
-### Fix: 이력서 JSON 구조 개편 - meta 객체 도입 (v0.6.17)
+### Fix: 이력서 JSON 구조 개편 - meta 객체 도입 (v0.7.7)
 
 - `src/types/resume.ts`: `sectionLabels`, `showEmojis`를 최상위에서 제거하고 `ResumeMeta` 인터페이스 및 `meta` 최상위 키로 통합
 - 이전 구조: `{ sectionLabels: {...}, showEmojis: {...}, work: [...] }`
@@ -41,7 +56,7 @@
 - `ResumePanel.tsx`: 모든 섹션 이모지 셀렉터 및 Switch 토글이 `resumeData.meta`를 참조하도록 수정
 - **DB 데이터 마이그레이션 필요**: 기존 `sectionLabels`/`showEmojis` 데이터를 `meta` 하위로 이동
 
-### Design: 이력서 타이포그래피 및 레이아웃 스케일링 (v0.6.12)
+### Design: 이력서 타이포그래피 및 레이아웃 스케일링 (v0.7.6)
 
 - `ResumeClassic.tsx`, `ResumeModern.tsx`: `ResumeMinimal.tsx`의 디자인 철학을 반영하여 전체적인 타이포그래피 크기 상향 조정
 - 섹션 제목(`text-xl`), 항목 제목(`text-lg`), 본문(`text-base`), 날짜(`text-sm`)로 정보 계층 구조 개선
@@ -49,7 +64,7 @@
 - 모든 링크에 `hover:underline` 스타일 추가하여 시각적 피드백 강화
 - Tailwind v4 디자인 린트 경고 해결 (`leading-[1.5]` → `leading-normal`)
 
-### Feat: 이력서 섹션별 이모지 커스텀 기능 추가 (v0.6.11)
+### Feat: 이력서 섹션별 이모지 커스텀 기능 추가 (v0.7.5)
 
 - `ResumePanel.tsx`: `SectionEmojiSelector` 컴포넌트 추가하여 각 섹션(경력, 프로젝트, 학력 등) 제목 앞에 표시할 이모지 선택 기능 구현
 - `ResumeModern.tsx`, `ResumeClassic.tsx`, `ResumeMinimal.tsx`: `getLabel` 함수를 통해 이모지 접두사(기본값: `➕`)가 포함된 섹션 제목 렌더링 지원
@@ -60,7 +75,7 @@
 - AdminDashboard: CommandPalette 연동
 - global.css: 어드민 마이크로 애니메이션 추가 (sidebar item 전환, card hover lift)
 
-### Feat: Admin 대시보드 리디자인 — Phase 3: Ghost Editorial Minimal 패널 적용 (v0.6.8)
+### Feat: Admin 대시보드 리디자인 — Phase 3: Ghost Editorial Minimal 패널 적용 (v0.7.4)
 
 - `TagsPanel.tsx`: 카드 기반 목록 → `divide-y` 리스트 행, 색상 도트, shadcn Badge/Button/Input/Collapsible 적용, hover-reveal 액션 버튼
 - `AboutPanel.tsx`: 프로필 이미지 레이아웃 개선, shadcn Input/Button/Separator 적용, 섹션 간 Separator 구분
@@ -69,14 +84,14 @@
 - `PortfolioPanel.tsx`: Ghost 에디터 레이아웃 적용 — borderless 제목, 전폭 RichMarkdownEditor, Settings→MetadataSheet, SaveIndicator sticky 바, useKeyboardSave, 즉시 발행 토글
 - `BooksSubPanel.tsx`: Ghost 에디터 레이아웃 적용 — borderless 제목, 전폭 RichMarkdownEditor, Settings→MetadataSheet(`type="book"`), SaveIndicator sticky 바, useKeyboardSave, 즉시 발행 토글
 
-### Feat: 이력서 스킬 배지 동적 아이콘 생성 지원 (v0.6.7)
+### Feat: 이력서 스킬 배지 동적 아이콘 생성 지원 (v0.7.3)
 
 - `simple-icons` 연동하여 스킬 키워드(`skill.keywords`)를 Shields.io 스타일의 뱃지로 동적 렌더링
 - `src/types/resume.ts`: `ResumeSkill`에 `iconSlug`, `iconColor` 오버라이드 속성 추가
 - `ResumePanel.tsx`: 스킬 편집 폼에 아이콘 슬러그 및 색상 직접 설정 기능(오버라이드) 추가
 - `ResumeModern.tsx`: `SkillBadge` 컴포넌트 추가하여 뱃지 배경색 대비(Luminance)에 따른 텍스트 색상 및 SVG 아이콘 자동 렌더링 적용
 
-### Refactor: 프론트엔드/어드민 레이아웃 분리 및 라우트 그룹 적용 (v0.6.6)
+### Refactor: 프론트엔드/어드민 레이아웃 분리 및 라우트 그룹 적용 (v0.7.2)
 
 - Next.js Route Groups 적용 (`src/app/(frontend)/` 및 `src/app/admin/`)으로 레이아웃 완벽 분리
 - `src/app/(frontend)/layout.tsx`: 프론트엔드 고유 레이아웃 (Header 및 패딩 컨테이너) 적용
@@ -86,7 +101,7 @@
 - 어드민 전용 레이아웃(`src/app/admin/layout.tsx`)에서 프론트엔드 패딩 제거 및 'Editorial Minimal/Ghost Admin' 기반 디자인 팁 적용 준비
 - `ResumeModern.tsx` 새로 생성하여 모던 스타일 이력서 뷰 컴포넌트 추가
 
-### Feat: Admin 대시보드 리디자인 — Phase 1: shadcn/ui 기반 설정 및 레이아웃 쉘 (v0.6.5)
+### Feat: Admin 대시보드 리디자인 — Phase 1: shadcn/ui 기반 설정 및 레이아웃 쉘 (v0.7.1)
 
 - shadcn/ui (New York style) 설치 — Sheet, Dialog, Badge, Switch, DropdownMenu, Popover, Collapsible, Command, Button, Input, Label, Separator, Tooltip
 - shadcn CSS 변수를 기존 `--color-*` 토큰에 매핑 (테마 자동 전환 유지)
@@ -94,7 +109,7 @@
 - `AdminSidebar.tsx` (신규): Content / Profile / System 섹션 그룹핑, Ghost 스타일 active 탭 (left border accent)
 - `AdminHeader.tsx` (신규): 비활동 타이머·테마 토글·로그아웃 추출
 
-### Feat: Next.js 16 마이그레이션
+### Feat: Next.js 16 마이그레이션 (v0.7.0)
 
 - Astro 5 (output: static) → Next.js 16 App Router 전환
 - `astro`, `@astrojs/*`, `prettier-plugin-astro`, `@tailwindcss/vite` 제거
@@ -123,7 +138,7 @@
 - `.gitignore`: `.astro/` → `.next/` 교체
 - `.prettierrc`: `prettier-plugin-astro` 및 astro 오버라이드 제거
 
-### Feat: DB 스키마 자동 버전 관리 시스템
+### Feat: DB 스키마 자동 버전 관리 시스템 (v0.6.8)
 
 - `src/lib/migrations.ts` 전면 재작성:
     - `APP_VERSION`: `package.json`에서 동적 import
@@ -139,7 +154,7 @@
     - 새로고침 버튼으로 DB 버전 재조회
 - `tsconfig.json`: `"resolveJsonModule": true` 추가
 
-### Feat: DB 스키마 마이그레이션 SQL 파일
+### Feat: DB 스키마 마이그레이션 SQL 파일 (v0.6.8)
 
 - `supabase/migration-whole.sql` (신규): feedback 브랜치 이전 DB를 현재 스키마(v0.6.4)로 일괄 업데이트하는 idempotent SQL
     - pgcrypto 확장, site_config / resume_data 테이블 생성, tags/posts/portfolio_items 컬럼 추가
@@ -149,47 +164,13 @@
 
 ## 2026-03-18
 
-### Feat: Admin - TagPanel 카테고리 관리 및 태그 정렬 (v0.6.1)
+### Feat: Admin - 포트폴리오 보기 방식 설정 (v0.6.7)
 
-- `TagsPanel.tsx`: 카테고리 탭 추가 — `posts` 테이블에서 distinct 카테고리 목록 로드 (게시글 수 포함)
-- 카테고리 이름 변경 (전체 포스트에 일괄 반영) 및 삭제 기능 (삭제 시 포스트 category null 처리)
-- 태그 및 카테고리 각각 A→Z / Z→A 정렬 지원, 선택값 localStorage 유지 (`admin_tag_sort`, `admin_cat_sort`)
-- lucide-react 아이콘 전면 적용 (Tag, FolderOpen, ArrowUpAZ, ArrowDownAZ, Pencil, Trash2, Plus)
-
-### Feat: Admin - PostsPanel 정렬/필터/배치 액션 (v0.6.2)
-
-- `PostsPanel.tsx`: Publish(초록·Eye)/Unpublish(주황·EyeOff) 버튼 아이콘 구분
-- 정렬: 최신순/오래된순/제목 A→Z/제목 Z→A/Published/Draft, 선택값 localStorage 유지 (`post_sort`)
-- 필터: 발행 상태, 직무 분야, 제목 검색
-- 체크박스 전체/개별 선택 + 배치 액션: 일괄 발행/미발행, 직무 분야 일괄 변경
-- 직무 분야 미설정 포스트 AlertTriangle 경고 배지 표시
-- 태그 최대 4개 인라인 표시 (+N 오버플로 카운트)
-
-### Feat: Admin - PortfolioPanel 정렬/필터/배치 액션 + Featured 제한 (v0.6.3)
-
-- `PortfolioPanel.tsx`: Featured(인디고·Star)/Unfeature(회색·StarOff) 버튼 아이콘 구분
-- Publish/Unpublish 버튼 목록에서도 직접 토글 가능 (기존은 편집 폼 내부에서만 가능)
-- Featured 최대 5개 제한 — 초과 시 browser alert 없이 하단 토스트 알림
-- 정렬: 순서/제목/Published/Draft/Featured 먼저, localStorage 유지 (`portfolio_sort`)
-- 필터: 발행 상태, 직무 분야, 제목·slug 검색
-- 체크박스 + 배치 액션: 일괄 발행/미발행, 직무 분야 일괄 변경
-- 직무 분야 미설정 항목 경고 배지, 태그 최대 4개 인라인 표시
-
-### Feat: Frontend - 404 페이지 / 블로그 URL 필터 / Medium 스타일 마크다운 (v0.6.4)
-
-- `src/pages/404.astro` (신규): "페이지를 찾을 수 없음" 메시지 + 5초 카운트다운 자동 홈 리다이렉트
-- `src/lib/blog.ts`: 블로그 포스트 요약 추출 시 Supabase 스토리지 URL 및 이미지 마크다운 제거 (정규식 필터)
-- `src/styles/global.css`: `.post-content.prose` / `.portfolio-markdoc-body.prose` Medium/TailwindCSS 블로그 스타일로 개선
-    - 본문 18px, 줄간격 1.85, 첫 단락 1.2rem/1.75 강조
-    - 이미지 border-radius 0.75rem + 그림자
-    - h2/h3 상하 여백 및 ul/ol 들여쓰기 개선
-- `blog/[slug].astro`: 뒤로가기 SVG → lucide `ArrowLeft` 아이콘 교체
-
-### Feat: Frontend - 포트폴리오 관련 도서 섹션 + books 상세 페이지 (v0.6.5)
-
-- `supabase/migrations/006_create_books.sql`: books 테이블 생성 (slug, title, author, cover_url, description, content, rating, tags[], job_field[], published, featured, order_idx, data jsonb, SEO 필드, RLS 포함)
-- `portfolio/[slug].astro`: 하단에 관련 도서 섹션 추가 — 프로젝트의 job_field와 overlaps 쿼리로 매칭, 표지·저자·별점 카드 표시
-- `src/pages/books/[slug].astro` (신규): 도서 리뷰 상세 페이지 — 표지 사이드바, 별점, 태그, Markdoc 본문 + TOC + Mermaid 지원
+- `PortfolioView.tsx`: `forcedViewMode?: "list" | "block"` prop 추가 — 지정 시 토글 UI 숨김 및 해당 뷰 고정
+- `portfolio/index.astro`: `site_config.portfolio_view_mode` 읽어 `forcedViewMode`로 전달
+- `PortfolioPanel.tsx`: 헤더에 List/Block/User 3단계 보기 방식 설정 버튼 추가
+    - List/Block: 모든 방문자에게 해당 뷰 고정, User: 방문자가 직접 선택 (기존 동작)
+    - 선택값 `site_config.portfolio_view_mode`에 upsert/delete로 저장
 
 ### Feat: Admin - PortfolioPanel 도서 관리 탭 (v0.6.6)
 
@@ -201,13 +182,47 @@
 - `PortfolioPanel.tsx`: 상단에 "포트폴리오 / 도서" 탭 전환 UI 추가, BooksSubPanel 탭 렌더링
 - `JobFieldItem.slug` → `JobFieldItem.id` 오타 수정 (PostsPanel, PortfolioPanel 필터 셀렉트)
 
-### Feat: Admin - 포트폴리오 보기 방식 설정 (v0.6.7)
+### Feat: Frontend - 포트폴리오 관련 도서 섹션 + books 상세 페이지 (v0.6.5)
 
-- `PortfolioView.tsx`: `forcedViewMode?: "list" | "block"` prop 추가 — 지정 시 토글 UI 숨김 및 해당 뷰 고정
-- `portfolio/index.astro`: `site_config.portfolio_view_mode` 읽어 `forcedViewMode`로 전달
-- `PortfolioPanel.tsx`: 헤더에 List/Block/User 3단계 보기 방식 설정 버튼 추가
-    - List/Block: 모든 방문자에게 해당 뷰 고정, User: 방문자가 직접 선택 (기존 동작)
-    - 선택값 `site_config.portfolio_view_mode`에 upsert/delete로 저장
+- `supabase/migrations/006_create_books.sql`: books 테이블 생성 (slug, title, author, cover_url, description, content, rating, tags[], job_field[], published, featured, order_idx, data jsonb, SEO 필드, RLS 포함)
+- `portfolio/[slug].astro`: 하단에 관련 도서 섹션 추가 — 프로젝트의 job_field와 overlaps 쿼리로 매칭, 표지·저자·별점 카드 표시
+- `src/pages/books/[slug].astro` (신규): 도서 리뷰 상세 페이지 — 표지 사이드바, 별점, 태그, Markdoc 본문 + TOC + Mermaid 지원
+
+### Feat: Frontend - 404 페이지 / 블로그 URL 필터 / Medium 스타일 마크다운 (v0.6.4)
+
+- `src/pages/404.astro` (신규): "페이지를 찾을 수 없음" 메시지 + 5초 카운트다운 자동 홈 리다이렉트
+- `src/lib/blog.ts`: 블로그 포스트 요약 추출 시 Supabase 스토리지 URL 및 이미지 마크다운 제거 (정규식 필터)
+- `src/styles/global.css`: `.post-content.prose` / `.portfolio-markdoc-body.prose` Medium/TailwindCSS 블로그 스타일로 개선
+    - 본문 18px, 줄간격 1.85, 첫 단락 1.2rem/1.75 강조
+    - 이미지 border-radius 0.75rem + 그림자
+    - h2/h3 상하 여백 및 ul/ol 들여쓰기 개선
+- `blog/[slug].astro`: 뒤로가기 SVG → lucide `ArrowLeft` 아이콘 교체
+
+### Feat: Admin - PortfolioPanel 정렬/필터/배치 액션 + Featured 제한 (v0.6.3)
+
+- `PortfolioPanel.tsx`: Featured(인디고·Star)/Unfeature(회색·StarOff) 버튼 아이콘 구분
+- Publish/Unpublish 버튼 목록에서도 직접 토글 가능 (기존은 편집 폼 내부에서만 가능)
+- Featured 최대 5개 제한 — 초과 시 browser alert 없이 하단 토스트 알림
+- 정렬: 순서/제목/Published/Draft/Featured 먼저, localStorage 유지 (`portfolio_sort`)
+- 필터: 발행 상태, 직무 분야, 제목·slug 검색
+- 체크박스 + 배치 액션: 일괄 발행/미발행, 직무 분야 일괄 변경
+- 직무 분야 미설정 항목 경고 배지, 태그 최대 4개 인라인 표시
+
+### Feat: Admin - PostsPanel 정렬/필터/배치 액션 (v0.6.2)
+
+- `PostsPanel.tsx`: Publish(초록·Eye)/Unpublish(주황·EyeOff) 버튼 아이콘 구분
+- 정렬: 최신순/오래된순/제목 A→Z/제목 Z→A/Published/Draft, 선택값 localStorage 유지 (`post_sort`)
+- 필터: 발행 상태, 직무 분야, 제목 검색
+- 체크박스 전체/개별 선택 + 배치 액션: 일괄 발행/미발행, 직무 분야 일괄 변경
+- 직무 분야 미설정 포스트 AlertTriangle 경고 배지 표시
+- 태그 최대 4개 인라인 표시 (+N 오버플로 카운트)
+
+### Feat: Admin - TagPanel 카테고리 관리 및 태그 정렬 (v0.6.1)
+
+- `TagsPanel.tsx`: 카테고리 탭 추가 — `posts` 테이블에서 distinct 카테고리 목록 로드 (게시글 수 포함)
+- 카테고리 이름 변경 (전체 포스트에 일괄 반영) 및 삭제 기능 (삭제 시 포스트 category null 처리)
+- 태그 및 카테고리 각각 A→Z / Z→A 정렬 지원, 선택값 localStorage 유지 (`admin_tag_sort`, `admin_cat_sort`)
+- lucide-react 아이콘 전면 적용 (Tag, FolderOpen, ArrowUpAZ, ArrowDownAZ, Pencil, Trash2, Plus)
 
 ### Feat: Admin - DB 마이그레이션 추적 패널 (v0.5.17–v0.5.20)
 

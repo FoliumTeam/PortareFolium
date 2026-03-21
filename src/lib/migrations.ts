@@ -33,7 +33,7 @@ export function getPendingMigrations(dbVersion: string): Migration[] {
 }
 
 // 기존 마이그레이션의 version은 git log로 각 파일이 추가된 시점의
-// package.json 버전을 확인해 맞춘다. 아래는 CHANGES.md 기준 근사치.
+// package.json 버전을 확인해 맞춘다. 아래는 docs/CHANGES.md 기준 근사치.
 // migration-whole.sql 실행 후 db_schema_version = "0.6.4" 이므로
 // 아래 항목들(version <= "0.6.4")은 모두 "적용 완료"로 표시된다.
 export const MIGRATIONS: Migration[] = [
@@ -182,6 +182,65 @@ WHERE lang = 'ko';
 INSERT INTO site_config (key, value)
 VALUES ('db_schema_version', '"0.6.18"')
 ON CONFLICT (key) DO UPDATE SET value = '"0.6.18"';`,
+    },
+    {
+        version: "0.6.20",
+        title: "ai_agent_tokens + content_snapshots 테이블 생성",
+        feature: "MCP Agent API (토큰 인증, 스냅샷 백업)",
+        sql: `CREATE TABLE IF NOT EXISTS ai_agent_tokens (
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  token_hash     TEXT        NOT NULL UNIQUE,
+  label          TEXT        NOT NULL,
+  duration_min   INTEGER     NOT NULL,
+  expires_at     TIMESTAMPTZ NOT NULL,
+  revoked        BOOLEAN     NOT NULL DEFAULT FALSE,
+  last_used_at   TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE ai_agent_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS content_snapshots (
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_table   TEXT        NOT NULL,
+  record_id      TEXT        NOT NULL,
+  data           JSONB       NOT NULL,
+  triggered_by   TEXT        NOT NULL DEFAULT 'mcp_agent',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE content_snapshots ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_lookup
+  ON content_snapshots(source_table, record_id, created_at DESC);
+
+CREATE OR REPLACE FUNCTION prune_snapshots()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  DELETE FROM content_snapshots
+  WHERE id IN (
+    SELECT id FROM content_snapshots
+    WHERE source_table = NEW.source_table AND record_id = NEW.record_id
+    ORDER BY created_at DESC
+    OFFSET 20
+  );
+  RETURN NEW;
+END;
+$$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'trg_prune_snapshots'
+  ) THEN
+    CREATE TRIGGER trg_prune_snapshots
+      AFTER INSERT ON content_snapshots
+      FOR EACH ROW EXECUTE FUNCTION prune_snapshots();
+  END IF;
+END $$;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.6.20"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.6.20"';`,
     },
     // 향후 마이그레이션 추가 예시:
     // {

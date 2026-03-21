@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documentation Requirements
 
 - Add brief docstrings in Korean for newly created functions.
-- Concisely document what changes you have done in the CHANGES.md file. This is to keep track of changes at a glance.
+- Concisely document what changes you have done in the docs/CHANGES.md file. This is to keep track of changes at a glance.
 - Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change.
 - Only update the 1st (major) and 2nd (minor) version numbers if explicitly requested by the user.
 
@@ -205,7 +205,7 @@ supabase/
 └── migration-whole.sql     # 구버전 DB → 현재 스키마 일괄 업데이트
 scripts/                    # Git 워크플로 쉘 스크립트
 public/                     # 정적 에셋 (favicon 등)
-CHANGES.md                  # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
+docs/CHANGES.md                  # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
 ```
 
 **Key Conventions:**

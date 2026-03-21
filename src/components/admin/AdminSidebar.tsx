@@ -8,6 +8,8 @@ import {
     ScrollText,
     Database,
     Settings,
+    KeyRound,
+    Archive,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -33,6 +35,8 @@ const SECTIONS = [
         items: [
             { id: "migrations", label: "DB 마이그레이션", icon: Database },
             { id: "config", label: "사이트 설정", icon: Settings },
+            { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
+            { id: "snapshots", label: "스냅샷", icon: Archive },
         ],
     },
 ] as const;
@@ -44,7 +48,9 @@ export type TabId =
     | "about"
     | "resume"
     | "migrations"
-    | "config";
+    | "config"
+    | "agent-tokens"
+    | "snapshots";
 
 interface AdminSidebarProps {
     activeTab: TabId;
