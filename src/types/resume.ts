@@ -41,6 +41,10 @@ export interface ResumeWork {
     highlights?: string[];
     location?: string;
     description?: string;
+    // 날짜에서 일(Day) 숨기고 월(Month)만 표시
+    hideDays?: boolean;
+    // 요약/성과를 마크다운으로 렌더링
+    markdown?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
 }
@@ -73,6 +77,8 @@ export interface ResumeAward {
     date?: string;
     awarder?: string;
     summary?: string;
+    // summary를 마크다운으로 렌더링할지 여부
+    markdown?: boolean;
 }
 
 export interface ResumeCertificate {
@@ -94,6 +100,9 @@ export interface ResumeSkill {
     name?: string;
     level?: string;
     keywords?: string[];
+    // 오버라이드용 커스텀 뱃지 정보
+    iconSlug?: string;
+    iconColor?: string;
 }
 
 export interface ResumeLanguage {
@@ -111,6 +120,14 @@ export interface ResumeReference {
     reference?: string;
 }
 
+// 프로젝트 자유 양식 섹션 (제목 + 내용)
+export interface ResumeProjectSection {
+    title: string;
+    content: string;
+    // 내용을 마크다운으로 렌더링
+    markdown?: boolean;
+}
+
 export interface ResumeProject {
     name?: string;
     description?: string;
@@ -119,24 +136,37 @@ export interface ResumeProject {
     startDate?: string;
     endDate?: string;
     url?: string;
+    // url에 표시할 커스텀 label (기본값: "라이브 URL")
+    urlLabel?: string;
     roles?: string[];
     entity?: string;
     type?: string;
+    // 날짜에서 일(Day) 숨기고 월(Month)만 표시
+    hideDays?: boolean;
     // 노출 직무 분야 id 배열. 비어있거나 없으면 미노출
     jobField?: string | string[];
+    // 자유 양식 섹션 목록. 존재하면 description/highlights 대신 렌더링
+    sections?: ResumeProjectSection[];
+}
+
+// 섹션별 이모지 및 entries 래퍼
+export interface ResumeSection<T> {
+    emoji: string;
+    showEmoji: boolean;
+    entries: T[];
 }
 
 export interface Resume {
     basics?: ResumeBasics;
-    work?: ResumeWork[];
-    volunteer?: ResumeVolunteer[];
-    education?: ResumeEducation[];
-    awards?: ResumeAward[];
-    certificates?: ResumeCertificate[];
-    publications?: ResumePublication[];
-    skills?: ResumeSkill[];
-    languages?: ResumeLanguage[];
-    interests?: ResumeInterest[];
-    references?: ResumeReference[];
-    projects?: ResumeProject[];
+    work?: ResumeSection<ResumeWork>;
+    volunteer?: ResumeSection<ResumeVolunteer>;
+    education?: ResumeSection<ResumeEducation>;
+    awards?: ResumeSection<ResumeAward>;
+    certificates?: ResumeSection<ResumeCertificate>;
+    publications?: ResumeSection<ResumePublication>;
+    skills?: ResumeSection<ResumeSkill>;
+    languages?: ResumeSection<ResumeLanguage>;
+    interests?: ResumeSection<ResumeInterest>;
+    references?: ResumeSection<ResumeReference>;
+    projects?: ResumeSection<ResumeProject>;
 }

@@ -1,0 +1,96 @@
+import { describe, it, expect } from "vitest";
+import { filterByJobField, matchesJobField } from "@/lib/job-field";
+
+// ─────────────────────────────────────────────
+// filterByJobField
+// ─────────────────────────────────────────────
+// 이력서 페이지(resume/page.tsx)에서 사용.
+// 활성 직무 분야(jobField)와 일치하는 항목만 남긴다.
+// jobField 없음 / 빈 배열 → 제외 (=프런트엔드 미노출).
+// ─────────────────────────────────────────────
+
+describe("filterByJobField", () => {
+    const items = [
+        { name: "A", jobField: "game" },
+        { name: "B", jobField: ["game", "web"] },
+        { name: "C", jobField: "web" },
+        { name: "D", jobField: [] as string[] },
+        { name: "E" }, // jobField 없음
+        { name: "F", jobField: null as unknown as string },
+    ];
+
+    it("활성 직무 분야(game)와 문자열이 일치하는 항목 포함", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).toContain("A");
+    });
+
+    it("배열에 활성 직무 분야가 포함된 항목 포함", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).toContain("B");
+    });
+
+    it("다른 직무 분야(web 전용) 항목 제외", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).not.toContain("C");
+    });
+
+    it("빈 배열(jobField: []) 항목 제외", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).not.toContain("D");
+    });
+
+    it("jobField 필드 자체가 없는 항목 제외", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).not.toContain("E");
+    });
+
+    it("jobField가 null인 항목 제외", () => {
+        const result = filterByJobField(items, "game");
+        expect(result.map((i) => i.name)).not.toContain("F");
+    });
+
+    it("빈 배열 입력 시 빈 배열 반환", () => {
+        expect(filterByJobField([], "game")).toEqual([]);
+    });
+
+    it("undefined 입력 시 빈 배열 반환", () => {
+        expect(filterByJobField(undefined, "game")).toEqual([]);
+    });
+});
+
+// ─────────────────────────────────────────────
+// matchesJobField
+// ─────────────────────────────────────────────
+// ResumePanel의 리스트 필터에서 사용.
+// 단일 항목의 jobField가 필터 값과 일치하는지 확인.
+// ─────────────────────────────────────────────
+
+describe("matchesJobField", () => {
+    it("문자열 jobField가 필터와 일치하면 true", () => {
+        expect(matchesJobField("game", "game")).toBe(true);
+    });
+
+    it("문자열 jobField가 필터와 다르면 false", () => {
+        expect(matchesJobField("web", "game")).toBe(false);
+    });
+
+    it("배열 jobField에 필터가 포함되면 true", () => {
+        expect(matchesJobField(["game", "web"], "game")).toBe(true);
+    });
+
+    it("배열 jobField에 필터가 없으면 false", () => {
+        expect(matchesJobField(["web", "design"], "game")).toBe(false);
+    });
+
+    it("undefined이면 false", () => {
+        expect(matchesJobField(undefined, "game")).toBe(false);
+    });
+
+    it("빈 배열이면 false", () => {
+        expect(matchesJobField([], "game")).toBe(false);
+    });
+
+    it("빈 문자열 jobField이면 false", () => {
+        expect(matchesJobField("", "game")).toBe(false);
+    });
+});

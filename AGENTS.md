@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documentation Requirements
 
 - Add brief docstrings in Korean for newly created functions.
-- Concisely document what changes you have done in the CHANGES.md file. This is to keep track of changes at a glance.
+- Concisely document what changes you have done in the docs/CHANGES.md file. This is to keep track of changes at a glance.
 - Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change.
 - Only update the 1st (major) and 2nd (minor) version numbers if explicitly requested by the user.
 
@@ -150,11 +150,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-**Project:** `portare-folium` — Astro + React 기반 개인 포트폴리오 사이트
+**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트
 
 **Stack:**
 
-- Framework: Astro (SSR/SSG) + React (island)
+- Framework: Next.js 16 (App Router) + React
 - Styling: Tailwind CSS v4
 - Backend/DB: Supabase (PostgreSQL + Storage)
 - Deployment: Vercel
@@ -165,43 +165,55 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ```
 src/
-├── pages/              # Astro 라우팅
-│   ├── index.astro     # 홈
-│   ├── about/          # About 페이지
-│   ├── blog/           # 블로그 목록 + [slug] 상세
-│   ├── portfolio/      # 포트폴리오 목록 + [slug] 상세
-│   ├── resume/         # 이력서
-│   └── admin/          # 관리자 대시보드 (index, login)
+├── app/
+│   ├── (frontend)/         # Route Group — 프론트엔드 전용 레이아웃
+│   │   ├── layout.tsx      # Header + 패딩 컨테이너
+│   │   ├── page.tsx        # 홈 (랜딩)
+│   │   ├── about/page.tsx
+│   │   ├── blog/           # 목록 page.tsx + [slug]/page.tsx
+│   │   ├── portfolio/      # 목록 page.tsx + [slug]/page.tsx
+│   │   ├── resume/page.tsx
+│   │   └── books/[slug]/page.tsx
+│   ├── admin/              # 관리자 대시보드 (Route Group 아님)
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── login/page.tsx
+│   ├── api/
+│   │   └── run-migrations/route.ts
+│   ├── layout.tsx          # 루트 레이아웃 (<html>, <body>)
+│   └── not-found.tsx
 ├── components/
-│   ├── admin/          # 관리자 UI 컴포넌트
-│   │   └── panels/     # About, Posts, Portfolio, Resume, Tags, SiteConfig 패널
-│   ├── resume/         # 이력서 테마 (Classic, Minimal, Modern)
-│   └── *.astro/.tsx    # 공용 컴포넌트 (Header, SEO, ThemeToggle 등)
-├── layouts/
-│   └── BaseLayout.astro
-├── lib/                # 유틸리티 모듈
-│   ├── blog.ts         # 블로그 데이터 fetch
-│   ├── supabase.ts     # Supabase 클라이언트
-│   ├── markdown.tsx    # Markdown 렌더링
-│   ├── toc.ts          # 목차 생성
-│   ├── image-upload.ts # 이미지 업로드
-│   └── mermaid-*.ts    # Mermaid 다이어그램 렌더링
-├── types/              # TypeScript 타입 정의 (about, portfolio, resume)
+│   ├── admin/              # 관리자 UI — "use client" React 컴포넌트
+│   │   └── panels/         # Posts, Portfolio, Resume, Tags, About, SiteConfig, Migrations 패널
+│   ├── resume/             # 이력서 테마 (Classic, Minimal, Modern) — Server Component
+│   └── *.tsx               # 공용 컴포넌트 (Header, SEO, ThemeToggle 등)
+├── lib/                    # 유틸리티 모듈
+│   ├── supabase.ts         # serverClient (service_role) + browserClient (anon)
+│   ├── blog.ts             # 블로그 유틸 (날짜 포맷, 요약 추출)
+│   ├── markdown.tsx        # Markdown 렌더링
+│   ├── migrations.ts       # DB 마이그레이션 버전 관리 (MIGRATIONS 배열)
+│   ├── toc.ts              # 목차 생성
+│   ├── image-upload.ts     # 이미지 업로드
+│   └── mermaid-*.ts        # Mermaid 다이어그램 렌더링
+├── types/                  # TypeScript 타입 정의 (about, portfolio, resume)
 ├── styles/
 │   └── global.css
-└── __tests__/          # Vitest 테스트
+└── __tests__/              # Vitest 테스트
 
-supabase/migrations/    # DB 마이그레이션 SQL
-scripts/                # Git 워크플로 쉘 스크립트 (upstream sync 등)
-public/                 # 정적 에셋 (favicon 등)
-CHANGES.md              # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
+supabase/
+├── setup.sql               # 전체 스키마 초기화 (신규 설치용)
+└── migration-whole.sql     # 구버전 DB → 현재 스키마 일괄 업데이트
+scripts/                    # Git 워크플로 쉘 스크립트
+public/                     # 정적 에셋 (favicon 등)
+docs/CHANGES.md                  # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
 ```
 
 **Key Conventions:**
 
-- `.astro` 파일: 정적/서버 렌더링 페이지 및 레이아웃
-- `.tsx` 파일: React island 컴포넌트 (클라이언트 인터랙션)
-- Supabase를 DB 및 이미지 스토리지로 사용
-- `src/lib/supabase.ts`에서 Supabase 클라이언트 초기화
+- Server Component (`.tsx`, `async`): 데이터 fetch + 정적 렌더링 (resume 테마 등)
+- Client Component (`"use client"` + `.tsx`): 인터랙션 필요한 컴포넌트 (모든 admin 패널)
+- `serverClient`: service_role 키 — API route / Server Component 전용, 절대 클라이언트 번들 포함 금지
+- `browserClient`: anon 키 + RLS — Client Component 전용
+- DB 마이그레이션은 `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리, admin 패널에서 적용
 - 디자인 컨셉: "Editorial Minimal" — 대담한 타이포그래피, 여백, 서브틀 애니메이션
 - 전역 애니메이션 유틸리티: `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-1~5`, `.card-lift` (`global.css`)

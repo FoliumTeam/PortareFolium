@@ -1,24 +1,20 @@
-/**
- * AdminDashboard
- *
- * 어드민 대시보드 메인 컴포넌트.
- * 사이드바 탭으로 각 관리 섹션을 전환한다:
- *   - 포스트: 블로그 글 CRUD
- *   - 포트폴리오: 포트폴리오 아이템 CRUD
- *   - About: about_data 편집 및 Supabase 저장
- *   - 사이트 설정: Color Scheme 등 site_config 관리 + 빌드 트리거
- *
- * 로그아웃 버튼은 헤더에 위치한다.
- */
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import { browserClient } from "@/lib/supabase";
-import ThemeToggle from "@/components/ThemeToggle";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
+import CommandPalette from "@/components/admin/CommandPalette";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
 import PortfolioPanel from "@/components/admin/panels/PortfolioPanel";
 import TagsPanel from "@/components/admin/panels/TagsPanel";
 import AboutPanel from "@/components/admin/panels/AboutPanel";
 import SiteConfigPanel from "@/components/admin/panels/SiteConfigPanel";
 import ResumePanel from "@/components/admin/panels/ResumePanel";
+import MigrationsPanel from "@/components/admin/panels/MigrationsPanel";
+import AgentTokensPanel from "@/components/admin/panels/AgentTokensPanel";
+import SnapshotsPanel from "@/components/admin/panels/SnapshotsPanel";
+import type { TabId } from "@/components/admin/AdminSidebar";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
@@ -26,31 +22,24 @@ const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
 // 활동 감지 이벤트 목록
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
 
-// 남은 시간을 MM:SS 형식으로 변환
-function formatRemaining(ms: number): string {
-    const totalSec = Math.max(0, Math.ceil(ms / 1000));
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-}
-
-// 탭 정의
-const TABS = [
-    { id: "posts", label: "포스트", icon: "📝" },
-    { id: "portfolio", label: "포트폴리오", icon: "🗂️" },
-    { id: "tags", label: "태그", icon: "🏷️" },
-    { id: "about", label: "About", icon: "👤" },
-    { id: "resume", label: "이력서", icon: "📄" },
-    { id: "config", label: "사이트 설정", icon: "⚙️" },
-] as const;
-
-type TabId = (typeof TABS)[number]["id"];
+// 유효한 탭 ID 목록
+const VALID_TABS: TabId[] = [
+    "posts",
+    "portfolio",
+    "tags",
+    "about",
+    "resume",
+    "migrations",
+    "config",
+    "agent-tokens",
+    "snapshots",
+];
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<TabId>(() => {
         if (typeof window !== "undefined") {
             const hash = window.location.hash.replace("#", "");
-            if (hash && TABS.some((t) => t.id === hash)) {
+            if (hash && VALID_TABS.includes(hash as TabId)) {
                 return hash as TabId;
             }
         }
@@ -58,6 +47,7 @@ export default function AdminDashboard() {
     });
 
     const [tabKey, setTabKey] = useState(0);
+    const [commandOpen, setCommandOpen] = useState(false);
     const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
     const lastActivityRef = useRef(Date.now());
 
@@ -66,7 +56,7 @@ export default function AdminDashboard() {
 
         const handleHashChange = () => {
             const hash = window.location.hash.replace("#", "");
-            if (hash && TABS.some((t) => t.id === hash)) {
+            if (hash && VALID_TABS.includes(hash as TabId)) {
                 setActiveTab(hash as TabId);
             }
         };
@@ -104,9 +94,10 @@ export default function AdminDashboard() {
         };
     }, []);
 
+    // 탭 클릭 핸들러
     const handleTabClick = (tabId: TabId) => {
         if (activeTab === tabId) {
-            setTabKey((prev) => prev + 1); // 이미 활성화된 탭 클릭 시 리마운트(목록뷰 복귀)
+            setTabKey((prev) => prev + 1);
         } else {
             setActiveTab(tabId);
             setTabKey(0);
@@ -121,90 +112,15 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="flex min-h-screen flex-col">
-            {/* 헤더 */}
-            <header className="flex items-center justify-between border-b border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-md">
-                <div className="flex items-center gap-4">
-                    <a
-                        href="/"
-                        className="flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                    >
-                        <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 19l-7-7 7-7"
-                            />
-                        </svg>
-                        사이트
-                    </a>
-                    <span
-                        className="h-4 w-px bg-(--color-border)"
-                        aria-hidden="true"
-                    />
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="h-2 w-2 rounded-full bg-(--color-accent)"
-                            aria-hidden="true"
-                        />
-                        <span className="text-sm font-black tracking-tight text-(--color-foreground)">
-                            Admin
-                        </span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    {/* 비활동 만료까지 남은 시간 */}
-                    <span
-                        className={[
-                            "font-mono text-xs tabular-nums",
-                            remainingMs <= 5 * 60 * 1000
-                                ? "text-red-500"
-                                : "text-(--color-muted)",
-                        ].join(" ")}
-                    >
-                        {formatRemaining(remainingMs)}
-                    </span>
-                    <ThemeToggle />
-                    <button
-                        onClick={handleLogout}
-                        className="rounded-full border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:border-red-400 hover:text-red-500"
-                    >
-                        로그아웃
-                    </button>
-                </div>
-            </header>
+        <div className="flex h-screen overflow-hidden bg-(--color-surface)">
+            <AdminSidebar activeTab={activeTab} onTabClick={handleTabClick} />
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* 사이드바 */}
-                <nav className="flex w-52 shrink-0 flex-col gap-0.5 border-r border-(--color-border) bg-(--color-surface-subtle) px-3 py-5">
-                    <p className="mb-3 px-2 text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                        메뉴
-                    </p>
-                    {TABS.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => handleTabClick(tab.id)}
-                            className={[
-                                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                                activeTab === tab.id
-                                    ? "bg-(--color-accent) text-(--color-on-accent)"
-                                    : "text-(--color-muted) hover:bg-(--color-surface) hover:text-(--color-foreground)",
-                            ].join(" ")}
-                        >
-                            <span className="text-base leading-none">
-                                {tab.icon}
-                            </span>
-                            <span>{tab.label}</span>
-                        </button>
-                    ))}
-                </nav>
+            <div className="flex flex-1 flex-col overflow-hidden">
+                <AdminHeader
+                    timeLeft={remainingMs}
+                    onLogout={handleLogout}
+                    onCommandOpen={() => setCommandOpen(true)}
+                />
 
                 <main className="flex-1 overflow-y-auto p-8">
                     {activeTab === "posts" && (
@@ -222,11 +138,26 @@ export default function AdminDashboard() {
                     {activeTab === "resume" && (
                         <ResumePanel key={`resume-${tabKey}`} />
                     )}
+                    {activeTab === "migrations" && (
+                        <MigrationsPanel key={`migrations-${tabKey}`} />
+                    )}
                     {activeTab === "config" && (
                         <SiteConfigPanel key={`config-${tabKey}`} />
                     )}
+                    {activeTab === "agent-tokens" && (
+                        <AgentTokensPanel key={`agent-tokens-${tabKey}`} />
+                    )}
+                    {activeTab === "snapshots" && (
+                        <SnapshotsPanel key={`snapshots-${tabKey}`} />
+                    )}
                 </main>
             </div>
+
+            <CommandPalette
+                open={commandOpen}
+                onOpenChange={setCommandOpen}
+                onNavigate={handleTabClick}
+            />
         </div>
     );
 }

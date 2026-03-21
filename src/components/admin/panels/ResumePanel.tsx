@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { uploadImageToSupabase } from "@/lib/image-upload";
+import { useAutoSave } from "@/lib/hooks/useAutoSave";
+import { matchesJobField } from "@/lib/job-field";
 import {
     JobFieldSelector,
     JobFieldBadges,
@@ -10,11 +14,16 @@ import type {
     Resume,
     ResumeWork,
     ResumeProject,
+    ResumeProjectSection,
     ResumeEducation,
+    ResumeAward,
     ResumeSkill,
     ResumeLanguage,
     ResumeBasics,
 } from "@/types/resume";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
+import { Switch } from "@/components/ui/switch";
 
 function InputField({
     label,
@@ -76,6 +85,70 @@ function TextAreaField({
 
 type ResumeLayout = "classic" | "modern" | "minimal";
 
+// 타임스탬프 포맷 (시:분:초)
+function fmtTime(d: Date): string {
+    return d.toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+}
+
+// 직무 분야 필터 매칭
+
+// 배열 항목 순서 변경 (불변)
+function reorderArray<T>(arr: T[], from: number, to: number): T[] {
+    const result = [...arr];
+    const [item] = result.splice(from, 1);
+    result.splice(to, 0, item);
+    return result;
+}
+
+function SectionEmojiSelector({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+}) {
+    const [showPicker, setShowPicker] = useState(false);
+    return (
+        <div className="relative mr-3 inline-block">
+            <button
+                onClick={() => setShowPicker(!showPicker)}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-(--color-border) bg-(--color-surface-subtle) text-base transition-colors hover:bg-(--color-border)"
+                title="이모지 선택"
+            >
+                {value || "➕"}
+            </button>
+            {showPicker && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowPicker(false)}
+                    />
+                    <div className="absolute top-10 left-0 z-50 shadow-xl">
+                        <Picker
+                            data={data}
+                            onEmojiSelect={(e: any) => {
+                                onChange(e.native);
+                                setShowPicker(false);
+                            }}
+                            theme={
+                                document.documentElement.classList.contains(
+                                    "dark"
+                                )
+                                    ? "dark"
+                                    : "light"
+                            }
+                        />
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -85,8 +158,14 @@ export default function ResumePanel() {
         type: "error" | "success";
         msg: string;
     } | null>(null);
+    const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
+    const savedDataRef = useRef<string>("");
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [activeJobField, setActiveJobField] = useState<string>("");
+    // 직무 분야 필터 (null = 전체)
+    const [filterJobField, setFilterJobField] = useState<string | null>(null);
 
     // Edit states for arrays
     const [editingWork, setEditingWork] = useState<number | null>(null);
@@ -94,12 +173,14 @@ export default function ResumePanel() {
     const [editingEducation, setEditingEducation] = useState<number | null>(
         null
     );
+    const [editingAward, setEditingAward] = useState<number | null>(null);
     const [editingSkill, setEditingSkill] = useState<number | null>(null);
+    const [editingSkillKeywords, setEditingSkillKeywords] =
+        useState<string>("");
     const [editingLanguage, setEditingLanguage] = useState<number | null>(null);
     const [backupData, setBackupData] = useState<any>(null);
-
-    // Fallback JSON input state
-    const [jsonInput, setJsonInput] = useState("");
+    // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
+    const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
     useEffect(() => {
         if (!browserClient) return;
@@ -120,8 +201,18 @@ export default function ResumePanel() {
                 .select("value")
                 .eq("key", "job_fields")
                 .single(),
+            browserClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "job_field")
+                .single(),
         ]).then(
-            ([{ data: row, error }, { data: layoutRow }, { data: jfRow }]) => {
+            ([
+                { data: row, error },
+                { data: layoutRow },
+                { data: jfRow },
+                { data: activeJfRow },
+            ]) => {
                 const defaultResume: Resume = {
                     basics: {
                         name: "",
@@ -132,25 +223,15 @@ export default function ResumePanel() {
                         phone: "",
                         url: "",
                     },
-                    work: [],
-                    projects: [],
-                    education: [],
-                    skills: [],
-                    languages: [],
                 };
                 if (!error && row) {
                     setRowId(row.id);
-                    setResumeData({
+                    const loaded = {
                         ...defaultResume,
                         ...(row.data as Resume),
-                    });
-                    setJsonInput(
-                        JSON.stringify(
-                            { ...defaultResume, ...(row.data as Resume) },
-                            null,
-                            2
-                        )
-                    );
+                    };
+                    savedDataRef.current = JSON.stringify(loaded);
+                    setResumeData(loaded);
                 } else {
                     setResumeData(defaultResume);
                 }
@@ -160,9 +241,39 @@ export default function ResumePanel() {
                 if (Array.isArray(jfRow?.value)) {
                     setJobFields(jfRow.value as JobFieldItem[]);
                 }
+                if (
+                    activeJfRow?.value &&
+                    typeof activeJfRow.value === "string"
+                ) {
+                    setActiveJobField(activeJfRow.value);
+                }
             }
         );
     }, []);
+
+    // dirty 상태 감지
+    useEffect(() => {
+        if (!resumeData || !savedDataRef.current) return;
+        setIsDirty(JSON.stringify(resumeData) !== savedDataRef.current);
+    }, [resumeData]);
+
+    // 자동 저장 (기존 row가 있을 때만)
+    const autoSave = async () => {
+        if (!browserClient || !resumeData || !rowId) return;
+        try {
+            const { error } = await browserClient
+                .from("resume_data")
+                .update({ data: resumeData as any })
+                .eq("id", rowId);
+            if (!error) {
+                savedDataRef.current = JSON.stringify(resumeData);
+                setIsDirty(false);
+                setSavedAt(new Date());
+            }
+        } catch {}
+    };
+
+    useAutoSave(isDirty, rowId !== null, autoSave);
 
     const handleSave = async () => {
         if (!browserClient || !resumeData) return;
@@ -195,6 +306,9 @@ export default function ResumePanel() {
                 .upsert({ key: "resume_layout", value: resumeLayout });
             if (layoutErr) throw layoutErr;
 
+            savedDataRef.current = JSON.stringify(resumeData);
+            setIsDirty(false);
+            setSavedAt(new Date());
             setStatus({
                 type: "success",
                 msg: "저장됐습니다. 이력서 페이지에 즉시 반영됩니다.",
@@ -203,6 +317,21 @@ export default function ResumePanel() {
             setStatus({ type: "error", msg: `저장 실패: ${e.message}` });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const saveLayout = async (layout: ResumeLayout) => {
+        if (!browserClient) return;
+        const { error } = await browserClient
+            .from("site_config")
+            .upsert({ key: "resume_layout", value: layout });
+        if (error) {
+            setStatus({
+                type: "error",
+                msg: `레이아웃 저장 실패: ${error.message}`,
+            });
+        } else {
+            setSavedAt(new Date());
         }
     };
 
@@ -251,18 +380,25 @@ export default function ResumePanel() {
         return <div className="p-4 text-(--color-muted)">Loading...</div>;
 
     return (
-        <div className="flex h-full max-w-4xl flex-col space-y-8 pb-20">
+        <div className="flex flex-col space-y-8">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                     이력서 편집
                 </h2>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                    {saving ? "저장 중..." : "변경사항 저장"}
-                </button>
+                <div className="flex items-center gap-3">
+                    {savedAt && (
+                        <span className="text-sm text-green-600">
+                            자동 저장 완료 {fmtTime(savedAt)}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || !isDirty}
+                        className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                        {saving ? "저장 중..." : "변경사항 저장"}
+                    </button>
+                </div>
             </div>
 
             {status && (
@@ -283,7 +419,10 @@ export default function ResumePanel() {
                         (l) => (
                             <button
                                 key={l}
-                                onClick={() => setResumeLayout(l)}
+                                onClick={() => {
+                                    setResumeLayout(l);
+                                    saveLayout(l);
+                                }}
                                 className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
                                     resumeLayout === l
                                         ? "bg-(--color-accent) text-(--color-on-accent)"
@@ -307,10 +446,10 @@ export default function ResumePanel() {
                         <img
                             src={resumeData.basics.image}
                             alt="Profile"
-                            className="h-24 w-24 flex-shrink-0 rounded-full border border-(--color-border) object-cover"
+                            className="h-48 w-48 shrink-0 rounded-full border border-(--color-border) object-cover"
                         />
                     )}
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1">
                         <label className="text-sm font-medium text-(--color-muted)">
                             프로필 사진 (자동 업로드)
                         </label>
@@ -319,7 +458,7 @@ export default function ResumePanel() {
                             accept="image/*"
                             onChange={handleImageUpload}
                             disabled={uploadingImage}
-                            className="block w-full cursor-pointer text-sm text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) disabled:opacity-50"
+                            className={`mt-4 block w-fit cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
                         />
                     </div>
                 </div>
@@ -363,9 +502,52 @@ export default function ResumePanel() {
             {/* 경력 (Work Experience) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        경력 (Work)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.work?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: {
+                                            ...(resumeData.work || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            경력 (Work)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-work"
+                                checked={resumeData.work?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: {
+                                            ...(resumeData.work || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-work"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -373,10 +555,21 @@ export default function ResumePanel() {
                                 name: "",
                                 position: "",
                                 startDate: "",
+                                jobField: activeJobField || undefined,
                             };
                             setResumeData({
                                 ...resumeData,
-                                work: [newWork, ...(resumeData.work || [])],
+                                work: {
+                                    ...(resumeData.work || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newWork,
+                                        ...(resumeData.work?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingWork(0);
                         }}
@@ -386,198 +579,513 @@ export default function ResumePanel() {
                     </button>
                 </div>
 
-                <div className="space-y-4">
-                    {resumeData.work?.map((work, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                {/* 직무 분야 필터 */}
+                {jobFields.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setFilterJobField(null)}
+                            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                         >
-                            {editingWork === idx ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <InputField
-                                            label="회사명"
-                                            value={work.name || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].name = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="직책"
-                                            value={work.position || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].position = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="시작일 (YYYY-MM)"
-                                            value={work.startDate || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].startDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="종료일 (비워두면 '현재')"
-                                            value={work.endDate || ""}
-                                            onChange={(v) => {
-                                                const w = [...resumeData.work!];
-                                                w[idx].endDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    work: w,
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                    <TextAreaField
-                                        label="요약 (Summary)"
-                                        value={work.summary || ""}
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].summary = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                    />
-                                    <TextAreaField
-                                        label="주요 성과 (Highlights, 엔터로 구분)"
-                                        value={
-                                            work.highlights?.join("\n") || ""
-                                        }
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].highlights = v.split("\n");
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                        rows={4}
-                                    />
-                                    <JobFieldSelector
-                                        value={work.jobField}
-                                        fields={jobFields}
-                                        onChange={(v) => {
-                                            const w = [...resumeData.work!];
-                                            w[idx].jobField = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                work: w,
-                                            });
-                                        }}
-                                    />
-                                    <div className="flex justify-end gap-2 pt-2">
-                                        <button
-                                            onClick={() => {
-                                                if (backupData)
-                                                    setResumeData(backupData);
-                                                setEditingWork(null);
-                                            }}
-                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
-                                        >
-                                            취소
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(null);
-                                                setEditingWork(null);
-                                            }}
-                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                        >
-                                            완료
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-start justify-between">
-                                    <div className="mr-12">
-                                        <h4 className="font-semibold text-(--color-foreground)">
-                                            {work.position} @ {work.name}
-                                        </h4>
-                                        <p className="text-sm text-(--color-muted)">
-                                            {work.startDate} ~{" "}
-                                            {work.endDate || "현재"}
-                                        </p>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            <JobFieldBadges
-                                                value={work.jobField}
-                                                fields={jobFields}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(resumeData);
-                                                setEditingWork(idx);
-                                            }}
-                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            수정
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (
-                                                    confirm("삭제하시겠습니까?")
-                                                ) {
+                            전체
+                        </button>
+                        {jobFields.map((jf) => (
+                            <button
+                                key={jf.id}
+                                onClick={() =>
+                                    setFilterJobField(
+                                        filterJobField === jf.id ? null : jf.id
+                                    )
+                                }
+                                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === jf.id ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
+                            >
+                                {jf.emoji ? `${jf.emoji} ` : ""}
+                                {jf.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    {resumeData.work?.entries.map((work, idx) => {
+                        if (
+                            filterJobField &&
+                            !matchesJobField(work.jobField, filterJobField)
+                        )
+                            return null;
+                        return (
+                            <div
+                                key={idx}
+                                draggable={editingWork !== idx}
+                                onDragStart={() => {
+                                    dragSrcRef.current = { type: "work", idx };
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                    if (
+                                        dragSrcRef.current?.type !== "work" ||
+                                        dragSrcRef.current.idx === idx
+                                    )
+                                        return;
+                                    setResumeData({
+                                        ...resumeData,
+                                        work: {
+                                            ...resumeData.work!,
+                                            entries: reorderArray(
+                                                resumeData.work!.entries,
+                                                dragSrcRef.current.idx,
+                                                idx
+                                            ),
+                                        },
+                                    });
+                                    dragSrcRef.current = null;
+                                }}
+                                className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                            >
+                                {editingWork === idx ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <InputField
+                                                label="회사명"
+                                                value={work.name || ""}
+                                                onChange={(v) => {
                                                     const w = [
-                                                        ...resumeData.work!,
+                                                        ...resumeData.work!
+                                                            .entries,
                                                     ];
-                                                    w.splice(idx, 1);
+                                                    w[idx].name = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        work: w,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
                                                     });
-                                                }
+                                                }}
+                                            />
+                                            <InputField
+                                                label="직책"
+                                                value={work.position || ""}
+                                                onChange={(v) => {
+                                                    const w = [
+                                                        ...resumeData.work!
+                                                            .entries,
+                                                    ];
+                                                    w[idx].position = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
+                                                    });
+                                                }}
+                                            />
+                                            <div className="flex flex-col space-y-1">
+                                                <label className="text-sm font-medium text-(--color-muted)">
+                                                    시작일
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={work.startDate || ""}
+                                                    onChange={(e) => {
+                                                        const w = [
+                                                            ...resumeData.work!
+                                                                .entries,
+                                                        ];
+                                                        w[idx] = {
+                                                            ...w[idx],
+                                                            startDate:
+                                                                e.target.value,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col space-y-1">
+                                                <label className="text-sm font-medium text-(--color-muted)">
+                                                    종료일 (비워두면 '현재')
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={work.endDate || ""}
+                                                    onChange={(e) => {
+                                                        const w = [
+                                                            ...resumeData.work!
+                                                                .entries,
+                                                        ];
+                                                        w[idx] = {
+                                                            ...w[idx],
+                                                            endDate:
+                                                                e.target.value,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={work.hideDays || false}
+                                                onChange={(e) => {
+                                                    const w = [
+                                                        ...resumeData.work!
+                                                            .entries,
+                                                    ];
+                                                    w[idx] = {
+                                                        ...w[idx],
+                                                        hideDays:
+                                                            e.target.checked,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
+                                                    });
+                                                }}
+                                                className="accent-(--color-accent)"
+                                            />
+                                            날짜에서 일(Day) 숨기기
+                                        </label>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={work.markdown || false}
+                                                onChange={(e) => {
+                                                    const w = [
+                                                        ...resumeData.work!
+                                                            .entries,
+                                                    ];
+                                                    w[idx] = {
+                                                        ...w[idx],
+                                                        markdown:
+                                                            e.target.checked,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
+                                                    });
+                                                }}
+                                                className="accent-(--color-accent)"
+                                            />
+                                            요약/성과를 마크다운으로 렌더링
+                                        </label>
+                                        <TextAreaField
+                                            label="요약 (Summary)"
+                                            value={work.summary || ""}
+                                            onChange={(v) => {
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
+                                                w[idx].summary = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
+                                                });
                                             }}
-                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            삭제
-                                        </button>
+                                        />
+                                        <TextAreaField
+                                            label="주요 성과 (Highlights, 엔터로 구분)"
+                                            value={
+                                                work.highlights?.join("\n") ||
+                                                ""
+                                            }
+                                            onChange={(v) => {
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
+                                                w[idx].highlights =
+                                                    v.split("\n");
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
+                                                });
+                                            }}
+                                            rows={4}
+                                        />
+                                        <JobFieldSelector
+                                            value={work.jobField}
+                                            fields={jobFields}
+                                            onChange={(v) => {
+                                                const w = [
+                                                    ...(resumeData.work
+                                                        ?.entries || []),
+                                                ];
+                                                w[idx].jobField = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    work: {
+                                                        ...(resumeData.work || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: w,
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <button
+                                                onClick={() => {
+                                                    if (backupData)
+                                                        setResumeData(
+                                                            backupData
+                                                        );
+                                                    setEditingWork(null);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(null);
+                                                    setEditingWork(null);
+                                                }}
+                                                className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                            >
+                                                완료
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                ) : (
+                                    <div className="flex items-start gap-2">
+                                        <span
+                                            className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                            title="드래그로 순서 변경"
+                                        >
+                                            ⠿
+                                        </span>
+                                        <div className="mr-12 flex-1">
+                                            <h4 className="font-semibold text-(--color-foreground)">
+                                                {work.position} @ {work.name}
+                                            </h4>
+                                            <p className="text-sm text-(--color-muted)">
+                                                {work.startDate} ~{" "}
+                                                {work.endDate || "현재"}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                <JobFieldBadges
+                                                    value={work.jobField}
+                                                    fields={jobFields}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(resumeData);
+                                                    setEditingWork(idx);
+                                                }}
+                                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                수정
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
+                                                    const w = [
+                                                        ...resumeData.work!
+                                                            .entries,
+                                                    ];
+                                                    const copy = {
+                                                        ...w[idx],
+                                                        jobField:
+                                                            activeJobField ||
+                                                            undefined,
+                                                    };
+                                                    w.unshift(copy);
+                                                    setBackupData(resumeData);
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        work: {
+                                                            ...(resumeData.work || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: w,
+                                                        },
+                                                    });
+                                                    setEditingWork(0);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
+                                            >
+                                                복사
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (
+                                                        confirm(
+                                                            "삭제하시겠습니까?"
+                                                        )
+                                                    ) {
+                                                        const w = [
+                                                            ...resumeData.work!
+                                                                .entries,
+                                                        ];
+                                                        w.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            work: {
+                                                                ...(resumeData.work || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: w,
+                                                            },
+                                                        });
+                                                    }
+                                                }}
+                                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
 
             {/* 프로젝트 (Projects) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        프로젝트 (Projects)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.projects?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: {
+                                            ...(resumeData.projects || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            프로젝트 (Projects)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-projects"
+                                checked={
+                                    resumeData.projects?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: {
+                                            ...(resumeData.projects || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-projects"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
                             const newProj: ResumeProject = {
                                 name: "",
-                                description: "",
+                                sections: [
+                                    { title: "설명", content: "" },
+                                    { title: "성과", content: "" },
+                                ],
+                                jobField: activeJobField || undefined,
                             };
                             setResumeData({
                                 ...resumeData,
-                                projects: [
-                                    newProj,
-                                    ...(resumeData.projects || []),
-                                ],
+                                projects: {
+                                    ...(resumeData.projects || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newProj,
+                                        ...(resumeData.projects?.entries || []),
+                                    ],
+                                },
                             });
                             setEditingProject(0);
                         }}
@@ -587,201 +1095,771 @@ export default function ResumePanel() {
                     </button>
                 </div>
 
-                <div className="space-y-4">
-                    {resumeData.projects?.map((proj, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                {/* 직무 분야 필터 */}
+                {jobFields.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setFilterJobField(null)}
+                            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                         >
-                            {editingProject === idx ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <InputField
-                                            label="프로젝트명"
-                                            value={proj.name || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].name = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="역할 (Roles, 쉼표 구분)"
-                                            value={proj.roles?.join(", ") || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].roles = v
-                                                    .split(",")
-                                                    .map((s) => s.trim());
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="시작일"
-                                            value={proj.startDate || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].startDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="종료일"
-                                            value={proj.endDate || ""}
-                                            onChange={(v) => {
-                                                const p = [
-                                                    ...resumeData.projects!,
-                                                ];
-                                                p[idx].endDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    projects: p,
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                    <TextAreaField
-                                        label="설명 (Description)"
-                                        value={proj.description || ""}
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].description = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                    />
-                                    <TextAreaField
-                                        label="주요 기능 (Highlights, 엔터 구분)"
-                                        value={
-                                            proj.highlights?.join("\n") || ""
-                                        }
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].highlights = v.split("\n");
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                        rows={4}
-                                    />
-                                    <JobFieldSelector
-                                        value={proj.jobField}
-                                        fields={jobFields}
-                                        onChange={(v) => {
-                                            const p = [...resumeData.projects!];
-                                            p[idx].jobField = v;
-                                            setResumeData({
-                                                ...resumeData,
-                                                projects: p,
-                                            });
-                                        }}
-                                    />
-                                    <div className="flex justify-end gap-2 pt-2">
-                                        <button
-                                            onClick={() => {
-                                                if (backupData)
-                                                    setResumeData(backupData);
-                                                setEditingProject(null);
-                                            }}
-                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
-                                        >
-                                            취소
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(null);
-                                                setEditingProject(null);
-                                            }}
-                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                        >
-                                            완료
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-start justify-between">
-                                    <div className="mr-12">
-                                        <h4 className="font-semibold text-(--color-foreground)">
-                                            {proj.name}
-                                        </h4>
-                                        <p className="text-sm text-(--color-muted)">
-                                            {proj.description?.substring(
-                                                0,
-                                                100
-                                            )}
-                                            {proj.description &&
-                                            proj.description.length > 100
-                                                ? "..."
-                                                : ""}
-                                        </p>
-                                        <div className="mt-1 flex flex-wrap gap-1">
-                                            <JobFieldBadges
-                                                value={proj.jobField}
-                                                fields={jobFields}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setBackupData(resumeData);
-                                                setEditingProject(idx);
-                                            }}
-                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            수정
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (
-                                                    confirm("삭제하시겠습니까?")
-                                                ) {
+                            전체
+                        </button>
+                        {jobFields.map((jf) => (
+                            <button
+                                key={jf.id}
+                                onClick={() =>
+                                    setFilterJobField(
+                                        filterJobField === jf.id ? null : jf.id
+                                    )
+                                }
+                                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === jf.id ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
+                            >
+                                {jf.emoji ? `${jf.emoji} ` : ""}
+                                {jf.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    {resumeData.projects?.entries.map((proj, idx) => {
+                        if (
+                            filterJobField &&
+                            !matchesJobField(proj.jobField, filterJobField)
+                        )
+                            return null;
+                        return (
+                            <div
+                                key={idx}
+                                draggable={editingProject !== idx}
+                                onDragStart={() => {
+                                    dragSrcRef.current = {
+                                        type: "project",
+                                        idx,
+                                    };
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                    if (
+                                        dragSrcRef.current?.type !==
+                                            "project" ||
+                                        dragSrcRef.current.idx === idx
+                                    )
+                                        return;
+                                    setResumeData({
+                                        ...resumeData,
+                                        projects: {
+                                            ...resumeData.projects!,
+                                            entries: reorderArray(
+                                                resumeData.projects!.entries,
+                                                dragSrcRef.current.idx,
+                                                idx
+                                            ),
+                                        },
+                                    });
+                                    dragSrcRef.current = null;
+                                }}
+                                className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                            >
+                                {editingProject === idx ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <InputField
+                                                label="프로젝트명"
+                                                value={proj.name || ""}
+                                                onChange={(v) => {
                                                     const p = [
-                                                        ...resumeData.projects!,
+                                                        ...resumeData.projects!
+                                                            .entries,
                                                     ];
-                                                    p.splice(idx, 1);
+                                                    p[idx].name = v;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        projects: p,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
                                                     });
+                                                }}
+                                            />
+                                            <InputField
+                                                label="역할 (Roles, 쉼표 구분)"
+                                                value={
+                                                    proj.roles?.join(", ") || ""
                                                 }
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!
+                                                            .entries,
+                                                    ];
+                                                    p[idx].roles = v
+                                                        .split(",")
+                                                        .map((s) => s.trim());
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
+                                                    });
+                                                }}
+                                            />
+                                            <div className="flex flex-col space-y-1">
+                                                <label className="text-sm font-medium text-(--color-muted)">
+                                                    시작일
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={proj.startDate || ""}
+                                                    onChange={(e) => {
+                                                        const p = [
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            startDate:
+                                                                e.target.value,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col space-y-1">
+                                                <label className="text-sm font-medium text-(--color-muted)">
+                                                    종료일
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={proj.endDate || ""}
+                                                    onChange={(e) => {
+                                                        const p = [
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            endDate:
+                                                                e.target.value,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                                />
+                                            </div>
+                                            <InputField
+                                                label="라이브 URL"
+                                                value={proj.url || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!
+                                                            .entries,
+                                                    ];
+                                                    p[idx].url = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
+                                                    });
+                                                }}
+                                                placeholder="https://..."
+                                            />
+                                            <InputField
+                                                label="URL 표시 텍스트 (기본: 라이브 URL)"
+                                                value={proj.urlLabel || ""}
+                                                onChange={(v) => {
+                                                    const p = [
+                                                        ...resumeData.projects!
+                                                            .entries,
+                                                    ];
+                                                    p[idx].urlLabel = v;
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
+                                                    });
+                                                }}
+                                                placeholder="예: 게임 시연 영상, 발표 자료"
+                                            />
+                                        </div>
+                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                            <input
+                                                type="checkbox"
+                                                checked={proj.hideDays || false}
+                                                onChange={(e) => {
+                                                    const p = [
+                                                        ...resumeData.projects!
+                                                            .entries,
+                                                    ];
+                                                    p[idx] = {
+                                                        ...p[idx],
+                                                        hideDays:
+                                                            e.target.checked,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
+                                                    });
+                                                }}
+                                                className="accent-(--color-accent)"
+                                            />
+                                            날짜에서 일(Day) 숨기기
+                                        </label>
+                                        {/* 자유 양식 섹션 목록 */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-(--color-muted)">
+                                                    섹션 목록
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const p = [
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
+                                                        ];
+                                                        const sections = [
+                                                            ...(p[idx]
+                                                                .sections ||
+                                                                []),
+                                                            {
+                                                                title: "",
+                                                                content: "",
+                                                            },
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            sections,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                                                >
+                                                    + 섹션 추가
+                                                </button>
+                                            </div>
+                                            {(proj.sections || []).map(
+                                                (sec, sIdx) => (
+                                                    <div
+                                                        key={sIdx}
+                                                        className="space-y-2 rounded-lg border border-(--color-border) p-3"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={
+                                                                    sec.title
+                                                                }
+                                                                placeholder="섹션 제목"
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    const p = [
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.map(
+                                                                            (
+                                                                                s,
+                                                                                i
+                                                                            ) =>
+                                                                                i ===
+                                                                                sIdx
+                                                                                    ? {
+                                                                                          ...s,
+                                                                                          title: e
+                                                                                              .target
+                                                                                              .value,
+                                                                                      }
+                                                                                    : s
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="flex-1 rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm font-medium text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const p = [
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.filter(
+                                                                            (
+                                                                                _,
+                                                                                i
+                                                                            ) =>
+                                                                                i !==
+                                                                                sIdx
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="rounded-lg bg-red-600 px-2 py-1 text-xs text-white hover:opacity-90"
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        </div>
+                                                        <textarea
+                                                            value={sec.content}
+                                                            placeholder="내용"
+                                                            rows={3}
+                                                            onChange={(e) => {
+                                                                const p = [
+                                                                    ...resumeData
+                                                                        .projects!
+                                                                        .entries,
+                                                                ];
+                                                                const sections =
+                                                                    p[
+                                                                        idx
+                                                                    ].sections!.map(
+                                                                        (
+                                                                            s,
+                                                                            i
+                                                                        ) =>
+                                                                            i ===
+                                                                            sIdx
+                                                                                ? {
+                                                                                      ...s,
+                                                                                      content:
+                                                                                          e
+                                                                                              .target
+                                                                                              .value,
+                                                                                  }
+                                                                                : s
+                                                                    );
+                                                                p[idx] = {
+                                                                    ...p[idx],
+                                                                    sections,
+                                                                };
+                                                                setResumeData({
+                                                                    ...resumeData,
+                                                                    projects: {
+                                                                        ...(resumeData.projects || {
+                                                                            showEmoji: false,
+                                                                            emoji: "✔️",
+                                                                            entries:
+                                                                                [],
+                                                                        }),
+                                                                        entries:
+                                                                            p,
+                                                                    },
+                                                                });
+                                                            }}
+                                                            className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                        />
+                                                        <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={
+                                                                    sec.markdown ||
+                                                                    false
+                                                                }
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    const p = [
+                                                                        ...resumeData
+                                                                            .projects!
+                                                                            .entries,
+                                                                    ];
+                                                                    const sections =
+                                                                        p[
+                                                                            idx
+                                                                        ].sections!.map(
+                                                                            (
+                                                                                s,
+                                                                                i
+                                                                            ) =>
+                                                                                i ===
+                                                                                sIdx
+                                                                                    ? {
+                                                                                          ...s,
+                                                                                          markdown:
+                                                                                              e
+                                                                                                  .target
+                                                                                                  .checked,
+                                                                                      }
+                                                                                    : s
+                                                                        );
+                                                                    p[idx] = {
+                                                                        ...p[
+                                                                            idx
+                                                                        ],
+                                                                        sections,
+                                                                    };
+                                                                    setResumeData(
+                                                                        {
+                                                                            ...resumeData,
+                                                                            projects:
+                                                                                {
+                                                                                    ...resumeData.projects!,
+                                                                                    entries:
+                                                                                        p,
+                                                                                },
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="accent-(--color-accent)"
+                                                            />
+                                                            마크다운으로 렌더링
+                                                        </label>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                        <JobFieldSelector
+                                            value={proj.jobField}
+                                            fields={jobFields}
+                                            onChange={(v) => {
+                                                const p = [
+                                                    ...resumeData.projects!
+                                                        .entries,
+                                                ];
+                                                p[idx].jobField = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    projects: {
+                                                        ...(resumeData.projects || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: p,
+                                                    },
+                                                });
                                             }}
-                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                        >
-                                            삭제
-                                        </button>
+                                        />
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <button
+                                                onClick={() => {
+                                                    if (backupData)
+                                                        setResumeData(
+                                                            backupData
+                                                        );
+                                                    setEditingProject(null);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(null);
+                                                    setEditingProject(null);
+                                                }}
+                                                className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                            >
+                                                완료
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                ) : (
+                                    <div className="flex items-start gap-2">
+                                        <span
+                                            className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
+                                            title="드래그로 순서 변경"
+                                        >
+                                            ⠿
+                                        </span>
+                                        <div className="mr-12 flex-1">
+                                            <h4 className="font-semibold text-(--color-foreground)">
+                                                {proj.name}
+                                            </h4>
+                                            <p className="text-sm text-(--color-muted)">
+                                                {proj.description?.substring(
+                                                    0,
+                                                    100
+                                                )}
+                                                {proj.description &&
+                                                proj.description.length > 100
+                                                    ? "..."
+                                                    : ""}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                <JobFieldBadges
+                                                    value={proj.jobField}
+                                                    fields={jobFields}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setBackupData(resumeData);
+                                                    // sections가 없으면 기존 description/highlights로 초기화
+                                                    if (
+                                                        !resumeData.projects!
+                                                            .entries[idx]
+                                                            .sections
+                                                    ) {
+                                                        const p = [
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
+                                                        ];
+                                                        p[idx] = {
+                                                            ...p[idx],
+                                                            sections: [
+                                                                {
+                                                                    title: "설명",
+                                                                    content:
+                                                                        p[idx]
+                                                                            .description ||
+                                                                        "",
+                                                                },
+                                                                {
+                                                                    title: "성과",
+                                                                    content:
+                                                                        p[
+                                                                            idx
+                                                                        ].highlights?.join(
+                                                                            "\n"
+                                                                        ) || "",
+                                                                },
+                                                            ],
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
+                                                        });
+                                                    }
+                                                    setEditingProject(idx);
+                                                }}
+                                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                수정
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // 항목을 복사해 맨 앞에 추가 후 편집 모드 진입
+                                                    const p = [
+                                                        ...resumeData.projects!
+                                                            .entries,
+                                                    ];
+                                                    const copy = {
+                                                        ...p[idx],
+                                                        jobField:
+                                                            activeJobField ||
+                                                            undefined,
+                                                    };
+                                                    p.unshift(copy);
+                                                    setBackupData(resumeData);
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        projects: {
+                                                            ...(resumeData.projects || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: p,
+                                                        },
+                                                    });
+                                                    setEditingProject(0);
+                                                }}
+                                                className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
+                                            >
+                                                복사
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (
+                                                        confirm(
+                                                            "삭제하시겠습니까?"
+                                                        )
+                                                    ) {
+                                                        const p = [
+                                                            ...resumeData
+                                                                .projects!
+                                                                .entries,
+                                                        ];
+                                                        p.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            projects: {
+                                                                ...(resumeData.projects || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: p,
+                                                            },
+                                                        });
+                                                    }
+                                                }}
+                                                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
 
             {/* 학력 (Education) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        학력 (Education)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.education?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        education: {
+                                            ...(resumeData.education || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            학력 (Education)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-education"
+                                checked={
+                                    resumeData.education?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        education: {
+                                            ...(resumeData.education || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-education"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -792,10 +1870,18 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                education: [
-                                    newEd,
-                                    ...(resumeData.education || []),
-                                ],
+                                education: {
+                                    ...(resumeData.education || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newEd,
+                                        ...(resumeData.education?.entries ||
+                                            []),
+                                    ],
+                                },
                             });
                             setEditingEducation(0);
                         }}
@@ -806,7 +1892,7 @@ export default function ResumePanel() {
                 </div>
 
                 <div className="space-y-4">
-                    {resumeData.education?.map((ed, idx) => (
+                    {resumeData.education?.entries.map((ed, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -819,12 +1905,20 @@ export default function ResumePanel() {
                                             value={ed.institution || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].institution = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -833,12 +1927,20 @@ export default function ResumePanel() {
                                             value={ed.area || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].area = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -847,43 +1949,87 @@ export default function ResumePanel() {
                                             value={ed.studyType || ""}
                                             onChange={(v) => {
                                                 const e = [
-                                                    ...resumeData.education!,
+                                                    ...resumeData.education!
+                                                        .entries,
                                                 ];
                                                 e[idx].studyType = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    education: e,
+                                                    education: {
+                                                        ...(resumeData.education || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: e,
+                                                    },
                                                 });
                                             }}
                                         />
-                                        <InputField
-                                            label="시작일"
-                                            value={ed.startDate || ""}
-                                            onChange={(v) => {
-                                                const e = [
-                                                    ...resumeData.education!,
-                                                ];
-                                                e[idx].startDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    education: e,
-                                                });
-                                            }}
-                                        />
-                                        <InputField
-                                            label="종료일"
-                                            value={ed.endDate || ""}
-                                            onChange={(v) => {
-                                                const e = [
-                                                    ...resumeData.education!,
-                                                ];
-                                                e[idx].endDate = v;
-                                                setResumeData({
-                                                    ...resumeData,
-                                                    education: e,
-                                                });
-                                            }}
-                                        />
+                                        <div className="flex flex-col space-y-1">
+                                            <label className="text-sm font-medium text-(--color-muted)">
+                                                시작일
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={ed.startDate || ""}
+                                                onChange={(ev) => {
+                                                    const e = [
+                                                        ...resumeData.education!
+                                                            .entries,
+                                                    ];
+                                                    e[idx] = {
+                                                        ...e[idx],
+                                                        startDate:
+                                                            ev.target.value,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
+                                                    });
+                                                }}
+                                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col space-y-1">
+                                            <label className="text-sm font-medium text-(--color-muted)">
+                                                종료일
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={ed.endDate || ""}
+                                                onChange={(ev) => {
+                                                    const e = [
+                                                        ...resumeData.education!
+                                                            .entries,
+                                                    ];
+                                                    e[idx] = {
+                                                        ...e[idx],
+                                                        endDate:
+                                                            ev.target.value,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
+                                                    });
+                                                }}
+                                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
+                                            />
+                                        </div>
                                     </div>
                                     {/* GPA 입력 */}
                                     <div className="flex items-end gap-3">
@@ -898,7 +2044,8 @@ export default function ResumePanel() {
                                                         ev.target.value
                                                     ) as 4 | 4.5;
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     // 기존 gpa 비례 환산
                                                     if (e[idx].gpa != null) {
@@ -916,7 +2063,14 @@ export default function ResumePanel() {
                                                     e[idx].gpaMax = newMax;
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 className="rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
@@ -942,7 +2096,8 @@ export default function ResumePanel() {
                                                     const max =
                                                         ed.gpaMax ?? 4.5;
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e[idx].gpa = isNaN(raw)
                                                         ? undefined
@@ -952,7 +2107,14 @@ export default function ResumePanel() {
                                                           );
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
                                                     });
                                                 }}
                                                 placeholder="예: 4.2"
@@ -1009,12 +2171,331 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const e = [
-                                                        ...resumeData.education!,
+                                                        ...resumeData.education!
+                                                            .entries,
                                                     ];
                                                     e.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        education: e,
+                                                        education: {
+                                                            ...(resumeData.education || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: e,
+                                                        },
+                                                    });
+                                                }
+                                            }}
+                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* 수상 (Awards) */}
+            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.awards?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        awards: {
+                                            ...(resumeData.awards || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            수상 (Awards)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-awards"
+                                checked={resumeData.awards?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        awards: {
+                                            ...(resumeData.awards || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-awards"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setBackupData(resumeData);
+                            const newAward: ResumeAward = {
+                                title: "",
+                                date: "",
+                                awarder: "",
+                                summary: "",
+                            };
+                            setResumeData({
+                                ...resumeData,
+                                awards: {
+                                    ...(resumeData.awards || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newAward,
+                                        ...(resumeData.awards?.entries || []),
+                                    ],
+                                },
+                            });
+                            setEditingAward(0);
+                        }}
+                        className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    >
+                        + 수상 추가
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    {(resumeData.awards?.entries || []).map((award, idx) => (
+                        <div
+                            key={idx}
+                            className="rounded-lg border border-(--color-border) bg-transparent p-4"
+                        >
+                            {editingAward === idx ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <InputField
+                                            label="수상명"
+                                            value={award.title || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    title: v,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                        <InputField
+                                            label="수여기관"
+                                            value={award.awarder || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    awarder: v,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                        <InputField
+                                            label="날짜 (YYYY-MM)"
+                                            value={award.date || ""}
+                                            onChange={(v) => {
+                                                const a = [
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
+                                                ];
+                                                a[idx] = { ...a[idx], date: v };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-(--color-muted)">
+                                                내용
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const a = [
+                                                        ...(resumeData.awards
+                                                            ?.entries || []),
+                                                    ];
+                                                    a[idx] = {
+                                                        ...a[idx],
+                                                        markdown:
+                                                            !a[idx].markdown,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        awards: {
+                                                            ...(resumeData.awards || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: a,
+                                                        },
+                                                    });
+                                                }}
+                                                className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                                                    award.markdown
+                                                        ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                        : "border border-(--color-border) text-(--color-muted)"
+                                                }`}
+                                            >
+                                                Markdown
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            value={award.summary || ""}
+                                            onChange={(e) => {
+                                                const a = [
+                                                    ...(resumeData.awards
+                                                        ?.entries || []),
+                                                ];
+                                                a[idx] = {
+                                                    ...a[idx],
+                                                    summary: e.target.value,
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    awards: {
+                                                        ...(resumeData.awards || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: a,
+                                                    },
+                                                });
+                                            }}
+                                            rows={3}
+                                            placeholder={
+                                                award.markdown
+                                                    ? "마크다운 형식으로 작성"
+                                                    : "수상 내용"
+                                            }
+                                            className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button
+                                            onClick={() => {
+                                                if (backupData)
+                                                    setResumeData(backupData);
+                                                setEditingAward(null);
+                                            }}
+                                            className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
+                                        >
+                                            취소
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(null);
+                                                setEditingAward(null);
+                                            }}
+                                            className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                        >
+                                            완료
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-start justify-between">
+                                    <div className="mr-12">
+                                        <h4 className="font-semibold text-(--color-foreground)">
+                                            {award.title}
+                                        </h4>
+                                        <p className="text-sm text-(--color-muted)">
+                                            {award.awarder}
+                                            {award.date
+                                                ? ` · ${award.date}`
+                                                : ""}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setBackupData(resumeData);
+                                                setEditingAward(idx);
+                                            }}
+                                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                        >
+                                            수정
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (
+                                                    confirm("삭제하시겠습니까?")
+                                                ) {
+                                                    const a = [
+                                                        ...(resumeData.awards
+                                                            ?.entries || []),
+                                                    ];
+                                                    a.splice(idx, 1);
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        awards: {
+                                                            ...(resumeData.awards || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: a,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -1033,9 +2514,52 @@ export default function ResumePanel() {
             {/* 스킬 (Skills) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        스킬 (Skills)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.skills?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        skills: {
+                                            ...(resumeData.skills || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            스킬 (Skills)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-skills"
+                                checked={resumeData.skills?.showEmoji === true}
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        skills: {
+                                            ...(resumeData.skills || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-skills"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -1046,11 +2570,19 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                skills: [
-                                    newSkill,
-                                    ...(resumeData.skills || []),
-                                ],
+                                skills: {
+                                    ...(resumeData.skills || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newSkill,
+                                        ...(resumeData.skills?.entries || []),
+                                    ],
+                                },
                             });
+                            setEditingSkillKeywords("");
                             setEditingSkill(0);
                         }}
                         className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
@@ -1059,7 +2591,7 @@ export default function ResumePanel() {
                     </button>
                 </div>
                 <div className="space-y-4">
-                    {resumeData.skills?.map((skill, idx) => (
+                    {resumeData.skills?.entries.map((skill, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -1072,12 +2604,20 @@ export default function ResumePanel() {
                                             value={skill.name || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].name = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                         />
@@ -1086,31 +2626,75 @@ export default function ResumePanel() {
                                             value={skill.level || ""}
                                             onChange={(v) => {
                                                 const s = [
-                                                    ...resumeData.skills!,
+                                                    ...resumeData.skills!
+                                                        .entries,
                                                 ];
                                                 s[idx].level = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    skills: s,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Master, Advanced"
                                         />
+                                        <InputField
+                                            label="아이콘 오버라이드 (Slug)"
+                                            value={skill.iconSlug || ""}
+                                            onChange={(v) => {
+                                                const s = [
+                                                    ...resumeData.skills!
+                                                        .entries,
+                                                ];
+                                                s[idx].iconSlug = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
+                                                });
+                                            }}
+                                            placeholder="예: react, typescript (simple-icons)"
+                                        />
+                                        <InputField
+                                            label="아이콘 색상 (Hex)"
+                                            value={skill.iconColor || ""}
+                                            onChange={(v) => {
+                                                const s = [
+                                                    ...resumeData.skills!
+                                                        .entries,
+                                                ];
+                                                s[idx].iconColor = v;
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
+                                                });
+                                            }}
+                                            placeholder="예: #61DAFB"
+                                        />
                                     </div>
                                     <TextAreaField
                                         label="키워드 (쉼표로 구분)"
-                                        value={skill.keywords?.join(", ") || ""}
-                                        onChange={(v) => {
-                                            const s = [...resumeData.skills!];
-                                            s[idx].keywords = v
-                                                .split(",")
-                                                .map((k) => k.trim())
-                                                .filter(Boolean);
-                                            setResumeData({
-                                                ...resumeData,
-                                                skills: s,
-                                            });
-                                        }}
+                                        value={editingSkillKeywords}
+                                        onChange={setEditingSkillKeywords}
                                         rows={2}
                                         placeholder="예: React, TypeScript, Node.js"
                                     />
@@ -1127,6 +2711,32 @@ export default function ResumePanel() {
                                         </button>
                                         <button
                                             onClick={() => {
+                                                // editingSkillKeywords 파싱 후 저장
+                                                const s = [
+                                                    ...resumeData.skills!
+                                                        .entries,
+                                                ];
+                                                s[idx] = {
+                                                    ...s[idx],
+                                                    keywords:
+                                                        editingSkillKeywords
+                                                            .split(",")
+                                                            .map((k) =>
+                                                                k.trim()
+                                                            )
+                                                            .filter(Boolean),
+                                                };
+                                                setResumeData({
+                                                    ...resumeData,
+                                                    skills: {
+                                                        ...(resumeData.skills || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: s,
+                                                    },
+                                                });
                                                 setBackupData(null);
                                                 setEditingSkill(null);
                                             }}
@@ -1147,11 +2757,11 @@ export default function ResumePanel() {
                                                 </span>
                                             )}
                                         </h4>
-                                        <div className="mt-1 flex flex-wrap gap-1">
+                                        <div className="mt-1 flex flex-wrap gap-2">
                                             {skill.keywords?.map((kw) => (
                                                 <span
                                                     key={kw}
-                                                    className="rounded bg-(--color-border) px-1.5 py-0.5 text-xs text-(--color-muted)"
+                                                    className="text-semibold rounded bg-(--color-accent) px-2 py-1 text-base text-(--color-on-accent)"
                                                 >
                                                     {kw}
                                                 </span>
@@ -1162,6 +2772,11 @@ export default function ResumePanel() {
                                         <button
                                             onClick={() => {
                                                 setBackupData(resumeData);
+                                                setEditingSkillKeywords(
+                                                    skill.keywords?.join(
+                                                        ", "
+                                                    ) || ""
+                                                );
                                                 setEditingSkill(idx);
                                             }}
                                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
@@ -1174,12 +2789,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const s = [
-                                                        ...resumeData.skills!,
+                                                        ...resumeData.skills!
+                                                            .entries,
                                                     ];
                                                     s.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        skills: s,
+                                                        skills: {
+                                                            ...(resumeData.skills || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: s,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -1198,9 +2821,54 @@ export default function ResumePanel() {
             {/* 언어 (Languages) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        언어 (Languages)
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                            <SectionEmojiSelector
+                                value={resumeData.languages?.emoji || ""}
+                                onChange={(v) => {
+                                    setResumeData({
+                                        ...resumeData,
+                                        languages: {
+                                            ...(resumeData.languages || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            emoji: v,
+                                        },
+                                    });
+                                }}
+                            />
+                            언어 (Languages)
+                        </h3>
+                        <div className="ml-4 flex items-center gap-2">
+                            <Switch
+                                id="show-emojis-languages"
+                                checked={
+                                    resumeData.languages?.showEmoji === true
+                                }
+                                onCheckedChange={(checked) =>
+                                    setResumeData({
+                                        ...resumeData,
+                                        languages: {
+                                            ...(resumeData.languages || {
+                                                showEmoji: false,
+                                                emoji: "✔️",
+                                                entries: [],
+                                            }),
+                                            showEmoji: checked,
+                                        },
+                                    })
+                                }
+                            />
+                            <label
+                                htmlFor="show-emojis-languages"
+                                className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
+                            >
+                                이모지 표시
+                            </label>
+                        </div>
+                    </div>
                     <button
                         onClick={() => {
                             setBackupData(resumeData);
@@ -1210,10 +2878,18 @@ export default function ResumePanel() {
                             };
                             setResumeData({
                                 ...resumeData,
-                                languages: [
-                                    newLang,
-                                    ...(resumeData.languages || []),
-                                ],
+                                languages: {
+                                    ...(resumeData.languages || {
+                                        showEmoji: false,
+                                        emoji: "✔️",
+                                        entries: [],
+                                    }),
+                                    entries: [
+                                        newLang,
+                                        ...(resumeData.languages?.entries ||
+                                            []),
+                                    ],
+                                },
                             });
                             setEditingLanguage(0);
                         }}
@@ -1223,7 +2899,7 @@ export default function ResumePanel() {
                     </button>
                 </div>
                 <div className="space-y-4">
-                    {resumeData.languages?.map((lang, idx) => (
+                    {resumeData.languages?.entries.map((lang, idx) => (
                         <div
                             key={idx}
                             className="rounded-lg border border-(--color-border) bg-transparent p-4"
@@ -1236,12 +2912,20 @@ export default function ResumePanel() {
                                             value={lang.language || ""}
                                             onChange={(v) => {
                                                 const l = [
-                                                    ...resumeData.languages!,
+                                                    ...resumeData.languages!
+                                                        .entries,
                                                 ];
                                                 l[idx].language = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    languages: l,
+                                                    languages: {
+                                                        ...(resumeData.languages || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: l,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Korean, English"
@@ -1251,12 +2935,20 @@ export default function ResumePanel() {
                                             value={lang.fluency || ""}
                                             onChange={(v) => {
                                                 const l = [
-                                                    ...resumeData.languages!,
+                                                    ...resumeData.languages!
+                                                        .entries,
                                                 ];
                                                 l[idx].fluency = v;
                                                 setResumeData({
                                                     ...resumeData,
-                                                    languages: l,
+                                                    languages: {
+                                                        ...(resumeData.languages || {
+                                                            showEmoji: false,
+                                                            emoji: "✔️",
+                                                            entries: [],
+                                                        }),
+                                                        entries: l,
+                                                    },
                                                 });
                                             }}
                                             placeholder="예: Native, Fluent, Intermediate"
@@ -1310,12 +3002,20 @@ export default function ResumePanel() {
                                                     confirm("삭제하시겠습니까?")
                                                 ) {
                                                     const l = [
-                                                        ...resumeData.languages!,
+                                                        ...resumeData.languages!
+                                                            .entries,
                                                     ];
                                                     l.splice(idx, 1);
                                                     setResumeData({
                                                         ...resumeData,
-                                                        languages: l,
+                                                        languages: {
+                                                            ...(resumeData.languages || {
+                                                                showEmoji: false,
+                                                                emoji: "✔️",
+                                                                entries: [],
+                                                            }),
+                                                            entries: l,
+                                                        },
                                                     });
                                                 }
                                             }}
@@ -1331,51 +3031,15 @@ export default function ResumePanel() {
                 </div>
             </section>
 
-            {/* 데이터 고급 편집 (JSONFallback) */}
-            <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            데이터 고급 편집 (JSONFallback)
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            기타 세부 정보 및 스킬, 언어 등은 JSON 편집기를 통해
-                            직접 조작할 수 있습니다.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => {
-                            try {
-                                const newD = JSON.parse(jsonInput);
-                                setResumeData(newD);
-                                setStatus({
-                                    type: "success",
-                                    msg: "JSON 데이터가 폼에 반영되었습니다.",
-                                });
-                            } catch (err: any) {
-                                setStatus({
-                                    type: "error",
-                                    msg: `JSON 파싱 에러: ${err.message}`,
-                                });
-                            }
-                        }}
-                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                    >
-                        JSON 적용
-                    </button>
-                </div>
-                <textarea
-                    value={jsonInput}
-                    onChange={(e) => setJsonInput(e.target.value)}
-                    className="h-64 w-full resize-y rounded-lg border border-(--color-border) bg-(--color-surface) p-4 font-mono text-sm leading-relaxed text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                    spellCheck={false}
-                />
-            </section>
-
-            <div className="flex justify-end border-t border-(--color-border) pt-6">
+            <div className="flex items-center justify-end gap-3 border-t border-(--color-border) pt-6">
+                {savedAt && (
+                    <span className="text-sm text-green-600">
+                        자동 저장 완료 {fmtTime(savedAt)}
+                    </span>
+                )}
                 <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || !isDirty}
                     className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                     {saving ? "저장 중..." : "변경사항 저장"}

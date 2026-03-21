@@ -30,8 +30,12 @@ export function getFirstImageFromContent(body: string): string | null {
 /** 본문에서 마크다운 제거 후 첫 3문장 반환 (요약 폴백용) */
 export function getFirstThreeSentences(body: string): string {
     if (!body || typeof body !== "string") return "";
-    // 간단한 마크다운 제거: 링크 [text](url) -> text, **bold** 제거, # 제거, 코드블록 제거
     let text = body
+        // 이미지 마크다운 제거
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+        // Supabase 스토리지 URL 제거
+        .replace(/https?:\/\/[a-z0-9-]+\.supabase\.co[^\s)"'\]]+/gi, "")
+        // 링크 텍스트 추출
         .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
         .replace(/\*\*([^*]+)\*\*/g, "$1")
         .replace(/\*([^*]+)\*/g, "$1")

@@ -1,6 +1,5 @@
 import { evaluate } from "@mdx-js/mdx";
 import * as runtime from "react/jsx-runtime";
-import { renderToString } from "react-dom/server";
 import rehypeShiki from "@shikijs/rehype";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -244,6 +243,7 @@ export async function renderMarkdown(content: string): Promise<string> {
             ],
         });
 
+        const { renderToString } = await import("react-dom/server");
         const html = renderToString(<MDXContent components={components} />);
         return html;
     } catch (e) {
