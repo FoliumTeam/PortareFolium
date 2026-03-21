@@ -2,6 +2,15 @@
 
 ## 2026-03-21
 
+### Fix: 마크다운 에디터 마지막 단락 텍스트 겹침 버그 수정 (v0.7.13)
+
+- `src/styles/global.css`: Lexical 에디터가 자동 삽입하는 빈 커서 단락을 숨기는 CSS 선택자를 `[dir="auto"]`에서 `:empty` 및 `:has(br:only-child)`로 엄격하게 변경하여 텍스트가 채워진 단락이 뭉개지는 현상 해결.
+- `package.json`: 버전을 `0.7.13`으로 업데이트
+
+### Feat: Admin 에디터 미리보기 버튼 추가 (v0.7.12)
+
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: 에디터 상단에 '미리보기' 버튼 추가 (발행 시 활성화, 새 탭에서 프론트엔드 상세 페이지 열기)
+
 ### Feat: MCP Agent API 구현 (v0.7.11)
 
 - `package.json`: `@modelcontextprotocol/sdk@1.27.1` 추가, version `0.7.11` bump
@@ -137,11 +146,6 @@
 - `MigrationsPanel.tsx`: "자동 적용" 버튼 추가 — `/api/run-migrations` 호출 후 버전 새로고침
 - `.gitignore`: `.astro/` → `.next/` 교체
 - `.prettierrc`: `prettier-plugin-astro` 및 astro 오버라이드 제거
-
-### Feat: Admin 에디터 미리보기 버튼 추가 (v0.7.12)
-
-- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: 에디터 상단에 '미리보기' 버튼 추가 (발행 시 활성화, 새 탭에서 프론트엔드 상세 페이지 열기)
-- `package.json`: version `0.7.12` bump
 
 ### Chore: CHANGES.md 버전 순서 정리 (v0.6.21)
 
