@@ -92,7 +92,7 @@ export default async function HomePage() {
         if (resumeRes.data?.data) {
             const resumeFull = resumeRes.data.data as {
                 basics?: { image?: string };
-                work?: WorkItem[];
+                work?: { entries?: WorkItem[] };
             };
             const img = resumeFull.basics?.image?.trim();
             if (img) profileImage = img;
@@ -105,7 +105,7 @@ export default async function HomePage() {
                         ? JSON.parse(raw)
                         : raw;
             }
-            workItems = (resumeFull.work ?? [])
+            workItems = (resumeFull.work?.entries ?? [])
                 .filter((w) => {
                     const jf = w.jobField;
                     if (!jf || (Array.isArray(jf) && jf.length === 0))
