@@ -10,6 +10,7 @@ import {
     Settings,
     KeyRound,
     Archive,
+    MessageSquare,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -34,9 +35,14 @@ const SECTIONS = [
         label: "System",
         items: [
             { id: "migrations", label: "DB 마이그레이션", icon: Database },
-            { id: "config", label: "사이트 설정", icon: Settings },
-            { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
             { id: "snapshots", label: "스냅샷", icon: Archive },
+            { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
+            {
+                id: "prompts",
+                label: "프롬프트 라이브러리",
+                icon: MessageSquare,
+            },
+            { id: "config", label: "사이트 설정", icon: Settings },
         ],
     },
 ] as const;
@@ -48,9 +54,10 @@ export type TabId =
     | "about"
     | "resume"
     | "migrations"
-    | "config"
+    | "snapshots"
     | "agent-tokens"
-    | "snapshots";
+    | "prompts"
+    | "config";
 
 interface AdminSidebarProps {
     activeTab: TabId;
