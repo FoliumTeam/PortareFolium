@@ -88,13 +88,13 @@ export function directiveToJsx(content: string): string {
 
     // ::youtube[]{id="xxx"} → <YouTube id="xxx" />
     out = out.replace(
-        /::youtube\[\]\{id="([^"]*)"\}/g,
+        /::youtube(?:\[\])?\{id="([^"]*)"\}/g,
         (_, id) => `<YouTube id="${id}" />`
     );
 
     // ::youtube[]{id=xxx} (unquoted id)
     out = out.replace(
-        /::youtube\[\]\{id=([^\s"}]+)\}/g,
+        /::youtube(?:\[\])?\{id=([^\s"}]+)\}/g,
         (_, id) => `<YouTube id="${id}" />`
     );
 
@@ -104,14 +104,15 @@ export function directiveToJsx(content: string): string {
         (_, id) => `<YouTube id="${id}" />`
     );
 
-    // ::folium-table[]{attr="val" ...} → <FoliumTable attr={'val'} ... />
-    out = out.replace(/::folium-table\[\]\{([^}]*)\}/g, (_, attrs) => {
+    // ::folium-table[]{attr="val" ...} 또는 ::folium-table{attr="val" ...} → <FoliumTable attr={'val'} ... />
+    out = out.replace(/::folium-table(?:\[\])?\{([^}]*)\}/g, (_, attrs) => {
         const parts: string[] = [];
         // lookahead로 attribute 경계 탐색 (bare quote가 값 안에 있어도 안전)
-        const regex = /(\w+)="([\s\S]*?)"(?=\s+\w+=|$)/g;
+        // MDXEditor 가 double quote를 포함한 값을 작은따옴표(')로 감쌀 수 있으므로 둘 다 지원
+        const regex = /(\w+)=(['"])([\s\S]*?)\2(?=\s+\w+=|$)/g;
         let m: RegExpExecArray | null;
         while ((m = regex.exec(attrs)) !== null) {
-            let cleanVal = m[2].replace(/\\"/g, '"');
+            let cleanVal = m[3].replace(/\\"/g, '"').replace(/&#x22;/g, '"'); // MDXEditor HTML-encoded double quotes
             cleanVal = cleanVal.replace(/'/g, "\\'");
             parts.push(`${m[1]}={'${cleanVal}'}`);
         }
