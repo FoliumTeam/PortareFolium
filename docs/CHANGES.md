@@ -138,7 +138,12 @@
 - `.gitignore`: `.astro/` → `.next/` 교체
 - `.prettierrc`: `prettier-plugin-astro` 및 astro 오버라이드 제거
 
-### Feat: DB 스키마 자동 버전 관리 시스템 (v0.6.8)
+### Feat: Admin 에디터 미리보기 버튼 추가 (v0.7.12)
+
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: 에디터 상단에 '미리보기' 버튼 추가 (발행 시 활성화, 새 탭에서 프론트엔드 상세 페이지 열기)
+- `package.json`: version `0.7.12` bump
+
+### Chore: CHANGES.md 버전 순서 정리 (v0.6.21)
 
 - `src/lib/migrations.ts` 전면 재작성:
     - `APP_VERSION`: `package.json`에서 동적 import
