@@ -16,6 +16,7 @@ import {
     AlertTriangle,
     ChevronDown,
     Settings,
+    ExternalLink,
 } from "lucide-react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
@@ -416,6 +417,16 @@ export default function PortfolioPanel() {
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
                         ← 목록
+                    </button>
+                    <button
+                        disabled={!form.published}
+                        onClick={() =>
+                            window.open(`/portfolio/${form.slug}`, "_blank")
+                        }
+                        className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                        <ExternalLink size={15} />
+                        미리보기
                     </button>
                     <button
                         onClick={() => setMetadataOpen(true)}
