@@ -5,7 +5,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import MermaidRenderer from "@/components/MermaidRenderer";
-import { ArrowLeft, Github, ExternalLink, BookOpen, Star } from "lucide-react";
+import { ArrowLeft, Github, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -34,15 +34,6 @@ export async function generateMetadata({
                 ? { images: [item.og_image || item.thumbnail] }
                 : undefined,
     };
-}
-
-interface BookItem {
-    slug: string;
-    title: string;
-    author: string | null;
-    cover_url: string | null;
-    description: string | null;
-    rating: number | null;
 }
 
 export default async function PortfolioDetailPage({
@@ -82,23 +73,6 @@ export default async function PortfolioDetailPage({
 
     const contentHtml = await renderMarkdown(item.content ?? "");
     const tocEntries = extractTocFromHtml(contentHtml);
-
-    const projectJobFields = Array.isArray(project.jobField)
-        ? project.jobField
-        : project.jobField
-          ? [project.jobField]
-          : [];
-
-    let relatedBooks: BookItem[] = [];
-    if (serverClient && projectJobFields.length > 0) {
-        const { data: booksData } = await serverClient
-            .from("books")
-            .select("slug, title, author, cover_url, description, rating")
-            .eq("published", true)
-            .overlaps("job_field", projectJobFields)
-            .order("order_idx", { ascending: true });
-        if (booksData) relatedBooks = booksData;
-    }
 
     return (
         <div className="mx-auto flex max-w-5xl gap-12">
@@ -252,76 +226,6 @@ export default async function PortfolioDetailPage({
                     data-content="true"
                     dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
-
-                {relatedBooks.length > 0 && (
-                    <>
-                        <div className="my-12 h-px bg-(--color-border)" />
-                        <section>
-                            <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                                <BookOpen
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                />
-                                관련 도서
-                            </h2>
-                            <ul className="space-y-4">
-                                {relatedBooks.map((book) => (
-                                    <li key={book.slug}>
-                                        <Link
-                                            href={`/books/${book.slug}`}
-                                            className="group flex items-start gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 transition-colors hover:border-(--color-accent)"
-                                        >
-                                            {book.cover_url ? (
-                                                <img
-                                                    src={book.cover_url}
-                                                    alt=""
-                                                    width={56}
-                                                    height={80}
-                                                    className="h-20 w-14 shrink-0 rounded object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-20 w-14 shrink-0 items-center justify-center rounded bg-(--color-border)">
-                                                    <BookOpen
-                                                        className="h-6 w-6 text-(--color-muted)"
-                                                        aria-hidden="true"
-                                                    />
-                                                </div>
-                                            )}
-                                            <div className="min-w-0 flex-1">
-                                                <p className="mb-1 font-semibold text-(--color-foreground) group-hover:text-(--color-accent)">
-                                                    {book.title}
-                                                </p>
-                                                {book.author && (
-                                                    <p className="mb-2 text-sm text-(--color-muted)">
-                                                        {book.author}
-                                                    </p>
-                                                )}
-                                                {book.rating && (
-                                                    <div className="flex items-center gap-0.5">
-                                                        {Array.from({
-                                                            length: 5,
-                                                        }).map((_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                className={`h-3.5 w-3.5 ${i < book.rating! ? "fill-(--color-accent) text-(--color-accent)" : "text-(--color-border)"}`}
-                                                                aria-hidden="true"
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {book.description && (
-                                                    <p className="mt-2 line-clamp-2 text-sm text-(--color-muted)">
-                                                        {book.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
-                    </>
-                )}
             </article>
             <TableOfContents
                 entries={tocEntries}
