@@ -393,7 +393,7 @@ export default function PostsPanel() {
     // ── 편집 화면 ────────────────────────────────────────────
     if (editTarget !== null) {
         return (
-            <div className="flex w-full max-w-6xl flex-col pb-20">
+            <div className="flex w-full flex-col pb-20">
                 {/* 헤더 */}
                 <div className="mb-4 flex items-center justify-between">
                     <button
@@ -451,7 +451,7 @@ export default function PostsPanel() {
 
                 {/* Sticky 저장 바 */}
                 <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
-                    <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+                    <div className="mx-auto flex items-center justify-end gap-3">
                         <SaveIndicator
                             saving={autoSaving}
                             savedAt={autoSavedAt}
@@ -463,7 +463,7 @@ export default function PostsPanel() {
                                     onClick={() =>
                                         handleDelete((editTarget as Post).id)
                                     }
-                                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
                                     삭제
                                 </button>
@@ -471,7 +471,7 @@ export default function PostsPanel() {
                             <button
                                 onClick={handleSave}
                                 disabled={saving || !isDirty}
-                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                             >
                                 {saving ? "저장 중..." : "저장"}
                             </button>

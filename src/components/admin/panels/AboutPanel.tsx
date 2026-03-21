@@ -262,7 +262,7 @@ export default function AboutPanel() {
     const availableFields = jobFields.filter((f) => !introductions[f.id]);
 
     return (
-        <div className="max-w-2xl space-y-8">
+        <div className="space-y-8">
             <h2 className="text-2xl font-bold text-(--color-foreground)">
                 About 편집
             </h2>
@@ -544,12 +544,19 @@ export default function AboutPanel() {
             {/* 피드백 + 저장 */}
             {status && (
                 <p
-                    className={`rounded-lg px-3 py-2 text-sm ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
+                    className={`rounded-lg px-6 py-4 text-lg ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
                 >
                     {status.msg}
                 </p>
             )}
-            <Button onClick={handleSave} disabled={saving}>
+
+            {/* 액션 버튼 */}
+            <Button
+                variant="default"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full bg-green-500 hover:bg-green-400 dark:bg-green-700 dark:hover:bg-green-600"
+            >
                 {saving ? "저장 중..." : "변경사항 저장"}
             </Button>
         </div>

@@ -505,7 +505,7 @@ export default function SiteConfigPanel() {
     };
 
     return (
-        <div className="max-w-lg space-y-8">
+        <div className="space-y-8">
             <h2 className="text-2xl font-bold text-(--color-foreground)">
                 사이트 설정
             </h2>
@@ -561,7 +561,7 @@ export default function SiteConfigPanel() {
                 </p>
 
                 {/* job field 목록 */}
-                <div className="divide-y divide-(--color-border)">
+                <div className="space-y-3">
                     {jobFields.length === 0 && (
                         <p className="py-3 text-sm text-(--color-muted)">
                             등록된 직무 분야가 없습니다
@@ -570,27 +570,27 @@ export default function SiteConfigPanel() {
                     {jobFields.map((field) => (
                         <div
                             key={field.id}
-                            className="group flex items-center gap-4 py-3"
+                            className={`group flex items-center gap-4`}
                         >
                             <button
                                 onClick={() => handleSelectJobField(field.id)}
-                                className="flex flex-1 items-center gap-2 text-left"
+                                className={`flex flex-1 items-center gap-2 rounded-lg p-3 text-left ${activeJobField === field.id ? "bg-(--color-accent)" : "bg-(--color-surface-subtle)"}`}
                             >
                                 <span className="text-xl">{field.emoji}</span>
                                 <span className="text-sm font-medium text-(--color-foreground)">
                                     {field.name}
                                 </span>
                                 {activeJobField === field.id && (
-                                    <span className="ml-auto text-xs font-semibold text-(--color-accent)">
+                                    <span className="ml-auto text-base font-semibold text-(--color-foreground)">
                                         활성
                                     </span>
                                 )}
                             </button>
                             <Button
-                                variant="ghost"
+                                variant="default"
                                 size="sm"
                                 onClick={() => handleDeleteJobField(field.id)}
-                                className="text-red-600 opacity-0 transition-opacity group-hover:opacity-100"
+                                className="h-full bg-red-600 p-3 text-white opacity-0 transition-opacity group-hover:opacity-100"
                             >
                                 <Trash2 size={13} />
                                 삭제
@@ -635,7 +635,7 @@ export default function SiteConfigPanel() {
                                 if (e.key === "Enter") handleAddJobField();
                             }}
                             placeholder="직무 분야 이름"
-                            className="flex-1"
+                            className="flex-1 border-(--color-border)"
                         />
                         <Button
                             onClick={handleAddJobField}
@@ -692,6 +692,7 @@ export default function SiteConfigPanel() {
                                     defaultTitle: e.target.value,
                                 })
                             }
+                            className="border-(--color-border)"
                         />
                     </div>
                     <div>
@@ -723,6 +724,7 @@ export default function SiteConfigPanel() {
                                 })
                             }
                             placeholder="https://..."
+                            className="border-(--color-border)"
                         />
                     </div>
                 </div>
@@ -733,14 +735,19 @@ export default function SiteConfigPanel() {
             {/* 피드백 */}
             {status && (
                 <p
-                    className={`rounded-lg px-3 py-2 text-sm ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
+                    className={`rounded-lg px-6 py-4 text-lg ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
                 >
                     {status.msg}
                 </p>
             )}
 
             {/* 액션 버튼 */}
-            <Button onClick={handleSave} disabled={saving}>
+            <Button
+                variant="default"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full bg-green-500 hover:bg-green-400 dark:bg-green-700 dark:hover:bg-green-600"
+            >
                 {saving ? "저장 중..." : "설정 저장"}
             </Button>
         </div>
