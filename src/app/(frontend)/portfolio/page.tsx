@@ -2,6 +2,17 @@ import type { Metadata } from "next";
 import PortfolioView from "@/components/PortfolioView";
 import { serverClient } from "@/lib/supabase";
 import type { PortfolioProject } from "@/types/portfolio";
+import Link from "next/link";
+import { BookOpen, Star } from "lucide-react";
+
+interface BookItem {
+    slug: string;
+    title: string;
+    author: string | null;
+    cover_url: string | null;
+    description: string | null;
+    rating: number | null;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +54,17 @@ export default async function PortfolioPage() {
         if (jf == null) return true;
         if (Array.isArray(jf)) return jf.includes(jobField);
         return jf === jobField;
+    }
+
+    let publicBooks: BookItem[] = [];
+    if (serverClient) {
+        const { data: booksData } = await serverClient
+            .from("books")
+            .select("slug, title, author, cover_url, description, rating")
+            .eq("published", true)
+            .contains("job_field", [jobField])
+            .order("order_idx", { ascending: true });
+        if (booksData) publicBooks = booksData;
     }
 
     let publicProjects: PortfolioProject[] = [];
@@ -99,6 +121,72 @@ export default async function PortfolioPage() {
                 projects={publicProjects}
                 forcedViewMode={portfolioViewMode}
             />
+
+            {publicBooks.length > 0 && (
+                <>
+                    <div className="my-12 h-px bg-(--color-border)" />
+                    <section>
+                        <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                            <BookOpen className="h-4 w-4" aria-hidden="true" />
+                            Books
+                        </h2>
+                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
+                            {publicBooks.map((book) => (
+                                <Link
+                                    key={book.slug}
+                                    href={`/books/${book.slug}`}
+                                    className="card-lift group flex items-start gap-4 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
+                                >
+                                    {book.cover_url ? (
+                                        <img
+                                            src={book.cover_url}
+                                            alt=""
+                                            width={64}
+                                            height={90}
+                                            className="h-24 w-16 shrink-0 rounded-lg object-cover shadow-sm"
+                                        />
+                                    ) : (
+                                        <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-lg bg-(--color-border)">
+                                            <BookOpen
+                                                className="h-6 w-6 text-(--color-muted)"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="mb-1 font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                            {book.title}
+                                        </p>
+                                        {book.author && (
+                                            <p className="mb-2 text-sm text-(--color-muted)">
+                                                {book.author}
+                                            </p>
+                                        )}
+                                        {book.rating && (
+                                            <div className="mb-2 flex items-center gap-0.5">
+                                                {Array.from({ length: 5 }).map(
+                                                    (_, i) => (
+                                                        <Star
+                                                            key={i}
+                                                            className={`h-3.5 w-3.5 ${i < book.rating! ? "fill-(--color-accent) text-(--color-accent)" : "text-(--color-border)"}`}
+                                                            aria-hidden="true"
+                                                        />
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+                                        {book.description && (
+                                            <p className="line-clamp-2 text-sm text-(--color-muted)">
+                                                {book.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                </>
+            )}
         </div>
     );
 }

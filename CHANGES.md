@@ -2,6 +2,12 @@
 
 ## 2026-03-21
 
+### Feat: 포트폴리오 페이지 하단 도서 섹션 추가 (v0.6.19)
+
+- `src/app/(frontend)/portfolio/page.tsx`: 활성 직무 분야에 맞는 published 도서를 fetch하여 포트폴리오 항목 하단에 표시
+- 포트폴리오 항목과 도서 섹션 사이에 수평 구분선 추가
+- 도서 카드: 표지 이미지, 제목, 저자, 별점, 한줄 소개 표시 — `/books/{slug}` 링크 연결
+
 ### Fix: Switch 컴포넌트 시각적 토글 미작동 수정 (v0.6.18)
 
 - `src/components/ui/switch.tsx`: `bg-primary`, `bg-input` 등 shadcn/ui 규칙 클래스를 Tailwind v4 CSS 변수 직접 참조 방식(`bg-(--color-accent)`, `bg-(--color-border)` 등)으로 교체
