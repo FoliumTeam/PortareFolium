@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Blog 목록 페이지: 좌측 카테고리/태그 필터, 포스트 카드 (썸네일 오른쪽, 텍스트 왼쪽)
  * 모바일에서 사이드바는 햄버거로 토글.
@@ -289,7 +291,9 @@ export default function BlogPage({
                                         type="button"
                                         onClick={() => {
                                             setSelectedTag(
-                                                selectedTag === value ? null : value
+                                                selectedTag === value
+                                                    ? null
+                                                    : value
                                             );
                                             setSidebarOpen(false);
                                         }}
@@ -343,7 +347,7 @@ export default function BlogPage({
                                                 {post.category}
                                             </p>
                                         )}
-                                        <h2 className="mb-1.5 text-base font-bold leading-snug text-(--color-foreground) group-hover:text-(--color-accent) transition-colors">
+                                        <h2 className="mb-1.5 text-base leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                             {post.title}
                                         </h2>
                                         <p className="mb-3 line-clamp-2 text-sm text-(--color-muted)">
@@ -355,7 +359,9 @@ export default function BlogPage({
                                                 post.tagsDisplay.map((tag) => {
                                                     const safeColor =
                                                         tag.color &&
-                                                        isSafeCssColor(tag.color)
+                                                        isSafeCssColor(
+                                                            tag.color
+                                                        )
                                                             ? tag.color
                                                             : undefined;
                                                     const bgColor = safeColor
@@ -370,7 +376,9 @@ export default function BlogPage({
                                                               : safeColor
                                                         : undefined;
                                                     const textColor = bgColor
-                                                        ? getContrastTextColor(bgColor)
+                                                        ? getContrastTextColor(
+                                                              bgColor
+                                                          )
                                                         : "#ffffff";
                                                     return (
                                                         <span
@@ -379,7 +387,8 @@ export default function BlogPage({
                                                             style={
                                                                 bgColor
                                                                     ? {
-                                                                          backgroundColor: bgColor,
+                                                                          backgroundColor:
+                                                                              bgColor,
                                                                           color: textColor,
                                                                       }
                                                                     : undefined

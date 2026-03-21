@@ -37,6 +37,29 @@ body {
     --breakpoint-desktop: 64rem; /* 1024px */
 }
 
+/* shadcn/ui CSS 변수 → 프로젝트 토큰 매핑 */
+:root {
+    --background: var(--color-surface);
+    --foreground: var(--color-foreground);
+    --card: var(--color-surface);
+    --card-foreground: var(--color-foreground);
+    --popover: var(--color-surface);
+    --popover-foreground: var(--color-foreground);
+    --primary: var(--color-accent);
+    --primary-foreground: var(--color-on-accent);
+    --secondary: var(--color-surface-subtle);
+    --secondary-foreground: var(--color-foreground);
+    --muted: var(--color-surface-subtle);
+    --muted-foreground: var(--color-muted);
+    --accent: var(--color-surface-subtle);
+    --accent-foreground: var(--color-foreground);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: var(--color-border);
+    --input: var(--color-border);
+    --ring: var(--color-accent);
+    --radius: 0.5rem;
+}
+
 /* Color Scheme: PUBLIC_COLOR_SCHEME env (blue | gray | beige | blackwhite | forest | sunset | lavender) */
 /* light mode: 각 스킴에 맞는 100~200 톤의 은은한 틴트 적용 */
 /* Mermaid 다이어그램 테마와 동기화: src/lib/mermaid-themes.ts */
@@ -870,10 +893,15 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 }
 
 /* Rich editor: Lexical 빈 커서 단락 축소
- * - dir="auto" = 텍스트 없는 빈 단락 (Lexical 방향 미결정)
- * - MDXEditor가 마지막에 자동 삽입하는 커서용 단락 포함 */
-.rich-markdown-editor [data-lexical-decorator="true"] + p[dir="auto"],
-.rich-markdown-editor [contenteditable="true"] > p[dir="auto"]:last-child {
+ * - 텍스트 없는 빈 단락 (br 요소만 있는 경우 또는 완전 빈 경우)
+ * - MDXEditor가 마지막에 자동 삽입하는 커서용 단락 포함 
+ * 주의: dir="auto" 속성만으로 타겟팅하면 텍스트가 있는 단락이 뭉개지는 버그가 발생함 */
+.rich-markdown-editor [data-lexical-decorator="true"] + p:has(br:only-child),
+.rich-markdown-editor [data-lexical-decorator="true"] + p:empty,
+.rich-markdown-editor
+    [contenteditable="true"]
+    > p:last-child:has(br:only-child),
+.rich-markdown-editor [contenteditable="true"] > p:last-child:empty {
     line-height: 0 !important;
     margin: 0 !important;
     min-height: 0 !important;
@@ -1004,6 +1032,70 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
     box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.35);
 }
 
+/* ── Medium / TailwindCSS 블로그 스타일 prose 오버라이드 ───────────── */
+
+/* 본문 텍스트: 18px, 넉넉한 줄간격 */
+.post-content.prose,
+.portfolio-markdoc-body.prose {
+    font-size: 1.125rem;
+    line-height: 1.85;
+}
+
+/* 단락 간격 확대 */
+.post-content.prose p,
+.portfolio-markdoc-body.prose p {
+    margin-bottom: 1.75em;
+    color: var(--color-foreground);
+}
+
+/* 첫 단락: 리드 문단 스타일 */
+.post-content.prose > p:first-of-type {
+    font-size: 1.2rem;
+    line-height: 1.75;
+    color: var(--color-foreground);
+}
+
+/* 이미지: 둥근 모서리 + 그림자 */
+.post-content.prose img,
+.portfolio-markdoc-body.prose img {
+    border-radius: 0.75rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+/* h2: 더 큰 여백 + 구분선 강화 */
+.post-content.prose h2,
+.portfolio-markdoc-body.prose h2 {
+    font-size: 1.625rem;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* h3: 깔끔한 소제목 */
+.post-content.prose h3,
+.portfolio-markdoc-body.prose h3 {
+    font-size: 1.25rem;
+    margin-top: 2.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* 리스트: 여백 + 줄간격 */
+.post-content.prose ul,
+.post-content.prose ol,
+.portfolio-markdoc-body.prose ul,
+.portfolio-markdoc-body.prose ol {
+    margin-bottom: 1.75em;
+}
+
+.post-content.prose li,
+.portfolio-markdoc-body.prose li {
+    margin-bottom: 0.5em;
+    line-height: 1.75;
+}
+
 /* ── Admin 마크다운 미리보기: 커스텀 태그 PLACEHOLDER */
 .admin-preview-body .preview-placeholder {
     padding: 0.75rem 1rem;
@@ -1019,4 +1111,22 @@ html.dark .rich-markdown-editor .rich-editor-prose :not(pre) > code,
 }
 .admin-preview-body .preview-youtube {
     font-weight: 500;
+}
+
+/* 어드민 마이크로 애니메이션 */
+.admin-sidebar-item {
+    transition:
+        background-color 150ms ease,
+        color 150ms ease,
+        border-color 150ms ease;
+}
+
+.admin-card-hover {
+    transition:
+        transform 150ms ease,
+        box-shadow 150ms ease;
+}
+.admin-card-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.08);
 }

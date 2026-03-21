@@ -1,3 +1,5 @@
+"use client";
+
 export type JobFieldItem = { id: string; name: string; emoji?: string };
 
 // job field 다중 선택 toggle 버튼 그룹
