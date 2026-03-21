@@ -11,6 +11,7 @@ import {
     Database,
     Settings,
     Plus,
+    MessageSquare,
 } from "lucide-react";
 import type { TabId } from "@/components/admin/AdminSidebar";
 import {
@@ -36,6 +37,8 @@ const NAV_COMMANDS = [
     { tab: "about", label: "About으로 이동", icon: User },
     { tab: "resume", label: "Resume으로 이동", icon: ScrollText },
     { tab: "migrations", label: "Migrations으로 이동", icon: Database },
+    { tab: "snapshots", label: "Snapshots으로 이동", icon: Database },
+    { tab: "prompts", label: "Prompt Library로 이동", icon: MessageSquare },
     { tab: "config", label: "Site Config으로 이동", icon: Settings },
 ] as const;
 

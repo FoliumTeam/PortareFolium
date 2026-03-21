@@ -14,6 +14,7 @@ import ResumePanel from "@/components/admin/panels/ResumePanel";
 import MigrationsPanel from "@/components/admin/panels/MigrationsPanel";
 import AgentTokensPanel from "@/components/admin/panels/AgentTokensPanel";
 import SnapshotsPanel from "@/components/admin/panels/SnapshotsPanel";
+import PromptLibraryPanel from "@/components/admin/panels/PromptLibraryPanel";
 import type { TabId } from "@/components/admin/AdminSidebar";
 
 // 비활동 제한 시간 (1시간)
@@ -30,9 +31,10 @@ const VALID_TABS: TabId[] = [
     "about",
     "resume",
     "migrations",
-    "config",
-    "agent-tokens",
     "snapshots",
+    "agent-tokens",
+    "prompts",
+    "config",
 ];
 
 export default function AdminDashboard() {
@@ -141,14 +143,17 @@ export default function AdminDashboard() {
                     {activeTab === "migrations" && (
                         <MigrationsPanel key={`migrations-${tabKey}`} />
                     )}
-                    {activeTab === "config" && (
-                        <SiteConfigPanel key={`config-${tabKey}`} />
+                    {activeTab === "snapshots" && (
+                        <SnapshotsPanel key={`snapshots-${tabKey}`} />
                     )}
                     {activeTab === "agent-tokens" && (
                         <AgentTokensPanel key={`agent-tokens-${tabKey}`} />
                     )}
-                    {activeTab === "snapshots" && (
-                        <SnapshotsPanel key={`snapshots-${tabKey}`} />
+                    {activeTab === "prompts" && (
+                        <PromptLibraryPanel key={`prompts-${tabKey}`} />
+                    )}
+                    {activeTab === "config" && (
+                        <SiteConfigPanel key={`config-${tabKey}`} />
                     )}
                 </main>
             </div>
