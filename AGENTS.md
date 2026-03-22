@@ -150,70 +150,141 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트
+**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트 (v0.7.15)
 
 **Stack:**
 
-- Framework: Next.js 16 (App Router) + React
+- Framework: Next.js 16 (App Router) + React 19
 - Styling: Tailwind CSS v4
 - Backend/DB: Supabase (PostgreSQL + Storage)
 - Deployment: Vercel
-- Package Manager: pnpm
+- Package Manager: pnpm 10
 - Testing: Vitest + Testing Library
+- Editor: MDX Editor (Rich Markdown Editor)
+- Diagrams: Mermaid 11
+- Code Highlighting: Shiki
+- Math: KaTeX
+- MCP: @modelcontextprotocol/sdk (MCP 서버 내장)
+- UI Primitives: Radix UI (shadcn/ui 기반)
 
 **Directory Layout:**
 
 ```
 src/
 ├── app/
-│   ├── (frontend)/         # Route Group — 프론트엔드 전용 레이아웃
-│   │   ├── layout.tsx      # Header + 패딩 컨테이너
-│   │   ├── page.tsx        # 홈 (랜딩)
+│   ├── layout.tsx                      # 루트 레이아웃 (<html>, <body>)
+│   ├── not-found.tsx
+│   ├── (frontend)/                     # Route Group — 프론트엔드 전용 레이아웃
+│   │   ├── layout.tsx                  # Header + 패딩 컨테이너
+│   │   ├── page.tsx                    # 홈 (랜딩)
 │   │   ├── about/page.tsx
-│   │   ├── blog/           # 목록 page.tsx + [slug]/page.tsx
-│   │   ├── portfolio/      # 목록 page.tsx + [slug]/page.tsx
+│   │   ├── blog/                       # 목록 page.tsx + [slug]/page.tsx
+│   │   ├── portfolio/                  # 목록 page.tsx + [slug]/page.tsx
 │   │   ├── resume/page.tsx
 │   │   └── books/[slug]/page.tsx
-│   ├── admin/              # 관리자 대시보드 (Route Group 아님)
+│   ├── admin/                          # 관리자 대시보드 (Route Group 아님)
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
-│   │   └── login/page.tsx
-│   ├── api/
-│   │   └── run-migrations/route.ts
-│   ├── layout.tsx          # 루트 레이아웃 (<html>, <body>)
-│   └── not-found.tsx
+│   │   ├── login/page.tsx
+│   │   └── actions/                    # Server Actions
+│   │       ├── agent-tokens.ts         # Agent token CRUD
+│   │       └── snapshots.ts            # DB 스냅샷 관리
+│   └── api/
+│       ├── mcp/route.ts                # MCP 서버 엔드포인트
+│       └── run-migrations/route.ts
 ├── components/
-│   ├── admin/              # 관리자 UI — "use client" React 컴포넌트
-│   │   └── panels/         # Posts, Portfolio, Resume, Tags, About, SiteConfig, Migrations 패널
-│   ├── resume/             # 이력서 테마 (Classic, Minimal, Modern) — Server Component
-│   └── *.tsx               # 공용 컴포넌트 (Header, SEO, ThemeToggle 등)
-├── lib/                    # 유틸리티 모듈
-│   ├── supabase.ts         # serverClient (service_role) + browserClient (anon)
-│   ├── blog.ts             # 블로그 유틸 (날짜 포맷, 요약 추출)
-│   ├── markdown.tsx        # Markdown 렌더링
-│   ├── migrations.ts       # DB 마이그레이션 버전 관리 (MIGRATIONS 배열)
-│   ├── toc.ts              # 목차 생성
-│   ├── image-upload.ts     # 이미지 업로드
-│   └── mermaid-*.ts        # Mermaid 다이어그램 렌더링
-├── types/                  # TypeScript 타입 정의 (about, portfolio, resume)
+│   ├── Header.tsx
+│   ├── ThemeToggle.tsx
+│   ├── AboutView.tsx                   # About 페이지 렌더러
+│   ├── PortfolioView.tsx               # Portfolio 상세 렌더러
+│   ├── BlogPage.tsx                    # Blog 상세 렌더러
+│   ├── TableOfContents.tsx             # 인라인 목차
+│   ├── GithubToc.tsx                   # GitHub 스타일 목차
+│   ├── MermaidRenderer.tsx             # Mermaid 다이어그램 렌더러
+│   ├── FoliumTable.tsx                 # 커스텀 테이블 컴포넌트
+│   ├── FoliumTableColorSync.tsx        # 테이블 컬러 테마 동기화
+│   ├── YouTubeEmbed.tsx                # YouTube 임베드
+│   ├── ui/                             # shadcn/ui 프리미티브
+│   │   └── (button, input, dialog, sheet, badge, popover, tooltip, command, ...)
+│   ├── resume/                         # 이력서 테마 — Server Component
+│   │   ├── ResumeClassic.tsx
+│   │   ├── ResumeModern.tsx
+│   │   ├── ResumeMinimal.tsx
+│   │   └── SkillBadge.tsx
+│   └── admin/                          # 관리자 UI — "use client" React 컴포넌트
+│       ├── AdminDashboard.tsx
+│       ├── AdminHeader.tsx
+│       ├── AdminSidebar.tsx
+│       ├── AuthGuard.tsx
+│       ├── CommandPalette.tsx          # Cmd+K 커맨드 팔레트
+│       ├── LoginForm.tsx
+│       ├── RichMarkdownEditor.tsx      # MDX Editor 기반 에디터
+│       ├── LatexEditorModal.tsx        # KaTeX 수식 편집 모달
+│       ├── ImageUploader.tsx
+│       ├── ThumbnailUploadField.tsx
+│       ├── MetadataSheet.tsx           # 포스트 메타데이터 사이드시트
+│       ├── TagSelector.tsx
+│       ├── CategorySelect.tsx
+│       ├── JobFieldSelector.tsx
+│       ├── SaveIndicator.tsx           # 자동저장 상태 표시
+│       └── panels/                     # Admin 기능별 패널
+│           ├── PostsPanel.tsx
+│           ├── BooksSubPanel.tsx
+│           ├── PortfolioPanel.tsx
+│           ├── ResumePanel.tsx
+│           ├── TagsPanel.tsx
+│           ├── AboutPanel.tsx
+│           ├── SiteConfigPanel.tsx
+│           ├── AgentTokensPanel.tsx    # MCP Agent 토큰 관리
+│           ├── PromptLibraryPanel.tsx  # MCP 프롬프트 라이브러리
+│           ├── MigrationsPanel.tsx
+│           └── SnapshotsPanel.tsx      # DB 스냅샷 관리
+├── lib/                                # 유틸리티 모듈
+│   ├── supabase.ts                     # serverClient (service_role) + browserClient (anon)
+│   ├── blog.ts                         # 블로그 유틸 (날짜 포맷, 요약 추출)
+│   ├── markdown.tsx                    # Markdown/MDX 렌더링
+│   ├── mdx-directive-converter.ts      # MDX directive 변환
+│   ├── migrations.ts                   # DB 마이그레이션 버전 관리 (MIGRATIONS 배열)
+│   ├── mcp-tools.ts                    # MCP 툴 정의
+│   ├── agent-token.ts                  # Agent 토큰 검증 유틸
+│   ├── toc.ts                          # 목차 생성
+│   ├── image-upload.ts                 # 이미지 업로드
+│   ├── job-field.ts                    # 직군 필드 유틸
+│   ├── mermaid-render.ts               # Mermaid 렌더링
+│   ├── mermaid-themes.ts               # Mermaid 테마 설정
+│   ├── tailwind-colors.ts              # Tailwind 컬러 유틸
+│   ├── utils.ts                        # 공용 유틸
+│   └── hooks/                          # React 커스텀 훅
+│       ├── useAutoSave.ts              # 자동저장 훅
+│       ├── useKeyboardSave.ts          # Cmd+S 저장 훅
+│       └── useUnsavedWarning.ts        # 미저장 경고 훅
+├── types/                              # TypeScript 타입 정의
+│   ├── about.ts
+│   ├── portfolio.ts
+│   └── resume.ts
 ├── styles/
 │   └── global.css
-└── __tests__/              # Vitest 테스트
+└── __tests__/                          # Vitest 테스트
+    ├── blog.test.ts
+    ├── toc.test.ts
+    ├── job-field.test.ts
+    └── image-upload.test.ts
 
 supabase/
-├── setup.sql               # 전체 스키마 초기화 (신규 설치용)
-└── migration-whole.sql     # 구버전 DB → 현재 스키마 일괄 업데이트
-scripts/                    # Git 워크플로 쉘 스크립트
-public/                     # 정적 에셋 (favicon 등)
-docs/CHANGES.md                  # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
+├── setup.sql                           # 전체 스키마 초기화 (신규 설치용)
+└── migration-whole.sql                 # 구버전 DB → 현재 스키마 일괄 업데이트
+public/                                 # 정적 에셋 (favicon 등)
+docs/CHANGES.md                         # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
 ```
 
 **Key Conventions:**
 
 - Server Component (`.tsx`, `async`): 데이터 fetch + 정적 렌더링 (resume 테마 등)
 - Client Component (`"use client"` + `.tsx`): 인터랙션 필요한 컴포넌트 (모든 admin 패널)
-- `serverClient`: service_role 키 — API route / Server Component 전용, 절대 클라이언트 번들 포함 금지
+- `serverClient`: service_role 키 — API route / Server Component / Server Action 전용, 절대 클라이언트 번들 포함 금지
 - `browserClient`: anon 키 + RLS — Client Component 전용
 - DB 마이그레이션은 `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리, admin 패널에서 적용
+- MCP 서버는 `api/mcp/route.ts`에서 노출, 툴 정의는 `lib/mcp-tools.ts`, 토큰 인증은 `lib/agent-token.ts`
+- 에디터 자동저장: `useAutoSave` + `useKeyboardSave` + `useUnsavedWarning` 훅 조합
 - 디자인 컨셉: "Editorial Minimal" — 대담한 타이포그래피, 여백, 서브틀 애니메이션
 - 전역 애니메이션 유틸리티: `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-1~5`, `.card-lift` (`global.css`)
