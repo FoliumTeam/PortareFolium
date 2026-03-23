@@ -13,6 +13,7 @@ import {
     directiveToJsx,
     transformOutsideCodeBlocks,
 } from "@/lib/mdx-directive-converter";
+import MarkdownImage from "@/components/MarkdownImage";
 
 function YouTube({ id }: { id?: string }) {
     if (!id) return null;
@@ -205,6 +206,7 @@ const components = {
     YouTube,
     FoliumTable,
     Mermaid,
+    img: MarkdownImage,
 };
 
 // 코드 블록 밖의 홀로 남은 { } 를 라인 단위로 이스케이프
