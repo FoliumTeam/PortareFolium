@@ -150,7 +150,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트 (v0.7.25)
+**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트 (v0.7.30)
 
 **Stack:**
 
@@ -201,6 +201,7 @@ src/
 │   ├── TableOfContents.tsx             # 인라인 목차
 │   ├── GithubToc.tsx                   # GitHub 스타일 목차
 │   ├── MermaidRenderer.tsx             # Mermaid 다이어그램 렌더러
+│   ├── MarkdownImage.tsx               # MDX img 대체 (SSR 호환 — plain img, lazy loading)
 │   ├── FoliumTable.tsx                 # 커스텀 테이블 컴포넌트
 │   ├── FoliumTableColorSync.tsx        # 테이블 컬러 테마 동기화
 │   ├── YouTubeEmbed.tsx                # YouTube 임베드
@@ -246,8 +247,9 @@ src/
 │           └── SnapshotsPanel.tsx      # DB 스냅샷 관리
 ├── lib/                                # 유틸리티 모듈
 │   ├── supabase.ts                     # serverClient (service_role) + browserClient (anon)
+│   ├── queries.ts                      # React cache() 기반 Supabase 쿼리 (getPost, getPortfolioItem, getTags, getSiteConfig)
 │   ├── blog.ts                         # 블로그 유틸 (날짜 포맷, 요약 추출)
-│   ├── markdown.tsx                    # Markdown/MDX 렌더링
+│   ├── markdown.tsx                    # Markdown/MDX 렌더링 (getCachedMarkdown — unstable_cache 기반)
 │   ├── mdx-directive-converter.ts      # MDX directive 변환
 │   ├── migrations.ts                   # DB 마이그레이션 버전 관리 (MIGRATIONS 배열)
 │   ├── mcp-tools.ts                    # MCP 툴 정의

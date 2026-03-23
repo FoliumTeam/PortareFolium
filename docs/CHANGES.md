@@ -2,6 +2,25 @@
 
 ## 2026-03-23
 
+### Fix: MarkdownImage에서 next/image 제거 — renderToString 서버 호환 수정 (v0.7.30)
+
+- `src/components/MarkdownImage.tsx`: `next/image` 제거, 순수 `<img loading="lazy" decoding="async">` 로 교체. `renderToString` 서버 컨텍스트에서 클라이언트 모듈(`next/image`)을 import하면 "Cannot access Image.prototype on the server" 오류 발생 — 이로 인해 `unstable_cache`가 결과를 캐싱하지 못해 매 요청마다 MDX 렌더링이 재실행되는 근본 원인이었음.
+
+### Fix: next/image 도메인 설정 (v0.7.29)
+
+- `next.config.ts`: `remotePatterns`에 `img.youtube.com`, `i.ytimg.com` 추가. YouTube 썸네일 도메인 미등록으로 발생하던 next/image 에러 수정.
+- `src/app/(frontend)/blog/[slug]/page.tsx`, `src/app/(frontend)/portfolio/[slug]/page.tsx`: 썸네일에 `<Image priority>` 적용.
+
+### Perf: ISR 캐싱 및 쿼리 중복 제거 (v0.7.26~v0.7.28)
+
+- `src/lib/queries.ts` (신규): React `cache()`로 감싼 `getPost`, `getPortfolioItem`, `getTags`, `getSiteConfig` export. 동일 request 내 `generateMetadata`와 page component가 같은 쿼리를 두 번 실행하던 문제 제거.
+- `src/lib/markdown.tsx`: `unstable_cache`를 사용하는 `getCachedMarkdown(slug, content)` 추가 (revalidate 3600, `post-{slug}` tag). MDX 렌더링 결과를 캐싱해 반복 방문 시 재렌더링 생략. `img` 컴포넌트 override로 `MarkdownImage` 등록.
+- `src/components/MarkdownImage.tsx` (신규): MDX 본문 `img` 대체 컴포넌트. `renderToString` 호환 (plain `<img>`).
+- `src/app/layout.tsx`: `force-dynamic` 제거, `revalidate = 3600` 추가. `getSiteConfig()` cached fetcher 사용.
+- `src/app/(frontend)/layout.tsx`: 동일하게 `getSiteConfig()` 사용.
+- `src/app/(frontend)/blog/[slug]/page.tsx`, `portfolio/[slug]/page.tsx`: `force-dynamic` 제거, `revalidate = 60`. `getCachedMarkdown` 사용.
+- `next.config.ts`: `images.unoptimized: true` 제거, `remotePatterns` (supabase, youtube) 추가.
+
 ### Feat: 스킬 어드민 배치 액션 추가 (v0.7.25)
 
 - `src/components/admin/skills/SkillsAdminSection.tsx`: 각 스킬 행에 체크박스 추가. 카테고리별 뷰에서 카테고리 헤더에 카테고리 전체 선택 체크박스 추가. 1개 이상 선택 시 배치 액션 바 노출 — 숙련도 일괄 변경 (datalist 자동완성), 직무 분야 일괄 변경 (select), 카테고리 일괄 변경 (datalist, 신규 생성 지원), 일괄 삭제. 액션 선택 시 인라인 폼 표시, filter/sort 변경 시 선택 자동 초기화.
