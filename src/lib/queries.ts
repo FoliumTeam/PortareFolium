@@ -32,6 +32,51 @@ export const getSiteConfig = cache(async () => {
     return (data ?? []) as { key: string; value: unknown }[];
 });
 
+// generateMetadata 전용 — content 제외 경량 쿼리
+export const getPostMeta = cache(async (slug: string) => {
+    if (!serverClient) return null;
+    const { data } = await serverClient
+        .from("posts")
+        .select(
+            "title, meta_title, meta_description, og_image, description, category, slug"
+        )
+        .eq("slug", slug)
+        .single();
+    return data;
+});
+
+// generateMetadata 전용 — content 제외 경량 쿼리
+export const getPortfolioItemMeta = cache(async (slug: string) => {
+    if (!serverClient) return null;
+    const { data } = await serverClient
+        .from("portfolio_items")
+        .select(
+            "title, meta_title, meta_description, og_image, thumbnail, description, slug"
+        )
+        .eq("slug", slug)
+        .single();
+    return data;
+});
+
+// 빌드 타임 generateStaticParams 전용 (cache 불필요)
+export async function getAllPostSlugs() {
+    if (!serverClient) return [];
+    const { data } = await serverClient
+        .from("posts")
+        .select("slug")
+        .eq("published", true);
+    return (data ?? []).map((p) => ({ slug: p.slug }));
+}
+
+export async function getAllPortfolioSlugs() {
+    if (!serverClient) return [];
+    const { data } = await serverClient
+        .from("portfolio_items")
+        .select("slug")
+        .eq("published", true);
+    return (data ?? []).map((p) => ({ slug: p.slug }));
+}
+
 // tags 전체 조회 캐싱
 export const getTags = cache(async () => {
     if (!serverClient)

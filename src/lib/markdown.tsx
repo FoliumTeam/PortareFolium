@@ -230,7 +230,7 @@ function escapeStrayCurlyBraces(chunk: string): string {
 const _renderCached = unstable_cache(
     async (_slug: string, content: string) => renderMarkdown(content),
     ["mdx-html"],
-    { revalidate: 3600 }
+    { revalidate: false }
 );
 
 // slug + content를 key로 MDX 렌더링 결과 캐싱
