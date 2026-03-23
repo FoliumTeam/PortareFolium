@@ -24,6 +24,7 @@ export default function MarkdownImage({
                 src={src}
                 alt={alt ?? ""}
                 fill
+                unoptimized
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 768px"
             />
