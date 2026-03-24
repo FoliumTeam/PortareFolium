@@ -115,56 +115,88 @@ export default async function PortfolioDetailPage({
                     ) : null}
                 </header>
 
-                <dl className="tablet:grid-cols-3 mb-8 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                        <dt className="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                            기간
-                        </dt>
-                        <dd className="text-sm font-semibold text-(--color-foreground)">
-                            {project.startDate} &mdash; {project.endDate}
-                        </dd>
+                {/* 메타데이터 — ref.png 스타일 */}
+                <div className="mb-8 space-y-3">
+                    <div className="tablet:grid-cols-4 grid grid-cols-2 gap-x-8 gap-y-3">
+                        {project.startDate || project.endDate ? (
+                            <div>
+                                <p className="mb-0.5 flex items-center gap-1 text-base font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                    <span
+                                        className="h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
+                                    개발 기간
+                                </p>
+                                <p className="text-sm font-medium text-(--color-foreground)">
+                                    {project.startDate}
+                                    {project.endDate
+                                        ? ` — ${project.endDate}`
+                                        : ""}
+                                </p>
+                            </div>
+                        ) : null}
+                        {project.role ? (
+                            <div>
+                                <p className="mb-0.5 flex items-center gap-1 text-base font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                    <span
+                                        className="h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
+                                    역할
+                                </p>
+                                <p className="text-sm font-medium text-(--color-foreground)">
+                                    {project.role}
+                                </p>
+                            </div>
+                        ) : null}
+                        {project.teamSize != null ? (
+                            <div>
+                                <p className="mb-0.5 flex items-center gap-1 text-base font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                    <span
+                                        className="h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
+                                    참여 인원
+                                </p>
+                                <p className="text-sm font-medium text-(--color-foreground)">
+                                    {project.teamSize}명
+                                </p>
+                            </div>
+                        ) : null}
                     </div>
-                    <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                        <dt className="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                            역할
-                        </dt>
-                        <dd className="text-sm font-semibold text-(--color-foreground)">
-                            {project.role}
-                        </dd>
-                    </div>
-                    <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                        <dt className="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                            참여 인원
-                        </dt>
-                        <dd className="text-sm font-semibold text-(--color-foreground)">
-                            {project.teamSize}명
-                        </dd>
-                    </div>
-                    {project.goal && (
-                        <div className="tablet:col-span-3 col-span-2 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                            <dt className="mb-1 text-[10px] font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                                목표
-                            </dt>
-                            <dd className="text-sm font-semibold text-(--color-foreground)">
+                    {project.goal ? (
+                        <div>
+                            <p className="mb-0.5 flex items-center gap-1 text-base font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                                <span
+                                    className="h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                    aria-hidden="true"
+                                />
+                                개발 목적
+                            </p>
+                            <p className="text-sm font-medium text-(--color-foreground)">
                                 {project.goal}
-                            </dd>
+                            </p>
                         </div>
-                    )}
-                </dl>
+                    ) : null}
+                </div>
 
                 {project.accomplishments.length > 0 ? (
-                    <section className="mb-8 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6">
-                        <h2 className="mb-4 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                    <section className="mb-8">
+                        <h2 className="mb-3 flex items-center gap-1 text-base font-bold tracking-[0.1em] text-(--color-accent) uppercase">
+                            <span
+                                className="h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                aria-hidden="true"
+                            />
                             성과
                         </h2>
-                        <ul className="space-y-2.5">
+                        <ul className="tablet:grid-cols-2 grid grid-cols-1 gap-2">
                             {project.accomplishments.map((a, idx) => (
                                 <li
                                     key={idx}
                                     className="flex items-start gap-2.5 text-sm text-(--color-foreground)"
                                 >
                                     <span
-                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
                                         aria-hidden="true"
                                     />
                                     <span className="leading-relaxed">{a}</span>

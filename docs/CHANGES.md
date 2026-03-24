@@ -2,6 +2,34 @@
 
 ## 2026-03-24
 
+### Feat: Portfolio 상세 페이지 메타데이터 ref.png 스타일 리디자인 (v0.7.53)
+
+- `src/app/(frontend)/portfolio/[slug]/page.tsx`: `<dl>` 테두리 박스 그리드 → flat accent-dot 레이블 섹션으로 교체. 개발기간·역할·참여인원 2→4열 그리드, 개발 목적 전폭. 성과 섹션 테두리 래퍼 제거 → 2열 그리드 accent-dot 불릿 리스트. 레이블 타이포그래피 `text-[10px]` → `text-base`.
+
+### Feat: Portfolio 리스트 뷰 ref.png 스타일 리디자인 (v0.7.52)
+
+- `src/components/PortfolioView.tsx`: 블록 뷰·토글 버튼·`TAG_COLORS`·`ViewMode` 완전 제거. 타임라인 리스트만 유지. float-right 썸네일 (`w-48 tablet:w-80`, aspect-video), accent-dot 레이블 섹션(역할/참여인원 2열 그리드, 목표 전폭), 설명 `line-clamp-2`, 성과 2열 불릿 그리드. 레이블 `text-[10px]` → `text-base`, dot `h-1.5 w-1.5` → `h-2 w-2`.
+- `src/app/(frontend)/portfolio/page.tsx`: `portfolioViewMode` site_config fetch 제거, `forcedViewMode` prop 제거.
+
+### Feat: Admin 포트폴리오 패널 성과 필드 추가 (v0.7.51)
+
+- `src/components/admin/MetadataSheet.tsx`: `PortfolioFields` 인터페이스에 `accomplishments: string` 추가. liveUrl 아래 "성과 (한 줄에 하나씩)" textarea(`rows={4}`, `resize-y`) 추가.
+- `src/components/admin/panels/PortfolioPanel.tsx`: `ItemForm`에 `accomplishments: string` 추가, `EMPTY_FORM` 초기값 `""`. 로드 시 `accomplishments` 배열 `"\n"` join, 저장 시 `"\n"` split → trim → filter 후 배열로 변환.
+
+### Feat: ResumeModern 프로젝트 카드 리디자인 (v0.7.50)
+
+- `src/types/resume.ts`: `ResumeProject`에 `portfolioSlug?: string` 추가.
+- `src/components/resume/ResumeModern.tsx`: 프로젝트 카드 전면 개편. 썸네일 `aspect-video` 16:9 비율. 날짜 일(day) 포함 전체 표시. `portfolioSlug` 있으면 카드 전체 stretched link로 포트폴리오 상세 페이지 연결. GitHub URL 있으면 `relative z-10` 독립 버튼 렌더링. `getPortfolioItem`으로 썸네일·태그·역할·팀 크기 fetch.
+
+### Feat: SkillsSection 직무분야별 뷰 및 기본 정렬 설정 (v0.7.49)
+
+- `src/types/resume.ts`: `ResumeSection<T>`에 `defaultView?: string` 추가.
+- `src/components/resume/SkillsSection.tsx`: `groupByJobField` 함수 추가 — jobField 기준 그룹화, 카테고리 중첩. `SkillsView` 타입에 `"by-job-field"` 추가. `defaultView` prop 지원.
+- `src/components/resume/ResumePhases.tsx`: `SkillsSection`에 `defaultView={resume.skills?.defaultView}` prop 전달.
+- `src/components/admin/skills/SkillsAdminSection.tsx`: 섹션 헤더에 "기본 정렬" select 추가 (직무 분야별/경력별/카테고리별/프로젝트별). `resumeData.skills.defaultView` 연동.
+
+## 2026-03-24
+
 ### Feat: 스킬 행에 직무 분야 표시 (v0.7.48)
 
 - `src/components/admin/skills/SkillsAdminSection.tsx`: `renderSkillRow`에 직무 분야 행 추가 (카테고리 아래). `JobFieldBadges` 컴포넌트로 emoji+name 배지 렌더링. `jobField`가 없으면 행 미표시.
