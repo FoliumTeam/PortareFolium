@@ -66,6 +66,7 @@ interface ItemForm {
     teamSize: string;
     github: string;
     liveUrl: string;
+    accomplishments: string;
     jobField: string[];
     meta_title: string;
     meta_description: string;
@@ -89,6 +90,7 @@ const EMPTY_FORM: ItemForm = {
     teamSize: "",
     github: "",
     liveUrl: "",
+    accomplishments: "",
     jobField: [],
     meta_title: "",
     meta_description: "",
@@ -124,6 +126,9 @@ function itemToForm(item: PortfolioItem): ItemForm {
         teamSize: String(d.teamSize ?? ""),
         github: (d.github as string) ?? "",
         liveUrl: (d.liveUrl as string) ?? "",
+        accomplishments: Array.isArray(d.accomplishments)
+            ? (d.accomplishments as string[]).join("\n")
+            : "",
         jobField: Array.isArray(d.jobField)
             ? (d.jobField as string[])
             : d.jobField
@@ -248,6 +253,12 @@ export default function PortfolioPanel() {
             teamSize: form.teamSize ? Number(form.teamSize) : undefined,
             github: form.github || undefined,
             liveUrl: form.liveUrl || undefined,
+            accomplishments: form.accomplishments
+                ? form.accomplishments
+                      .split("\n")
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                : undefined,
             jobField: form.jobField.length ? form.jobField : undefined,
         },
         meta_title: form.meta_title || null,

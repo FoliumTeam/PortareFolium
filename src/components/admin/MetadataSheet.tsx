@@ -49,6 +49,7 @@ interface PortfolioFields {
     teamSize: string;
     github: string;
     liveUrl: string;
+    accomplishments: string;
     meta_title: string;
     meta_description: string;
     og_image: string;
@@ -495,6 +496,26 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             onChange("liveUrl", e.target.value)
                                         }
                                         className={`${inputClass} font-mono`}
+                                    />
+                                </div>
+                                <div>
+                                    <Label className={labelClass}>
+                                        성과 (한 줄에 하나씩)
+                                    </Label>
+                                    <textarea
+                                        value={
+                                            (form as PortfolioFields)
+                                                .accomplishments
+                                        }
+                                        onChange={(e) =>
+                                            onChange(
+                                                "accomplishments",
+                                                e.target.value
+                                            )
+                                        }
+                                        rows={4}
+                                        placeholder="성과 항목을 한 줄에 하나씩 입력하세요"
+                                        className={`${inputClass} resize-y`}
                                     />
                                 </div>
                             </section>
