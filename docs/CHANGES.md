@@ -2,6 +2,12 @@
 
 ## 2026-03-25
 
+### Design: 포트폴리오 및 이력서 내 GitHub 링크를 솔리드 버튼으로 변경 (v0.7.58)
+
+- `src/components/resume/ProjectsSection.tsx`, `src/components/PortfolioView.tsx`: 기존의 테두리만 있는 외부 링크 스타일의 GitHub 버튼을 `bg-[#24292e] text-white` 기반의 솔리드 버튼 디자인으로 교체.
+- 내부에 텍스트 우측에 있던 화살표 아이콘 대신 텍스트 좌측에 GitHub 브랜드 로고 SVG 배치.
+- 줄바꿈 방지(`whitespace-nowrap`) 특성에 맞추어 버튼 내 텍스트 줄바꿈 방지, 호버 시 투명도 조절(`hover:opacity-80`) 적용.
+
 ### Feat: ProjectsSection 컴포넌트 추출 및 전 이력서 테마 적용 (v0.7.57)
 
 - `src/components/resume/ProjectsSection.tsx` 신규 생성: 이력서 프로젝트 카드 그리드를 독립 async Server Component로 추출. markdown 렌더링·portfolio fetch 자체 처리. `label`, `badge` props 지원.
