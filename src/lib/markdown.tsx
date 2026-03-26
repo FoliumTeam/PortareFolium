@@ -30,7 +30,7 @@ function YouTube({ id }: { id?: string }) {
     );
 }
 
-function FoliumTable({
+function ColoredTable({
     columns,
     rows,
     columnHeadColors,
@@ -70,9 +70,9 @@ function FoliumTable({
     const hasColors = !!(headColors?.length || bodyColors?.length);
 
     return (
-        <div className="folium-table-wrapper">
+        <div className="colored-table-wrapper">
             <table
-                className={`folium-table${hasColors ? "has-col-colors" : ""}`}
+                className={`colored-table${hasColors ? "has-col-colors" : ""}`}
             >
                 <thead>
                     <tr>
@@ -204,7 +204,9 @@ function remarkMermaid() {
 
 const components = {
     YouTube,
-    FoliumTable,
+    ColoredTable,
+    // 기존 콘텐츠 하위 호환용 별칭
+    FoliumTable: ColoredTable,
     Mermaid,
     img: MarkdownImage,
     // 콘텐츠 내 <Image> JSX 사용 시 next/image 대신 안전한 컴포넌트로 대체

@@ -35,7 +35,7 @@ function getTextColor(tailwindName: string): string {
 }
 
 // MDX directive 호환 레거시 어댑터 — inline hex style로 색상 적용
-export default function FoliumTable({
+export default function ColoredTable({
     columns,
     rows,
     columnHeadColors,
@@ -53,9 +53,9 @@ export default function FoliumTable({
     const hasColColors = !!(headColors?.length || bodyColors?.length);
 
     return (
-        <div className="folium-table-wrapper">
+        <div className="colored-table-wrapper">
             <table
-                className={`folium-table${hasColColors ? "has-col-colors" : ""}`}
+                className={`colored-table${hasColColors ? "has-col-colors" : ""}`}
             >
                 <thead>
                     <tr>

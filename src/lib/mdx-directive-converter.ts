@@ -2,8 +2,8 @@
  * JSX ↔ MDX directive 양방향 변환
  *
  * Supabase에는 표준 MDX(JSX) 형식 저장, MDXEditor에는 remark-directive 형식 사용.
- * - JSX: <YouTube id="x" />, <FoliumTable columns="..." rows="..." />
- * - MDX(Editor): ::youtube[]{id="x"}, ::folium-table[]{columns="..." rows="..."}
+ * - JSX: <YouTube id="x" />, <ColoredTable columns="..." rows="..." />
+ * - MDX(Editor): ::youtube[]{id="x"}, ::colored-table[]{columns="..." rows="..."}
  */
 
 /** JSX → MDX Directives (에디터 로드 시) */
@@ -33,22 +33,25 @@ export function jsxToDirective(content: string): string {
         (_, id) => `::youtube[]{id="${id}"}`
     );
 
-    // <FoliumTable ... /> → ::folium-table[]{columns="..." rows="..."}
-    out = out.replace(/<FoliumTable\s+([\s\S]*?)\s*\/>/g, (_, attrs) => {
-        // attrs: columns={'["val"]'} rows={'[["r1"]]'}
-        // regex to extract key={'val'}
-        const regex = /(\w+)\s*=\s*\{'((?:[^'\\]|\\.)*)'\}/g;
-        const parts: string[] = [];
-        let m: RegExpExecArray | null;
-        while ((m = regex.exec(attrs)) !== null) {
-            // unescape \' to '
-            let val = m[2].replace(/\\'/g, "'");
-            // escape " to \"
-            val = val.replace(/"/g, '\\"');
-            parts.push(`${m[1]}="${val}"`);
+    // <ColoredTable ... /> 또는 <FoliumTable ... /> → ::colored-table[]{columns="..." rows="..."}
+    out = out.replace(
+        /<(?:ColoredTable|FoliumTable)\s+([\s\S]*?)\s*\/>/g,
+        (_, attrs) => {
+            // attrs: columns={'["val"]'} rows={'[["r1"]]'}
+            // regex to extract key={'val'}
+            const regex = /(\w+)\s*=\s*\{'((?:[^'\\]|\\.)*)'\}/g;
+            const parts: string[] = [];
+            let m: RegExpExecArray | null;
+            while ((m = regex.exec(attrs)) !== null) {
+                // unescape \' to '
+                let val = m[2].replace(/\\'/g, "'");
+                // escape " to \"
+                val = val.replace(/"/g, '\\"');
+                parts.push(`${m[1]}="${val}"`);
+            }
+            return `::colored-table[]{${parts.join(" ")}}`;
         }
-        return `::folium-table[]{${parts.join(" ")}}`;
-    });
+    );
 
     return out;
 }
@@ -104,20 +107,25 @@ export function directiveToJsx(content: string): string {
         (_, id) => `<YouTube id="${id}" />`
     );
 
-    // ::folium-table[]{attr="val" ...} 또는 ::folium-table{attr="val" ...} → <FoliumTable attr={'val'} ... />
-    out = out.replace(/::folium-table(?:\[\])?\{([^}]*)\}/g, (_, attrs) => {
-        const parts: string[] = [];
-        // lookahead로 attribute 경계 탐색 (bare quote가 값 안에 있어도 안전)
-        // MDXEditor 가 double quote를 포함한 값을 작은따옴표(')로 감쌀 수 있으므로 둘 다 지원
-        const regex = /(\w+)=(['"])([\s\S]*?)\2(?=\s+\w+=|$)/g;
-        let m: RegExpExecArray | null;
-        while ((m = regex.exec(attrs)) !== null) {
-            let cleanVal = m[3].replace(/\\"/g, '"').replace(/&#x22;/g, '"'); // MDXEditor HTML-encoded double quotes
-            cleanVal = cleanVal.replace(/'/g, "\\'");
-            parts.push(`${m[1]}={'${cleanVal}'}`);
+    // ::colored-table 또는 ::folium-table directive → <ColoredTable attr={'val'} ... />
+    out = out.replace(
+        /::(?:colored-table|folium-table)(?:\[\])?\{([^}]*)\}/g,
+        (_, attrs) => {
+            const parts: string[] = [];
+            // lookahead로 attribute 경계 탐색 (bare quote가 값 안에 있어도 안전)
+            // MDXEditor 가 double quote를 포함한 값을 작은따옴표(')로 감쌀 수 있으므로 둘 다 지원
+            const regex = /(\w+)=(['"])([\s\S]*?)\2(?=\s+\w+=|$)/g;
+            let m: RegExpExecArray | null;
+            while ((m = regex.exec(attrs)) !== null) {
+                let cleanVal = m[3]
+                    .replace(/\\"/g, '"')
+                    .replace(/&#x22;/g, '"'); // MDXEditor HTML-encoded double quotes
+                cleanVal = cleanVal.replace(/'/g, "\\'");
+                parts.push(`${m[1]}={'${cleanVal}'}`);
+            }
+            return `<ColoredTable ${parts.join(" ")} />`;
         }
-        return `<FoliumTable ${parts.join(" ")} />`;
-    });
+    );
 
     return out;
 }

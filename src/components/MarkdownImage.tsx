@@ -9,14 +9,14 @@ export default function MarkdownImage({
 }) {
     if (!src) return null;
     return (
-        <span className="my-4 block w-full" style={{ aspectRatio: "16/9" }}>
+        <span className="my-4 block">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src={src}
                 alt={alt ?? ""}
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full object-contain"
+                className="h-auto max-w-full rounded"
             />
         </span>
     );

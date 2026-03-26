@@ -26,7 +26,7 @@ Rules:
 
 Content 구조 (마크다운):
 \`\`\`
-<FoliumTable columns={'["항목", "내용"]'} rows={'[["게임 장르", "..."], ["플랫폼", "..."], ["개발 인원", "1인"], ["사용 기술", "..."], ["프로젝트 기간", "YYYY.MM.DD ~ YYYY.MM.DD"]]'} />
+<ColoredTable columns={'["항목", "내용"]'} rows={'[["게임 장르", "..."], ["플랫폼", "..."], ["개발 인원", "1인"], ["사용 기술", "..."], ["프로젝트 기간", "YYYY.MM.DD ~ YYYY.MM.DD"]]'} />
 
 ## 게임/프로젝트 소개
 [1~2문단 프로젝트 개요 — 핵심 메커니즘, 기술 선택 이유]
@@ -219,7 +219,7 @@ export default function PromptLibraryPanel() {
                 </div>
                 <p className="text-sm text-(--color-muted)">
                     프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가
-                    포트폴리오 항목 본문(FoliumTable, 개발 내용, 트러블슈팅
+                    포트폴리오 항목 본문(ColoredTable, 개발 내용, 트러블슈팅
                     등)을 작성하여 데이터베이스에 저장합니다. 토큰은 보안을 위해
                     직접 발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
                     위치에 붙여넣어주세요.

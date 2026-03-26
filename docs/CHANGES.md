@@ -1,8 +1,26 @@
 # CHANGES
 
+## v0.8.5 (2026-03-26)
+
+### Feat: FoliumTable → ColoredTable 전면 리네이밍 (v0.8.5)
+
+- `src/components/FoliumTable.tsx` → `ColoredTable.tsx`, `FoliumTableColorSync.tsx` → `ColoredTableColorSync.tsx`, `src/extensions/FoliumTableExtension.ts` → `ColoredTableExtension.ts`: 파일명 + export명 변경.
+- `src/lib/markdown.tsx`, `mdx-directive-converter.ts`: 기존 `<FoliumTable>` 역호환 alias 유지.
+- `src/styles/global.css`: `.folium-table` → `.colored-table` CSS 셀렉터 변경.
+
+### Feat: YouTube 풀 플레이어 + 이미지 자연 크기 (v0.8.5)
+
+- `RichMarkdownEditor.tsx`: `Youtube.configure({ controls: true })` — 에디터 내 YouTube controls 활성화.
+- `MarkdownImage.tsx`: `aspectRatio: "16/9"` 제거 → `h-auto max-w-full` 자연 크기 렌더링.
+
+### Feat: Source 편집 모드 + 통합 toolbar (v0.8.5)
+
+- `RichMarkdownEditor.tsx`: Source ↔ Markdown 뷰 토글 추가. Source textarea 자동 높이 확장 (이중 스크롤바 제거).
+- `EditorToolbar.tsx`: Image/Source/Fullscreen 버튼을 toolbar 우측 ToolbarGroup으로 통합. 별도 버튼 바 제거. `onImageUpload`, `sourceMode`, `onSourceToggle` props 추가.
+
 ## v0.8.0 ~ v0.8.4 (2026-03-26)
 
-### Fix: 목록 상태 새로고침 + 버전 업데이트 (v0.8.4)
+### Fix: 목록 상태 새로고침 + `버전 업데이트 (v0.8.4)
 
 - `PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: `handleBack()`에 `loadStateCounts()` 추가 — "목록" 버튼 클릭 시 상태 count 즉시 반영.
 - `package.json`: v0.8.4. `AGENTS.md`: Editor 설명 MDX → Tiptap 변경.

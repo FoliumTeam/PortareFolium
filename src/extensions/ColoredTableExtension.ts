@@ -5,7 +5,7 @@ import { TableCell } from "@tiptap/extension-table-cell";
 import { tailwindToHex } from "@/lib/tailwind-colors";
 
 // tailwindColor attribute를 가진 TableCell 확장
-export const FoliumTableCell = TableCell.extend({
+export const ColoredTableCell = TableCell.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
@@ -26,9 +26,9 @@ export const FoliumTableCell = TableCell.extend({
     },
 });
 
-// FoliumTableCell을 포함한 Table 확장
-export const FoliumTableExtension = Table.extend({
+// ColoredTableCell을 포함한 Table 확장
+export const ColoredTableExtension = Table.extend({
     addExtensions() {
-        return [TableRow, TableHeader, FoliumTableCell];
+        return [TableRow, TableHeader, ColoredTableCell];
     },
 });

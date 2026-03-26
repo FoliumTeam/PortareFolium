@@ -1,6 +1,6 @@
 /**
  * Tailwind CSS default color palette - maps color names (e.g. "red-400") to hex.
- * Used by FoliumTable for column/row coloring.
+ * Used by ColoredTable for column/row coloring.
  * Source: Tailwind CSS v4 default theme
  */
 const TAILWIND_COLORS: Record<string, string> = {

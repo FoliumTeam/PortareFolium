@@ -709,52 +709,52 @@ html.dark .prose :where(td) {
     opacity: 0.85;
 }
 
-/* ── FoliumTable ──────────────────────────────────────────────────── */
-/* renderMarkdown()이 생성한 HTML에 적용 (FoliumTable.astro scoped 스타일 대체) */
-.folium-table-wrapper {
+/* ── ColoredTable ─────────────────────────────────────────────────── */
+/* renderMarkdown()이 생성한 HTML에 적용 (ColoredTable 컴포넌트 스타일) */
+.colored-table-wrapper {
     overflow: hidden;
     background: var(--color-surface);
 }
-.folium-table {
+.colored-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 1.125rem;
     margin: 0;
 }
-.folium-table th,
-.folium-table td {
+.colored-table th,
+.colored-table td {
     padding: 0.875rem 1.25rem;
     text-align: left;
     border-bottom: 1px solid var(--color-border);
 }
-.folium-table .ft-nowrap {
+.colored-table .ft-nowrap {
     white-space: nowrap;
 }
-.folium-table thead tr th {
+.colored-table thead tr th {
     background: var(--color-surface-subtle);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     font-size: 1.25rem;
 }
-.folium-table th.pt-head-col {
+.colored-table th.pt-head-col {
     background: var(--pt-bg) !important;
     color: var(--pt-text) !important;
 }
-.folium-table td.pt-body-col {
+.colored-table td.pt-body-col {
     background: var(--pt-bg) !important;
     color: var(--pt-text) !important;
 }
-.folium-table tbody tr:last-child td {
+.colored-table tbody tr:last-child td {
     border-bottom: 1px solid var(--color-border);
 }
-.folium-table.has-col-colors tbody tr:hover td {
+.colored-table.has-col-colors tbody tr:hover td {
     filter: brightness(0.97);
 }
-.folium-table th:not(.pt-head-col) {
+.colored-table th:not(.pt-head-col) {
     color: var(--color-foreground);
 }
-.folium-table td:not(.pt-body-col) {
+.colored-table td:not(.pt-body-col) {
     color: var(--color-foreground);
 }
 
@@ -1047,7 +1047,7 @@ html.dark .prose :where(td) {
     font-size: 1rem;
     margin: 0.5rem 0;
 }
-.admin-preview-body .preview-folium-table {
+.admin-preview-body .preview-colored-table {
     font-weight: 500;
 }
 .admin-preview-body .preview-youtube {

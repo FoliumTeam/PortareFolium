@@ -12,7 +12,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import Youtube from "@tiptap/extension-youtube";
 import Image from "@tiptap/extension-image";
-import { FoliumTableExtension } from "@/extensions/FoliumTableExtension";
+import { ColoredTableExtension } from "@/extensions/ColoredTableExtension";
 import EditorToolbar from "@/components/admin/EditorToolbar";
 import EditorFullscreenModal from "@/components/admin/EditorFullscreenModal";
 import TiptapImageUpload from "@/components/admin/TiptapImageUpload";
@@ -41,6 +41,33 @@ export default function RichMarkdownEditor({
     // 이미지 업로드 모달 상태
     const [imageUploadOpen, setImageUploadOpen] = useState(false);
 
+    // source 편집 모드
+    const [sourceMode, setSourceMode] = useState(false);
+    const [sourceText, setSourceText] = useState("");
+
+    // WYSIWYG → Source 전환
+    const enterSourceMode = () => {
+        if (!editor) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const md = (editor.storage as any).markdown.getMarkdown() as string;
+        setSourceText(md);
+        setSourceMode(true);
+    };
+
+    // Source → WYSIWYG 전환
+    const exitSourceMode = () => {
+        if (!editor) return;
+        editor.commands.setContent(sourceText);
+        onChange(sourceText);
+        setSourceMode(false);
+    };
+
+    // source 모드에서 textarea 변경
+    const handleSourceChange = (val: string) => {
+        setSourceText(val);
+        onChange(val);
+    };
+
     const initialContent = useMemo(() => {
         if (!value) return "";
         if (value.trimStart().startsWith("{")) {
@@ -66,11 +93,11 @@ export default function RichMarkdownEditor({
             TextStyle,
             Color,
             Highlight.configure({ multicolor: true }),
-            Youtube.configure({ controls: false, nocookie: true }),
+            Youtube.configure({ controls: true, nocookie: true }),
             Placeholder.configure({
                 placeholder: placeholder ?? "Start writing...",
             }),
-            FoliumTableExtension.configure({ resizable: false }),
+            ColoredTableExtension.configure({ resizable: false }),
         ],
         content: initialContent,
         editable: !disabled,
@@ -118,43 +145,49 @@ export default function RichMarkdownEditor({
                         editor={editor}
                         isFullscreen={false}
                         onToggleFullscreen={toggleFullscreen}
+                        onImageUpload={() => setImageUploadOpen(true)}
+                        sourceMode={sourceMode}
+                        onSourceToggle={
+                            sourceMode ? exitSourceMode : enterSourceMode
+                        }
                     />
-                    {/* 이미지 삽입 버튼 바 */}
-                    <div className="relative flex items-center gap-2 border-b border-zinc-200 px-3 py-1.5 dark:border-zinc-700">
-                        <button
-                            type="button"
-                            onClick={() => setImageUploadOpen(true)}
-                            className="flex items-center gap-1 rounded-lg border border-(--color-border) px-2.5 py-1 text-sm text-(--color-muted) hover:bg-(--color-surface-subtle)"
-                            title="Insert Image"
+                    {sourceMode ? (
+                        <div
+                            className="min-h-[300px] w-full bg-zinc-50 p-6 dark:bg-zinc-800"
+                            onClick={(e) => {
+                                // textarea 외 영역 클릭 시 textarea에 focus
+                                const ta = (
+                                    e.currentTarget as HTMLElement
+                                ).querySelector("textarea");
+                                if (ta) ta.focus();
+                            }}
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <rect
-                                    width="18"
-                                    height="18"
-                                    x="3"
-                                    y="3"
-                                    rx="2"
-                                    ry="2"
-                                />
-                                <circle cx="9" cy="9" r="2" />
-                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                            </svg>
-                            <span>Image</span>
-                        </button>
-                    </div>
-                    <div className="prose prose-base min-h-[300px] max-w-none p-6">
-                        <EditorContent editor={editor} />
-                    </div>
+                            <textarea
+                                value={sourceText}
+                                onChange={(e) => {
+                                    handleSourceChange(e.target.value);
+                                    // 자동 높이 조절
+                                    e.target.style.height = "auto";
+                                    e.target.style.height =
+                                        e.target.scrollHeight + "px";
+                                }}
+                                ref={(el) => {
+                                    // mount 시 높이 자동 조절
+                                    if (el) {
+                                        el.style.height = "auto";
+                                        el.style.height =
+                                            el.scrollHeight + "px";
+                                    }
+                                }}
+                                className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-zinc-800 outline-none dark:text-zinc-200"
+                                spellCheck={false}
+                            />
+                        </div>
+                    ) : (
+                        <div className="prose prose-base min-h-[300px] max-w-none p-6">
+                            <EditorContent editor={editor} />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -169,6 +202,11 @@ export default function RichMarkdownEditor({
                             editor={editor}
                             isFullscreen={true}
                             onToggleFullscreen={toggleFullscreen}
+                            onImageUpload={() => setImageUploadOpen(true)}
+                            sourceMode={sourceMode}
+                            onSourceToggle={
+                                sourceMode ? exitSourceMode : enterSourceMode
+                            }
                         />
                         <button
                             onClick={() => setIsFullscreen(false)}
@@ -179,45 +217,30 @@ export default function RichMarkdownEditor({
                         </button>
                     </div>
                 }
-                autosaveBanner={
-                    <>
-                        {/* Fullscreen 이미지 삽입 버튼 바 */}
-                        <div className="relative flex items-center gap-2 border-b border-zinc-200 px-3 py-1.5 dark:border-zinc-700">
-                            <button
-                                type="button"
-                                onClick={() => setImageUploadOpen(true)}
-                                className="flex items-center gap-1 rounded-lg border border-(--color-border) px-2.5 py-1 text-sm text-(--color-muted) hover:bg-(--color-surface-subtle)"
-                                title="Insert Image"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <rect
-                                        width="18"
-                                        height="18"
-                                        x="3"
-                                        y="3"
-                                        rx="2"
-                                        ry="2"
-                                    />
-                                    <circle cx="9" cy="9" r="2" />
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                </svg>
-                                <span>Image</span>
-                            </button>
-                        </div>
-                    </>
-                }
             >
-                <EditorContent editor={editor} />
+                {sourceMode ? (
+                    <div className="w-full bg-zinc-50 p-6 dark:bg-zinc-800">
+                        <textarea
+                            value={sourceText}
+                            onChange={(e) => {
+                                handleSourceChange(e.target.value);
+                                e.target.style.height = "auto";
+                                e.target.style.height =
+                                    e.target.scrollHeight + "px";
+                            }}
+                            ref={(el) => {
+                                if (el) {
+                                    el.style.height = "auto";
+                                    el.style.height = el.scrollHeight + "px";
+                                }
+                            }}
+                            className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-zinc-800 outline-none dark:text-zinc-200"
+                            spellCheck={false}
+                        />
+                    </div>
+                ) : (
+                    <EditorContent editor={editor} />
+                )}
             </EditorFullscreenModal>
 
             {/* 이미지 업로드 모달 */}

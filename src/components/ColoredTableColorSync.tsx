@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-export default function FoliumTableColorSync() {
+export default function ColoredTableColorSync() {
     useEffect(() => {
         function updateColors() {
             const isDark = document.documentElement.classList.contains("dark");

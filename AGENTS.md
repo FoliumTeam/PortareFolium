@@ -203,8 +203,8 @@ src/
 │   ├── GithubToc.tsx                   # GitHub 스타일 목차
 │   ├── MermaidRenderer.tsx             # Mermaid 다이어그램 렌더러
 │   ├── MarkdownImage.tsx               # MDX img 대체 (SSR 호환 — plain img, lazy loading)
-│   ├── FoliumTable.tsx                 # 커스텀 테이블 컴포넌트
-│   ├── FoliumTableColorSync.tsx        # 테이블 컬러 테마 동기화
+│   ├── ColoredTable.tsx                # 커스텀 테이블 컴포넌트
+│   ├── ColoredTableColorSync.tsx       # 테이블 컬러 테마 동기화
 │   ├── YouTubeEmbed.tsx                # YouTube 임베드
 │   ├── ui/                             # shadcn/ui 프리미티브
 │   │   └── (button, input, dialog, sheet, badge, popover, tooltip, command, ...)
