@@ -83,7 +83,7 @@ export default function ThumbnailUploadField({
                 </div>
             )}
 
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="tablet:flex-row flex flex-col gap-2">
                 <input
                     ref={fileInputRef}
                     type="file"

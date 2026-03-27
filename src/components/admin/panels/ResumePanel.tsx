@@ -516,7 +516,7 @@ export default function ResumePanel() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                     <InputField
                         label="이름 (Name)"
                         value={resumeData.basics?.name || ""}
@@ -1048,7 +1048,7 @@ export default function ResumePanel() {
                             >
                                 {editingWork === idx ? (
                                     <div className="space-y-4">
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                                             <InputField
                                                 label="회사명"
                                                 value={work.name || ""}
@@ -1568,7 +1568,7 @@ export default function ResumePanel() {
                             >
                                 {editingProject === idx ? (
                                     <div className="space-y-4">
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                                             <InputField
                                                 label="프로젝트명"
                                                 value={proj.name || ""}
@@ -2304,7 +2304,7 @@ export default function ResumePanel() {
                         >
                             {editingEducation === idx ? (
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                                         <InputField
                                             label="학교/기관명"
                                             value={ed.institution || ""}
@@ -2692,7 +2692,7 @@ export default function ResumePanel() {
                         >
                             {editingAward === idx ? (
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                                         <InputField
                                             label="수상명"
                                             value={award.title || ""}
@@ -3012,7 +3012,7 @@ export default function ResumePanel() {
                         >
                             {editingLanguage === idx ? (
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                                         <InputField
                                             label="언어"
                                             value={lang.language || ""}
