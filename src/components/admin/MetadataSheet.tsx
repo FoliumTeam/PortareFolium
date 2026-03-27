@@ -131,7 +131,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[85vh] w-full max-w-7xl overflow-y-auto bg-(--color-surface)">
+            <DialogContent className="laptop:max-w-4xl desktop:max-w-7xl max-h-[85vh] w-full overflow-y-auto bg-(--color-surface)">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
@@ -379,7 +379,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                 <h4 className="text-sm font-semibold text-(--color-foreground)">
                                     프로젝트 상세
                                 </h4>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
                                     <div>
                                         <Label className={labelClass}>
                                             시작일
@@ -421,7 +421,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
                                     <div>
                                         <Label className={labelClass}>
                                             역할
