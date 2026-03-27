@@ -602,7 +602,7 @@ export default function SiteConfigPanel() {
                                 variant="default"
                                 size="sm"
                                 onClick={() => handleDeleteJobField(field.id)}
-                                className="h-full bg-red-600 p-3 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                className="tablet:opacity-0 tablet:group-hover:opacity-100 h-full bg-red-600 p-3 text-white transition-opacity"
                             >
                                 <Trash2 size={13} />
                                 삭제

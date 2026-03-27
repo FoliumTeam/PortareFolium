@@ -1066,7 +1066,7 @@ export default function PortfolioPanel({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
                                             <button
                                                 onClick={() =>
                                                     toggleFeatured(item)
@@ -1082,9 +1082,11 @@ export default function PortfolioPanel({
                                                 ) : (
                                                     <Star size={12} />
                                                 )}
-                                                {item.featured
-                                                    ? "Featured 해제"
-                                                    : "Featured"}
+                                                <span className="tablet:inline hidden">
+                                                    {item.featured
+                                                        ? "Featured 해제"
+                                                        : "Featured"}
+                                                </span>
                                             </button>
                                             <button
                                                 onClick={() =>
@@ -1101,16 +1103,20 @@ export default function PortfolioPanel({
                                                 ) : (
                                                     <Eye size={12} />
                                                 )}
-                                                {item.published
-                                                    ? "Unpublish"
-                                                    : "Publish"}
+                                                <span className="tablet:inline hidden">
+                                                    {item.published
+                                                        ? "Unpublish"
+                                                        : "Publish"}
+                                                </span>
                                             </button>
                                             <button
                                                 onClick={() => openEdit(item)}
                                                 className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
                                                 <Pencil size={12} />
-                                                편집
+                                                <span className="tablet:inline hidden">
+                                                    편집
+                                                </span>
                                             </button>
                                             <button
                                                 onClick={() =>
@@ -1119,7 +1125,9 @@ export default function PortfolioPanel({
                                                 className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
                                                 <Trash2 size={12} />
-                                                삭제
+                                                <span className="tablet:inline hidden">
+                                                    삭제
+                                                </span>
                                             </button>
                                         </div>
                                     </div>

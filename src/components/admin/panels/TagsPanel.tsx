@@ -604,7 +604,7 @@ export default function TagsPanel() {
                                             {tag.slug}
                                         </Badge>
                                     </div>
-                                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex gap-1 transition-opacity">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -727,7 +727,7 @@ export default function TagsPanel() {
                                                     포스트 {cat.count}개
                                                 </Badge>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex gap-1 transition-opacity">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"

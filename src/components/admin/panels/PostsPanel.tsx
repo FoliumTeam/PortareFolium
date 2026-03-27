@@ -996,7 +996,7 @@ export default function PostsPanel({
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
                                     <button
                                         onClick={() => togglePublish(post)}
                                         className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
@@ -1010,23 +1010,29 @@ export default function PostsPanel({
                                         ) : (
                                             <Eye size={12} />
                                         )}
-                                        {post.published
-                                            ? "Unpublish"
-                                            : "Publish"}
+                                        <span className="tablet:inline hidden">
+                                            {post.published
+                                                ? "Unpublish"
+                                                : "Publish"}
+                                        </span>
                                     </button>
                                     <button
                                         onClick={() => openEdit(post)}
                                         className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                     >
                                         <Pencil size={12} />
-                                        편집
+                                        <span className="tablet:inline hidden">
+                                            편집
+                                        </span>
                                     </button>
                                     <button
                                         onClick={() => handleDelete(post.id)}
                                         className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                     >
                                         <Trash2 size={12} />
-                                        삭제
+                                        <span className="tablet:inline hidden">
+                                            삭제
+                                        </span>
                                     </button>
                                 </div>
                             </div>
