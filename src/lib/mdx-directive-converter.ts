@@ -37,14 +37,15 @@ export function jsxToDirective(content: string): string {
     out = out.replace(
         /<(?:ColoredTable|FoliumTable)\s+([\s\S]*?)\s*\/>/g,
         (_, attrs) => {
-            // attrs: columns={'["val"]'} rows={'[["r1"]]'}
-            // regex to extract key={'val'}
-            const regex = /(\w+)\s*=\s*\{'((?:[^'\\]|\\.)*)'\}/g;
+            // key={'val'}, key='val', key="val" 세 형식 모두 지원
+            const regex =
+                /(\w+)\s*=\s*(?:\{'((?:[^'\\]|\\.)*)'\}|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
             const parts: string[] = [];
             let m: RegExpExecArray | null;
             while ((m = regex.exec(attrs)) !== null) {
+                let val = m[2] ?? m[3] ?? m[4];
                 // unescape \' to '
-                let val = m[2].replace(/\\'/g, "'");
+                val = val.replace(/\\'/g, "'");
                 // escape " to \"
                 val = val.replace(/"/g, '\\"');
                 parts.push(`${m[1]}="${val}"`);
@@ -69,10 +70,10 @@ export function transformOutsideCodeBlocks(
         .join("");
 }
 
-// directive 라인의 markdown 백슬래시 이스케이프 제거
+// directive 라인의 markdown 백슬래시 이스케이프 제거 (\:: 또는 :: 모두 처리)
 function stripDirectiveEscapes(text: string): string {
-    return text.replace(/^.*\\::[a-z-].*$/gm, (line) =>
-        line.replace(/\\([:\[\]"=])/g, "$1")
+    return text.replace(/^.*\\?::[a-z-].*$/gm, (line) =>
+        line.replace(/\\([:\[\]"=~])/g, "$1")
     );
 }
 

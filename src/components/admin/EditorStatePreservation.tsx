@@ -172,6 +172,9 @@ export default function EditorStatePreservation({
         useState<EditorSnapshot | null>(null);
     const [confirmRevertId, setConfirmRevertId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmBulkDeleteAuto, setConfirmBulkDeleteAuto] = useState(false);
+    const [confirmBulkDeleteManual, setConfirmBulkDeleteManual] =
+        useState(false);
     const initialSaved = useRef(false);
 
     // snapshot 변경 시 부모에 count 전달
@@ -262,6 +265,19 @@ export default function EditorStatePreservation({
             setSnapshots(loaded);
         },
         [entityType, entitySlug]
+    );
+
+    // 섹션 전체 삭제 (Auto-save 또는 Bookmark)
+    const handleDeleteAll = useCallback(
+        async (label: "Auto-save" | "Bookmark") => {
+            const toDelete = snapshots.filter((s) => s.label === label);
+            for (const snap of toDelete) {
+                await deleteSnapshotById(snap.id);
+            }
+            const loaded = await loadSnapshots(entityType, entitySlug);
+            setSnapshots(loaded);
+        },
+        [snapshots, entityType, entitySlug]
     );
 
     // badge label 표시 텍스트
@@ -436,6 +452,48 @@ export default function EditorStatePreservation({
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {autoSnapshots.map(renderSnapshotCard)}
+                                {confirmBulkDeleteAuto ? (
+                                    <div className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20">
+                                        <span className="text-red-600 dark:text-red-400">
+                                            자동 저장된 스냅샷을 모두
+                                            삭제하시겠습니까?
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={async () => {
+                                                    await handleDeleteAll(
+                                                        "Auto-save"
+                                                    );
+                                                    setConfirmBulkDeleteAuto(
+                                                        false
+                                                    );
+                                                }}
+                                                className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
+                                            >
+                                                삭제
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    setConfirmBulkDeleteAuto(
+                                                        false
+                                                    )
+                                                }
+                                                className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
+                                            >
+                                                취소
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() =>
+                                            setConfirmBulkDeleteAuto(true)
+                                        }
+                                        className="mt-1 w-full rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        모두 삭제
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -452,6 +510,48 @@ export default function EditorStatePreservation({
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {manualSnapshots.map(renderSnapshotCard)}
+                                {confirmBulkDeleteManual ? (
+                                    <div className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20">
+                                        <span className="text-red-600 dark:text-red-400">
+                                            수동 저장된 스냅샷을 모두
+                                            삭제하시겠습니까?
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={async () => {
+                                                    await handleDeleteAll(
+                                                        "Bookmark"
+                                                    );
+                                                    setConfirmBulkDeleteManual(
+                                                        false
+                                                    );
+                                                }}
+                                                className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
+                                            >
+                                                삭제
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    setConfirmBulkDeleteManual(
+                                                        false
+                                                    )
+                                                }
+                                                className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
+                                            >
+                                                취소
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() =>
+                                            setConfirmBulkDeleteManual(true)
+                                        }
+                                        className="mt-1 w-full rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        모두 삭제
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

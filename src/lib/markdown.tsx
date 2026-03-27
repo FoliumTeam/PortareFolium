@@ -6,6 +6,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import React from "react";
 import { visit } from "unist-util-visit";
 import { tailwindToHex, isLightBackground } from "@/lib/tailwind-colors";
@@ -256,7 +257,7 @@ export async function renderMarkdown(content: string): Promise<string> {
 
         const { default: MDXContent } = await evaluate(mdx, {
             ...(runtime as any),
-            remarkPlugins: [remarkMath, remarkMermaid],
+            remarkPlugins: [remarkGfm, remarkMath, remarkMermaid],
             rehypePlugins: [
                 rehypeKatex,
                 [

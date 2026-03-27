@@ -1,6 +1,8 @@
 # My Docs
-USER_TASKS.md
-PLAN_*.md
+/*.md
+!AGENTS.md
+!CLAUDE.md
+!README.md
 PROMPT_*.md
 prompt/
 

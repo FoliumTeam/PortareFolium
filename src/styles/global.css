@@ -714,12 +714,15 @@ html.dark .prose :where(td) {
 .colored-table-wrapper {
     overflow: hidden;
     background: var(--color-surface);
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
 }
 .colored-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 1.125rem;
-    margin: 0;
+    margin: 0 !important;
 }
 .colored-table th,
 .colored-table td {
@@ -756,6 +759,48 @@ html.dark .prose :where(td) {
 }
 .colored-table td:not(.pt-body-col) {
     color: var(--color-foreground);
+}
+
+/* ── ProseMirror Table (에디터 내 테이블) ────────────────────────── */
+.ProseMirror .tableWrapper {
+    overflow-x: auto;
+    margin: 1em 0;
+}
+.ProseMirror table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    overflow: hidden;
+}
+.ProseMirror th,
+.ProseMirror td {
+    border: 1px solid var(--color-border, #d4d4d8);
+    padding: 0.5rem 0.75rem;
+    vertical-align: top;
+    position: relative;
+    min-width: 80px;
+}
+.ProseMirror th {
+    background: var(--color-surface-subtle, #f4f4f5);
+    font-weight: 600;
+}
+.ProseMirror .selectedCell {
+    background: rgba(99, 102, 241, 0.15);
+    outline: 2px solid rgba(99, 102, 241, 0.4);
+    outline-offset: -2px;
+}
+.ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #6366f1;
+    pointer-events: none;
+    z-index: 10;
+}
+.ProseMirror.resize-cursor {
+    cursor: col-resize;
 }
 
 /* ── YouTubeEmbed ─────────────────────────────────────────────────── */
@@ -982,10 +1027,10 @@ html.dark .prose :where(td) {
     line-height: 1.85;
 }
 
-/* 단락 간격 확대 */
+/* 단락 간격 */
 .post-content.prose p,
 .portfolio-markdoc-body.prose p {
-    margin-bottom: 1.75em;
+    margin-bottom: 0.875em;
     color: var(--color-foreground);
 }
 
@@ -1028,13 +1073,19 @@ html.dark .prose :where(td) {
 .post-content.prose ol,
 .portfolio-markdoc-body.prose ul,
 .portfolio-markdoc-body.prose ol {
-    margin-bottom: 1.75em;
+    margin-bottom: 0.875em;
 }
 
 .post-content.prose li,
 .portfolio-markdoc-body.prose li {
-    margin-bottom: 0.5em;
+    margin-bottom: 0.125em;
     line-height: 1.75;
+}
+
+.post-content.prose li > p,
+.portfolio-markdoc-body.prose li > p {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 /* ── Admin 마크다운 미리보기: 커스텀 태그 PLACEHOLDER */
@@ -1433,6 +1484,23 @@ html.dark .prose :where(td) {
 
 .tiptap {
     outline: none;
+}
+
+/* Tiptap 에디터 단락/리스트 간격 축소
+   .prose .tiptap 으로 scope — Tailwind Typography v4 specificity 대응 */
+.prose .tiptap p {
+    margin-bottom: 0.875em;
+}
+.prose .tiptap ul,
+.prose .tiptap ol {
+    margin-bottom: 0.875em;
+}
+.prose .tiptap li {
+    margin-bottom: 0.125em;
+}
+.prose .tiptap li > p {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .tiptap p.is-editor-empty:first-child::before {

@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.8.6",
+    "version": "0.8.15",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -55,7 +55,6 @@
         "@tiptap/extension-text-style": "^3.20.5",
         "@tiptap/extension-typography": "^3.20.5",
         "@tiptap/extension-underline": "^3.20.5",
-        "@tiptap/extension-youtube": "^3.20.5",
         "@tiptap/pm": "^3.20.5",
         "@tiptap/react": "^3.20.5",
         "@tiptap/starter-kit": "^3.20.5",
@@ -76,6 +75,7 @@
         "rehype-autolink-headings": "^7.1.0",
         "rehype-katex": "^7.0.1",
         "rehype-slug": "^6.0.0",
+        "remark-gfm": "^4.0.1",
         "remark-math": "^6.0.0",
         "simple-icons": "^16.12.0",
         "tailwind-merge": "^3.5.0",

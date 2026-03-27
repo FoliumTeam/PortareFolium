@@ -70,9 +70,6 @@ function CellColorPicker({ editor }: { editor: Editor }) {
         "pink-200": "#fbcfe8",
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cmd = (e: Editor) => e.chain().focus() as any;
-
     return (
         <div ref={ref} className="relative">
             <button
@@ -92,10 +89,13 @@ function CellColorPicker({ editor }: { editor: Editor }) {
                                 className="h-5 w-5 rounded border border-zinc-300 transition-transform hover:scale-110 dark:border-zinc-600"
                                 style={{ backgroundColor: colorHex[c.name] }}
                                 onClick={() => {
-                                    cmd(editor)
-                                        .updateAttributes("tableCell", {
-                                            tailwindColor: c.name,
-                                        })
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .setCellAttribute(
+                                            "tailwindColor",
+                                            c.name
+                                        )
                                         .run();
                                     setOpen(false);
                                 }}
@@ -108,7 +108,7 @@ function CellColorPicker({ editor }: { editor: Editor }) {
     );
 }
 
-// YouTube URL 입력 서브 컴포넌트
+// YouTube directive 삽입 서브 컴포넌트
 function YoutubeInput({ editor }: { editor: Editor }) {
     const [open, setOpen] = useState(false);
     const [url, setUrl] = useState("");
@@ -127,8 +127,23 @@ function YoutubeInput({ editor }: { editor: Editor }) {
 
     const handleInsert = () => {
         if (!url.trim()) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (editor.commands as any).setYoutubeVideo({ src: url.trim() });
+        // URL에서 video ID 추출
+        let id = url.trim();
+        try {
+            const parsed = new URL(id);
+            id =
+                parsed.searchParams.get("v") ||
+                parsed.pathname.split("/").pop() ||
+                id;
+        } catch {
+            // ID 직접 입력으로 간주
+        }
+        // YoutubeEmbed 노드 삽입 (에디터에서 iframe 프리뷰, 저장 시 directive로 serialize)
+        editor
+            .chain()
+            .focus()
+            .insertContent({ type: "youtubeEmbed", attrs: { videoId: id } })
+            .run();
         setUrl("");
         setOpen(false);
     };
@@ -151,7 +166,7 @@ function YoutubeInput({ editor }: { editor: Editor }) {
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleInsert()}
-                        placeholder="YouTube URL"
+                        placeholder="YouTube URL 또는 ID"
                         className="w-52 rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:ring-1 focus:ring-zinc-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
                         autoFocus
                     />
@@ -161,6 +176,459 @@ function YoutubeInput({ editor }: { editor: Editor }) {
                     >
                         삽입
                     </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// 색상 프리셋 (ColoredTable 모달 + CellColorPicker 공용)
+const COLOR_PRESETS = [
+    { name: "slate-200", label: "Slate", hex: "#e2e8f0" },
+    { name: "red-200", label: "Red", hex: "#fecaca" },
+    { name: "orange-200", label: "Orange", hex: "#fed7aa" },
+    { name: "yellow-200", label: "Yellow", hex: "#fef08a" },
+    { name: "green-200", label: "Green", hex: "#bbf7d0" },
+    { name: "blue-200", label: "Blue", hex: "#bfdbfe" },
+    { name: "purple-200", label: "Purple", hex: "#e9d5ff" },
+    { name: "pink-200", label: "Pink", hex: "#fbcfe8" },
+];
+
+// 컬럼 헤더 색상 picker (미니)
+function MiniColorPicker({
+    value,
+    onChange,
+}: {
+    value: string | null;
+    onChange: (color: string | null) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node))
+                setOpen(false);
+        };
+        if (open) document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [open]);
+
+    const activeColor = COLOR_PRESETS.find((c) => c.name === value);
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="h-4 w-4 rounded border border-zinc-300 dark:border-zinc-600"
+                style={{
+                    backgroundColor: activeColor?.hex ?? "transparent",
+                }}
+                title="헤더 색상"
+            />
+            {open && (
+                <div className="absolute top-full left-0 z-50 mt-1 rounded border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                    <div className="flex gap-1">
+                        {/* 색상 제거 */}
+                        <button
+                            type="button"
+                            className="h-4 w-4 rounded border border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900"
+                            title="색상 제거"
+                            onClick={() => {
+                                onChange(null);
+                                setOpen(false);
+                            }}
+                        >
+                            <span className="text-[8px] leading-none text-zinc-400">
+                                ✕
+                            </span>
+                        </button>
+                        {COLOR_PRESETS.map((c) => (
+                            <button
+                                key={c.name}
+                                type="button"
+                                title={c.label}
+                                className="h-4 w-4 rounded border border-zinc-300 transition-transform hover:scale-110 dark:border-zinc-600"
+                                style={{ backgroundColor: c.hex }}
+                                onClick={() => {
+                                    onChange(c.name);
+                                    setOpen(false);
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ColoredTable directive 삽입 서브 컴포넌트
+interface ColDef {
+    name: string;
+    color: string | null;
+}
+
+// JSX 코드에서 ColoredTable attribute 파싱
+function parseColoredTableJsx(code: string): {
+    columns: string;
+    rows: string;
+    columnHeadColors: string;
+} | null {
+    const m = code.match(/<(?:ColoredTable|FoliumTable)\s+([\s\S]*?)\s*\/>/);
+    if (!m) return null;
+    const attrs = m[1];
+    const extract = (key: string): string | null => {
+        const re = new RegExp(
+            `${key}\\s*=\\s*(?:\\{'([^']*)'\\}|'([^']*)'|"([^"]*)")`
+        );
+        const am = attrs.match(re);
+        if (!am) return null;
+        return am[1] ?? am[2] ?? am[3] ?? null;
+    };
+    const columns = extract("columns");
+    const rows = extract("rows");
+    if (!columns || !rows) return null;
+    return {
+        columns,
+        rows,
+        columnHeadColors: extract("columnHeadColors") ?? "[]",
+    };
+}
+
+function ColoredTableInsert({ editor }: { editor: Editor }) {
+    const [open, setOpen] = useState(false);
+    const [tab, setTab] = useState<"classic" | "code">("classic");
+    const [codeText, setCodeText] = useState("");
+    const [columns, setColumns] = useState<ColDef[]>([
+        { name: "", color: null },
+        { name: "", color: null },
+    ]);
+    const [rows, setRows] = useState<string[][]>([["", ""]]);
+    const ref = useRef<HTMLDivElement>(null);
+
+    // 외부 클릭 시 닫기
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        if (open) document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [open]);
+
+    // 컬럼 추가
+    const addColumn = () => {
+        setColumns((prev) => [...prev, { name: "", color: null }]);
+        setRows((prev) => prev.map((row) => [...row, ""]));
+    };
+
+    // 컬럼 삭제
+    const removeColumn = (idx: number) => {
+        if (columns.length <= 1) return;
+        setColumns((prev) => prev.filter((_, i) => i !== idx));
+        setRows((prev) => prev.map((row) => row.filter((_, i) => i !== idx)));
+    };
+
+    // 컬럼명 변경
+    const updateColumnName = (idx: number, name: string) => {
+        setColumns((prev) =>
+            prev.map((col, i) => (i === idx ? { ...col, name } : col))
+        );
+    };
+
+    // 컬럼 색상 변경
+    const updateColumnColor = (idx: number, color: string | null) => {
+        setColumns((prev) =>
+            prev.map((col, i) => (i === idx ? { ...col, color } : col))
+        );
+    };
+
+    // 행 추가
+    const addRow = () => {
+        setRows((prev) => [...prev, columns.map(() => "")]);
+    };
+
+    // 행 삭제
+    const removeRow = (idx: number) => {
+        if (rows.length <= 1) return;
+        setRows((prev) => prev.filter((_, i) => i !== idx));
+    };
+
+    // 셀 값 변경
+    const updateCell = (rowIdx: number, colIdx: number, value: string) => {
+        setRows((prev) =>
+            prev.map((row, ri) =>
+                ri === rowIdx
+                    ? row.map((cell, ci) => (ci === colIdx ? value : cell))
+                    : row
+            )
+        );
+    };
+
+    // Code 탭 삽입
+    const handleCodeInsert = () => {
+        const parsed = parseColoredTableJsx(codeText);
+        if (!parsed) return;
+        editor
+            .chain()
+            .focus()
+            .insertContent({
+                type: "coloredTableEmbed",
+                attrs: {
+                    columns: parsed.columns,
+                    rows: parsed.rows,
+                    columnHeadColors: parsed.columnHeadColors,
+                },
+            })
+            .run();
+        setCodeText("");
+        setOpen(false);
+    };
+
+    // Classic 탭 삽입
+    const handleInsert = () => {
+        const colNames = columns.map(
+            (c) => c.name || `Col ${columns.indexOf(c) + 1}`
+        );
+        const headColors = columns.map((c) => c.color ?? "");
+        // ColoredTableNode 삽입 (에디터에서 테이블 프리뷰, 저장 시 directive로 serialize)
+        editor
+            .chain()
+            .focus()
+            .insertContent({
+                type: "coloredTableEmbed",
+                attrs: {
+                    columns: JSON.stringify(colNames),
+                    rows: JSON.stringify(rows),
+                    columnHeadColors: JSON.stringify(headColors),
+                },
+            })
+            .run();
+        // 초기화
+        setColumns([
+            { name: "", color: null },
+            { name: "", color: null },
+        ]);
+        setRows([["", ""]]);
+        setOpen(false);
+    };
+
+    const inputCls =
+        "w-full rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:ring-1 focus:ring-indigo-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100";
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                onClick={() => setOpen((v) => !v)}
+                title="ColoredTable 삽입 (저장 후 렌더링)"
+            >
+                <svg
+                    viewBox="0 0 18 18"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                >
+                    <rect x="1" y="1" width="16" height="16" rx="1" />
+                    <line x1="1" y1="6.5" x2="17" y2="6.5" />
+                    <line x1="7" y1="1" x2="7" y2="17" />
+                    <line x1="13" y1="1" x2="13" y2="17" />
+                    <rect
+                        x="1.5"
+                        y="1.5"
+                        width="5"
+                        height="4.5"
+                        fill="#fef08a"
+                        stroke="none"
+                    />
+                    <rect
+                        x="7.5"
+                        y="1.5"
+                        width="5"
+                        height="4.5"
+                        fill="#bfdbfe"
+                        stroke="none"
+                    />
+                </svg>
+            </button>
+            {open && (
+                <div className="absolute top-full right-0 z-50 mt-1 flex max-h-[60vh] w-[480px] flex-col gap-3 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
+                    {/* 탭 */}
+                    <div className="flex gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-700">
+                        <button
+                            type="button"
+                            onClick={() => setTab("classic")}
+                            className={`flex-1 rounded-md px-3 py-1 text-xs font-medium transition-colors ${tab === "classic" ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"}`}
+                        >
+                            Classic
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTab("code")}
+                            className={`flex-1 rounded-md px-3 py-1 text-xs font-medium transition-colors ${tab === "code" ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"}`}
+                        >
+                            Code
+                        </button>
+                    </div>
+
+                    {tab === "code" ? (
+                        <>
+                            <textarea
+                                value={codeText}
+                                onChange={(e) => setCodeText(e.target.value)}
+                                placeholder={
+                                    '<ColoredTable columns={\'["항목","내용"]\'} rows={\'[["값1","값2"]]\'} />'
+                                }
+                                className="h-32 w-full resize-y rounded border border-zinc-300 bg-white px-2 py-1.5 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:ring-1 focus:ring-indigo-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                                spellCheck={false}
+                            />
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                                    {parseColoredTableJsx(codeText)
+                                        ? "파싱 성공"
+                                        : "ColoredTable JSX를 붙여넣으세요"}
+                                </p>
+                                <button
+                                    onClick={handleCodeInsert}
+                                    disabled={!parseColoredTableJsx(codeText)}
+                                    className="rounded bg-zinc-800 px-4 py-1.5 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 disabled:opacity-40 dark:bg-zinc-200 dark:text-zinc-900"
+                                >
+                                    삽입
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* 컬럼 헤더 영역 */}
+                            <div className="flex items-end gap-1">
+                                {columns.map((col, ci) => (
+                                    <div
+                                        key={ci}
+                                        className="flex min-w-0 flex-1 flex-col gap-1"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <MiniColorPicker
+                                                value={col.color}
+                                                onChange={(c) =>
+                                                    updateColumnColor(ci, c)
+                                                }
+                                            />
+                                            {columns.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeColumn(ci)
+                                                    }
+                                                    className="text-xs text-zinc-400 hover:text-red-500"
+                                                    title="컬럼 삭제"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={col.name}
+                                            onChange={(e) =>
+                                                updateColumnName(
+                                                    ci,
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder={`Col ${ci + 1}`}
+                                            className={`${inputCls} font-semibold`}
+                                            style={
+                                                col.color
+                                                    ? {
+                                                          backgroundColor:
+                                                              COLOR_PRESETS.find(
+                                                                  (p) =>
+                                                                      p.name ===
+                                                                      col.color
+                                                              )?.hex,
+                                                      }
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={addColumn}
+                                    className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded border border-dashed border-zinc-300 text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
+                                    title="컬럼 추가"
+                                >
+                                    +
+                                </button>
+                            </div>
+
+                            {/* 구분선 */}
+                            <hr className="border-zinc-200 dark:border-zinc-700" />
+
+                            {/* 행 데이터 */}
+                            <div className="flex flex-col gap-1.5">
+                                {rows.map((row, ri) => (
+                                    <div
+                                        key={ri}
+                                        className="flex items-center gap-1"
+                                    >
+                                        {row.map((cell, ci) => (
+                                            <input
+                                                key={ci}
+                                                type="text"
+                                                value={cell}
+                                                onChange={(e) =>
+                                                    updateCell(
+                                                        ri,
+                                                        ci,
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="—"
+                                                className={`min-w-0 flex-1 ${inputCls}`}
+                                            />
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeRow(ri)}
+                                            disabled={rows.length <= 1}
+                                            className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:invisible"
+                                            title="행 삭제"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 행 추가 */}
+                            <button
+                                type="button"
+                                onClick={addRow}
+                                className="w-full rounded border border-dashed border-zinc-300 py-1 text-sm text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
+                            >
+                                + 행 추가
+                            </button>
+
+                            {/* 하단 액션 */}
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                                    저장 후 렌더링
+                                </p>
+                                <button
+                                    onClick={handleInsert}
+                                    className="rounded bg-zinc-800 px-4 py-1.5 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 dark:bg-zinc-200 dark:text-zinc-900"
+                                >
+                                    삽입
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
         </div>
@@ -321,6 +789,18 @@ export default function EditorToolbar({
                             ↔✕
                         </Btn>
                         <Btn
+                            onClick={() => cmd(editor).mergeOrSplit().run()}
+                            title="셀 병합/분할"
+                        >
+                            ⊡
+                        </Btn>
+                        <Btn
+                            onClick={() => cmd(editor).toggleHeaderRow().run()}
+                            title="헤더 행 토글"
+                        >
+                            H
+                        </Btn>
+                        <Btn
                             onClick={() => cmd(editor).deleteTable().run()}
                             title="테이블 삭제"
                         >
@@ -336,6 +816,7 @@ export default function EditorToolbar({
             {/* 7. Media */}
             <ToolbarGroup>
                 <YoutubeInput editor={editor} />
+                <ColoredTableInsert editor={editor} />
             </ToolbarGroup>
 
             <Spacer />

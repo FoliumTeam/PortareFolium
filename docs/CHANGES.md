@@ -1,5 +1,83 @@
 # CHANGES
 
+## v0.8.15 (2026-03-27)
+
+### Fix: Source → WYSIWYG 전환 시 flushSync 에러 해결 (v0.8.15)
+
+- `src/components/admin/RichMarkdownEditor.tsx`: `EditorContent`를 조건부 mount/unmount에서 항상 mount + CSS `hidden` 토글로 변경. source 모드 전환 시 `ReactNodeViewRenderer`가 `flushSync`를 React 렌더 중 호출하던 근본 원인 해결. `exitSourceMode`에서 `queueMicrotask` 제거, `pendingContent` ref + `useEffect`로 `setContent` defer. inline/fullscreen 모드 모두 적용.
+
+## v0.8.14 (2026-03-27)
+
+### Feat: EditorStatePreservation Auto/Manual 섹션 모두 삭제 버튼 추가 (v0.8.14)
+
+- `src/components/admin/EditorStatePreservation.tsx`: Auto 섹션과 Manual 섹션 하단에 "모두 삭제" 버튼 추가. 클릭 시 인라인 확인 UI 표시 (2-click 확인). `handleDeleteAll` 콜백 추가 (`Auto-save` | `Bookmark` label 일괄 삭제). Initial 스냅샷은 대상 외.
+
+## v0.8.13 (2026-03-26)
+
+### Fix+Feat: Source 모드 ColoredTable paste 수정 + Code 탭 추가 (v0.8.13)
+
+- `src/extensions/ColoredTableNode.tsx`: `extractAttr` 함수가 홑따옴표(`'`)와 쌍따옴표(`"`) 모두 매칭하도록 수정. `jsxToDirective`가 쌍따옴표로 출력하는 directive를 `coloredTableDirectiveToHtml`이 파싱 실패하던 버그 해결. Source 모드에서 `<ColoredTable ... />` 붙여넣기 후 Markdown 뷰 전환 시 정상 렌더링.
+- `src/components/admin/EditorToolbar.tsx`: `ColoredTableInsert` 모달에 Classic/Code 탭 추가. Code 탭에서 `<ColoredTable ... />` JSX를 붙여넣으면 자동 파싱 → 삽입 가능. `parseColoredTableJsx` 함수 추가 (3가지 attribute 형식 지원).
+
+## v0.8.12 (2026-03-26)
+
+### Feat: YouTube/ColoredTable WYSIWYG 프리뷰 + YouTube extension 교체 (v0.8.12)
+
+- `src/extensions/YoutubeEmbed.tsx`: 커스텀 Tiptap Node extension. `@tiptap/extension-youtube` 대체. 에디터에서 16:9 iframe 프리뷰 렌더링. `::youtube[]{id="..."}` directive serialize/parse.
+- `src/extensions/ColoredTableNode.tsx`: ColoredTable 프리뷰 Node extension. 에디터에서 헤더 색상 포함 읽기 전용 테이블 렌더링. `::colored-table[]{...}` directive serialize/parse.
+- `src/components/admin/RichMarkdownEditor.tsx`: `YoutubeEmbed` + `ColoredTableNode` extension 등록. 로드 시 directive → HTML 전처리 (`youtubeDirectiveToHtml`, `coloredTableDirectiveToHtml`).
+- `src/components/admin/EditorToolbar.tsx`: `YoutubeInput`/`ColoredTableInsert`가 커스텀 노드 삽입으로 변경 (텍스트 → 노드).
+- `@tiptap/extension-youtube` 패키지 제거. React DOM 경고 해소.
+
+## v0.8.11 (2026-03-26)
+
+### Feat: Tiptap 테이블 개선 + ColoredTable 모달 재구현 + YouTube directive 전환 (v0.8.11)
+
+- `src/components/admin/RichMarkdownEditor.tsx`: `ColoredTableExtension.configure({ resizable: true })` 변경. 컬럼 리사이즈 핸들 활성화. `@tiptap/extension-youtube` 제거, directive 방식으로 전환.
+- `src/components/admin/EditorToolbar.tsx`:
+    - 셀 병합/분할 (`mergeOrSplit`) 버튼 추가.
+    - 헤더 행 토글 (`toggleHeaderRow`) 버튼 추가.
+    - `ColoredTableInsert` 모달 재구현: 동적 컬럼/행 추가/삭제, 각 셀별 입력 박스 그리드, 컬럼 헤더 색상 picker (`MiniColorPicker`), `columnHeadColors` 속성 directive 생성.
+    - `YoutubeInput`: `setYoutubeVideo` → `::youtube[]{id="..."}` directive 텍스트 삽입으로 변경. URL/ID 자동 파싱.
+- `src/styles/global.css`: ProseMirror 에디터 내 테이블 CSS 추가 — `.tableWrapper`, 셀 border/padding, `.selectedCell` 하이라이트, `.column-resize-handle` 시각화, `.resize-cursor`.
+- `@tiptap/extension-youtube` 패키지 제거. React DOM 경고(`allowfullscreen`, `autoplay`, `loop`) 해소.
+
+## v0.8.10 (2026-03-26)
+
+### Fix: tiptap-markdown 이스케이프된 directive 렌더링 실패 (v0.8.10)
+
+- `src/lib/mdx-directive-converter.ts`: `stripDirectiveEscapes` regex 수정.
+    - `\\::` → `\\?::`: `\::` 없이 `::` 로 시작하는 directive 라인도 처리.
+    - 이스케이프 대상에 `~` 추가: `\~` → `~` 변환.
+    - 원인: tiptap-markdown이 WYSIWYG 에디터에서 `::colored-table\[\]{...}` 형태로 serialize할 때 `::` 앞에 백슬래시가 없지만 `[`, `]`, `"`, `~`는 이스케이프함. 기존 regex가 `\::` 있는 줄만 처리해 이스케이프 제거가 스킵되고 directive regex 매칭 실패 → 프론트엔드 렌더링 불가.
+
+## v0.8.9 (2026-03-26)
+
+### Fix: Source 모드 auto-save directive 변환 누락 (v0.8.9)
+
+- `src/components/admin/RichMarkdownEditor.tsx`: `handleSourceChange`에서 `onChange(val)` → `onChange(directiveToJsx(val))` 변경. Source 모드에서 `::colored-table[]{...}` 등 directive 문법으로 입력 시 auto-save가 JSX 변환 없이 DB에 저장되던 버그 수정. `exitSourceMode`에는 변환이 있었지만 keystroke마다 호출되는 auto-save 경로에는 없었음.
+
+## v0.8.8 (2026-03-26)
+
+### Feat: ColoredTable 삽입 버튼 + 셀 배경색 버그 수정 (v0.8.8)
+
+- `src/components/admin/EditorToolbar.tsx`:
+    - `ColoredTableInsert` 서브 컴포넌트 추가: 컬럼명(쉼표 구분) + 행 수 입력 후 `::colored-table[]{...}` directive를 에디터에 삽입. Media ToolbarGroup에 배치. 저장 시 자동으로 JSX 변환됨.
+    - `CellColorPicker` 버그 수정: `updateAttributes("tableCell", {...})` → `setCellAttribute("tailwindColor", c.name)` 변경. Tiptap Table extension 전용 명령어로 셀 배경색이 실제 적용됨.
+- `src/lib/mdx-directive-converter.ts`:
+    - `jsxToDirective` 어트리뷰트 파싱 regex 확장: `key={'value'}` 형식 외 `key='value'`, `key="value"` 형식도 지원. 사용자가 직접 타이핑한 JSX도 올바르게 directive로 변환됨.
+
+## v0.8.7 (2026-03-26)
+
+### Fix: 마크다운 테이블 + ColoredTable 렌더링 버그 (v0.8.7)
+
+- `remark-gfm` 패키지 추가: `src/lib/markdown.tsx`의 `evaluate` remarkPlugins에 `remarkGfm` 추가 → 프론트엔드에서 GFM 파이프 테이블(`| col |`) 정상 렌더링.
+- `src/components/admin/RichMarkdownEditor.tsx`:
+    - `initialContent` — `jsxToDirective(value)` 적용: JSX로 저장된 `<ColoredTable>`/`<FoliumTable>`을 Tiptap에 로드 전 directive 형식(`::colored-table{...}`)으로 변환. 미적용 시 Tiptap이 JSX를 소실시키고 auto-save가 빈 내용을 DB에 덮어씀.
+    - `onUpdate` — `directiveToJsx(md)` 적용 후 `onChange`: WYSIWYG 수정 시 directive → JSX 변환 후 저장 (DB는 항상 JSX 형식 유지).
+    - `enterSourceMode` — `directiveToJsx(md)` 적용: source textarea에 JSX 형식 표시.
+    - `exitSourceMode` — `jsxToDirective(jsxContent)`로 Tiptap 로드, `directiveToJsx(sourceText)`로 DB 저장.
+
 ## v0.8.6 (2026-03-26)
 
 ### Fix: EditorToolbar 버튼 overflow + 셀 배경색 팝업 클리핑 (v0.8.6)
