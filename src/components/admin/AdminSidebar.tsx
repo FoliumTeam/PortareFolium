@@ -11,6 +11,7 @@ import {
     KeyRound,
     Archive,
     MessageSquare,
+    ExternalLink,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -121,6 +122,16 @@ export default function AdminSidebar({
                         })}
                     </div>
                 ))}
+                {/* 사이트 링크 */}
+                <div className="mt-auto border-t border-(--color-border) px-4 pt-3 pb-2">
+                    <a
+                        href="/"
+                        className="flex items-center gap-3 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                    >
+                        <ExternalLink className="h-4 w-4 shrink-0" />
+                        <span>사이트로 이동</span>
+                    </a>
+                </div>
             </nav>
         </>
     );

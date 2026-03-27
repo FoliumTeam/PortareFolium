@@ -1,5 +1,45 @@
 # CHANGES
 
+## v0.9.8 (2026-03-28)
+
+### Feat: Admin 패널 모바일 레이아웃 + 사이트 링크 사이드바 이동 (v0.9.8)
+
+- `src/components/admin/AdminHeader.tsx`: "사이트" 링크 + divider 제거 (사이드바로 이동). 타이틀 "Admin" → "Admin 대시보드" + `text-base`로 폰트 확대. `px-3 tablet:px-6` 반응형 padding. gap 축소 (`gap-2 tablet:gap-4`, `gap-2 tablet:gap-3`)
+- `src/components/admin/AdminSidebar.tsx`: 하단에 `ExternalLink` 아이콘 + "사이트로 이동" 링크 추가 (`mt-auto`로 하단 고정)
+- `src/components/admin/panels/AboutPanel.tsx`: 프로필 섹션 `flex-col tablet:flex-row` 모바일 세로 배치
+- `src/components/admin/panels/MigrationsPanel.tsx`: 헤더에 `flex-wrap` 추가
+- `src/components/admin/panels/PromptLibraryPanel.tsx`: System Prompt 헤더에 `flex-wrap` + 반응형 padding (2곳)
+- `src/components/admin/panels/ResumePanel.tsx`: 기본 정보 프로필 사진 섹션 `flex-col tablet:flex-row` + 파일 input `max-w-full` overflow 방지
+
+## v0.9.7 (2026-03-28)
+
+### Feat: 에디터 반응형 — 툴바 모바일 수정 + 페이퍼 패딩 (v0.9.7)
+
+- `src/components/tiptap-ui-primitive/toolbar/toolbar.scss`: 모바일 `position: absolute` → `position: sticky`로 변경하여 플로우 유지. 미디어 쿼리 480px → 768px 확장. 불필요한 height/border 오버라이드 제거. 가로 스크롤 유지
+- `src/components/admin/EditorToolbar.tsx`: Find/Replace 팝업 `w-[480px]` → `w-[calc(100vw-2rem)] tablet:w-[480px]` 반응형
+- `src/components/admin/RichMarkdownEditor.tsx`: 전체화면 모드 Source/WYSIWYG 페이퍼 패딩 `p-16` → `p-4 tablet:p-8 laptop:p-16` (2곳)
+
+## v0.9.6 (2026-03-28)
+
+### Feat: Hover-revealed 버튼 모바일 가시성 + icon-only labels (v0.9.6)
+
+- `src/components/admin/panels/PostsPanel.tsx`: 포스트 목록 액션 버튼 `opacity-0 group-hover:opacity-100` → `tablet:opacity-0 tablet:group-hover:opacity-100` (모바일 항상 표시). 버튼 텍스트 `hidden tablet:inline` (모바일 icon-only)
+- `src/components/admin/panels/PortfolioPanel.tsx`: 포트폴리오 목록 동일 패턴 적용 (Featured/Publish/편집/삭제 4버튼)
+- `src/components/admin/panels/BooksSubPanel.tsx`: 도서 목록 동일 패턴 적용 (Featured/Publish/편집/삭제 4버튼)
+- `src/components/admin/panels/TagsPanel.tsx`: 태그/카테고리 수정/삭제 버튼 (2곳)
+- `src/components/admin/panels/SiteConfigPanel.tsx`: Job field 삭제 버튼
+
+## v0.9.0–v0.9.5 (2026-03-28)
+
+### Feat: Admin 반응형 디자인 대규모 적용 (v0.9.0–v0.9.5)
+
+- v0.9.0: `sm:` → `tablet:` 무효 브레이크포인트 일괄 교체 (ResumePanel 6곳, ThumbnailUploadField 1곳)
+- v0.9.1: 사이드바 모바일 햄버거 토글 (AdminSidebar 오버레이/슬라이드인, AdminHeader 햄버거 버튼, AdminDashboard sidebarOpen state, main padding 반응형)
+- v0.9.2: MetadataSheet 다이얼로그 너비 `laptop:max-w-4xl desktop:max-w-7xl` + 포트폴리오 그리드 반응형
+- v0.9.3: SiteConfigPanel 색상 테마 `grid-cols-2 tablet:grid-cols-3`
+- v0.9.4: 4개 모달 여백/너비 반응형 (TiptapImageUpload, EditorStatePreservation, StatePreviewModal, SkillEditorModal)
+- v0.9.5: AgentTokensPanel `min-w-0`, CategorySelect `w-full`, LoginForm glow 크기, ResumePanel 프로필 사진 크기
+
 ## v0.8.17 (2026-03-27)
 
 ### Feat: 편집 상태 새로고침 영속화 + LaTeX 에디터 기능 (v0.8.17)

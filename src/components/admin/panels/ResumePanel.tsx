@@ -494,7 +494,7 @@ export default function ResumePanel() {
                 <h3 className="text-xl font-bold text-(--color-foreground)">
                     기본 정보
                 </h3>
-                <div className="mb-4 flex items-start gap-6">
+                <div className="tablet:flex-row tablet:gap-6 mb-4 flex flex-col items-start gap-4">
                     {resumeData.basics?.image && (
                         <img
                             src={resumeData.basics.image}
@@ -502,7 +502,7 @@ export default function ResumePanel() {
                             className="tablet:h-48 tablet:w-48 h-32 w-32 shrink-0 rounded-full border border-(--color-border) object-cover"
                         />
                     )}
-                    <div className="flex-1">
+                    <div className="max-w-full min-w-0 flex-1">
                         <label className="text-sm font-medium text-(--color-muted)">
                             프로필 사진 (자동 업로드)
                         </label>
@@ -511,7 +511,7 @@ export default function ResumePanel() {
                             accept="image/*"
                             onChange={handleImageUpload}
                             disabled={uploadingImage}
-                            className={`mt-4 block w-fit cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
+                            className={`mt-4 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
                         />
                     </div>
                 </div>

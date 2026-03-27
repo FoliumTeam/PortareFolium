@@ -32,8 +32,8 @@ export default function AdminHeader({
     onMenuOpen,
 }: AdminHeaderProps) {
     return (
-        <header className="flex h-14 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-6">
-            <div className="flex items-center gap-4">
+        <header className="tablet:px-6 flex h-14 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-3">
+            <div className="tablet:gap-4 flex items-center gap-2">
                 {onMenuOpen && (
                     <button
                         onClick={onMenuOpen}
@@ -55,41 +55,17 @@ export default function AdminHeader({
                         </svg>
                     </button>
                 )}
-                <a
-                    href="/"
-                    className="flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                >
-                    <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 19l-7-7 7-7"
-                        />
-                    </svg>
-                    사이트
-                </a>
-                <span
-                    className="h-4 w-px bg-(--color-border)"
-                    aria-hidden="true"
-                />
                 <div className="flex items-center gap-2">
                     <span
-                        className="h-2 w-2 rounded-full bg-(--color-accent)"
+                        className="h-2.5 w-2.5 rounded-full bg-(--color-accent)"
                         aria-hidden="true"
                     />
-                    <span className="text-sm font-black tracking-tight text-(--color-foreground)">
-                        Admin
+                    <span className="text-base font-black tracking-tight text-(--color-foreground)">
+                        Admin 대시보드
                     </span>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="tablet:gap-3 flex items-center gap-2">
                 <span
                     className={[
                         "font-mono text-xs tabular-nums",

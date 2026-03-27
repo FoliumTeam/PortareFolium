@@ -280,7 +280,7 @@ export default function AboutPanel() {
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     프로필
                 </h3>
-                <div className="flex items-start gap-6">
+                <div className="tablet:flex-row tablet:gap-6 flex flex-col items-start gap-4">
                     {/* 이미지 미리보기 */}
                     <div className="shrink-0">
                         {profileImage ? (

@@ -172,7 +172,7 @@ export default function PromptLibraryPanel() {
                 </p>
 
                 <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
-                    <div className="flex items-center justify-between border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-4 py-2 dark:bg-[rgba(255,255,255,0.02)]">
+                    <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
                         <span className="text-xs font-medium text-(--color-muted)">
                             System Prompt
                         </span>
@@ -226,7 +226,7 @@ export default function PromptLibraryPanel() {
                 </p>
 
                 <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
-                    <div className="flex items-center justify-between border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-4 py-2 dark:bg-[rgba(255,255,255,0.02)]">
+                    <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
                         <span className="text-xs font-medium text-(--color-muted)">
                             System Prompt
                         </span>
