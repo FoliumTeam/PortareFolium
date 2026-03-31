@@ -18,6 +18,7 @@ import {
     ChevronDown,
     Settings,
     ExternalLink,
+    GripVertical,
 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
@@ -468,6 +469,45 @@ export default function PortfolioPanel({
         loadItems();
     };
 
+    // Featured 순서 드래그 앤 드롭
+    const dragItemRef = useRef<number | null>(null);
+    const dragOverItemRef = useRef<number | null>(null);
+
+    const handleFeaturedReorder = async () => {
+        if (
+            !browserClient ||
+            dragItemRef.current === null ||
+            dragOverItemRef.current === null ||
+            dragItemRef.current === dragOverItemRef.current
+        )
+            return;
+
+        const featuredItems = items
+            .filter((i) => i.featured)
+            .sort((a, b) => a.order_idx - b.order_idx);
+
+        const reordered = [...featuredItems];
+        const [dragged] = reordered.splice(dragItemRef.current, 1);
+        reordered.splice(dragOverItemRef.current, 0, dragged);
+
+        // order_idx 일괄 업데이트
+        const updates = reordered.map((item, idx) => ({
+            id: item.id,
+            order_idx: idx,
+        }));
+
+        for (const u of updates) {
+            await browserClient
+                .from("portfolio_items")
+                .update({ order_idx: u.order_idx })
+                .eq("id", u.id);
+        }
+
+        dragItemRef.current = null;
+        dragOverItemRef.current = null;
+        loadItems();
+    };
+
     // MetadataSheet onChange 핸들러
     const handleMetaChange = (field: string, value: unknown) => {
         setForm((f) => ({ ...f, [field]: value }));
@@ -798,6 +838,50 @@ export default function PortfolioPanel({
                             </button>
                         </div>
                     </div>
+
+                    {/* Featured 순서 조정 */}
+                    {items.filter((i) => i.featured).length > 0 && (
+                        <div className="mb-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                            <p className="mb-2 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
+                                Featured 순서 (드래그하여 변경)
+                            </p>
+                            <div className="space-y-1">
+                                {items
+                                    .filter((i) => i.featured)
+                                    .sort((a, b) => a.order_idx - b.order_idx)
+                                    .map((item, idx) => (
+                                        <div
+                                            key={item.id}
+                                            draggable
+                                            onDragStart={() => {
+                                                dragItemRef.current = idx;
+                                            }}
+                                            onDragEnter={() => {
+                                                dragOverItemRef.current = idx;
+                                            }}
+                                            onDragOver={(e) =>
+                                                e.preventDefault()
+                                            }
+                                            onDragEnd={handleFeaturedReorder}
+                                            className="flex cursor-grab items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 transition-colors hover:border-(--color-accent)/50 active:cursor-grabbing"
+                                        >
+                                            <GripVertical className="h-4 w-4 shrink-0 text-(--color-muted)" />
+                                            <span className="font-mono text-xs font-bold text-(--color-accent)">
+                                                {idx + 1}
+                                            </span>
+                                            <span className="truncate text-sm font-medium text-(--color-foreground)">
+                                                {item.title}
+                                            </span>
+                                            {!item.published && (
+                                                <span className="ml-auto shrink-0 rounded bg-(--color-border) px-1.5 py-0.5 text-[10px] font-medium text-(--color-muted)">
+                                                    Draft
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* 필터 + 정렬 */}
                     <div className="mb-4 flex flex-wrap items-center gap-2">

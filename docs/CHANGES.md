@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.9.12 (2026-03-31)
+
+### Feat: 포트폴리오 Featured 순서 드래그 앤 드롭 관리 (v0.9.12)
+
+- `src/components/admin/panels/PortfolioPanel.tsx`: Admin 포트폴리오 패널에 Featured 순서 조정 UI 추가. HTML5 드래그 앤 드롭으로 featured 항목 순서 변경 → DB `order_idx` 일괄 업데이트.
+
 ## v0.9.11 (2026-03-31)
 
 ### Feat: 랜딩 페이지 & 이력서 리디자인 — 페르소나 선언형 Hero + 핵심역량 (v0.9.11)
