@@ -6,9 +6,11 @@ import Link from "next/link";
 
 export default function Header({
     siteName,
+    githubUrl,
     isDev,
 }: {
     siteName: string;
+    githubUrl: string;
     isDev: boolean;
 }) {
     const [open, setOpen] = useState(false);
@@ -108,7 +110,7 @@ export default function Header({
                         </Link>
                     )}
                     <a
-                        href="https://github.com/"
+                        href={githubUrl || "https://github.com/"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"

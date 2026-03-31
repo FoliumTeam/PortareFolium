@@ -22,11 +22,25 @@ export default async function FrontendLayout({
         if (typeof v === "string") siteName = v;
     }
 
+    let githubUrl = "";
+    const ghRow = configRows.find((r) => r.key === "github_url");
+    if (ghRow?.value) {
+        let v = ghRow.value;
+        if (typeof v === "string" && v.startsWith('"')) {
+            try {
+                v = JSON.parse(v);
+            } catch {
+                // invalid JSON
+            }
+        }
+        if (typeof v === "string") githubUrl = v;
+    }
+
     const isDev = process.env.NODE_ENV === "development";
 
     return (
         <>
-            <Header siteName={siteName} isDev={isDev} />
+            <Header siteName={siteName} githubUrl={githubUrl} isDev={isDev} />
             <main className="mx-auto max-w-[1350px] px-4 py-8">{children}</main>
         </>
     );

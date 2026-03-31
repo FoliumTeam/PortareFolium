@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.9.13 (2026-03-31)
+
+### Feat: GitHub URL 통합 관리 — About/SiteConfig 패널 양방향 동기화 + Header 동적 링크 (v0.9.13)
+
+- `site_config.github_url`을 단일 출처로 사용하여 About 패널과 SiteConfig 패널에서 양방향 편집 가능
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 글로벌 SEO 섹션에 GitHub URL 입력 필드 추가, 저장 시 `site_config` upsert
+- `src/components/admin/panels/AboutPanel.tsx`: `site_config.github_url`에서 로드 (기존 `about_data.contacts.github` fallback 유지), 저장 시 `site_config`에도 동기화
+- `src/components/Header.tsx`: `githubUrl` prop 추가, DB에서 읽은 URL로 GitHub 버튼 동적 연결
+- `src/app/(frontend)/layout.tsx`: `site_config`에서 `github_url` 읽어 Header에 전달
+
 ## v0.9.12 (2026-03-31)
 
 ### Feat: 포트폴리오 Featured 순서 드래그 앤 드롭 관리 (v0.9.12)

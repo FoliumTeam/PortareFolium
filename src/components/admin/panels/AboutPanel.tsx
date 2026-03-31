@@ -88,11 +88,13 @@ export default function AboutPanel() {
             browserClient
                 .from("site_config")
                 .select("key, value")
-                .eq("key", "job_fields")
-                .limit(1)
-                .single(),
+                .in("key", ["job_fields", "github_url"]),
         ]).then(
-            ([{ data: row, error }, { data: resumeRow }, { data: config }]) => {
+            ([
+                { data: row, error },
+                { data: resumeRow },
+                { data: configs },
+            ]) => {
                 if (!error && row) {
                     const d = row.data as AboutData;
                     setRowId(row.id);
@@ -125,8 +127,22 @@ export default function AboutPanel() {
                     const img = resumeRow.data?.basics?.image?.trim();
                     if (img) setProfileImage(img);
                 }
-                if (config) {
-                    setJobFields((config.value as JobFieldItem[]) ?? []);
+                if (configs) {
+                    for (const cfg of configs) {
+                        if (cfg.key === "job_fields")
+                            setJobFields((cfg.value as JobFieldItem[]) ?? []);
+                        if (cfg.key === "github_url") {
+                            let v = cfg.value;
+                            if (typeof v === "string" && v.startsWith('"')) {
+                                try {
+                                    v = JSON.parse(v as string);
+                                } catch {
+                                    // invalid JSON
+                                }
+                            }
+                            if (typeof v === "string") setGithub(v);
+                        }
+                    }
                 }
             }
         );
@@ -247,6 +263,14 @@ export default function AboutPanel() {
             err = res.error;
             if (res.data) setRowId(res.data.id);
         }
+
+        // github_url site_config 동기화
+        await browserClient
+            .from("site_config")
+            .upsert(
+                [{ key: "github_url", value: JSON.stringify(github.trim()) }],
+                { onConflict: "key" }
+            );
 
         if (!err) {
             await revalidateHome();

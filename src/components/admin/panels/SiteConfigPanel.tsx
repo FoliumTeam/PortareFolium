@@ -85,6 +85,7 @@ export default function SiteConfigPanel() {
         defaultDescription: "포트폴리오 & 기술 블로그",
         defaultOgImage: "",
     });
+    const [githubUrl, setGithubUrl] = useState("");
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{
         type: "error" | "success";
@@ -110,6 +111,7 @@ export default function SiteConfigPanel() {
                 "job_fields",
                 "site_name",
                 "seo_config",
+                "github_url",
             ])
             .then(({ data: rows }) => {
                 if (!rows) return;
@@ -143,6 +145,9 @@ export default function SiteConfigPanel() {
                                 "포트폴리오 & 기술 블로그",
                             defaultOgImage: v.default_og_image || "",
                         }));
+                    }
+                    if (row.key === "github_url" && typeof v === "string") {
+                        setGithubUrl(v);
                     }
                 }
             });
@@ -493,6 +498,7 @@ export default function SiteConfigPanel() {
                     default_og_image: seoConfig.defaultOgImage,
                 },
             },
+            { key: "github_url", value: JSON.stringify(githubUrl.trim()) },
         ];
 
         const { error } = await browserClient
@@ -736,6 +742,17 @@ export default function SiteConfigPanel() {
                                 })
                             }
                             placeholder="https://..."
+                            className="border-(--color-border)"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm font-medium text-(--color-muted)">
+                            GitHub URL
+                        </Label>
+                        <Input
+                            value={githubUrl}
+                            onChange={(e) => setGithubUrl(e.target.value)}
+                            placeholder="https://github.com/username"
                             className="border-(--color-border)"
                         />
                     </div>
