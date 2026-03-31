@@ -29,7 +29,16 @@ export async function handleGetSchema(): Promise<unknown> {
             "All write tools auto-snapshot before mutating — mistakes are recoverable",
             "slug collision returns error code -32000 with 'slug 중복' message — pick a different slug",
             "For update_resume: always call get_resume first, then send the FULL section (emoji + showEmoji + entries) to avoid data loss",
+            "content field is MDX (Markdown + JSX) — use the components below for rich embeds",
         ],
+        content_components: {
+            YouTube: '<YouTube id="VIDEO_ID" /> — YouTube embed',
+            ColoredTable:
+                '<ColoredTable columns={\'["Col1","Col2"]\'} rows={\'[["a","b"]]\'} /> — custom table with optional columnHeadColors',
+            LaTeX: "$$E = mc^2$$ — KaTeX math block (double dollar signs)",
+            Mermaid:
+                "```mermaid\\ngraph LR; A-->B\\n``` — Mermaid diagram (fenced code block with lang=mermaid)",
+        },
         tools: [
             "get_schema — returns this guide",
             "list_posts({ published?: bool, limit?: int })",
@@ -52,7 +61,7 @@ export async function handleGetSchema(): Promise<unknown> {
             tags: "string[]",
             job_field: "'web' | 'game'",
             thumbnail: "URL string",
-            content: "Markdown string",
+            content: "MDX string (Markdown + JSX components)",
             published: "boolean, default false",
             meta_title: "string (SEO)",
             meta_description: "string (SEO)",
@@ -65,7 +74,7 @@ export async function handleGetSchema(): Promise<unknown> {
             tags: "string[]",
             job_field: "'web' | 'game'",
             thumbnail: "URL string",
-            content: "Markdown string",
+            content: "MDX string (Markdown + JSX components)",
             featured: "boolean",
             order_idx: "integer",
             published: "boolean, default false",

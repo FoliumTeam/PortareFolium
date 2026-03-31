@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.9.14 (2026-03-31)
+
+### Feat: MCP 스키마 가이드에 MDX 컴포넌트 문서 추가 (v0.9.14)
+
+- `src/lib/mcp-tools.ts`: `handleGetSchema()`에 `content_components` 섹션 추가 — YouTube, ColoredTable, LaTeX, Mermaid 사용법 안내. content 필드 설명 `"Markdown string"` → `"MDX string (Markdown + JSX components)"` 변경
+
 ## v0.9.13 (2026-03-31)
 
 ### Feat: GitHub URL 통합 관리 — About/SiteConfig 패널 양방향 동기화 + Header 동적 링크 (v0.9.13)
