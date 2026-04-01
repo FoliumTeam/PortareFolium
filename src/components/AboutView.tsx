@@ -274,7 +274,7 @@ export default function AboutView() {
                                     {items.map((item, i) => (
                                         <span
                                             key={i}
-                                            className="rounded-full bg-(--color-tag-bg) px-4 py-1.5 text-sm font-medium text-(--color-tag-fg)"
+                                            className="rounded-lg bg-(--color-tag-bg) px-4 py-1.5 text-sm font-medium text-(--color-tag-fg)"
                                         >
                                             {item}
                                         </span>

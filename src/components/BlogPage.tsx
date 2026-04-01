@@ -224,7 +224,7 @@ export default function BlogPage({
                         href="/keystatic"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 rounded-full bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+                        className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
                         Write post
                     </a>
@@ -297,7 +297,7 @@ export default function BlogPage({
                                             );
                                             setSidebarOpen(false);
                                         }}
-                                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                        className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                                             selectedTag === value
                                                 ? "bg-(--color-accent) text-(--color-on-accent)"
                                                 : "border border-(--color-border) text-(--color-foreground) hover:border-(--color-accent) hover:text-(--color-accent)"
@@ -323,7 +323,7 @@ export default function BlogPage({
                             href="/admin"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 rounded-full bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+                            className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
                             Write post
                         </a>
@@ -383,7 +383,7 @@ export default function BlogPage({
                                                     return (
                                                         <span
                                                             key={tag.name}
-                                                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${!bgColor ? "bg-(--color-accent) text-(--color-on-accent)" : ""}`}
+                                                            className={`rounded-lg px-2.5 py-0.5 text-xs font-medium ${!bgColor ? "bg-(--color-accent) text-(--color-on-accent)" : ""}`}
                                                             style={
                                                                 bgColor
                                                                     ? {

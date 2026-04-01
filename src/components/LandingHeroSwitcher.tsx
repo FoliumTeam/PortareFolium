@@ -73,13 +73,13 @@ export default function LandingHero({
                         <div className="tablet:justify-start flex flex-wrap justify-center gap-4">
                             <Link
                                 href="/portfolio"
-                                className="rounded-full bg-(--color-accent) px-8 py-4 text-base font-semibold text-(--color-on-accent) transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
+                                className="rounded-2xl bg-(--color-accent) px-8 py-4 text-base font-semibold text-(--color-on-accent) transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
                             >
                                 Portfolio 보기
                             </Link>
                             <Link
                                 href="/resume"
-                                className="rounded-full border-2 border-(--color-border) px-8 py-4 text-base font-semibold text-(--color-foreground) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--color-accent) hover:text-(--color-accent)"
+                                className="rounded-2xl border-2 border-(--color-border) px-8 py-4 text-base font-semibold text-(--color-foreground) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--color-accent) hover:text-(--color-accent)"
                             >
                                 Resume 보기
                             </Link>

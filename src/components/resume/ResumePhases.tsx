@@ -201,7 +201,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
                             className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
                         >
                             <div className="mb-2 flex items-center gap-2.5">
-                                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
                                     {idx + 1}
                                 </span>
                                 <h3 className="m-0 text-base font-bold text-(--color-foreground)">

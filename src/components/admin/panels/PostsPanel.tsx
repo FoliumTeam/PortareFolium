@@ -955,7 +955,7 @@ export default function PostsPanel({
                                             </Badge>
                                         )}
                                         {stateCount > 0 && (
-                                            <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                            <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
                                                 상태: {stateCount}
                                             </span>
                                         )}
@@ -984,7 +984,7 @@ export default function PostsPanel({
                                         {post.tags.slice(0, 3).map((t) => (
                                             <span
                                                 key={t}
-                                                className="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
+                                                className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
                                             >
                                                 {t}
                                             </span>

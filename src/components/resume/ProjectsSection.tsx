@@ -52,7 +52,7 @@ export default async function ProjectsSection({
             >
                 {label}
                 {badge ? (
-                    <span className="rounded-full bg-(--color-accent) px-3 py-0.5 text-xs font-bold tracking-widest text-(--color-on-accent) normal-case">
+                    <span className="rounded-lg bg-(--color-accent) px-3 py-0.5 text-xs font-bold tracking-widest text-(--color-on-accent) normal-case">
                         {badge}
                     </span>
                 ) : null}

@@ -50,7 +50,7 @@ export default async function BookDetailPage({
             <article className="max-w-3xl min-w-0 flex-1">
                 <Link
                     href="/portfolio"
-                    className="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+                    className="mb-8 inline-flex items-center gap-2 rounded-xl border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     Portfolio 목록
@@ -96,7 +96,7 @@ export default async function BookDetailPage({
                                 {book.tags.map((tag: string) => (
                                     <span
                                         key={tag}
-                                        className="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg)"
+                                        className="rounded-lg bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg)"
                                     >
                                         {tag}
                                     </span>

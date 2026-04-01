@@ -555,7 +555,7 @@ export default function ResumePanel() {
             {/* 커리어 타임라인 — phases 디자인 전용 */}
             {resumeLayout === "phases" ? (
                 <section className="space-y-4 rounded-xl border border-(--color-accent) bg-(--color-surface) p-6">
-                    <div className="w-fit rounded-full bg-(--color-accent) px-2 py-0.5 text-sm font-medium text-(--color-on-accent)">
+                    <div className="w-fit rounded-lg bg-(--color-accent) px-2 py-0.5 text-sm font-medium text-(--color-on-accent)">
                         Phases 전용
                     </div>
                     <div className="flex items-center justify-between">

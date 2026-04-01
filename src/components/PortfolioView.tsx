@@ -117,7 +117,7 @@ export default function PortfolioView({ projects }: Props) {
                                     {project.badges.map((b, i) => (
                                         <span
                                             key={i}
-                                            className="rounded-full bg-(--color-accent) px-2.5 py-0.5 text-xs font-semibold text-white"
+                                            className="rounded-lg bg-(--color-accent) px-2.5 py-0.5 text-xs font-semibold text-white"
                                         >
                                             {b.text}
                                         </span>
@@ -188,7 +188,7 @@ export default function PortfolioView({ projects }: Props) {
                                     {project.keywords.map((k, i) => (
                                         <span
                                             key={i}
-                                            className="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg)"
+                                            className="rounded-lg bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg)"
                                         >
                                             {k}
                                         </span>

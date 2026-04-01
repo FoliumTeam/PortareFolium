@@ -1083,13 +1083,13 @@ export default function PortfolioPanel({
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 {item.featured && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                                    <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
                                                         <Star size={10} />{" "}
                                                         Featured
                                                     </span>
                                                 )}
                                                 <span
-                                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
                                                         item.published
                                                             ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
                                                             : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
@@ -1105,7 +1105,7 @@ export default function PortfolioPanel({
                                                         : "Draft"}
                                                 </span>
                                                 {!hasJobField && (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                                                    <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
                                                         <AlertTriangle
                                                             size={10}
                                                         />
@@ -1113,7 +1113,7 @@ export default function PortfolioPanel({
                                                     </span>
                                                 )}
                                                 {stateCount > 0 && (
-                                                    <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                                    <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
                                                         상태: {stateCount}
                                                     </span>
                                                 )}
@@ -1138,7 +1138,7 @@ export default function PortfolioPanel({
                                                 {tags.slice(0, 3).map((t) => (
                                                     <span
                                                         key={t}
-                                                        className="rounded-full bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
+                                                        className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
                                                     >
                                                         {t}
                                                     </span>

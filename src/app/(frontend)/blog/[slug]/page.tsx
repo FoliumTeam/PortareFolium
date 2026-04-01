@@ -86,7 +86,7 @@ export default async function BlogPostPage({
             <article className="max-w-3xl min-w-0 flex-1">
                 <Link
                     href="/blog"
-                    className="mb-8 inline-flex items-center gap-2 rounded-full border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
+                    className="mb-8 inline-flex items-center gap-2 rounded-xl border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     Blog 목록
@@ -107,7 +107,7 @@ export default async function BlogPostPage({
 
                 <header className="mb-10">
                     {category && (
-                        <span className="mb-4 inline-flex items-center rounded-full bg-(--color-accent) px-3 py-1 text-xs font-semibold text-(--color-on-accent)">
+                        <span className="mb-4 inline-flex items-center rounded-lg bg-(--color-accent) px-3 py-1 text-xs font-semibold text-(--color-on-accent)">
                             {category}
                         </span>
                     )}
@@ -140,7 +140,7 @@ export default async function BlogPostPage({
                                         <Link
                                             key={t.slug}
                                             href={`/blog?tag=${encodeURIComponent(t.slug)}`}
-                                            className="rounded-full bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg) transition-opacity hover:opacity-80"
+                                            className="rounded-lg bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg) transition-opacity hover:opacity-80"
                                             style={
                                                 t.color
                                                     ? {

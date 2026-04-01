@@ -690,13 +690,13 @@ export default function BooksSubPanel({
                             <div className="min-w-0 flex-1 space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     {book.featured && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                        <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
                                             <Star className="h-2.5 w-2.5" />{" "}
                                             Featured
                                         </span>
                                     )}
                                     <span
-                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
                                             book.published
                                                 ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
                                                 : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
@@ -710,13 +710,13 @@ export default function BooksSubPanel({
                                         {book.published ? "Published" : "Draft"}
                                     </span>
                                     {!book.job_field?.length && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                                        <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
                                             <AlertTriangle className="h-2.5 w-2.5" />
                                             직무 분야 없음
                                         </span>
                                     )}
                                     {(stateCounts[book.slug] ?? 0) > 0 && (
-                                        <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                        <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
                                             상태: {stateCounts[book.slug]}
                                         </span>
                                     )}

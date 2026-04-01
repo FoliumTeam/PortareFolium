@@ -116,7 +116,7 @@ export default function LoginForm({ siteName = "" }: { siteName?: string }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full rounded-full bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-2xl bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
