@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.10.12 (2026-04-04)
+
+### Fix: 에디터 fullscreen 모드에서 이미지 업로드 모달이 가려지는 버그 수정
+
+- `src/components/admin/TiptapImageUpload.tsx`: 모달 backdrop `z-50` → `z-[110]` 변경 — fullscreen 에디터 컨테이너(`z-[100]`)보다 높은 z-index로 모달이 항상 최상단에 표시되도록 수정
+
 ## v0.10.11 (2026-04-01)
 
 ### Feat: Admin 레이아웃 재구성 — 전체 너비 헤더 + 사이드바 토글 (v0.10.11)

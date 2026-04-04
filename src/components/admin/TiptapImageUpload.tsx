@@ -205,7 +205,8 @@ export default function TiptapImageUpload({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            // z-[110]: fullscreen 에디터 z-[100] (RichMarkdownEditor) 위에 렌더링
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
             onClick={handleClose}
         >
             <div
