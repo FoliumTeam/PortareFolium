@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PortfolioView from "@/components/PortfolioView";
+import PdfExportButton from "@/components/PdfExportButton";
 import { serverClient } from "@/lib/supabase";
 import type { PortfolioProject } from "@/types/portfolio";
 import Link from "next/link";
@@ -96,77 +97,82 @@ export default async function PortfolioPage() {
     }
 
     return (
-        <div className="mx-auto max-w-4xl">
-            <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
-                Portfolio
-            </h1>
-            <PortfolioView projects={publicProjects} />
+        <PdfExportButton fileName="portfolio">
+            <div className="mx-auto max-w-4xl">
+                <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
+                    Portfolio
+                </h1>
+                <PortfolioView projects={publicProjects} />
 
-            {publicBooks.length > 0 && (
-                <>
-                    <div className="my-12 h-px bg-(--color-border)" />
-                    <section>
-                        <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                            <BookOpen className="h-4 w-4" aria-hidden="true" />
-                            Books
-                        </h2>
-                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
-                            {publicBooks.map((book) => (
-                                <Link
-                                    key={book.slug}
-                                    href={`/books/${book.slug}`}
-                                    className="card-lift group flex items-start gap-4 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
-                                >
-                                    {book.cover_url ? (
-                                        <img
-                                            src={book.cover_url}
-                                            alt=""
-                                            width={64}
-                                            height={90}
-                                            className="h-24 w-16 shrink-0 rounded-lg object-cover shadow-sm"
-                                        />
-                                    ) : (
-                                        <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-lg bg-(--color-border)">
-                                            <BookOpen
-                                                className="h-6 w-6 text-(--color-muted)"
-                                                aria-hidden="true"
+                {publicBooks.length > 0 && (
+                    <>
+                        <div className="my-12 h-px bg-(--color-border)" />
+                        <section>
+                            <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
+                                <BookOpen
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                                Books
+                            </h2>
+                            <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
+                                {publicBooks.map((book) => (
+                                    <Link
+                                        key={book.slug}
+                                        href={`/books/${book.slug}`}
+                                        className="card-lift group flex items-start gap-4 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
+                                    >
+                                        {book.cover_url ? (
+                                            <img
+                                                src={book.cover_url}
+                                                alt=""
+                                                width={64}
+                                                height={90}
+                                                className="h-24 w-16 shrink-0 rounded-lg object-cover shadow-sm"
                                             />
-                                        </div>
-                                    )}
-                                    <div className="min-w-0 flex-1">
-                                        <p className="mb-1 font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                            {book.title}
-                                        </p>
-                                        {book.author && (
-                                            <p className="mb-2 text-sm text-(--color-muted)">
-                                                {book.author}
-                                            </p>
+                                        ) : (
+                                            <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-lg bg-(--color-border)">
+                                                <BookOpen
+                                                    className="h-6 w-6 text-(--color-muted)"
+                                                    aria-hidden="true"
+                                                />
+                                            </div>
                                         )}
-                                        {book.rating && (
-                                            <div className="mb-2 flex items-center gap-0.5">
-                                                {Array.from({ length: 5 }).map(
-                                                    (_, i) => (
+                                        <div className="min-w-0 flex-1">
+                                            <p className="mb-1 font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                                {book.title}
+                                            </p>
+                                            {book.author && (
+                                                <p className="mb-2 text-sm text-(--color-muted)">
+                                                    {book.author}
+                                                </p>
+                                            )}
+                                            {book.rating && (
+                                                <div className="mb-2 flex items-center gap-0.5">
+                                                    {Array.from({
+                                                        length: 5,
+                                                    }).map((_, i) => (
                                                         <Star
                                                             key={i}
                                                             className={`h-3.5 w-3.5 ${i < book.rating! ? "fill-(--color-accent) text-(--color-accent)" : "text-(--color-border)"}`}
                                                             aria-hidden="true"
                                                         />
-                                                    )
-                                                )}
-                                            </div>
-                                        )}
-                                        {book.description && (
-                                            <p className="line-clamp-2 text-sm text-(--color-muted)">
-                                                {book.description}
-                                            </p>
-                                        )}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                </>
-            )}
-        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {book.description && (
+                                                <p className="line-clamp-2 text-sm text-(--color-muted)">
+                                                    {book.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </section>
+                    </>
+                )}
+            </div>
+        </PdfExportButton>
     );
 }

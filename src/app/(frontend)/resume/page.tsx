@@ -5,6 +5,7 @@ import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import ResumeMinimal from "@/components/resume/ResumeMinimal";
 import ResumePhases from "@/components/resume/ResumePhases";
+import PdfExportButton from "@/components/PdfExportButton";
 import { filterByJobField } from "@/lib/job-field";
 
 export const revalidate = false;
@@ -91,7 +92,7 @@ export default async function ResumePage() {
     };
 
     return (
-        <>
+        <PdfExportButton fileName="resume">
             {resumeLayout === "classic" && (
                 <ResumeClassic resume={resumeData} />
             )}
@@ -106,6 +107,6 @@ export default async function ResumePage() {
                     activeJobField={jobField}
                 />
             )}
-        </>
+        </PdfExportButton>
     );
 }
