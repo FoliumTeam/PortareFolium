@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.10.20 (2026-04-09)
+
+### Fix: 로그인 페이지 인증 리다이렉트
+
+- `src/components/admin/LoginForm.tsx`: 마운트 시 세션 체크 추가 — 이미 로그인된 유저가 `/admin/login` 방문 시 랜딩 페이지(`/`)로 자동 리다이렉트
+
 ## v0.10.19 (2026-04-09)
 
 ### Fix: 에셋 이전 handleSave 누락 + Storage RLS 정책 마이그레이션

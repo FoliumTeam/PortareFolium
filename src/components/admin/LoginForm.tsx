@@ -6,7 +6,7 @@
  * Supabase Auth 이메일/패스워드 로그인 폼.
  * 로그인 성공 시 /admin 으로 리다이렉트한다.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 
 export default function LoginForm({
@@ -20,6 +20,16 @@ export default function LoginForm({
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
+    useEffect(() => {
+        if (!browserClient) return;
+        browserClient.auth.getUser().then(({ data }) => {
+            if (data.user) {
+                window.location.href = "/";
+            }
+        });
+    }, []);
 
     /** 폼 제출 — Supabase signInWithPassword 호출 */
     const handleSubmit = async (e: React.FormEvent) => {
