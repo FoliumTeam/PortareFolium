@@ -19,7 +19,7 @@ export default function Header({
             className="sticky top-0 z-50 border-b-2 border-(--color-border) bg-(--color-surface)/95 backdrop-blur-md transition-shadow"
             id="site-header"
         >
-            <nav className="container mx-auto flex items-center justify-between gap-4 px-6 py-4">
+            <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
                 {/* 사이트 로고 */}
                 <Link
                     href="/"

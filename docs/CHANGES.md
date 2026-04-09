@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.10.16 (2026-04-09)
+
+### Refactor: 프론트엔드 max-width 축소
+
+- `src/app/(frontend)/layout.tsx`: main 래퍼 `max-w-[1350px]` → `max-w-6xl` (1152px)
+- `src/components/Header.tsx`: nav `container` → `max-w-6xl` (콘텐츠 영역과 정렬)
+- `src/components/AboutView.tsx`: loading/error 상태 `max-w-7xl` → `max-w-5xl`
+
 ## v0.10.15 (2026-04-09)
 
 ### Feat: Tailwind named color 스킴 확장 + PDF 내보내기 + 인증 UX 개선
