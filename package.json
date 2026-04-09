@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.10.12",
+    "version": "0.10.19",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -64,6 +64,8 @@
         "cm6-theme-basic-dark": "^0.2.0",
         "cm6-theme-basic-light": "^0.2.0",
         "cmdk": "^1.1.1",
+        "html2canvas-pro": "^2.0.2",
+        "jspdf": "^4.2.1",
         "katex": "^0.16.38",
         "lucide-react": "^0.577.0",
         "mermaid": "^11.13.0",
@@ -80,6 +82,7 @@
         "simple-icons": "^16.12.0",
         "tailwind-merge": "^3.5.0",
         "tiptap-markdown": "^0.9.0",
+        "transliteration": "^2.6.1",
         "unist-util-visit": "^5.1.0"
     },
     "devDependencies": {

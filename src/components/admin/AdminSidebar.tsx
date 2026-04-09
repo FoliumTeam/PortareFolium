@@ -103,7 +103,7 @@ export default function AdminSidebar({
                             // 섹션 구분선
                             <div className="mx-3 my-2.5 h-px bg-(--color-border) opacity-70" />
                         )}
-                        <p className="mb-1 px-4 text-[9px] font-black tracking-[0.2em] text-(--color-muted) uppercase opacity-60">
+                        <p className="mb-1 px-4 text-[10px] font-black tracking-[0.2em] text-(--color-muted) uppercase">
                             {section.label}
                         </p>
                         {section.items.map((item) => {

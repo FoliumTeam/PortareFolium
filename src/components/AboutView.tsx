@@ -73,7 +73,7 @@ export default function AboutView() {
 
     if (loading) {
         return (
-            <div className="mx-auto max-w-7xl animate-pulse space-y-4 py-12">
+            <div className="mx-auto max-w-5xl animate-pulse space-y-4 py-12">
                 <div className="h-8 w-40 rounded bg-(--color-border)" />
                 <div className="flex gap-8">
                     <div className="h-40 w-40 shrink-0 rounded-full bg-(--color-border)" />
@@ -89,7 +89,7 @@ export default function AboutView() {
 
     if (error || !data) {
         return (
-            <div className="mx-auto max-w-7xl py-12">
+            <div className="mx-auto max-w-5xl py-12">
                 <p className="text-sm text-red-500">{error ?? "데이터 없음"}</p>
             </div>
         );
@@ -126,7 +126,7 @@ export default function AboutView() {
     );
 
     return (
-        <article className="mx-auto max-w-4xl py-12">
+        <article className="scroll-reveal mx-auto max-w-4xl py-12">
             {/* 프로필 섹션 */}
             <div className="tablet:flex-row tablet:items-start tablet:gap-12 flex flex-col gap-8">
                 {/* 프로필 이미지 */}

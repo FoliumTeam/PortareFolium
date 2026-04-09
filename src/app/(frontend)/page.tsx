@@ -223,12 +223,11 @@ export default async function HomePage() {
                 descriptionSub={about.descriptionSub}
                 profileImage={profileImage}
                 valuePillars={valuePillars}
-                coreCompetencies={coreValues}
             />
 
             {/* Portfolio Featured */}
             {featuredItems.length > 0 && (
-                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
+                <section className="scroll-reveal mx-auto max-w-5xl border-t border-(--color-border) py-14">
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
@@ -361,7 +360,7 @@ export default async function HomePage() {
             )}
 
             {/* 핵심 역량 */}
-            <section className="mx-auto max-w-5xl border-t border-(--color-border) py-16">
+            <section className="scroll-reveal mx-auto max-w-5xl border-t border-(--color-border) py-16">
                 <div className="mb-10">
                     <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
                         Technical Strengths
@@ -394,7 +393,7 @@ export default async function HomePage() {
 
             {/* Work Experience */}
             {workItems.length > 0 && (
-                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
+                <section className="scroll-reveal mx-auto max-w-5xl border-t border-(--color-border) py-14">
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
@@ -466,7 +465,7 @@ export default async function HomePage() {
 
             {/* Blog 최신 글 */}
             {latestPosts.length > 0 && (
-                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
+                <section className="scroll-reveal mx-auto max-w-5xl border-t border-(--color-border) py-14">
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
@@ -500,7 +499,7 @@ export default async function HomePage() {
                     {latestPosts[0] && (
                         <Link
                             href={`/blog/${latestPosts[0].slug}`}
-                            className="card-lift group mb-4 block overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
+                            className="card-lift group mb-4 block overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)"
                         >
                             <div className="tablet:flex-row flex flex-col">
                                 {latestPosts[0].thumbnailUrl && (
@@ -541,7 +540,7 @@ export default async function HomePage() {
                     )}
 
                     {latestPosts.length > 1 && (
-                        <ul className="divide-y divide-(--color-border) overflow-hidden rounded-2xl border border-(--color-border)">
+                        <ul className="divide-y divide-(--color-border) overflow-hidden rounded-xl border border-(--color-border)">
                             {latestPosts.slice(1).map((post) => (
                                 <li key={post.slug}>
                                     <Link

@@ -1,5 +1,62 @@
 # CHANGES
 
+## v0.10.19 (2026-04-09)
+
+### Fix: 에셋 이전 handleSave 누락 + Storage RLS 정책 마이그레이션
+
+- `src/components/admin/panels/PostsPanel.tsx`: `handleSave`에 `migrateAssetsIfNeeded()` 호출 추가 (수동 저장 시에도 에셋 이전 실행)
+- `src/components/admin/panels/PortfolioPanel.tsx`: 동일 수정
+- `src/lib/image-upload.ts`: `listStorageFiles`, `moveStorageFolder`, `deleteStorageFolder` 에러 로깅 추가
+- `src/lib/migrations.ts`: Storage RLS 정책 마이그레이션 2건 추가 (SELECT authenticated, UPDATE/DELETE authenticated) — 수동 실행 필요
+
+## v0.10.18 (2026-04-09)
+
+### Feat: Slug 자동 생성 (한글 romanization) + 에셋 이전 + 삭제 cleanup
+
+- `src/lib/slug.ts`: `toSlug` (transliteration 기반 한글→romanized slug), `uniqueSlug` (DB 중복 검사 + suffix)
+- `src/lib/image-upload.ts`: `listStorageFiles`, `moveStorageFolder`, `deleteStorageFolder`, `replaceImageUrls` 유틸 추가 + 이미지 중복 처리 TODO
+- `src/components/admin/RichMarkdownEditor.tsx`: `transferring` prop + "에셋 이전 중..." overlay
+- `src/components/admin/panels/PostsPanel.tsx`: slug 변경 감지 → 에셋 자동 이전, 삭제 시 스토리지 cleanup, slug UI (수동 편집 + 자동 생성 토글)
+- `src/components/admin/panels/PortfolioPanel.tsx`: 동일 패턴 적용
+- `src/components/admin/panels/BooksSubPanel.tsx`: inline toSlug 제거, slug.ts import
+- `src/__tests__/slug.test.ts`: toSlug + uniqueSlug 테스트 (9개)
+
+## v0.10.17 (2026-04-09)
+
+### Feat: 스크롤 reveal 애니메이션 + active nav 표시
+
+- `src/components/ScrollRevealInit.tsx`: IntersectionObserver + MutationObserver 기반 scroll reveal (viewport 내 요소 즉시 reveal, 동적 렌더링 요소 자동 감지)
+- `src/styles/global.css`: `.scroll-reveal`, `.stagger-child`, `.img-hover-zoom`, `:focus-visible`, active nav 스타일 추가
+- `src/components/Header.tsx`: `usePathname` 기반 `aria-current="page"` active nav 표시
+- `src/app/(frontend)/page.tsx`, `portfolio/page.tsx`, `blog/page.tsx`, `AboutView.tsx`: 주요 섹션에 `scroll-reveal` 적용
+
+## v0.10.16 (2026-04-09)
+
+### Refactor: 프론트엔드 max-width 축소
+
+- `src/app/(frontend)/layout.tsx`: main 래퍼 `max-w-[1350px]` → `max-w-6xl` (1152px)
+- `src/components/Header.tsx`: nav `container` → `max-w-6xl` (콘텐츠 영역과 정렬)
+- `src/components/AboutView.tsx`: loading/error 상태 `max-w-7xl` → `max-w-5xl`
+
+## v0.10.15 (2026-04-09)
+
+### Feat: Tailwind named color 스킴 확장 + PDF 내보내기 + 인증 UX 개선
+
+- `src/lib/color-schemes.ts`: 17개 Tailwind named color (red~rose) 스킴 정의, 기존 커스텀 스킴 (slate/ember/circuit/phantom) 제거
+- `src/styles/tailwind-color-schemes.css`: 전체 스킴 CSS 변수 (light/dark) + plain 모드 + PDF 중립 흑백 스킴
+- `src/styles/global.css`: 커스텀 스킴 CSS 제거, Tailwind 스킴 CSS import
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 그리드 버튼 → 드롭다운 (색상 스와치) + plain 모드 토글
+- `src/lib/mermaid-themes.ts`: 전체 스킴 mermaid 테마 동기화
+- `src/app/layout.tsx`: VALID_SCHEMES 동적화, plain_mode SSR/localStorage 지원, 기본 스킴 blue
+- `src/components/PdfPreviewModal.tsx`: PDF 프리뷰 모달 (사이드바 컨트롤, 컬러 스킴 선택, 로딩 애니메이션, 다중 페이지 PDF)
+- `src/components/PdfExportButton.tsx`: 인증된 사용자만 PDF 내보내기 버튼 표시
+- `src/app/(frontend)/resume/page.tsx`, `portfolio/page.tsx`: PdfExportButton 래핑
+- `src/components/ThemeToggle.tsx`: 컬러 스킴 선택 제거, dark/light/system만 표시
+- `src/components/UserMenu.tsx`: 헤더 로그인/프로필 드롭다운 (Admin + 로그아웃)
+- `src/components/Header.tsx`: UserMenu 추가, isDev Admin 링크 제거
+- `src/components/admin/LoginForm.tsx`: returnUrl 지원 (로그인 후 이전 페이지로 복귀)
+- `src/app/admin/login/page.tsx`: searchParams에서 returnUrl 전달
+
 ## v0.10.12 (2026-04-04)
 
 ### Fix: 에디터 fullscreen 모드에서 이미지 업로드 모달이 가려지는 버그 수정

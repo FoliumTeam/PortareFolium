@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { browserClient } from "@/lib/supabase";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LogOut, Settings } from "lucide-react";
+
+// 프로필 이미지 placeholder
+const PLACEHOLDER_IMG =
+    "https://urqqfjxocxfrvuozgobi.supabase.co/storage/v1/object/public/images/legacy/avatar-placeholder-c9516fa9.svg";
+
+export default function UserMenu() {
+    const [user, setUser] = useState<{ id: string } | null>(null);
+    const [profileImg, setProfileImg] = useState<string>(PLACEHOLDER_IMG);
+    const [open, setOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
+
+    // 인증 상태 + 프로필 이미지 로드
+    useEffect(() => {
+        setMounted(true);
+        if (!browserClient) return;
+
+        browserClient.auth.getUser().then(({ data }) => {
+            if (data.user) {
+                setUser({ id: data.user.id });
+                loadProfileImage();
+            }
+        });
+
+        const { data: listener } = browserClient.auth.onAuthStateChange(
+            (_event, session) => {
+                if (session?.user) {
+                    setUser({ id: session.user.id });
+                    loadProfileImage();
+                } else {
+                    setUser(null);
+                }
+            }
+        );
+
+        return () => listener.subscription.unsubscribe();
+    }, []);
+
+    // resume_data에서 프로필 이미지 fetch
+    const loadProfileImage = async () => {
+        if (!browserClient) return;
+        const { data } = await browserClient
+            .from("resume_data")
+            .select("data")
+            .eq("lang", "ko")
+            .single();
+        const img = (data?.data as Record<string, unknown>)?.basics as
+            | { image?: string }
+            | undefined;
+        if (img?.image) setProfileImg(img.image);
+    };
+
+    // 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        if (open) document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [open]);
+
+    if (!mounted) {
+        return (
+            <div className="h-8 w-8 animate-pulse rounded-full bg-(--color-muted)/20" />
+        );
+    }
+
+    // 미인증: 로그인 버튼
+    if (!user) {
+        return (
+            <Link
+                href={`/admin/login?returnUrl=${encodeURIComponent(pathname)}`}
+                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+            >
+                로그인
+            </Link>
+        );
+    }
+
+    // 인증됨: 프로필 이미지 + 드롭다운
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-(--color-border) transition-colors hover:border-(--color-accent)"
+            >
+                <img
+                    src={profileImg}
+                    alt="프로필"
+                    className="h-full w-full object-cover"
+                />
+            </button>
+
+            {open && (
+                <div className="absolute top-full right-0 z-50 mt-1 min-w-[140px]">
+                    <div className="rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
+                        <Link
+                            href="/admin"
+                            onClick={() => setOpen(false)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
+                        >
+                            <Settings className="h-4 w-4" />
+                            Admin
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setOpen(false);
+                                await browserClient?.auth.signOut();
+                                setUser(null);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-(--color-surface-subtle)"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            로그아웃
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

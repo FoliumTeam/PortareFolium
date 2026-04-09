@@ -12,6 +12,7 @@ export interface Migration {
     title: string;
     feature: string;
     sql: string;
+    manual?: string;
 }
 
 // a < b → -1 | a === b → 0 | a > b → 1
@@ -300,5 +301,42 @@ WHERE NOT (data ? 'valuePillars');
 INSERT INTO site_config (key, value)
 VALUES ('db_schema_version', '"0.10.6"')
 ON CONFLICT (key) DO UPDATE SET value = '"0.10.6"';`,
+    },
+    {
+        version: "0.10.18",
+        title: "Storage 파일 목록 정책 보안 강화",
+        feature: "images bucket SELECT 정책: public → authenticated only",
+        manual: "storage.objects 테이블은 supabase_storage_admin 소유 — DDL 정책 변경은 Supabase Dashboard SQL Editor에서만 실행 가능",
+        sql: `
+DROP POLICY IF EXISTS images_public_read ON storage.objects;
+
+CREATE POLICY images_authenticated_select ON storage.objects
+  FOR SELECT
+  TO authenticated
+  USING (bucket_id = 'images');
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.10.18"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.10.18"';`,
+    },
+    {
+        version: "0.10.19",
+        title: "Storage UPDATE/DELETE 정책 추가",
+        feature: "images bucket에셋 이전(move) + 삭제(remove) 권한",
+        manual: "storage.objects DDL 정책 — Supabase Dashboard SQL Editor에서 실행",
+        sql: `
+CREATE POLICY images_authenticated_update ON storage.objects
+  FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'images');
+
+CREATE POLICY images_authenticated_delete ON storage.objects
+  FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'images');
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.10.19"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.10.19"';`,
     },
 ];

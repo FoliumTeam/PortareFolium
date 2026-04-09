@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
+import {
+    moveStorageFolder,
+    deleteStorageFolder,
+    replaceImageUrls,
+} from "@/lib/image-upload";
+import { toSlug, uniqueSlug } from "@/lib/slug";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
 import {
     Eye,
@@ -89,16 +95,6 @@ const EMPTY_FORM: PostForm = {
 const POST_SELECT_FIELDS =
     "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
 
-// slug 자동 생성: 제목에서 공백→하이픈, 영소문자/숫자/하이픈만 허용
-function toSlug(title: string): string {
-    return title
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "")
-        .replace(/-+/g, "-")
-        .slice(0, 80);
-}
-
 interface PostsPanelProps {
     editPath?: string;
     onEditPathChange?: (path: string) => void;
@@ -124,6 +120,10 @@ export default function PostsPanel({
     const [postTocStyles, setPostTocStyles] = useState<Record<string, string>>(
         {}
     );
+    // slug 수동 편집 잠금 + 에셋 이전 상태
+    const [slugLocked, setSlugLocked] = useState(false);
+    const [transferring, setTransferring] = useState(false);
+    const savedSlugRef = useRef<string>("");
     // MetadataSheet 상태
     const [metadataOpen, setMetadataOpen] = useState(false);
 
@@ -311,6 +311,8 @@ export default function PostsPanel({
             og_image: post.og_image ?? "",
         };
         initialFormRef.current = f;
+        savedSlugRef.current = post.slug;
+        setSlugLocked(true);
         setForm(f);
         setEditTarget(post);
         onEditPathChange?.(`edit/${post.slug}`);
@@ -325,6 +327,8 @@ export default function PostsPanel({
             jobField: activeJobField ? [activeJobField] : [],
         };
         initialFormRef.current = base;
+        savedSlugRef.current = "";
+        setSlugLocked(false);
         setForm(base);
         setEditTarget("new");
         onEditPathChange?.("new");
@@ -332,10 +336,32 @@ export default function PostsPanel({
         setSuccess(null);
     };
 
+    // slug 변경 시 에셋 이전
+    const migrateAssetsIfNeeded = async (): Promise<string> => {
+        const oldSlug = savedSlugRef.current;
+        const newSlug = form.slug;
+        if (!oldSlug || oldSlug === newSlug) return form.content;
+        setTransferring(true);
+        try {
+            await moveStorageFolder(`blog/${oldSlug}`, `blog/${newSlug}`);
+            const updated = replaceImageUrls(
+                form.content,
+                `blog/${oldSlug}`,
+                `blog/${newSlug}`
+            );
+            setForm((f) => ({ ...f, content: updated }));
+            savedSlugRef.current = newSlug;
+            return updated;
+        } finally {
+            setTransferring(false);
+        }
+    };
+
     // 자동 저장 (DB에 직접 저장)
     const autoSave = async () => {
         if (!browserClient || !form.title || !form.slug) return;
-        const payload = buildPayload();
+        const migratedContent = await migrateAssetsIfNeeded();
+        const payload = { ...buildPayload(), content: migratedContent };
         if (editTarget === "new") {
             // 신규: insert 후 editTarget을 실제 post로 전환
             const { data: newPost, error: err } = await browserClient
@@ -345,6 +371,7 @@ export default function PostsPanel({
                 .single();
             if (!err && newPost) {
                 initialFormRef.current = form;
+                savedSlugRef.current = newPost.slug;
                 setEditTarget(newPost);
                 await revalidatePost(newPost.slug);
             }
@@ -375,7 +402,8 @@ export default function PostsPanel({
         setSaving(true);
         setError(null);
 
-        const payload = buildPayload();
+        const migratedContent = await migrateAssetsIfNeeded();
+        const payload = { ...buildPayload(), content: migratedContent };
         let err;
         if (editTarget === "new") {
             ({ error: err } = await browserClient
@@ -393,6 +421,7 @@ export default function PostsPanel({
             setError(err.message);
         } else {
             initialFormRef.current = form;
+            savedSlugRef.current = form.slug;
             setSuccess("저장 완료");
             loadPosts();
             if (editTarget === "new") setEditTarget(null);
@@ -412,15 +441,18 @@ export default function PostsPanel({
         }
     };
 
-    // 삭제
+    // 삭제 (스토리지 cleanup 포함)
     const handleDelete = async (id: string) => {
         if (!browserClient || !confirm("정말 삭제하시겠습니까?")) return;
+        // slug 확인 (스토리지 폴더 삭제용)
+        const target = posts.find((p) => p.id === id);
         const { error: err } = await browserClient
             .from("posts")
             .delete()
             .eq("id", id);
         if (err) setError(err.message);
         else {
+            if (target?.slug) deleteStorageFolder(`blog/${target.slug}`);
             if (
                 editTarget !== null &&
                 editTarget !== "new" &&
@@ -516,12 +548,52 @@ export default function PostsPanel({
                         setForm((f) => ({
                             ...f,
                             title: t,
-                            slug: f.slug || toSlug(t),
+                            slug: slugLocked ? f.slug : toSlug(t),
                         }));
                     }}
                     placeholder="제목을 입력하세요"
                     className="w-full border-none bg-transparent py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
                 />
+                {/* slug 입력 */}
+                <div className="flex items-center gap-2 border-t border-(--color-border) px-1 py-2">
+                    <span className="shrink-0 text-xs text-(--color-muted)">
+                        /{slugLocked ? "🔒" : "🔓"}
+                    </span>
+                    <input
+                        type="text"
+                        value={form.slug}
+                        onChange={(e) => {
+                            setSlugLocked(true);
+                            setForm((f) => ({
+                                ...f,
+                                slug: e.target.value
+                                    .toLowerCase()
+                                    .replace(/\s+/g, "-")
+                                    .replace(
+                                        /[^a-z0-9가-힣ぁ-んァ-ヶ一-龥-]/g,
+                                        ""
+                                    )
+                                    .slice(0, 80),
+                            }));
+                        }}
+                        className="min-w-0 flex-1 bg-transparent text-xs text-(--color-muted) focus:text-(--color-foreground) focus:outline-none"
+                    />
+                    {slugLocked && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSlugLocked(false);
+                                setForm((f) => ({
+                                    ...f,
+                                    slug: toSlug(f.title),
+                                }));
+                            }}
+                            className="shrink-0 rounded bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            자동 생성
+                        </button>
+                    )}
+                </div>
 
                 {/* 본문 에디터 */}
                 <div className="min-h-[400px] flex-1">
@@ -532,6 +604,7 @@ export default function PostsPanel({
                         folderPath={`blog/${form.slug || "untitled"}`}
                         storageKey={`post_${form.slug || "new"}`}
                         onEditorReady={setEditorInstance}
+                        transferring={transferring}
                     />
                 </div>
 
@@ -548,7 +621,7 @@ export default function PostsPanel({
                 )}
 
                 {/* Sticky 저장 바 */}
-                <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+                <div className="tablet:-mx-6 laptop:-mx-8 sticky bottom-0 z-50 -mx-4 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
                     <div className="mx-auto flex items-center justify-between gap-3">
                         <span className="text-base text-(--color-muted)">
                             저장 후 미리보기를 방문하면 캐시가 갱신됩니다.

@@ -2,6 +2,7 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@import "./tailwind-color-schemes.css";
 
 /* 스무스 스크롤 */
 html {
@@ -71,155 +72,6 @@ body {
     --input: var(--color-border);
     --ring: var(--color-accent);
     --radius: 0.5rem;
-}
-
-/* Color Scheme: slate (UE5 blue) | ember (orange) | circuit (green) | phantom (purple) */
-/* 다크모드 1차, 라이트모드 동등 지원. Mermaid 동기화: src/lib/mermaid-themes.ts */
-
-/* slate: UE5 Editor 다크 슬레이트 + Unreal Blue (기본값) */
-[data-color-scheme="slate"],
-:root:not([data-color-scheme]) {
-    --color-code-block-bg: #1e2028;
-    --color-code-block-fg: #e0e4ec;
-    --color-surface: #f3f5f8;
-    --color-surface-subtle: #e6eaf0;
-    --color-foreground: #141620;
-    --color-muted: #5c6370;
-    --color-border: #c5cad4;
-    --color-accent: #2563eb;
-    --color-on-accent: #ffffff;
-    --color-highlight: #1d4ed8;
-    --color-tag-bg: #dbeafe;
-    --color-tag-fg: #1e40af;
-    --color-code-bg: #e8ecf2;
-    --color-code-fg: #1a1c28;
-    --color-link: #2563eb;
-}
-[data-color-scheme="slate"].dark,
-:root:not([data-color-scheme]).dark {
-    --color-code-block-bg: #14161e;
-    --color-code-block-fg: #d0d6e0;
-    --color-surface: #1a1c24;
-    --color-surface-subtle: #22252e;
-    --color-foreground: #e4e8f0;
-    --color-muted: #8890a0;
-    --color-border: #2e3340;
-    --color-accent: #2d7ff9;
-    --color-on-accent: #ffffff;
-    --color-highlight: #5ba0ff;
-    --color-tag-bg: #1a2540;
-    --color-tag-fg: #7db4ff;
-    --color-code-bg: #1e2230;
-    --color-code-fg: #c8d0e0;
-    --color-link: #5ba0ff;
-}
-
-/* ember: 고에너지 오렌지/파이어 */
-[data-color-scheme="ember"] {
-    --color-code-block-bg: #261a10;
-    --color-code-block-fg: #f0e6da;
-    --color-surface: #faf8f5;
-    --color-surface-subtle: #f2ede6;
-    --color-foreground: #2a2118;
-    --color-muted: #7a6f62;
-    --color-border: #ddd5ca;
-    --color-accent: #ea580c;
-    --color-on-accent: #ffffff;
-    --color-highlight: #c2410c;
-    --color-tag-bg: #ffedd5;
-    --color-tag-fg: #c2410c;
-    --color-code-bg: #f5ece2;
-    --color-code-fg: #2a2118;
-    --color-link: #ea580c;
-}
-[data-color-scheme="ember"].dark {
-    --color-code-block-bg: #1a1410;
-    --color-code-block-fg: #f0e6da;
-    --color-surface: #1c1814;
-    --color-surface-subtle: #28201a;
-    --color-foreground: #f0ebe4;
-    --color-muted: #9a918a;
-    --color-border: #3d3228;
-    --color-accent: #f97316;
-    --color-on-accent: #1c1814;
-    --color-highlight: #fb923c;
-    --color-tag-bg: #2e2010;
-    --color-tag-fg: #fbb870;
-    --color-code-bg: #261e14;
-    --color-code-fg: #e8ddd0;
-    --color-link: #fb923c;
-}
-
-/* circuit: 매트릭스 그린 */
-[data-color-scheme="circuit"] {
-    --color-code-block-bg: #0a1a12;
-    --color-code-block-fg: #d0f0dc;
-    --color-surface: #f2faf5;
-    --color-surface-subtle: #e0f2e8;
-    --color-foreground: #0f2618;
-    --color-muted: #4a7058;
-    --color-border: #b0d4be;
-    --color-accent: #16a34a;
-    --color-on-accent: #ffffff;
-    --color-highlight: #15803d;
-    --color-tag-bg: #dcfce7;
-    --color-tag-fg: #166534;
-    --color-code-bg: #e2f0e8;
-    --color-code-fg: #0f2618;
-    --color-link: #16a34a;
-}
-[data-color-scheme="circuit"].dark {
-    --color-code-block-bg: #0a140e;
-    --color-code-block-fg: #d0f0dc;
-    --color-surface: #0e1612;
-    --color-surface-subtle: #162018;
-    --color-foreground: #daf0e2;
-    --color-muted: #70a880;
-    --color-border: #1e3828;
-    --color-accent: #22c55e;
-    --color-on-accent: #0a1a10;
-    --color-highlight: #4ade80;
-    --color-tag-bg: #102818;
-    --color-tag-fg: #6ee7a0;
-    --color-code-bg: #12201a;
-    --color-code-fg: #c8e8d4;
-    --color-link: #4ade80;
-}
-
-/* phantom: 보라/바이올렛 */
-[data-color-scheme="phantom"] {
-    --color-code-block-bg: #1a1028;
-    --color-code-block-fg: #e4daf0;
-    --color-surface: #f8f5ff;
-    --color-surface-subtle: #ede8f8;
-    --color-foreground: #1a1030;
-    --color-muted: #665c80;
-    --color-border: #c8bce0;
-    --color-accent: #7c3aed;
-    --color-on-accent: #ffffff;
-    --color-highlight: #6d28d9;
-    --color-tag-bg: #ede9fe;
-    --color-tag-fg: #5b21b6;
-    --color-code-bg: #e8e0f4;
-    --color-code-fg: #1a1030;
-    --color-link: #7c3aed;
-}
-[data-color-scheme="phantom"].dark {
-    --color-code-block-bg: #100c1a;
-    --color-code-block-fg: #e4daf0;
-    --color-surface: #13101c;
-    --color-surface-subtle: #1c1828;
-    --color-foreground: #e8e2f4;
-    --color-muted: #8a80a8;
-    --color-border: #2e2848;
-    --color-accent: #8b5cf6;
-    --color-on-accent: #ffffff;
-    --color-highlight: #a78bfa;
-    --color-tag-bg: #1e1440;
-    --color-tag-fg: #b8a0f8;
-    --color-code-bg: #1a1430;
-    --color-code-fg: #d8cee8;
-    --color-link: #a78bfa;
 }
 
 /* ── Prose Overhaul ─────────────────────────────────────────────── */
@@ -731,6 +583,78 @@ html.dark .prose :where(td) {
 }
 .dark .card-lift:hover {
     box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ── Delight: scroll reveal ─────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+    [data-scroll-ready] .scroll-reveal {
+        opacity: 0;
+        transform: translateY(1.2rem);
+        transition:
+            opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .scroll-reveal.revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    /* 리스트 아이템 순차 등장 */
+    .scroll-reveal.revealed .stagger-child:nth-child(1) {
+        transition-delay: 0s;
+    }
+    .scroll-reveal.revealed .stagger-child:nth-child(2) {
+        transition-delay: 0.07s;
+    }
+    .scroll-reveal.revealed .stagger-child:nth-child(3) {
+        transition-delay: 0.14s;
+    }
+    .scroll-reveal.revealed .stagger-child:nth-child(4) {
+        transition-delay: 0.21s;
+    }
+    .scroll-reveal.revealed .stagger-child:nth-child(5) {
+        transition-delay: 0.28s;
+    }
+    .scroll-reveal.revealed .stagger-child:nth-child(6) {
+        transition-delay: 0.35s;
+    }
+    [data-scroll-ready] .scroll-reveal .stagger-child {
+        opacity: 0;
+        transform: translateY(0.75rem);
+        transition:
+            opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .scroll-reveal.revealed .stagger-child {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Delight: 이미지 hover zoom ──────────────────────────────────── */
+.img-hover-zoom {
+    overflow: hidden;
+}
+.img-hover-zoom img {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.img-hover-zoom:hover img {
+    transform: scale(1.04);
+}
+
+/* ── Delight: focus ring ─────────────────────────────────────────── */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* ── Delight: active nav 표시 ────────────────────────────────────── */
+.nav-link[aria-current="page"]::after {
+    width: 100%;
+    left: 0;
+    background: var(--color-accent);
+}
+.nav-link[aria-current="page"] {
+    color: var(--color-foreground);
 }
 
 /* ── Medium / TailwindCSS 블로그 스타일 prose 오버라이드 ───────────── */

@@ -1,26 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import UserMenu from "@/components/UserMenu";
 import Link from "next/link";
 
 export default function Header({
     siteName,
     githubUrl,
-    isDev,
 }: {
     siteName: string;
     githubUrl: string;
-    isDev: boolean;
 }) {
     const [open, setOpen] = useState(false);
+    const pathname = usePathname();
 
     return (
         <header
             className="sticky top-0 z-50 border-b-2 border-(--color-border) bg-(--color-surface)/95 backdrop-blur-md transition-shadow"
             id="site-header"
         >
-            <nav className="container mx-auto flex items-center justify-between gap-4 px-6 py-4">
+            <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
                 {/* 사이트 로고 */}
                 <Link
                     href="/"
@@ -107,20 +108,14 @@ export default function Header({
                             key={href}
                             href={href}
                             className="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                            aria-current={
+                                pathname.startsWith(href) ? "page" : undefined
+                            }
                             onClick={() => setOpen(false)}
                         >
                             {label}
                         </Link>
                     ))}
-                    {isDev && (
-                        <Link
-                            href="/admin"
-                            className="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                            onClick={() => setOpen(false)}
-                        >
-                            Admin
-                        </Link>
-                    )}
                     {/* 구분선 */}
                     <span
                         className="tablet:block tablet:h-5 tablet:w-px tablet:mx-2 hidden bg-(--color-border)"
@@ -147,6 +142,7 @@ export default function Header({
                         </svg>
                     </a>
                     <ThemeToggle />
+                    <UserMenu />
                 </div>
             </nav>
         </header>

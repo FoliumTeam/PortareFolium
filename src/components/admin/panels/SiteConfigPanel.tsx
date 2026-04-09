@@ -12,22 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Trash2 } from "lucide-react";
-
-type ColorScheme = "slate" | "ember" | "circuit" | "phantom";
+import { Switch } from "@/components/ui/switch";
+import { ChevronDown, Trash2 } from "lucide-react";
+import { COLOR_SCHEMES, type ColorScheme } from "@/lib/color-schemes";
 
 type JobFieldItem = {
     id: string;
     name: string;
     emoji: string;
 };
-
-const COLOR_OPTIONS: { value: ColorScheme; label: string; desc: string }[] = [
-    { value: "slate", label: "Slate", desc: "UE5 다크 슬레이트 + Unreal Blue" },
-    { value: "ember", label: "Ember", desc: "고에너지 오렌지/파이어" },
-    { value: "circuit", label: "Circuit", desc: "매트릭스 그린" },
-    { value: "phantom", label: "Phantom", desc: "바이올렛/퍼플" },
-];
 
 export default function SiteConfigPanel() {
     const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
@@ -36,8 +29,16 @@ export default function SiteConfigPanel() {
                 document.documentElement.getAttribute("data-color-scheme");
             if (attr) return attr as ColorScheme;
         }
-        return "slate";
+        return "blue";
     });
+    const [plainMode, setPlainMode] = useState<boolean>(() => {
+        if (typeof document !== "undefined") {
+            return document.documentElement.hasAttribute("data-plain");
+        }
+        return false;
+    });
+    const [schemeDropdownOpen, setSchemeDropdownOpen] = useState(false);
+    const schemeDropdownRef = useRef<HTMLDivElement>(null);
     const [activeJobField, setActiveJobField] = useState<string>("");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [seoConfig, setSeoConfig] = useState({
@@ -67,6 +68,7 @@ export default function SiteConfigPanel() {
             .select("key, value")
             .in("key", [
                 "color_scheme",
+                "plain_mode",
                 "job_field",
                 "job_fields",
                 "site_name",
@@ -90,6 +92,24 @@ export default function SiteConfigPanel() {
                             "data-color-scheme",
                             v as ColorScheme
                         );
+                    }
+                    if (row.key === "plain_mode") {
+                        const plain = v === true || v === "true";
+                        setPlainMode(plain);
+                        localStorage.setItem(
+                            "folium_plain_mode",
+                            String(plain)
+                        );
+                        if (plain) {
+                            document.documentElement.setAttribute(
+                                "data-plain",
+                                ""
+                            );
+                        } else {
+                            document.documentElement.removeAttribute(
+                                "data-plain"
+                            );
+                        }
                     }
                     if (row.key === "job_field") setActiveJobField(v as string);
                     if (row.key === "job_fields")
@@ -126,6 +146,21 @@ export default function SiteConfigPanel() {
         if (showPicker) document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, [showPicker]);
+
+    // 스킴 드롭다운 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (
+                schemeDropdownRef.current &&
+                !schemeDropdownRef.current.contains(e.target as Node)
+            ) {
+                setSchemeDropdownOpen(false);
+            }
+        };
+        if (schemeDropdownOpen)
+            document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [schemeDropdownOpen]);
 
     // job_fields + job_field upsert
     const saveJobFields = async (
@@ -449,6 +484,7 @@ export default function SiteConfigPanel() {
 
         const rows = [
             { key: "color_scheme", value: JSON.stringify(colorScheme) },
+            { key: "plain_mode", value: plainMode },
             // site_name: 사이트명 단일 출처
             { key: "site_name", value: JSON.stringify(seoConfig.defaultTitle) },
             {
@@ -467,6 +503,7 @@ export default function SiteConfigPanel() {
 
         if (!error) {
             localStorage.setItem("folium_color_scheme", colorScheme);
+            localStorage.setItem("folium_plain_mode", String(plainMode));
             await revalidateHome();
             await revalidateResume();
         }
@@ -497,32 +534,88 @@ export default function SiteConfigPanel() {
                     새로운 테마를 선택하면 대시보드 화면에 즉시 반영되며, '설정
                     저장' 버튼을 누르면 다른 사용자들에게도 배포됩니다.
                 </p>
-                <div className="tablet:grid-cols-3 grid grid-cols-2 gap-2">
-                    {COLOR_OPTIONS.map((opt) => (
+                <div className="flex items-center gap-4">
+                    {/* 스킴 드롭다운 */}
+                    <div className="relative flex-1" ref={schemeDropdownRef}>
                         <button
-                            key={opt.value}
-                            onClick={() => {
-                                setColorScheme(opt.value);
-                                document.documentElement.setAttribute(
-                                    "data-color-scheme",
-                                    opt.value
-                                );
-                            }}
-                            className={[
-                                "flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                                colorScheme === opt.value
-                                    ? "border-(--color-accent) bg-(--color-accent)/5"
-                                    : "border-(--color-border) hover:border-(--color-accent)/50",
-                            ].join(" ")}
+                            type="button"
+                            onClick={() => setSchemeDropdownOpen((v) => !v)}
+                            className="flex w-full items-center gap-2 rounded-lg border border-(--color-border) px-3 py-2.5 text-left transition-colors hover:border-(--color-accent)/50"
                         >
-                            <span className="text-sm font-semibold text-(--color-foreground)">
-                                {opt.label}
+                            <span
+                                className="h-4 w-4 shrink-0 rounded"
+                                style={{
+                                    backgroundColor:
+                                        COLOR_SCHEMES.find(
+                                            (s) => s.value === colorScheme
+                                        )?.swatch ?? "#6b7280",
+                                }}
+                            />
+                            <span className="flex-1 text-sm font-medium text-(--color-foreground)">
+                                {COLOR_SCHEMES.find(
+                                    (s) => s.value === colorScheme
+                                )?.label ?? colorScheme}
                             </span>
-                            <span className="text-xs text-(--color-muted)">
-                                {opt.desc}
-                            </span>
+                            <ChevronDown
+                                className={`h-4 w-4 text-(--color-muted) transition-transform ${schemeDropdownOpen ? "rotate-180" : ""}`}
+                            />
                         </button>
-                    ))}
+                        {schemeDropdownOpen && (
+                            <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
+                                {COLOR_SCHEMES.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => {
+                                            setColorScheme(opt.value);
+                                            document.documentElement.setAttribute(
+                                                "data-color-scheme",
+                                                opt.value
+                                            );
+                                            setSchemeDropdownOpen(false);
+                                        }}
+                                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${colorScheme === opt.value ? "bg-(--color-accent)/10 font-semibold text-(--color-accent)" : "text-(--color-foreground) hover:bg-(--color-surface-subtle)"}`}
+                                    >
+                                        <span
+                                            className="h-3.5 w-3.5 shrink-0 rounded"
+                                            style={{
+                                                backgroundColor: opt.swatch,
+                                            }}
+                                        />
+                                        <span>{opt.label}</span>
+                                        <span className="ml-auto text-xs text-(--color-muted)">
+                                            {opt.desc}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {/* plain 모드 토글 */}
+                    <div className="flex shrink-0 items-center gap-2">
+                        <Label
+                            htmlFor="plain-toggle"
+                            className="text-sm text-(--color-muted)"
+                        >
+                            Plain
+                        </Label>
+                        <Switch
+                            id="plain-toggle"
+                            checked={plainMode}
+                            onCheckedChange={(checked) => {
+                                setPlainMode(checked);
+                                if (checked) {
+                                    document.documentElement.setAttribute(
+                                        "data-plain",
+                                        ""
+                                    );
+                                } else {
+                                    document.documentElement.removeAttribute(
+                                        "data-plain"
+                                    );
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
             </section>
 
@@ -723,11 +816,8 @@ export default function SiteConfigPanel() {
 
             <Separator />
 
-            {/* 하단 여백 (sticky footer 공간 확보) */}
-            <div className="h-20" />
-
             {/* Sticky 저장 바 */}
-            <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+            <div className="tablet:-mx-6 laptop:-mx-8 sticky bottom-0 z-50 -mx-4 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
                 <div className="mx-auto flex items-center justify-between gap-3">
                     {status && (
                         <span

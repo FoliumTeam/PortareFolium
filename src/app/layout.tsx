@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/global.css";
 import "katex/dist/katex.min.css";
 import { getSiteConfig } from "@/lib/queries";
+import { ALL_SCHEME_IDS } from "@/lib/color-schemes";
 import ColoredTableColorSync from "@/components/ColoredTableColorSync";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
@@ -14,14 +15,15 @@ export const metadata: Metadata = {
     icons: { icon: "/favicon.svg" },
 };
 
-const VALID_SCHEMES = ["slate", "ember", "circuit", "phantom"];
+const VALID_SCHEMES: readonly string[] = ALL_SCHEME_IDS;
 
 export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "slate";
+    let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "blue";
+    let plainMode = false;
 
     const configRows = await getSiteConfig();
     for (const row of configRows) {
@@ -29,24 +31,25 @@ export default async function RootLayout({
         if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
         if (row.key === "color_scheme" && typeof v === "string")
             colorScheme = v;
+        if (row.key === "plain_mode") plainMode = v === true || v === "true";
     }
 
     const validScheme = VALID_SCHEMES.includes(colorScheme)
         ? colorScheme
-        : "slate";
-    const isDev = process.env.NODE_ENV === "development";
+        : "blue";
 
     return (
         <html
             lang="ko"
             data-color-scheme={validScheme}
+            {...(plainMode ? { "data-plain": "" } : {})}
             data-scroll-behavior="smooth"
             suppressHydrationWarning
         >
             <head>
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){var t=localStorage.getItem("theme")||"system";var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var c=localStorage.getItem("folium_color_scheme");if(c){document.documentElement.setAttribute("data-color-scheme",c)}})();`,
+                        __html: `(function(){var t=localStorage.getItem("theme")||"system";var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var c=localStorage.getItem("folium_color_scheme");if(c){document.documentElement.setAttribute("data-color-scheme",c)}var p=localStorage.getItem("folium_plain_mode");if(p==="true"){document.documentElement.setAttribute("data-plain","")}else if(p==="false"){document.documentElement.removeAttribute("data-plain")}})();`,
                     }}
                 />
             </head>

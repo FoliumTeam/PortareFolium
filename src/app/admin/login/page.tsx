@@ -8,7 +8,12 @@ export const metadata: Metadata = {
     icons: { icon: "/favicon-admin.svg" },
 };
 
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ returnUrl?: string }>;
+}) {
+    const { returnUrl } = await searchParams;
     let siteName = "";
     if (serverClient) {
         const { data } = await serverClient
@@ -22,5 +27,5 @@ export default async function AdminLoginPage() {
             if (typeof v === "string") siteName = v;
         }
     }
-    return <LoginForm siteName={siteName} />;
+    return <LoginForm siteName={siteName} returnUrl={returnUrl} />;
 }

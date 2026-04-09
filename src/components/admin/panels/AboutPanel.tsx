@@ -23,7 +23,6 @@ import {
     COMPETENCY_PLACEHOLDERS,
 } from "@/types/about";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 
 type JobFieldItem = { id: string; name: string; emoji: string };
@@ -498,30 +497,30 @@ export default function AboutPanel() {
                     <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         Email
                     </label>
-                    <Input
+                    <input
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`${inputCls} shadow-none`}
+                        className={inputCls}
                     />
                 </div>
                 <div>
                     <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         GitHub URL
                     </label>
-                    <Input
+                    <input
                         value={github}
                         onChange={(e) => setGithub(e.target.value)}
-                        className={`${inputCls} shadow-none`}
+                        className={inputCls}
                     />
                 </div>
                 <div>
                     <label className="mb-1 block text-sm font-medium text-(--color-muted)">
                         LinkedIn URL
                     </label>
-                    <Input
+                    <input
                         value={linkedin}
                         onChange={(e) => setLinkedin(e.target.value)}
-                        className={`${inputCls} shadow-none`}
+                        className={inputCls}
                     />
                 </div>
             </section>
@@ -812,11 +811,8 @@ export default function AboutPanel() {
                 ))}
             </section>
 
-            {/* 하단 여백 (sticky footer 공간 확보) */}
-            <div className="h-20" />
-
             {/* Sticky 저장 바 */}
-            <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+            <div className="tablet:-mx-6 laptop:-mx-8 sticky bottom-0 z-50 -mx-4 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
                 <div className="mx-auto flex items-center justify-between gap-3">
                     {status && (
                         <span

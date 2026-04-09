@@ -9,7 +9,13 @@
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase";
 
-export default function LoginForm({ siteName = "" }: { siteName?: string }) {
+export default function LoginForm({
+    siteName = "",
+    returnUrl,
+}: {
+    siteName?: string;
+    returnUrl?: string;
+}) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +39,7 @@ export default function LoginForm({ siteName = "" }: { siteName?: string }) {
             setError("이메일 또는 패스워드가 올바르지 않습니다.");
             setLoading(false);
         } else {
-            window.location.href = "/admin";
+            window.location.href = returnUrl || "/admin";
         }
     };
 

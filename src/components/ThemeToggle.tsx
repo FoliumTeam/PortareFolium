@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 
 type Theme = "light" | "dark" | "system";
-type ColorScheme = "slate" | "ember" | "circuit" | "phantom";
 
 // 테마 레이블
 const themeLabels: Record<Theme, string> = {
@@ -12,44 +11,20 @@ const themeLabels: Record<Theme, string> = {
     system: "시스템",
 };
 
-// 컬러 스킴 레이블 및 accent 색상
-const colorSchemes: { id: ColorScheme; label: string; color: string }[] = [
-    { id: "slate", label: "Slate", color: "#2d7ff9" },
-    { id: "ember", label: "Ember", color: "#f97316" },
-    { id: "circuit", label: "Circuit", color: "#22c55e" },
-    { id: "phantom", label: "Phantom", color: "#8b5cf6" },
-];
-
 export default function ThemeToggle() {
     const [theme, setTheme] = useState<Theme>("system");
-    const [colorScheme, setColorScheme] = useState<ColorScheme>("slate");
     const [mounted, setMounted] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        // 저장된 테마 복원
         const savedTheme = localStorage.getItem("theme") as Theme | null;
         if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
             setTheme(savedTheme);
         }
-        // 저장된 컬러 스킴 복원
-        const savedScheme = localStorage.getItem(
-            "folium_color_scheme"
-        ) as ColorScheme | null;
-        if (
-            savedScheme &&
-            ["slate", "ember", "circuit", "phantom"].includes(savedScheme)
-        ) {
-            setColorScheme(savedScheme);
-            document.documentElement.setAttribute(
-                "data-color-scheme",
-                savedScheme
-            );
-        }
     }, []);
 
-    // 다크/라이트 클래스 적용
+    // dark/light 클래스 적용
     useEffect(() => {
         if (!mounted) return;
 
@@ -91,14 +66,6 @@ export default function ThemeToggle() {
         setIsOpen(false);
     };
 
-    // 컬러 스킴 선택 — localStorage 저장 + data-color-scheme 업데이트
-    const handleSchemeSelect = (scheme: ColorScheme) => {
-        setColorScheme(scheme);
-        localStorage.setItem("folium_color_scheme", scheme);
-        document.documentElement.setAttribute("data-color-scheme", scheme);
-        setIsOpen(false);
-    };
-
     if (!mounted) {
         return (
             <div className="h-10 w-10 animate-pulse rounded-md bg-(--color-muted)/20" />
@@ -115,7 +82,7 @@ export default function ThemeToggle() {
                 type="button"
                 onClick={() => setIsOpen((v) => !v)}
                 className="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                aria-label="테마 및 컬러 선택"
+                aria-label="테마 선택"
                 aria-haspopup="true"
                 aria-expanded={isOpen}
             >
@@ -166,20 +133,13 @@ export default function ThemeToggle() {
                 )}
             </button>
 
-            {/* 드롭다운 메뉴 */}
             {isOpen && (
                 <div
-                    className="absolute top-full right-0 z-35 min-w-[160px] pt-1"
+                    className="absolute top-full right-0 z-35 min-w-[140px] pt-1"
                     role="menu"
                     aria-orientation="vertical"
                 >
                     <div className="rounded-md border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
-                        {/* Theme 섹션 */}
-                        <div className="px-3 py-1.5">
-                            <span className="text-xs font-semibold tracking-wider text-(--color-muted) uppercase">
-                                Theme
-                            </span>
-                        </div>
                         {(["light", "dark", "system"] as const).map((t) => (
                             <button
                                 key={t}
@@ -238,37 +198,6 @@ export default function ThemeToggle() {
                                     </svg>
                                 )}
                                 {themeLabels[t]}
-                            </button>
-                        ))}
-
-                        {/* 구분선 */}
-                        <div className="my-1 border-t border-(--color-border)" />
-
-                        {/* Color 섹션 */}
-                        <div className="px-3 py-1.5">
-                            <span className="text-xs font-semibold tracking-wider text-(--color-muted) uppercase">
-                                Color
-                            </span>
-                        </div>
-                        {colorSchemes.map(({ id, label, color }) => (
-                            <button
-                                key={id}
-                                type="button"
-                                role="menuitem"
-                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                                    colorScheme === id
-                                        ? "bg-(--color-accent)/10 text-(--color-accent)"
-                                        : "text-(--color-foreground) hover:bg-(--color-muted)/10"
-                                }`}
-                                onClick={() => handleSchemeSelect(id)}
-                            >
-                                {/* 컬러 스킴 accent 원 */}
-                                <span
-                                    className="h-3 w-3 shrink-0 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                    aria-hidden="true"
-                                />
-                                {label}
                             </button>
                         ))}
                     </div>
