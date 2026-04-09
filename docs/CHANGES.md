@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.10.25 (2026-04-09)
+
+### Feat: 직무 분야 이모지에 스쿼클 배경 추가
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 직무 분야 목록의 이모지에 `rounded-[22%]` 스쿼클 컨테이너(`bg-gray-300`, `shadow-sm`) 적용
+
 ## v0.10.24 (2026-04-09)
 
 ### Fix: 컬러 스킴 localStorage 의존성 제거 — DB 기반 서버 렌더링으로 통일

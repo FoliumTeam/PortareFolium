@@ -648,7 +648,9 @@ export default function SiteConfigPanel() {
                                 onClick={() => handleSelectJobField(field.id)}
                                 className={`flex flex-1 items-center gap-2 rounded-lg p-3 text-left ${activeJobField === field.id ? "bg-(--color-accent)" : "bg-(--color-surface-subtle)"}`}
                             >
-                                <span className="text-xl">{field.emoji}</span>
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[22%] bg-gray-300 text-xl">
+                                    {field.emoji}
+                                </span>
                                 <span
                                     className={`text-sm font-medium ${activeJobField === field.id ? "text-(--color-on-accent)" : "text-(--color-foreground)"}`}
                                 >
