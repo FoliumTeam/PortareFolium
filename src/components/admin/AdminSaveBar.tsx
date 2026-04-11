@@ -19,7 +19,7 @@ export default function AdminSaveBar({
 
     return createPortal(
         <div className="border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3">
+            <div className="tablet:flex-row flex flex-col items-center justify-between gap-3">
                 {children}
             </div>
         </div>,
