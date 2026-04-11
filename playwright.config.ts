@@ -84,7 +84,8 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: "pnpm dev",
+        // CI: 빌드 결과물 서빙 (빠름), 로컬: dev 서버
+        command: process.env.CI ? "pnpm start" : "pnpm dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

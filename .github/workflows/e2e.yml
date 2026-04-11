@@ -46,6 +46,9 @@ jobs:
               run: pnpm test:e2e --project=${{ matrix.project }} --project=authenticated-${{ matrix.project }}
               env:
                   BASE_URL: http://localhost:3000
+                  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+                  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
                   E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
                   E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
