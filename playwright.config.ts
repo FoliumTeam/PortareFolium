@@ -1,4 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+
+// .env.local에서 E2E_EMAIL, E2E_PASSWORD 등 로드
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+
+const authFile = ".auth/user.json";
 
 export default defineConfig({
     testDir: "./e2e",
@@ -14,25 +21,66 @@ export default defineConfig({
         screenshot: "only-on-failure",
     },
     projects: [
+        // 인증 setup (1회 실행, storageState 저장)
+        {
+            name: "setup",
+            testMatch: /auth\.setup\.ts/,
+        },
+
+        // 공개 페이지 테스트 (인증 불필요)
         {
             name: "chromium",
             use: { ...devices["Desktop Chrome"] },
+            testIgnore: /authenticated\//,
         },
         {
             name: "firefox",
             use: { ...devices["Desktop Firefox"] },
+            testIgnore: /authenticated\//,
         },
         {
             name: "webkit",
             use: { ...devices["Desktop Safari"] },
+            testIgnore: /authenticated\//,
         },
         {
             name: "mobile-chrome",
             use: { ...devices["Pixel 5"] },
+            testIgnore: /authenticated\//,
         },
         {
             name: "mobile-safari",
             use: { ...devices["iPhone 12"] },
+            testIgnore: /authenticated\//,
+        },
+
+        // 인증 필요 테스트 (setup 의존)
+        {
+            name: "authenticated-chromium",
+            use: {
+                ...devices["Desktop Chrome"],
+                storageState: authFile,
+            },
+            testMatch: /authenticated\/.+\.spec\.ts/,
+            dependencies: ["setup"],
+        },
+        {
+            name: "authenticated-firefox",
+            use: {
+                ...devices["Desktop Firefox"],
+                storageState: authFile,
+            },
+            testMatch: /authenticated\/.+\.spec\.ts/,
+            dependencies: ["setup"],
+        },
+        {
+            name: "authenticated-webkit",
+            use: {
+                ...devices["Desktop Safari"],
+                storageState: authFile,
+            },
+            testMatch: /authenticated\/.+\.spec\.ts/,
+            dependencies: ["setup"],
         },
     ],
     webServer: {

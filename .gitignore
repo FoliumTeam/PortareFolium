@@ -42,6 +42,7 @@ pnpm-debug.log*
 .vercel
 
 # Playwright
+.auth/
 e2e/.results/
 playwright-report/
 blob-report/

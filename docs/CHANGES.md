@@ -1,5 +1,22 @@
 # CHANGES
 
+## v0.11.1 (2026-04-11)
+
+### Feat: 인증 필요 E2E 테스트 — PDF Export 프리뷰 검증
+
+- `e2e/auth.setup.ts`: Supabase 로그인 + `storageState` 저장 (`.auth/user.json`)
+- `e2e/authenticated/pdf-export.spec.ts`: Resume/Portfolio PDF export 6개 테스트
+    - PDF 내보내기 버튼 표시 (인증 상태)
+    - 프리뷰 모달 열림 + 사이드바 UI (Color Scheme, Pages, 다운로드 버튼)
+    - 페이지 구분선 (dashed line) 존재 확인
+    - 컬러 스킴 변경 시 페이지 수 유지 확인
+    - ESC 키로 모달 닫기
+    - Portfolio 페이지 PDF export
+- `playwright.config.ts`: `setup` project + `authenticated-*` projects 추가 (Chromium/Firefox/WebKit)
+- `.gitignore`: `.auth/` 디렉토리 제외
+- `.github/workflows/e2e.yml`: `E2E_EMAIL`, `E2E_PASSWORD` secrets 추가
+- `dotenv` dev dependency 추가 (`.env.local` 로드)
+
 ## v0.11.0 (2026-04-11)
 
 ### Feat: Playwright E2E 테스트 인프라 + GitHub Actions CI
