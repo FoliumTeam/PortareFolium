@@ -41,5 +41,11 @@ pnpm-debug.log*
 # Vercel
 .vercel
 
+# Playwright
+e2e/.results/
+playwright-report/
+blob-report/
+test-results/
+
 # OMC
 .omc

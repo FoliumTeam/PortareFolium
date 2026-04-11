@@ -1,5 +1,26 @@
 # CHANGES
 
+## v0.11.0 (2026-04-11)
+
+### Feat: Playwright E2E 테스트 인프라 구축
+
+- Playwright 설치 (Chromium, Firefox, WebKit + mobile viewport)
+- `playwright.config.ts`: 5개 프로젝트 (desktop 3 + mobile 2), dev 서버 자동 기동
+- `e2e/smoke.spec.ts`: 주요 페이지 로딩 + 404 검증
+- `e2e/navigation.spec.ts`: 헤더 네비게이션 + 페이지 이동
+- `e2e/theme.spec.ts`: 다크/라이트 모드 토글
+- `e2e/responsive.spec.ts`: mobile/tablet/desktop 수평 overflow 검증
+- `e2e/seo.spec.ts`: 메타데이터 + 접근성 기본 검증 (alt, lang, viewport)
+- `package.json`: `test:e2e`, `test:e2e:ui`, `test:e2e:chromium` 스크립트 추가
+- `.gitignore`: Playwright 산출물 제외
+
+### Chore: 불필요한 구조 검증 테스트 정리 (142→79개)
+
+- `color-schemes.test.ts` 삭제 (TypeScript 타입이 이미 보장하는 구조 검증)
+- `mermaid-themes.test.ts` 축소 (fallback 동작 테스트만 유지)
+- `tailwind-colors.test.ts` 축소 (경계값 + edge case만 유지)
+- `tiptap-utils.test.ts` 축소 (보안 관련 + 대표 케이스만 유지)
+
 ## v0.10.28 (2026-04-11)
 
 ### Feat: PDF export 페이지 분할 개선 — block-aware pagination
