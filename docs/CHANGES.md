@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.3 (2026-04-12)
+
+### Docs: SEO 설정 가이드 추가
+
+- `docs/SEO.md`: Google Search Console + NAVER Search Advisor 등록 가이드 — robots.txt, sitemap.xml 코드, 소유권 확인, 사이트맵 제출, Open Graph 메타데이터 확인, 환경 변수 요약, 체크리스트
+
 ## v0.11.2 (2026-04-12)
 
 ### Feat: 수동 체크리스트 E2E 자동화 — PDF grid 검증 + 콘텐츠 렌더링
