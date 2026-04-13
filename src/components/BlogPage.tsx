@@ -164,6 +164,7 @@ export default function BlogPage({
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [searchQuery, setSearchQuery] = useState("");
     const hasSyncedFromUrl = useRef(false);
 
     // localStorage에서 view mode 복원
@@ -235,6 +236,13 @@ export default function BlogPage({
         });
     }, [posts, selectedCategory, selectedTag]);
 
+    // search: 카테고리/태그 필터 결과 내에서 title 검색
+    const searchedPosts = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return filteredPosts;
+        return filteredPosts.filter((p) => p.title.toLowerCase().includes(q));
+    }, [filteredPosts, searchQuery]);
+
     return (
         <div className="tablet:flex-row flex flex-col gap-8">
             {/* Hamburger + title + view toggle: mobile top row */}
@@ -290,6 +298,16 @@ export default function BlogPage({
                         Write post
                     </a>
                 )}
+                {/* Mobile search */}
+                <div className="w-full">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search posts..."
+                        className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                    />
+                </div>
             </div>
 
             {/* Sidebar: categories + tags */}
@@ -380,6 +398,13 @@ export default function BlogPage({
                         Blog
                     </h1>
                     <div className="flex items-center gap-3">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search posts..."
+                            className="w-56 rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                        />
                         <div className="flex items-center gap-1">
                             <button
                                 type="button"
@@ -410,14 +435,14 @@ export default function BlogPage({
                         )}
                     </div>
                 </div>
-                {filteredPosts.length === 0 ? (
+                {searchedPosts.length === 0 ? (
                     <p className="text-(--color-muted)">
                         No posts match the current filters.
                     </p>
                 ) : viewMode === "block" ? (
                     // Block view: grid 카드
                     <div className="tablet:grid-cols-2 laptop:grid-cols-3 grid grid-cols-1 gap-6">
-                        {filteredPosts.map((post) => (
+                        {searchedPosts.map((post) => (
                             <a
                                 key={post.slug}
                                 href={`/blog/${post.slug}`}
@@ -467,7 +492,7 @@ export default function BlogPage({
                 ) : (
                     // List view: 기존
                     <ul className="space-y-4">
-                        {filteredPosts.map((post) => (
+                        {searchedPosts.map((post) => (
                             <li key={post.slug}>
                                 <a
                                     href={`/blog/${post.slug}`}

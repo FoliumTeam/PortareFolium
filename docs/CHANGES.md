@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.9 (2026-04-14)
+
+### Feat: Blog 페이지 검색 input
+
+- `src/components/BlogPage.tsx`: search input 추가 (desktop + mobile) — 카테고리/태그 필터 결과 내에서 title 검색, `searchedPosts` memo 기반 필터링
+
 ## v0.11.8 (2026-04-14)
 
 ### Feat: Blog block view + list/block toggle
