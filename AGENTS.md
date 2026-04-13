@@ -151,7 +151,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Structure
 
-**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트 (v0.11.7)
+**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트 (v0.11.12)
 
 **Stack:**
 
@@ -203,9 +203,10 @@ src/
 │   ├── ContentWrapper.tsx              # CVA 기반 max-width 래퍼 (default/wide/full)
 │   ├── ThemeToggle.tsx                 # dark/light/system 토글
 │   ├── UserMenu.tsx                    # 로그인/프로필 드롭다운
+│   ├── GlobalSearch.tsx                # Header global search (posts + portfolio, job_field 기반)
 │   ├── AboutView.tsx                   # About 페이지 렌더러
 │   ├── PortfolioView.tsx               # Portfolio 상세 렌더러
-│   ├── BlogPage.tsx                    # Blog 상세 렌더러
+│   ├── BlogPage.tsx                    # Blog 목록 (list/block view toggle, search, pagination)
 │   ├── PdfPreviewModal.tsx             # PDF 프리뷰 모달 (block-aware pagination)
 │   ├── PdfExportButton.tsx             # 인증 사용자 전용 PDF 내보내기 버튼
 │   ├── TableOfContents.tsx             # 인라인 목차
@@ -306,6 +307,7 @@ e2e/                                    # Playwright E2E 테스트
 ├── responsive.spec.ts                  # mobile/tablet/desktop overflow 검증
 ├── seo.spec.ts                         # 메타데이터 + 접근성 기본 검증
 ├── content-rendering.spec.ts           # Shiki, 이미지, TOC, Mermaid, KaTeX 렌더링
+├── blog-views.spec.ts                  # Blog list/block toggle, search, pagination
 └── authenticated/                      # 인증 필요 테스트
     └── pdf-export.spec.ts              # PDF export 프리뷰 + grid 검증
 playwright.config.ts                    # Playwright 설정 (5 + authenticated 3 projects)
