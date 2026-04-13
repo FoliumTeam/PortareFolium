@@ -1,5 +1,6 @@
 import { getSiteConfig } from "@/lib/queries";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import ContentWrapper from "@/components/ContentWrapper";
 import ScrollRevealInit from "@/components/ScrollRevealInit";
 
@@ -39,12 +40,13 @@ export default async function FrontendLayout({
     }
 
     return (
-        <>
+        <div className="flex min-h-screen flex-col">
             <Header siteName={siteName} githubUrl={githubUrl} />
-            <ContentWrapper as="main" className="px-4 py-8">
+            <ContentWrapper as="main" className="flex-1 px-4 py-8">
                 {children}
             </ContentWrapper>
+            <Footer siteName={siteName} githubUrl={githubUrl} />
             <ScrollRevealInit />
-        </>
+        </div>
     );
 }

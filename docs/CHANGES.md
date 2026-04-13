@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.11.6 (2026-04-13)
+
+### Feat: frontend footer 추가
+
+- `src/components/Footer.tsx`: 저작권 (동적 연도 + DB site_name) + GitHub 아이콘 버튼
+- `src/app/(frontend)/layout.tsx`: flex column 레이아웃 + Footer 배치 (스크롤 최하단에 표시)
+
 ## v0.11.5 (2026-04-13)
 
 ### Feat: React Compiler 활성화
