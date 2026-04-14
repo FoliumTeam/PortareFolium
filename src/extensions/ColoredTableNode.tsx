@@ -44,16 +44,25 @@ function ColoredTablePreview({ node }: ReactNodeViewProps) {
                     <thead>
                         <tr>
                             {columns.map((col, ci) => {
-                                const color = headColors[ci] || "slate";
-                                const hex = deriveColorHex(color, 300);
+                                const color = headColors[ci] || null;
+                                const hex = color
+                                    ? deriveColorHex(color, 300)
+                                    : "";
                                 return (
                                     <th
                                         key={ci}
                                         className="border-b border-zinc-200 px-3 py-2 text-left font-semibold dark:border-zinc-700"
-                                        style={{
-                                            backgroundColor: hex,
-                                            color: "oklch(0.1 0 0)",
-                                        }}
+                                        style={
+                                            hex
+                                                ? {
+                                                      backgroundColor: hex,
+                                                      color: "oklch(0.1 0 0)",
+                                                  }
+                                                : {
+                                                      backgroundColor:
+                                                          "var(--color-surface-subtle)",
+                                                  }
+                                        }
                                     >
                                         {col}
                                     </th>
@@ -65,13 +74,22 @@ function ColoredTablePreview({ node }: ReactNodeViewProps) {
                         {rows.map((row, ri) => (
                             <tr key={ri}>
                                 {columns.map((_, ci) => {
-                                    const color = headColors[ci] || "slate";
-                                    const bodyBg = deriveColorHex(color, 100);
+                                    const color = headColors[ci] || null;
+                                    const bodyBg = color
+                                        ? deriveColorHex(color, 100)
+                                        : "";
                                     return (
                                         <td
                                             key={ci}
                                             className="border-b border-zinc-100 px-3 py-1.5 dark:border-zinc-800"
-                                            style={{ backgroundColor: bodyBg }}
+                                            style={
+                                                bodyBg
+                                                    ? {
+                                                          backgroundColor:
+                                                              bodyBg,
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             {row[ci] || "—"}
                                         </td>

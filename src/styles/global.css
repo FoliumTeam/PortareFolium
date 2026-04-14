@@ -470,9 +470,18 @@ html.dark .colored-table td[data-ct-color="pink"] {
     background: #9d174d;
     color: oklch(0.88 0 0);
 }
-/* 색상 미지정 바디 셀 */
-.colored-table td:not([data-ct-color]) {
+/* 기본 색상 (미지정) — 헤더: 테마 상대, 진한 표면 */
+.colored-table th:not([data-ct-color]) {
     background: var(--color-surface-subtle);
+    color: var(--color-foreground);
+}
+/* 기본 색상 (미지정) — 바디: 테마 상대, 연한 표면 */
+.colored-table td:not([data-ct-color]) {
+    background: color-mix(
+        in srgb,
+        var(--color-surface-subtle) 40%,
+        var(--color-surface)
+    );
     color: var(--color-foreground);
 }
 .colored-table tbody tr:last-child td {
@@ -480,9 +489,6 @@ html.dark .colored-table td[data-ct-color="pink"] {
 }
 .colored-table.has-col-colors tbody tr:hover td {
     filter: brightness(0.97);
-}
-.colored-table th:not([data-ct-color]) {
-    color: var(--color-foreground);
 }
 
 /* ── ProseMirror Table (에디터 내 테이블) ────────────────────────── */

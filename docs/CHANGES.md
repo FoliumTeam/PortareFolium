@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.23 (2026-04-14)
+
+### refactor: ColoredTable 기본 색상 — slate 고정 → 테마 상대 색상
+
+- `src/lib/markdown.tsx`: `columnHeadColors` 미지정 시 `data-ct-color` 속성 생략 (기존 `"slate"` 기본값 제거)
+- `src/styles/global.css`: `:not([data-ct-color])` fallback — 헤더 `var(--color-surface-subtle)`, 바디 `color-mix(40% surface-subtle, surface)` 적용. color scheme/dark mode에 자동 반응
+- `src/components/admin/EditorToolbar.tsx`: slate 프리셋 복원, `SLATE_HEX` 상수 제거, clear 버튼 → light/dark 그라디언트로 "테마 자동" 표시
+- `src/extensions/ColoredTableNode.tsx`: 에디터 프리뷰 미지정 컬럼 → `var(--color-surface-subtle)` 기본 배경
+
 ## v0.11.22 (2026-04-14)
 
 ### fix: ColoredTable 프론트엔드 색상 렌더링 복구 — CSS custom property → data attribute 방식

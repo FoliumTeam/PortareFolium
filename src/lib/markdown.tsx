@@ -51,10 +51,11 @@ function ColoredTable({
         : undefined;
 
     const NOWRAP = 15;
-    // 색상 미지정 컬럼은 기본값 "slate"로 처리 — shade 접미사 제거 (e.g. "green-400" → "green")
-    const resolvedColors = headers.map((_, i) =>
-        (headColors?.[i] || "slate").replace(/-\d+$/, "")
-    );
+    // 색상 미지정 컬럼은 null — shade 접미사 제거 (e.g. "green-400" → "green")
+    const resolvedColors = headers.map((_, i) => {
+        const raw = headColors?.[i];
+        return raw ? raw.replace(/-\d+$/, "") : null;
+    });
 
     return (
         <div className="colored-table-wrapper">
@@ -74,7 +75,7 @@ function ColoredTable({
                                 <th
                                     key={i}
                                     className={cls || undefined}
-                                    data-ct-color={colorName}
+                                    data-ct-color={colorName || undefined}
                                 >
                                     {h}
                                 </th>
@@ -99,7 +100,7 @@ function ColoredTable({
                                     <td
                                         key={i}
                                         className={cls || undefined}
-                                        data-ct-color={colorName}
+                                        data-ct-color={colorName || undefined}
                                     >
                                         {text}
                                     </td>
