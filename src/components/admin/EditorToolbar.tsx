@@ -631,6 +631,51 @@ function ColoredTableInsert({ editor }: { editor: Editor }) {
     );
 }
 
+// Accordion 삽입 버튼
+function AccordionInsert({ editor }: { editor: Editor }) {
+    const handleInsert = () => {
+        editor
+            .chain()
+            .focus()
+            .insertContent({
+                type: "accordion",
+                attrs: { title: "Accordion title" },
+                content: [
+                    {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "Accordion content" }],
+                    },
+                ],
+            })
+            .run();
+    };
+
+    return (
+        <button
+            className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleInsert}
+            title="Accordion 삽입"
+        >
+            <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <rect x="3" y="4" width="18" height="4" rx="1" />
+                <rect x="3" y="10" width="18" height="4" rx="1" />
+                <rect x="3" y="16" width="18" height="4" rx="1" />
+                <path d="M19 12l-2-2m2 2l-2 2" />
+            </svg>
+        </button>
+    );
+}
+
 // 테이블 삽입/편집 버튼
 function Btn({
     onClick,
@@ -814,6 +859,7 @@ export default function EditorToolbar({
                 <YoutubeInput editor={editor} />
                 <ColoredTableInsert editor={editor} />
                 <LatexInput editor={editor} />
+                <AccordionInsert editor={editor} />
             </ToolbarGroup>
 
             <Spacer />

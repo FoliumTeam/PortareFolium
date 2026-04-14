@@ -47,6 +47,23 @@ describe("jsxToDirective", () => {
         });
     });
 
+    describe("Accordion 변환", () => {
+        it('<Accordion title="X">...</Accordion> → :::accordion[X]...:::', () => {
+            const input =
+                '<Accordion title="My Title">\n\ninner content\n\n</Accordion>';
+            const result = jsxToDirective(input);
+            expect(result).toContain(":::accordion[My Title]");
+            expect(result).toContain("inner content");
+            expect(result).toContain(":::");
+        });
+
+        it("Accordion title에 single-quote 형식도 지원", () => {
+            const input = `<Accordion title={'Quoted'}>\n\nbody\n\n</Accordion>`;
+            const result = jsxToDirective(input);
+            expect(result).toContain(":::accordion[Quoted]");
+        });
+    });
+
     describe("코드 블록 보호", () => {
         it("코드 블록 내부 LaTeX($$...$$)는 변환하지 않음", () => {
             const input = "```\n$$E=mc^2$$\n```\nOutside $$x+y$$";
@@ -96,6 +113,16 @@ describe("directiveToJsx", () => {
             const input = '::latex{src="E = mc^2"}';
             const result = directiveToJsx(input);
             expect(result).toContain("$$E = mc^2$$");
+        });
+    });
+
+    describe("Accordion 변환", () => {
+        it(":::accordion[X]...::: → <Accordion title={'X'}>...</Accordion>", () => {
+            const input = ":::accordion[My Title]\n\ninner\n\n:::";
+            const result = directiveToJsx(input);
+            expect(result).toContain("<Accordion title={'My Title'}>");
+            expect(result).toContain("inner");
+            expect(result).toContain("</Accordion>");
         });
     });
 

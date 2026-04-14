@@ -54,6 +54,16 @@ export function jsxToDirective(content: string): string {
         }
     );
 
+    // <Accordion title="X">...</Accordion> → :::accordion[X]\n...\n:::
+    out = out.replace(
+        /<Accordion\s+title\s*=\s*(?:\{'((?:[^'\\]|\\.)*)'\}|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")\s*>([\s\S]*?)<\/Accordion>/g,
+        (_, a, b, c, inner) => {
+            const title = (a ?? b ?? c ?? "").replace(/\\'/g, "'");
+            const safeTitle = title.replace(/[\[\]]/g, "");
+            return `\n\n:::accordion[${safeTitle}]\n${inner.trim()}\n:::\n\n`;
+        }
+    );
+
     return out;
 }
 
@@ -125,6 +135,15 @@ export function directiveToJsx(content: string): string {
                 parts.push(`${m[1]}={'${cleanVal}'}`);
             }
             return `<ColoredTable ${parts.join(" ")} />`;
+        }
+    );
+
+    // :::accordion[X]\n...\n::: → <Accordion title={'X'}>...</Accordion>
+    out = out.replace(
+        /:::accordion\[([^\]]*)\]\n([\s\S]*?)\n:::/g,
+        (_, title, inner) => {
+            const safeTitle = String(title).replace(/'/g, "\\'");
+            return `<Accordion title={'${safeTitle}'}>\n\n${inner.trim()}\n\n</Accordion>`;
         }
     );
 

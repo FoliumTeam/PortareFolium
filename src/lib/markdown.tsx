@@ -114,6 +114,37 @@ function ColoredTable({
     );
 }
 
+function Accordion({
+    title,
+    children,
+}: {
+    title?: string;
+    children?: React.ReactNode;
+}) {
+    return (
+        <details className="accordion-block">
+            <summary className="accordion-summary">
+                <svg
+                    className="accordion-arrow"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="M9 6l6 6-6 6" />
+                </svg>
+                <span>{title || "Accordion"}</span>
+            </summary>
+            <div className="accordion-body">{children}</div>
+        </details>
+    );
+}
+
 function Mermaid({ encoded }: { encoded: string }) {
     return (
         <div
@@ -155,6 +186,7 @@ const components = {
     ColoredTable,
     // 기존 콘텐츠 하위 호환용 별칭
     FoliumTable: ColoredTable,
+    Accordion,
     Mermaid,
     img: MarkdownImage,
     // 콘텐츠 내 <Image> JSX 사용 시 next/image 대신 안전한 컴포넌트로 대체

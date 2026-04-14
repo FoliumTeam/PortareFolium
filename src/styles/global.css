@@ -306,6 +306,61 @@ html.dark .prose :where(td) {
     opacity: 0.85;
 }
 
+/* ── Accordion ─────────────────────────────────────────────────────── */
+/* 네이티브 <details>/<summary> 기반 collapsible block */
+.accordion-block {
+    margin: 1rem 0;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--color-surface);
+}
+.accordion-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface-subtle);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-foreground);
+    list-style: none;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+.accordion-summary:hover {
+    background: color-mix(
+        in oklab,
+        var(--color-surface-subtle) 70%,
+        var(--color-accent) 10%
+    );
+}
+/* 기본 marker 제거 (Chrome/Safari/Firefox) */
+.accordion-summary::-webkit-details-marker {
+    display: none;
+}
+.accordion-summary::marker {
+    content: "";
+}
+.accordion-arrow {
+    flex-shrink: 0;
+    color: var(--color-muted);
+    transition: transform 0.2s ease;
+}
+.accordion-block[open] > .accordion-summary .accordion-arrow {
+    transform: rotate(90deg);
+}
+.accordion-body {
+    padding: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+.accordion-body > :first-child {
+    margin-top: 0;
+}
+.accordion-body > :last-child {
+    margin-bottom: 0;
+}
+
 /* ── ColoredTable ─────────────────────────────────────────────────── */
 /* renderMarkdown()이 생성한 HTML에 적용 (ColoredTable 컴포넌트 스타일) */
 .colored-table-wrapper {

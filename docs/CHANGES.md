@@ -1,5 +1,21 @@
 # CHANGES
 
+## v0.11.27 (2026-04-15)
+
+### feat: Accordion (collapsible block) markdown 기능
+
+- `src/extensions/AccordionNode.tsx` 신규 — Tiptap Node with React NodeView, `content: "block+"` (inner markdown 편집 가능), title inline 편집 + 화살표 토글
+- `src/lib/mdx-directive-converter.ts`: `<Accordion>` JSX ↔ `:::accordion[]` directive 양방향 변환 추가
+- `src/lib/markdown.tsx`: Frontend `Accordion` component 추가 — 네이티브 `<details>`/`<summary>` 사용 (JS 불필요), components 맵 등록
+- `src/styles/global.css`: `.accordion-block` 스타일 + arrow 90° rotation (`details[open]` 기반 CSS only)
+- `src/components/admin/RichMarkdownEditor.tsx`: `AccordionNode` extension 등록 + `accordionDirectiveToHtml` preprocessor 추가
+- `src/components/admin/EditorToolbar.tsx`: Media group에 `AccordionInsert` 버튼 추가
+- `src/__tests__/mdx-directive-converter.test.ts`: Accordion 변환 3개 test 추가
+
+**DB 저장 형식**: `<Accordion title="X">\n\n...markdown...\n\n</Accordion>`
+**Editor source mode**: `:::accordion[X]\n...\n:::`
+**Frontend**: 네이티브 `<details>` — keyboard/screen reader 접근성 자동 지원
+
 ## v0.11.26 (2026-04-14)
 
 ### fix: EditorToolbar undo/redo 영구 disabled + fullscreen dropdown z-index
