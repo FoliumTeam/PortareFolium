@@ -213,4 +213,5 @@ export interface Resume {
     references?: ResumeSection<ResumeReference>;
     projects?: ResumeSection<ResumeProject>;
     careerPhases?: ResumeSection<ResumeCareerPhase>;
+    coreCompetencies?: { title: string; description: string }[];
 }

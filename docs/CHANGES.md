@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.11.21 (2026-04-14)
+
+### refactor: coreCompetencies DB 저장 위치 변경 — about_data → resume_data
+
+- `src/types/resume.ts`: Resume 인터페이스에 `coreCompetencies` 필드 추가
+- `src/app/(frontend)/resume/page.tsx`: about_data 조회 제거, resumeData에서 직접 coreCompetencies 읽기
+- `src/components/admin/panels/ResumePanel.tsx`: coreCompetencies를 resumeData 상태에 통합, 별도 저장 버튼 제거
+- `src/components/admin/panels/AboutPanel.tsx`: coreCompetencies pass-through 제거
+- `src/lib/migrations.ts`: v0.11.21 마이그레이션 — about_data → resume_data JSONB 이동
+- `supabase/setup.sql` + `migration-whole.sql`: 버전 0.11.21 동기화
+
 ## v0.11.20 (2026-04-14)
 
 ### refactor: 핵심역량 편집 UI — AboutPanel → ResumePanel 이동 + DB 키 마이그레이션

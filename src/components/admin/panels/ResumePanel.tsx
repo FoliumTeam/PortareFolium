@@ -15,7 +15,6 @@ import {
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
 import { Trash2 } from "lucide-react";
-import type { CoreValue } from "@/types/about";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
 import type {
     Resume,
@@ -210,15 +209,6 @@ export default function ResumePanel() {
     // 직무 분야 필터 (null = 전체)
     const [filterJobField, setFilterJobField] = useState<string | null>(null);
 
-    // Core Competencies (about_data 별도 저장)
-    const [coreCompetencies, setCoreCompetencies] = useState<CoreValue[]>([]);
-    const [aboutRowId, setAboutRowId] = useState<string | null>(null);
-    const [savingCompetencies, setSavingCompetencies] = useState(false);
-    const [competenciesStatus, setCompetenciesStatus] = useState<{
-        type: "error" | "success";
-        msg: string;
-    } | null>(null);
-
     // Edit states for arrays
     const [editingWork, setEditingWork] = useState<number | null>(null);
     const [editingProject, setEditingProject] = useState<number | null>(null);
@@ -260,18 +250,12 @@ export default function ResumePanel() {
                 .select("value")
                 .eq("key", "job_field")
                 .single(),
-            browserClient
-                .from("about_data")
-                .select("id, data")
-                .limit(1)
-                .single(),
         ]).then(
             ([
                 { data: row, error },
                 { data: layoutRow },
                 { data: jfRow },
                 { data: activeJfRow },
-                { data: aboutRow },
             ]) => {
                 const defaultResume: Resume = {
                     basics: {
@@ -306,13 +290,6 @@ export default function ResumePanel() {
                     typeof activeJfRow.value === "string"
                 ) {
                     setActiveJobField(activeJfRow.value);
-                }
-                if (aboutRow) {
-                    setAboutRowId(aboutRow.id);
-                    setCoreCompetencies(
-                        (aboutRow.data as { coreCompetencies?: CoreValue[] })
-                            .coreCompetencies ?? []
-                    );
                 }
             }
         );
@@ -404,51 +381,6 @@ export default function ResumePanel() {
         } else {
             setSavedAt(new Date());
             await revalidateResume();
-        }
-    };
-
-    const handleSaveCompetencies = async () => {
-        if (!browserClient) return;
-        setSavingCompetencies(true);
-        setCompetenciesStatus(null);
-        try {
-            let err;
-            if (aboutRowId) {
-                const { data: current } = await browserClient
-                    .from("about_data")
-                    .select("data")
-                    .eq("id", aboutRowId)
-                    .single();
-                const merged = {
-                    ...((current?.data as object) ?? {}),
-                    coreCompetencies,
-                };
-                ({ error: err } = await browserClient
-                    .from("about_data")
-                    .update({ data: merged })
-                    .eq("id", aboutRowId));
-            } else {
-                const res = await browserClient
-                    .from("about_data")
-                    .insert({ data: { coreCompetencies } })
-                    .select("id")
-                    .single();
-                err = res.error;
-                if (res.data) setAboutRowId(res.data.id);
-            }
-            if (!err) await revalidateResume();
-            setCompetenciesStatus(
-                err
-                    ? { type: "error", msg: err.message }
-                    : { type: "success", msg: "핵심역량이 저장됐습니다." }
-            );
-        } catch (e: unknown) {
-            setCompetenciesStatus({
-                type: "error",
-                msg: `저장 실패: ${e instanceof Error ? e.message : String(e)}`,
-            });
-        } finally {
-            setSavingCompetencies(false);
         }
     };
 
@@ -972,6 +904,146 @@ export default function ResumePanel() {
                     ))}
                 </section>
             ) : null}
+
+            {/* 핵심역량 (이력서와 함께 저장) */}
+            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-(--color-foreground)">
+                        Core Competencies (핵심역량)
+                    </h3>
+                    <span className="text-sm text-(--color-muted)">
+                        {(resumeData?.coreCompetencies ?? []).length} / 4
+                    </span>
+                </div>
+                <p className="text-sm text-(--color-muted)">
+                    이력서의 핵심역량 섹션에 표시됩니다. 아래 저장 버튼으로 함께
+                    저장됩니다.
+                </p>
+                {(resumeData?.coreCompetencies ?? []).map((comp, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                    >
+                        <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-bold text-(--color-accent)">
+                                역량 {idx + 1}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (
+                                        !confirm(
+                                            `역량 ${idx + 1}을 삭제하시겠습니까?`
+                                        )
+                                    )
+                                        return;
+                                    setResumeData((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  coreCompetencies: (
+                                                      prev.coreCompetencies ??
+                                                      []
+                                                  ).filter((_, i) => i !== idx),
+                                              }
+                                            : prev
+                                    );
+                                }}
+                                className="shrink-0 cursor-pointer rounded-lg bg-red-600 p-1.5 text-white"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
+                                    Title
+                                </label>
+                                <input
+                                    value={comp.title}
+                                    onChange={(e) =>
+                                        setResumeData((prev) =>
+                                            prev
+                                                ? {
+                                                      ...prev,
+                                                      coreCompetencies: (
+                                                          prev.coreCompetencies ??
+                                                          []
+                                                      ).map((c, i) =>
+                                                          i === idx
+                                                              ? {
+                                                                    ...c,
+                                                                    title: e
+                                                                        .target
+                                                                        .value,
+                                                                }
+                                                              : c
+                                                      ),
+                                                  }
+                                                : prev
+                                        )
+                                    }
+                                    placeholder="제목"
+                                    className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
+                                    Description
+                                </label>
+                                <input
+                                    value={comp.description}
+                                    onChange={(e) =>
+                                        setResumeData((prev) =>
+                                            prev
+                                                ? {
+                                                      ...prev,
+                                                      coreCompetencies: (
+                                                          prev.coreCompetencies ??
+                                                          []
+                                                      ).map((c, i) =>
+                                                          i === idx
+                                                              ? {
+                                                                    ...c,
+                                                                    description:
+                                                                        e.target
+                                                                            .value,
+                                                                }
+                                                              : c
+                                                      ),
+                                                  }
+                                                : prev
+                                        )
+                                    }
+                                    placeholder="설명"
+                                    className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                {(resumeData?.coreCompetencies ?? []).length < 4 && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setResumeData((prev) =>
+                                prev
+                                    ? {
+                                          ...prev,
+                                          coreCompetencies: [
+                                              ...(prev.coreCompetencies ?? []),
+                                              { title: "", description: "" },
+                                          ],
+                                      }
+                                    : prev
+                            )
+                        }
+                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"
+                    >
+                        추가
+                    </button>
+                )}
+            </section>
 
             {/* 경력 (Work Experience) */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
@@ -3203,128 +3275,6 @@ export default function ResumePanel() {
                             )}
                         </div>
                     ))}
-                </div>
-            </section>
-
-            {/* 핵심역량 (about_data 저장) */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        Core Competencies (핵심역량)
-                    </h3>
-                    <span className="text-sm text-(--color-muted)">
-                        {coreCompetencies.length} / 4
-                    </span>
-                </div>
-                <p className="text-sm text-(--color-muted)">
-                    이력서의 핵심역량 섹션에 표시됩니다. (about_data 저장)
-                </p>
-                {coreCompetencies.map((comp, idx) => (
-                    <div
-                        key={idx}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
-                    >
-                        <div className="mb-2 flex items-center justify-between">
-                            <span className="text-sm font-bold text-(--color-accent)">
-                                역량 {idx + 1}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (
-                                        !confirm(
-                                            `역량 ${idx + 1}을 삭제하시겠습니까?`
-                                        )
-                                    )
-                                        return;
-                                    setCoreCompetencies((prev) =>
-                                        prev.filter((_, i) => i !== idx)
-                                    );
-                                }}
-                                className="shrink-0 cursor-pointer rounded-lg bg-red-600 p-1.5 text-white"
-                            >
-                                <Trash2 size={12} />
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                    Title
-                                </label>
-                                <input
-                                    value={comp.title}
-                                    onChange={(e) =>
-                                        setCoreCompetencies((prev) =>
-                                            prev.map((c, i) =>
-                                                i === idx
-                                                    ? {
-                                                          ...c,
-                                                          title: e.target.value,
-                                                      }
-                                                    : c
-                                            )
-                                        )
-                                    }
-                                    placeholder="제목"
-                                    className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                    Description
-                                </label>
-                                <input
-                                    value={comp.description}
-                                    onChange={(e) =>
-                                        setCoreCompetencies((prev) =>
-                                            prev.map((c, i) =>
-                                                i === idx
-                                                    ? {
-                                                          ...c,
-                                                          description:
-                                                              e.target.value,
-                                                      }
-                                                    : c
-                                            )
-                                        )
-                                    }
-                                    placeholder="설명"
-                                    className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                ))}
-                {coreCompetencies.length < 4 && (
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setCoreCompetencies((prev) => [
-                                ...prev,
-                                { title: "", description: "" },
-                            ])
-                        }
-                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"
-                    >
-                        추가
-                    </button>
-                )}
-                <div className="flex items-center justify-end gap-3 pt-2">
-                    {competenciesStatus && (
-                        <span
-                            className={`text-sm ${competenciesStatus.type === "error" ? "text-red-500" : "text-green-600"}`}
-                        >
-                            {competenciesStatus.msg}
-                        </span>
-                    )}
-                    <button
-                        type="button"
-                        onClick={handleSaveCompetencies}
-                        disabled={savingCompetencies}
-                        className="rounded-lg bg-green-600 px-6 py-2.5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    >
-                        {savingCompetencies ? "저장 중..." : "핵심역량 저장"}
-                    </button>
                 </div>
             </section>
 

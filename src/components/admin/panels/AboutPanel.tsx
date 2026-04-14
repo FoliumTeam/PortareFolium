@@ -12,7 +12,6 @@ import type {
     AboutData,
     AboutSectionKey,
     CompetencySectionKey,
-    CoreValue,
     FieldIntroduction,
     ValuePillar,
 } from "@/types/about";
@@ -56,7 +55,6 @@ export default function AboutPanel() {
 
     // 랜딩 페이지 히어로 섹션
     const [valuePillars, setValuePillars] = useState<ValuePillar[]>([]);
-    const [coreCompetencies, setCoreCompetencies] = useState<CoreValue[]>([]);
 
     // Job Field별 소개
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
@@ -125,7 +123,6 @@ export default function AboutPanel() {
                     });
                     setIntroductions(d.introductions ?? {});
                     setValuePillars(d.valuePillars ?? []);
-                    setCoreCompetencies(d.coreCompetencies ?? []);
                 }
                 // resume_data.basics.image를 프로필 이미지 단일 출처로 사용
                 if (resumeRow) {
@@ -227,8 +224,6 @@ export default function AboutPanel() {
                     ? introductions
                     : undefined,
             valuePillars: valuePillars.length > 0 ? valuePillars : undefined,
-            coreCompetencies:
-                coreCompetencies.length > 0 ? coreCompetencies : undefined,
             sections: Object.fromEntries(
                 ABOUT_SECTION_KEYS.map((k) => [
                     k,
