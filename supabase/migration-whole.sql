@@ -3,7 +3,7 @@
 -- PortareFolium DB 스키마 전체 동기화
 --
 -- 대상: 모든 사용자 (최초 설치 또는 구버전 DB 보유)
--- 효과: 실행 후 db_schema_version = "0.6.17" 로 설정됨
+-- 효과: 실행 후 db_schema_version = "0.10.19" 로 설정됨
 -- 실행: Supabase 대시보드 → SQL Editor → 전체 내용 붙여넣기 후 실행
 -- 안전: idempotent — 이미 최신 DB에 재실행해도 에러 없음
 -- ============================================================
@@ -216,9 +216,81 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ── editor_states 테이블 (v0.8.3) ────────────────────────────
+
+CREATE TABLE IF NOT EXISTS editor_states (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type  TEXT        NOT NULL,
+    entity_slug  TEXT        NOT NULL,
+    label        TEXT        NOT NULL,
+    content      TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_editor_states_entity
+    ON editor_states (entity_type, entity_slug, created_at DESC);
+
+ALTER TABLE editor_states ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'editor_states_admin_all'
+    ) THEN
+        CREATE POLICY editor_states_admin_all ON editor_states
+            FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    END IF;
+END $$;
+
+-- ── about_data valuePillars/coreValues 시딩 (v0.10.6) ────────
+
+UPDATE about_data
+SET data = data || '{
+  "valuePillars": [
+    {"label": "Pillar 1", "sub": "Sub 1", "description": "Admin에서 Value Pillar를 입력하세요"},
+    {"label": "Pillar 2", "sub": "Sub 2", "description": "Admin에서 Value Pillar를 입력하세요"},
+    {"label": "Pillar 3", "sub": "Sub 3", "description": "Admin에서 Value Pillar를 입력하세요"}
+  ],
+  "coreValues": [
+    {"title": "Value 1", "description": "Admin에서 Core Value를 입력하세요"},
+    {"title": "Value 2", "description": "Admin에서 Core Value를 입력하세요"},
+    {"title": "Value 3", "description": "Admin에서 Core Value를 입력하세요"}
+  ]
+}'::jsonb
+WHERE NOT (data ? 'valuePillars');
+
+-- ── Storage policy 보안 강화 (v0.10.18 + v0.10.19) ──────────
+-- SELECT: public → authenticated only
+-- UPDATE/DELETE: authenticated 추가
+
+DROP POLICY IF EXISTS images_public_read ON storage.objects;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'objects' AND policyname = 'images_authenticated_select'
+    ) THEN
+        CREATE POLICY images_authenticated_select ON storage.objects
+            FOR SELECT TO authenticated USING (bucket_id = 'images');
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'objects' AND policyname = 'images_authenticated_update'
+    ) THEN
+        CREATE POLICY images_authenticated_update ON storage.objects
+            FOR UPDATE TO authenticated USING (bucket_id = 'images');
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'objects' AND policyname = 'images_authenticated_delete'
+    ) THEN
+        CREATE POLICY images_authenticated_delete ON storage.objects
+            FOR DELETE TO authenticated USING (bucket_id = 'images');
+    END IF;
+END $$;
+
 -- ── DB 스키마 버전 설정 ───────────────────────────────────────
 -- 항상 최신 버전으로 덮어씀 (migration-whole.sql은 전체 재동기화 목적)
 
 INSERT INTO site_config (key, value)
-VALUES ('db_schema_version', '"0.6.20"')
-ON CONFLICT (key) DO UPDATE SET value = '"0.6.20"';
+VALUES ('db_schema_version', '"0.10.19"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.10.19"';

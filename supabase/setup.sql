@@ -106,6 +106,38 @@ CREATE TABLE IF NOT EXISTS books (
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- MCP Agent 토큰 인증
+CREATE TABLE IF NOT EXISTS ai_agent_tokens (
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_hash     TEXT        NOT NULL UNIQUE,
+    label          TEXT        NOT NULL,
+    duration_min   INTEGER     NOT NULL,
+    expires_at     TIMESTAMPTZ NOT NULL,
+    revoked        BOOLEAN     NOT NULL DEFAULT FALSE,
+    last_used_at   TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 콘텐츠 스냅샷 (MCP Agent 백업)
+CREATE TABLE IF NOT EXISTS content_snapshots (
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_table   TEXT        NOT NULL,
+    record_id      TEXT        NOT NULL,
+    data           JSONB       NOT NULL,
+    triggered_by   TEXT        NOT NULL DEFAULT 'mcp_agent',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 에디터 상태 보존
+CREATE TABLE IF NOT EXISTS editor_states (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type  TEXT        NOT NULL,
+    entity_slug  TEXT        NOT NULL,
+    label        TEXT        NOT NULL,
+    content      TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── 인덱스 ──────────────────────────────────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_posts_slug        ON posts(slug);
@@ -115,6 +147,8 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
 CREATE INDEX IF NOT EXISTS idx_books_slug        ON books(slug);
 CREATE INDEX IF NOT EXISTS idx_books_published   ON books(published, order_idx);
+CREATE INDEX IF NOT EXISTS idx_snapshots_lookup  ON content_snapshots(source_table, record_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_editor_states_entity ON editor_states(entity_type, entity_slug, created_at DESC);
 
 -- ── updated_at 자동 갱신 트리거 ─────────────────────────────
 
@@ -149,6 +183,33 @@ CREATE OR REPLACE TRIGGER trg_site_config_updated_at
 CREATE OR REPLACE TRIGGER trg_books_updated_at
     BEFORE UPDATE ON books
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ── 스냅샷 자동 정리 트리거 (최근 20건만 유지) ──────────────
+
+CREATE OR REPLACE FUNCTION prune_snapshots()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM content_snapshots
+    WHERE id IN (
+        SELECT id FROM content_snapshots
+        WHERE source_table = NEW.source_table AND record_id = NEW.record_id
+        ORDER BY created_at DESC
+        OFFSET 20
+    );
+    RETURN NEW;
+END;
+$$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_prune_snapshots'
+    ) THEN
+        CREATE TRIGGER trg_prune_snapshots
+            AFTER INSERT ON content_snapshots
+            FOR EACH ROW EXECUTE FUNCTION prune_snapshots();
+    END IF;
+END $$;
 
 -- ── Row Level Security ───────────────────────────────────────
 
@@ -224,6 +285,21 @@ CREATE POLICY "books_auth_all"
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 
+-- ai_agent_tokens: 인증된 사용자만 접근
+ALTER TABLE ai_agent_tokens ENABLE ROW LEVEL SECURITY;
+
+-- content_snapshots: 인증된 사용자만 접근
+ALTER TABLE content_snapshots ENABLE ROW LEVEL SECURITY;
+
+-- editor_states: 인증된 사용자만 접근
+ALTER TABLE editor_states ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "editor_states_admin_all"
+    ON editor_states FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
 -- ── exec_sql 함수 (service_role 전용 DDL 실행) ───────────────
 
 CREATE OR REPLACE FUNCTION exec_sql(sql text)
@@ -242,12 +318,16 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('images', 'images', true)
 ON CONFLICT (id) DO NOTHING;
 
-DROP POLICY IF EXISTS "images_public_read"  ON storage.objects;
-DROP POLICY IF EXISTS "images_auth_upload"  ON storage.objects;
-DROP POLICY IF EXISTS "images_auth_delete"  ON storage.objects;
+DROP POLICY IF EXISTS "images_public_read"            ON storage.objects;
+DROP POLICY IF EXISTS "images_auth_upload"            ON storage.objects;
+DROP POLICY IF EXISTS "images_auth_delete"            ON storage.objects;
+DROP POLICY IF EXISTS "images_authenticated_select"   ON storage.objects;
+DROP POLICY IF EXISTS "images_authenticated_update"   ON storage.objects;
+DROP POLICY IF EXISTS "images_authenticated_delete"   ON storage.objects;
 
-CREATE POLICY "images_public_read"
+CREATE POLICY "images_authenticated_select"
 ON storage.objects FOR SELECT
+TO authenticated
 USING (bucket_id = 'images');
 
 CREATE POLICY "images_auth_upload"
@@ -255,7 +335,12 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'images');
 
-CREATE POLICY "images_auth_delete"
+CREATE POLICY "images_authenticated_update"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'images');
+
+CREATE POLICY "images_authenticated_delete"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (bucket_id = 'images');
@@ -270,5 +355,5 @@ INSERT INTO site_config (key, value) VALUES
     ('seo_config',         '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
     ('resume_layout',      '"modern"'),
     -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 현재 버전으로 초기화
-    ('db_schema_version',  '"0.6.20"')
+    ('db_schema_version',  '"0.10.19"')
 ON CONFLICT (key) DO NOTHING;
