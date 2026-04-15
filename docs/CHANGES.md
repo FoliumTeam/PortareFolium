@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.11.40 (2026-04-15)
+
+### docs: AGENTS.md Known Pitfalls 섹션에 MDX ↔ tiptap 상호작용 함정 3건 추가 + lib 트리 갱신
+
+- `AGENTS.md` Project Structure → `lib/` 트리에 `tiptap-markdown.ts` (getCleanMarkdown, unescapeJsxBrackets helper) 추가
+- `AGENTS.md` Known Pitfalls 섹션에 3 entries 추가:
+    1. **JSX 속성값의 `[`/`]` backslash-escape (tiptap-markdown 잔재)** — v0.11.36+의 4-layer 방어 구조 (editor wrapper / converter / render-time / MCP save-time) 문서화. 새 진입 경로 추가 시 한 layer 이상 포함 필수
+    2. **JSX 속성값의 `$` 가 inline math로 오인 (v0.11.39)** — `transformOutsideCodeBlocks` split 정규식의 self-closing JSX alternative 제거 금지 경고
+    3. **MDX 렌더 에러 진단 (`renderMarkdown` catch)** — `[mdx-debug]` prefix 덤프 출력 설명, 향후 에러 재발 시 즉시 진단 가능하도록 참조
+- 목적: v0.11.36~39의 MDX ↔ tiptap-markdown 상호작용 버그 체인이 숨은 코드 불변식(self-closing JSX 보호, 4-layer escape 방어)으로 정착된 상태를 docs로 명시화 → 향후 같은 함정에 빠지는 것 원천 차단
+
 ## v0.11.39 (2026-04-15)
 
 ### fix: JSX 태그 안의 `$` 가 inline math로 오인되어 뒷부분 `{}`가 escape되던 MDX 렌더 에러 해결

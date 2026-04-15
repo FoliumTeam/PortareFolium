@@ -314,7 +314,8 @@ src/
 │   ├── queries.ts                      # React cache() 기반 Supabase 쿼리
 │   ├── blog.ts                         # 블로그 유틸 (날짜 포맷, 요약 추출)
 │   ├── markdown.tsx                    # Markdown/MDX 렌더링 (getCachedMarkdown — unstable_cache 기반)
-│   ├── mdx-directive-converter.ts      # MDX directive 변환
+│   ├── mdx-directive-converter.ts      # MDX directive 변환 (JSX ↔ ::directive 양방향 + transformOutsideCodeBlocks)
+│   ├── tiptap-markdown.ts              # tiptap-markdown serializer wrapper (getCleanMarkdown, unescapeJsxBrackets)
 │   ├── migrations.ts                   # DB 마이그레이션 버전 관리 (MIGRATIONS 배열)
 │   ├── auto-migrate.ts                 # 서버 시작 시 자동 마이그레이션
 │   ├── color-schemes.ts                # 21개 컬러 스킴 정의 (17 Tailwind named + plain + neutral 등)
@@ -407,6 +408,9 @@ PDF 내보내기는 `PdfPreviewModal.tsx`의 `paginateBlocks()`가 `data-pdf-blo
 - **`unstable_cache` 클로저 패턴 금지**: `unstable_cache(() => fn(arg), [key])()` 형태로 매 호출마다 새 클로저를 생성하면 `arg`가 cache key에 포함되지 않음. 동일 key라면 `arg` 변경·코드 수정 후에도 stale 결과(에러 포함)를 계속 서빙. **올바른 패턴**: 모듈 레벨에서 `const cached = unstable_cache(async (a, b) => fn(b), ['key'])` 선언 후 `cached(a, b)` 호출 — 인자가 실제 cache key의 일부가 됨.
 - **`renderToString` 컨텍스트에서 `next/image` 금지**: `next/image`는 `"use client"` 모듈이므로 `renderToString` (서버 전용 컨텍스트)에서 import하면 "Cannot access Image.prototype on the server" 에러 발생. MDX 렌더링 파이프라인 내 컴포넌트(`MarkdownImage` 등)는 반드시 plain `<img>`를 사용.
 - **MDX 콘텐츠 내 `next/image` import**: Supabase에 저장된 MDX 콘텐츠가 `import Image from 'next/image'`를 포함하면 `@mdx-js/mdx` `evaluate`가 실제 Node.js require로 처리해 동일 에러 발생. `renderMarkdown`에서 `evaluate` 전 해당 구문을 정규식으로 제거하고 `components`에 `Image: MarkdownImage`를 등록해 안전하게 대체.
+- **JSX 속성값의 `[`/`]` backslash-escape (tiptap-markdown 잔재)**: tiptap-markdown serializer는 Tiptap 상태를 markdown으로 직렬화할 때 JSX attribute `{'...'}` 내부 문자열도 일반 prose로 취급해 `[`, `]`를 markdown link 문법 충돌 회피용으로 `\[`, `\]` 이스케이프함. 이 escape가 DB에 들어가면 프론트엔드 render 시 acorn JSX expression 파서가 `Could not parse expression with acorn` 에러를 냄. **방어 layer 4단 (v0.11.36+)**: (1) `src/lib/tiptap-markdown.ts`의 `getCleanMarkdown(editor)` wrapper로 editor의 `getMarkdown()` 호출 지점 모두 감쌈, (2) `mdx-directive-converter.ts`의 jsxToDirective / directiveToJsx 양방향에서 ColoredTable 속성값 `\[`/`\]` unescape, (3) `markdown.tsx` `renderMarkdown()` 진입부에 `unescapeJsxBrackets(content)` 호출 (render time safety net), (4) `mcp-tools.ts`의 create/update post·portfolio_item 핸들러에서 `sanitizeContentField(fields)` 적용. 새 진입 경로 추가 시 이 layer 중 하나에는 반드시 포함시킬 것.
+- **JSX 속성값의 `$` 가 inline math로 오인되는 문제 (v0.11.39)**: `mdx-directive-converter.ts`의 `transformOutsideCodeBlocks`는 math/code block을 보존하기 위해 split 정규식을 사용. 이 정규식에 self-closing JSX 태그 (`<Tag ... />`) 패턴을 **반드시 포함**해야 함 — 그렇지 않으면 속성값 안의 `"$0.01/GB"` 같은 `$` 포함 문자열이 inline math로 매칭되어 JSX 태그가 중간에서 쪼개짐. 쪼개진 뒷부분은 `escapeStrayCurlyBraces`의 JSX 라인 감지에 걸리지 않아 `{`/`}` 가 `\{`/`\}` 로 escape되고, acorn이 "Expecting Unicode escape sequence \\uXXXX" 혹은 유사한 parser 오류를 뱉음. 현재 split 정규식: `/(```[\s\S]*?```|<[A-Z]\w*[\s\S]*?\/>|\$\$[\s\S]*?\$\$|\$(?!\$)[^\n$]+?\$)/g` — alternative에서 JSX 패턴 제거 금지.
+- **MDX 렌더 에러 진단 (`renderMarkdown` catch)**: `src/lib/markdown.tsx`의 catch 블록은 acorn 에러 발생 시 line±40 content, col±10 codepoint hex dump, `cause.pos`±60 global content를 `[mdx-debug]` prefix로 `console.error`에 덤프. 새 MDX 렌더 에러가 나면 dev 터미널의 이 출력으로 정확한 문자 위치 + codepoint를 바로 식별 가능.
 
 ## MCP Agent Guide
 
