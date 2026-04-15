@@ -1,5 +1,18 @@
 # CHANGES
 
+## v0.11.39 (2026-04-15)
+
+### fix: JSX 태그 안의 `$` 가 inline math로 오인되어 뒷부분 `{}`가 escape되던 MDX 렌더 에러 해결
+
+- `src/lib/mdx-directive-converter.ts` `transformOutsideCodeBlocks`: split 정규식에 **self-closing JSX 태그 (`<Tag ... />`) 보호 패턴 추가**. 코드 블록·math와 함께 해당 구간을 atomic하게 보존.
+- **버그 체인**:
+    1. ColoredTable 속성값에 `"$0"`, `"$0.01/GB"` 등 `$` 포함 문자열이 있음
+    2. `transformOutsideCodeBlocks`의 `$(?!\$)[^\n$]+?\$` 정규식이 이 구간을 inline math로 잘못 매칭해 줄을 쪼갬
+    3. 쪼개진 끝부분(예: `0.01/GB","..."]]'} columnHeadColors={'...'} />`)은 선행 `<Tag` 토큰이 없어 `escapeStrayCurlyBraces`의 JSX 라인 감지(`/<\w+[\s/>]/`)에 걸리지 않음
+    4. 결과: JSX 표현식 경계 `{`, `}` 가 `\{`, `\}` 로 escape 되어 저장됨
+    5. 이후 acorn이 parser 상태 혼란에 빠져 "Expecting Unicode escape sequence \\uXXXX" 발생
+- 테스트: `transformOutsideCodeBlocks JSX 태그 보호` describe 3 cases 추가 (JSX 안의 `$`, 태그 밖의 math, 태그 뒤의 prose transform). 총 91 tests pass.
+
 ## v0.11.38 (2026-04-15)
 
 ### chore: MDX 렌더 에러 진단 로깅 추가 (임시)

@@ -74,8 +74,10 @@ export function transformOutsideCodeBlocks(
     content: string,
     transform: (text: string) => string
 ): string {
+    // self-closing JSX tag (<Tag ... />) 도 보호 구간에 포함해 그 안의 $ 가 math 로 잘못 파싱되거나
+    // } 가 stray-brace 로 escape 되는 것 차단
     const parts = content.split(
-        /(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$(?!\$)[^\n$]+?\$)/g
+        /(```[\s\S]*?```|<[A-Z]\w*[\s\S]*?\/>|\$\$[\s\S]*?\$\$|\$(?!\$)[^\n$]+?\$)/g
     );
     return parts
         .map((part, i) => (i % 2 === 0 ? transform(part) : part))

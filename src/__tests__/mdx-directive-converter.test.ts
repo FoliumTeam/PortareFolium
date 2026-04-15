@@ -202,3 +202,36 @@ describe("ColoredTable backslash bracket unescape", () => {
         expect(result).not.toContain("\\]");
     });
 });
+
+// ─────────────────────────────────────────────────────────
+// transformOutsideCodeBlocks: self-closing JSX 태그 보호
+// 이전 버그: JSX 태그 안의 $ 가 inline math로 잘못 파싱되어 뒷부분의 { } 가 \{ \} 로 escape 됨
+// ─────────────────────────────────────────────────────────
+
+describe("transformOutsideCodeBlocks JSX 태그 보호", () => {
+    it("self-closing JSX 태그 안의 $ 가 math 로 split되지 않음", () => {
+        const input = `<ColoredTable rows={'[["a","$0.01/GB"],["b","$100"]]'} />`;
+        // transform은 upperCase로 — JSX 내부는 건드리지 않아야 함
+        const result = transformOutsideCodeBlocks(input, (t) =>
+            t.toUpperCase()
+        );
+        expect(result).toBe(input);
+    });
+
+    it("JSX 태그 외부의 $...$ math 는 여전히 보호됨", () => {
+        const input = `텍스트 $x+y$ 더보기`;
+        const result = transformOutsideCodeBlocks(input, (t) =>
+            t.toUpperCase()
+        );
+        expect(result).toBe("텍스트 $x+y$ 더보기");
+    });
+
+    it("JSX 태그 뒤의 prose 는 transform 적용", () => {
+        const input = `<ColoredTable rows={'["a"]'} />\n뒤 텍스트`;
+        const result = transformOutsideCodeBlocks(input, (t) =>
+            t.toUpperCase()
+        );
+        expect(result).toContain(`<ColoredTable rows={'["a"]'} />`);
+        expect(result).toContain("뒤 텍스트".toUpperCase());
+    });
+});
