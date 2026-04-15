@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.11.33 (2026-04-15)
+
+### fix: blog-views E2E placeholder 한국어 동기화
+
+- `e2e/blog-views.spec.ts`: `Blog search` describe의 selector 2건을 `'input[placeholder="Search posts..."]:visible'` → `'input[placeholder="블로그 포스트 검색..."]:visible'`로 업데이트 (line 46, 54)
+- **원인**: `d9a7654 (v0.11.16)`에서 `BlogPage.tsx` search input placeholder를 한국어로 변경했으나 E2E 테스트가 함께 동기화되지 않아 CI에서 element-not-found timeout 발생 (3회 retry 모두 실패)
+- **수정 범위**: 테스트만, 애플리케이션 코드 미변경
+
 ## v0.11.32 (2026-04-15)
 
 ### chore: `/release` slash command 추가 — minor bump + tag push 자동화

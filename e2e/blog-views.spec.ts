@@ -43,7 +43,7 @@ test.describe("Blog search", () => {
     test("search input 존재 확인", async ({ page }) => {
         await page.goto("/blog");
         const searchInput = page.locator(
-            'input[placeholder="Search posts..."]:visible'
+            'input[placeholder="블로그 포스트 검색..."]:visible'
         );
         await expect(searchInput.first()).toBeVisible();
     });
@@ -51,7 +51,7 @@ test.describe("Blog search", () => {
     test("검색 입력 시 필터링 동작", async ({ page }) => {
         await page.goto("/blog");
         const searchInput = page
-            .locator('input[placeholder="Search posts..."]:visible')
+            .locator('input[placeholder="블로그 포스트 검색..."]:visible')
             .first();
         await searchInput.fill("zzz_nonexistent_query_zzz");
         // 검색 결과 없음 → "No posts match" 또는 빈 상태
