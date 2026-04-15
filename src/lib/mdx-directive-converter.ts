@@ -46,6 +46,8 @@ export function jsxToDirective(content: string): string {
                 let val = m[2] ?? m[3] ?? m[4];
                 // unescape \' to '
                 val = val.replace(/\\'/g, "'");
+                // tiptap-markdown이 JSX 속성값 [, ]에 link 문법 충돌 방지 backslash 주입하는 것 복원
+                val = val.replace(/\\([\[\]])/g, "$1");
                 // escape " to \"
                 val = val.replace(/"/g, '\\"');
                 parts.push(`${m[1]}="${val}"`);
@@ -131,6 +133,8 @@ export function directiveToJsx(content: string): string {
                 let cleanVal = m[3]
                     .replace(/\\"/g, '"')
                     .replace(/&#x22;/g, '"'); // MDXEditor HTML-encoded double quotes
+                // backslash-escaped brackets 복원 (tiptap-markdown 잔재 방어)
+                cleanVal = cleanVal.replace(/\\([\[\]])/g, "$1");
                 cleanVal = cleanVal.replace(/'/g, "\\'");
                 parts.push(`${m[1]}={'${cleanVal}'}`);
             }

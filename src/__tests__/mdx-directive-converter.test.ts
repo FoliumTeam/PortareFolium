@@ -177,3 +177,28 @@ describe("transformOutsideCodeBlocks", () => {
         expect(result).toBe("");
     });
 });
+
+// ─────────────────────────────────────────────────────────
+// ColoredTable attribute 값 내부 backslash-escaped brackets 복원
+// tiptap-markdown이 [, ]를 link 문법 충돌 회피로 \[, \] escape하는 잔재 방어
+// ─────────────────────────────────────────────────────────
+
+describe("ColoredTable backslash bracket unescape", () => {
+    it("jsxToDirective: rows 값 내부 \\[ \\] 복원", () => {
+        const input = `<ColoredTable rows={'[["a","b"\\],\\["c","d"\\]\\]'} />`;
+        const result = jsxToDirective(input);
+        expect(result).toContain(
+            `rows="[[\\"a\\",\\"b\\"],[\\"c\\",\\"d\\"]]"`
+        );
+        expect(result).not.toContain("\\[");
+        expect(result).not.toContain("\\]");
+    });
+
+    it("directiveToJsx: directive 값 내부 \\[ \\] 복원", () => {
+        const input = `::colored-table[]{rows="[[\\"a\\",\\"b\\"\\],\\[\\"c\\",\\"d\\"\\]\\]"}`;
+        const result = directiveToJsx(input);
+        expect(result).toContain("<ColoredTable");
+        expect(result).not.toContain("\\[");
+        expect(result).not.toContain("\\]");
+    });
+});

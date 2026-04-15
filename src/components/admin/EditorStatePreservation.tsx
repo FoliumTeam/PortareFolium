@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
 import { browserClient } from "@/lib/supabase";
+import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import StatePreviewModal from "@/components/admin/StatePreviewModal";
 
 interface EditorSnapshot {
@@ -203,8 +204,7 @@ export default function EditorStatePreservation({
         if (!editor) return;
 
         const id = setInterval(async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const md = (editor.storage as any).markdown.getMarkdown() as string;
+            const md = getCleanMarkdown(editor);
             if (!md) return;
 
             const snap = await saveSnapshot(
@@ -236,8 +236,7 @@ export default function EditorStatePreservation({
     // 현재 상태 수동 저장 (Bookmark, 무제한)
     const handleBookmark = useCallback(async () => {
         if (!editor) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const md = (editor.storage as any).markdown.getMarkdown() as string;
+        const md = getCleanMarkdown(editor);
         if (!md) return;
 
         const snap = await saveSnapshot(entityType, entitySlug, "Bookmark", md);

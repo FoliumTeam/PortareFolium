@@ -26,6 +26,7 @@ import {
     accordionDirectiveToHtml,
 } from "@/extensions/AccordionNode";
 import { jsxToDirective, directiveToJsx } from "@/lib/mdx-directive-converter";
+import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import EditorToolbar from "@/components/admin/EditorToolbar";
 import TiptapImageUpload from "@/components/admin/TiptapImageUpload";
 
@@ -99,8 +100,7 @@ export default function RichMarkdownEditor({
     const enterSourceMode = () => {
         if (!editor) return;
         saveScrollRatio();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const md = (editor.storage as any).markdown.getMarkdown() as string;
+        const md = getCleanMarkdown(editor);
         setSourceText(directiveToJsx(md));
         setSourceMode(true);
     };
@@ -174,8 +174,7 @@ export default function RichMarkdownEditor({
         content: initialContent,
         editable: !disabled,
         onUpdate({ editor: e }) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const md = (e.storage as any).markdown.getMarkdown() as string;
+            const md = getCleanMarkdown(e);
             // directive → JSX 변환 후 저장 (DB에는 항상 JSX 형식 유지)
             onChange(directiveToJsx(md));
         },
@@ -220,8 +219,7 @@ export default function RichMarkdownEditor({
     useEffect(() => {
         if (!editor || disabled) return;
         const id = setInterval(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const md = (editor.storage as any).markdown.getMarkdown() as string;
+            const md = getCleanMarkdown(editor);
             if (md) {
                 localStorage.setItem(
                     AUTOSAVE_KEY,

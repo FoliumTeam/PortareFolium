@@ -1,5 +1,17 @@
 # CHANGES
 
+## v0.11.36 (2026-04-15)
+
+### fix: tiptap-markdown의 JSX 속성 `\[ \]` escape 원천 차단 (acorn parse error 해결)
+
+- `src/lib/tiptap-markdown.ts` 신규 — `getCleanMarkdown(editor)` + `unescapeJsxBrackets(md)` helper. tiptap-markdown serializer가 JSX 속성값 내부 `[`, `]`를 link 문법 충돌 회피용으로 `\[`, `\]` 이스케이프하는 것을 대문자로 시작하는 JSX tag 범위에 한해 선별 복원.
+- `src/components/admin/RichMarkdownEditor.tsx`: 3개 `getMarkdown()` 호출 지점(enterSourceMode, onUpdate, localStorage autosave) → `getCleanMarkdown()` 로 교체.
+- `src/components/admin/EditorStatePreservation.tsx`: auto-save + Bookmark 2개 지점 → `getCleanMarkdown()` 로 교체.
+- `src/lib/mdx-directive-converter.ts`: `jsxToDirective()` + `directiveToJsx()` 양 방향의 ColoredTable attribute 값 unescape 체인에 `val.replace(/\\([\[\]])/g, "$1")` 추가 — 이중 safety net. 기존 DB에 이미 섞인 `\[`/`\]`도 render/load 시 자동 정리.
+- **원인**: tiptap-markdown이 Tiptap 상태를 markdown으로 직렬화할 때 JSX 속성의 `{'...'}` 내부 문자열도 일반 prose로 취급해 `[`, `]`를 이스케이프. MDX 3 acorn JSX expression 파서가 이를 거부하면서 "Could not parse expression with acorn" 에러 발생.
+- **효과**: WYSIWYG/Source 모드 전환, onUpdate, auto-save 전 경로에서 JSX tag 내부 backslash escape 유입 차단. 기존 오염 DB는 converter layer에서 투명하게 정리.
+- 테스트: `src/__tests__/tiptap-markdown.test.ts` 신규 (4 cases), `mdx-directive-converter.test.ts` backslash unescape 2 cases 추가. 총 88 tests pass.
+
 ## v0.11.35 (2026-04-15)
 
 ### docs: 커밋 타입 분류표 + 선택 가이드를 AGENTS.md & ship.md에 통합
