@@ -19,7 +19,6 @@ import {
     Pencil,
     Trash2,
     AlertTriangle,
-    ChevronDown,
     Settings,
     ExternalLink,
 } from "lucide-react";
@@ -145,7 +144,6 @@ export default function PostsPanel({
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [batchJobField, setBatchJobField] = useState("");
     const [batchSaving, setBatchSaving] = useState(false);
-    const [showSortMenu, setShowSortMenu] = useState(false);
     // editor_states count (목록 yellow highlight용)
     const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
     // 토스트 알림
@@ -159,7 +157,6 @@ export default function PostsPanel({
     const setSortAndSave = (key: string) => {
         setSortKey(key);
         localStorage.setItem("post_sort", key);
-        setShowSortMenu(false);
     };
 
     // dirty 상태
@@ -508,7 +505,7 @@ export default function PostsPanel({
     // ── 편집 화면 ────────────────────────────────────────────
     if (editTarget !== null) {
         return (
-            <div className="flex w-full flex-col pb-20">
+            <div className="tablet:h-full tablet:overflow-hidden tablet:pb-0 flex w-full flex-col pb-20">
                 {/* 헤더 */}
                 <div className="mb-4 flex items-center justify-between">
                     <button
@@ -597,7 +594,7 @@ export default function PostsPanel({
                 </div>
 
                 {/* 본문 에디터 */}
-                <div className="min-h-[400px] flex-1">
+                <div className="tablet:min-h-0 min-h-[400px] flex-1">
                     <RichMarkdownEditor
                         value={form.content}
                         onChange={(c) => setForm((f) => ({ ...f, content: c }))}
@@ -609,23 +606,21 @@ export default function PostsPanel({
                     />
                 </div>
 
-                {/* 피드백 */}
-                {error && (
-                    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-950/30">
-                        {error}
-                    </p>
-                )}
-                {success && (
-                    <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/30">
-                        {success}
-                    </p>
-                )}
-
-                {/* Sticky 저장 바 */}
+                {/* Sticky 저장 바 — error/success/안내 메시지를 좌측에 overlay */}
                 <AdminSaveBar>
-                    <span className="text-base text-(--color-muted)">
-                        저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
-                    </span>
+                    {error ? (
+                        <span className="text-base font-medium text-red-500">
+                            {error}
+                        </span>
+                    ) : success ? (
+                        <span className="text-base font-medium text-green-600">
+                            {success}
+                        </span>
+                    ) : (
+                        <span className="text-base text-(--color-muted)">
+                            저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                        </span>
+                    )}
                     <div className="flex items-center gap-3">
                         <SaveIndicator
                             saving={autoSaving}
@@ -791,332 +786,357 @@ export default function PostsPanel({
         showToast(`${selected.size}개 포스트의 직무 분야를 변경했습니다.`);
     };
 
-    const SORT_LABELS: Record<string, string> = {
-        date_desc: "최신순",
-        date_asc: "오래된순",
-        title_az: "제목 A→Z",
-        title_za: "제목 Z→A",
-        published_first: "Published 먼저",
-        draft_first: "Draft 먼저",
-    };
-
     return (
-        <div>
-            {/* 헤더 */}
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-(--color-foreground)">
-                    블로그 포스트
-                </h2>
-                <button
-                    onClick={openNew}
-                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                >
-                    + 새 포스트
-                </button>
-            </div>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            {/* 고정 header: title + filter */}
+            <div className="shrink-0 pt-1 pb-4">
+                {/* 헤더 */}
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-(--color-foreground)">
+                        블로그 포스트
+                    </h2>
+                    <button
+                        onClick={openNew}
+                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    >
+                        + 새 포스트
+                    </button>
+                </div>
 
-            {/* 필터 + 정렬 */}
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-                <input
-                    type="text"
-                    value={filterSearch}
-                    onChange={(e) => setFilterSearch(e.target.value)}
-                    placeholder="제목 또는 slug 검색"
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                />
-                <select
-                    value={filterStatus}
-                    onChange={(e) =>
-                        setFilterStatus(
-                            e.target.value as "all" | "published" | "draft"
-                        )
-                    }
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
-                >
-                    <option value="all">전체</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                </select>
-                {jobFields.length > 0 && (
+                {/* 필터 + 정렬 */}
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <input
+                        type="text"
+                        value={filterSearch}
+                        onChange={(e) => setFilterSearch(e.target.value)}
+                        placeholder="제목 또는 slug 검색"
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                    />
                     <select
-                        value={filterJobField}
-                        onChange={(e) => setFilterJobField(e.target.value)}
+                        value={filterStatus}
+                        onChange={(e) =>
+                            setFilterStatus(
+                                e.target.value as "all" | "published" | "draft"
+                            )
+                        }
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
                     >
-                        <option value="">직무 분야 전체</option>
-                        {jobFields.map((f) => (
-                            <option key={f.id} value={f.id}>
-                                {f.emoji} {f.name}
-                            </option>
-                        ))}
+                        <option value="all">전체</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
                     </select>
-                )}
-                <div className="relative">
-                    <button
-                        type="button"
-                        onClick={() => setShowSortMenu((v) => !v)}
-                        className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) hover:bg-(--color-surface-subtle)"
-                    >
-                        {sortKey.startsWith("date") ? (
-                            sortKey === "date_desc" ? (
-                                <CalendarArrowDown size={14} />
-                            ) : (
-                                <CalendarArrowUp size={14} />
-                            )
-                        ) : sortKey.includes("az") ? (
-                            <ArrowUpAZ size={14} />
-                        ) : sortKey.includes("za") ? (
-                            <ArrowDownAZ size={14} />
-                        ) : null}
-                        {SORT_LABELS[sortKey]}
-                        <ChevronDown size={14} />
-                    </button>
-                    {showSortMenu && (
-                        <div className="absolute top-full right-0 z-20 mt-1 w-40 rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
-                            {Object.entries(SORT_LABELS).map(([key, label]) => (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setSortAndSave(key)}
-                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-(--color-surface-subtle) ${sortKey === key ? "font-semibold text-(--color-accent)" : "text-(--color-foreground)"}`}
-                                >
-                                    {label}
-                                </button>
+                    {jobFields.length > 0 && (
+                        <select
+                            value={filterJobField}
+                            onChange={(e) => setFilterJobField(e.target.value)}
+                            className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                        >
+                            <option value="">직무 분야 전체</option>
+                            {jobFields.map((f) => (
+                                <option key={f.id} value={f.id}>
+                                    {f.emoji} {f.name}
+                                </option>
                             ))}
-                        </div>
+                        </select>
                     )}
+                    <div className="ml-auto flex items-center gap-1">
+                        {[
+                            {
+                                key: "date_desc",
+                                icon: <CalendarArrowDown className="h-4 w-4" />,
+                                label: "최신순",
+                            },
+                            {
+                                key: "date_asc",
+                                icon: <CalendarArrowUp className="h-4 w-4" />,
+                                label: "오래된순",
+                            },
+                            {
+                                key: "title_az",
+                                icon: <ArrowUpAZ className="h-4 w-4" />,
+                                label: "제목 A→Z",
+                            },
+                            {
+                                key: "title_za",
+                                icon: <ArrowDownAZ className="h-4 w-4" />,
+                                label: "제목 Z→A",
+                            },
+                            {
+                                key: "published_first",
+                                icon: <Eye className="h-4 w-4" />,
+                                label: "Published 먼저",
+                            },
+                            {
+                                key: "draft_first",
+                                icon: <EyeOff className="h-4 w-4" />,
+                                label: "Draft 먼저",
+                            },
+                        ].map(({ key, icon, label }) => (
+                            <button
+                                key={key}
+                                onClick={() => setSortAndSave(key)}
+                                title={label}
+                                className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+                                    sortKey === key
+                                        ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
+                                        : "border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50"
+                                }`}
+                            >
+                                {icon}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* 배치 액션 바 */}
-            {someSelected && (
-                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-(--color-accent)/30 bg-(--color-surface-subtle) px-4 py-3">
-                    <span className="text-sm font-medium text-(--color-foreground)">
-                        {selected.size}개 선택됨
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => batchPublish(true)}
-                        disabled={batchSaving}
-                        className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
-                    >
-                        <Eye size={13} /> Publish
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => batchPublish(false)}
-                        disabled={batchSaving}
-                        className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
-                    >
-                        <EyeOff size={13} /> Unpublish
-                    </button>
-                    {jobFields.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                            <select
-                                value={batchJobField}
-                                onChange={(e) =>
-                                    setBatchJobField(e.target.value)
-                                }
-                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
-                            >
-                                <option value="">직무 분야 선택</option>
-                                {jobFields.map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.emoji} {f.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={batchSetJobField}
-                                disabled={batchSaving || !batchJobField}
-                                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
-                            >
-                                적용
-                            </button>
-                        </div>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setSelected(new Set())}
-                        className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
-                    >
-                        선택 해제
-                    </button>
-                </div>
-            )}
-
-            {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
-
-            {loading ? (
-                <p className="text-sm text-(--color-muted)">불러오는 중...</p>
-            ) : displayedPosts.length === 0 ? (
-                <p className="text-sm text-(--color-muted)">
-                    {posts.length === 0
-                        ? "포스트가 없습니다."
-                        : "필터 조건에 맞는 포스트가 없습니다."}
-                </p>
-            ) : (
-                <div>
-                    {/* 전체 선택 행 */}
-                    <div className="flex items-center gap-3 border-b border-(--color-border) px-2 py-2">
-                        <input
-                            type="checkbox"
-                            checked={allSelected}
-                            onChange={toggleSelectAll}
-                            className="h-4 w-4 cursor-pointer rounded"
-                        />
-                        <span className="text-sm text-(--color-muted)">
-                            전체 선택 ({displayedPosts.length}개)
+            <div className="flex min-h-0 flex-1 flex-col">
+                {/* 배치 액션 바 */}
+                {someSelected && (
+                    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-(--color-accent)/30 bg-(--color-surface-subtle) px-4 py-3">
+                        <span className="text-sm font-medium text-(--color-foreground)">
+                            {selected.size}개 선택됨
                         </span>
+                        <button
+                            type="button"
+                            onClick={() => batchPublish(true)}
+                            disabled={batchSaving}
+                            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                            <Eye size={13} /> Publish
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => batchPublish(false)}
+                            disabled={batchSaving}
+                            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                            <EyeOff size={13} /> Unpublish
+                        </button>
+                        {jobFields.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <select
+                                    value={batchJobField}
+                                    onChange={(e) =>
+                                        setBatchJobField(e.target.value)
+                                    }
+                                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
+                                >
+                                    <option value="">직무 분야 선택</option>
+                                    {jobFields.map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.emoji} {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={batchSetJobField}
+                                    disabled={batchSaving || !batchJobField}
+                                    className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
+                                >
+                                    적용
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setSelected(new Set())}
+                            className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
+                        >
+                            선택 해제
+                        </button>
                     </div>
-                    {displayedPosts.map((post) => {
-                        const hasJobField =
-                            !!post.job_field &&
-                            (Array.isArray(post.job_field)
-                                ? post.job_field.length > 0
-                                : true);
-                        const stateCount = stateCounts[post.slug] ?? 0;
-                        return (
-                            <div
-                                key={post.id}
-                                className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
-                                    stateCount > 0
-                                        ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
-                                        : ""
-                                } ${
-                                    selected.has(post.id)
-                                        ? "bg-(--color-surface-subtle)"
-                                        : ""
-                                }`}
-                            >
+                )}
+
+                {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+
+                {loading ? (
+                    <p className="text-sm text-(--color-muted)">
+                        불러오는 중...
+                    </p>
+                ) : displayedPosts.length === 0 ? (
+                    <p className="text-sm text-(--color-muted)">
+                        {posts.length === 0
+                            ? "포스트가 없습니다."
+                            : "필터 조건에 맞는 포스트가 없습니다."}
+                    </p>
+                ) : (
+                    <>
+                        {/* 전체 선택 행 */}
+                        <div className="shrink-0 border-b border-(--color-border)">
+                            <div className="flex items-center gap-3 px-2 py-2">
                                 <input
                                     type="checkbox"
-                                    checked={selected.has(post.id)}
-                                    onChange={() => toggleSelect(post.id)}
-                                    className="h-4 w-4 flex-shrink-0 cursor-pointer rounded"
+                                    checked={allSelected}
+                                    onChange={toggleSelectAll}
+                                    className="h-4 w-4 cursor-pointer rounded"
                                 />
-                                <div className="min-w-0 flex-1 space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Badge
-                                            variant={
-                                                post.published
-                                                    ? "default"
-                                                    : "secondary"
-                                            }
-                                            className="text-xs"
-                                        >
-                                            {post.published ? (
-                                                <Eye size={10} />
-                                            ) : (
-                                                <EyeOff size={10} />
-                                            )}
-                                            {post.published
-                                                ? "Published"
-                                                : "Draft"}
-                                        </Badge>
-                                        {!hasJobField && (
-                                            <Badge
-                                                variant="destructive"
-                                                className="text-xs"
-                                            >
-                                                <AlertTriangle size={10} />
-                                                직무 분야 없음
-                                            </Badge>
-                                        )}
-                                        {stateCount > 0 && (
-                                            <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
-                                                상태: {stateCount}
-                                            </span>
-                                        )}
-                                        {post.category && (
-                                            <span className="text-xs text-(--color-muted)">
-                                                {post.category}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="truncate text-sm font-semibold text-(--color-foreground)">
-                                        {post.title}
-                                    </p>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="font-mono text-xs text-(--color-muted)">
-                                            {post.slug}
-                                        </span>
-                                        <span className="text-xs text-(--color-muted)">
-                                            {new Date(
-                                                post.pub_date
-                                            ).toLocaleDateString("ko-KR")}
-                                        </span>
-                                        <JobFieldBadges
-                                            value={post.job_field}
-                                            fields={jobFields}
-                                        />
-                                        {post.tags.slice(0, 3).map((t) => (
-                                            <span
-                                                key={t}
-                                                className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
-                                            >
-                                                {t}
-                                            </span>
-                                        ))}
-                                        {post.tags.length > 3 && (
-                                            <span className="text-xs text-(--color-muted)">
-                                                +{post.tags.length - 3}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
-                                    <button
-                                        onClick={() => togglePublish(post)}
-                                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
-                                            post.published
-                                                ? "bg-amber-500"
-                                                : "bg-green-600"
+                                <span className="text-sm text-(--color-muted)">
+                                    전체 선택 ({displayedPosts.length}개)
+                                </span>
+                            </div>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto">
+                            {displayedPosts.map((post) => {
+                                const hasJobField =
+                                    !!post.job_field &&
+                                    (Array.isArray(post.job_field)
+                                        ? post.job_field.length > 0
+                                        : true);
+                                const stateCount = stateCounts[post.slug] ?? 0;
+                                return (
+                                    <div
+                                        key={post.id}
+                                        className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
+                                            stateCount > 0
+                                                ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
+                                                : ""
+                                        } ${
+                                            selected.has(post.id)
+                                                ? "bg-(--color-surface-subtle)"
+                                                : ""
                                         }`}
                                     >
-                                        {post.published ? (
-                                            <EyeOff size={12} />
-                                        ) : (
-                                            <Eye size={12} />
-                                        )}
-                                        <span className="tablet:inline hidden">
-                                            {post.published
-                                                ? "Unpublish"
-                                                : "Publish"}
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => openEdit(post)}
-                                        className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                    >
-                                        <Pencil size={12} />
-                                        <span className="tablet:inline hidden">
-                                            편집
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(post.id)}
-                                        className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                    >
-                                        <Trash2 size={12} />
-                                        <span className="tablet:inline hidden">
-                                            삭제
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(post.id)}
+                                            onChange={() =>
+                                                toggleSelect(post.id)
+                                            }
+                                            className="h-4 w-4 flex-shrink-0 cursor-pointer rounded"
+                                        />
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span
+                                                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
+                                                        post.published
+                                                            ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                                    }`}
+                                                >
+                                                    {post.published ? (
+                                                        <Eye size={10} />
+                                                    ) : (
+                                                        <EyeOff size={10} />
+                                                    )}
+                                                    {post.published
+                                                        ? "Published"
+                                                        : "Draft"}
+                                                </span>
+                                                {!hasJobField && (
+                                                    <Badge
+                                                        variant="destructive"
+                                                        className="text-xs"
+                                                    >
+                                                        <AlertTriangle
+                                                            size={10}
+                                                        />
+                                                        직무 분야 없음
+                                                    </Badge>
+                                                )}
+                                                {stateCount > 0 && (
+                                                    <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                                        상태: {stateCount}
+                                                    </span>
+                                                )}
+                                                {post.category && (
+                                                    <span className="text-xs text-(--color-muted)">
+                                                        {post.category}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="truncate text-sm font-semibold text-(--color-foreground)">
+                                                {post.title}
+                                            </p>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="font-mono text-xs text-(--color-muted)">
+                                                    {post.slug}
+                                                </span>
+                                                <span className="text-xs text-(--color-muted)">
+                                                    {new Date(
+                                                        post.pub_date
+                                                    ).toLocaleDateString(
+                                                        "ko-KR"
+                                                    )}
+                                                </span>
+                                                <JobFieldBadges
+                                                    value={post.job_field}
+                                                    fields={jobFields}
+                                                />
+                                                {post.tags
+                                                    .slice(0, 3)
+                                                    .map((t) => (
+                                                        <span
+                                                            key={t}
+                                                            className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
+                                                        >
+                                                            {t}
+                                                        </span>
+                                                    ))}
+                                                {post.tags.length > 3 && (
+                                                    <span className="text-xs text-(--color-muted)">
+                                                        +{post.tags.length - 3}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                            <button
+                                                onClick={() =>
+                                                    togglePublish(post)
+                                                }
+                                                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
+                                                    post.published
+                                                        ? "bg-amber-500"
+                                                        : "bg-green-600"
+                                                }`}
+                                            >
+                                                {post.published ? (
+                                                    <EyeOff size={12} />
+                                                ) : (
+                                                    <Eye size={12} />
+                                                )}
+                                                <span className="tablet:inline hidden">
+                                                    {post.published
+                                                        ? "Unpublish"
+                                                        : "Publish"}
+                                                </span>
+                                            </button>
+                                            <button
+                                                onClick={() => openEdit(post)}
+                                                className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                            >
+                                                <Pencil size={12} />
+                                                <span className="tablet:inline hidden">
+                                                    편집
+                                                </span>
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(post.id)
+                                                }
+                                                className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                            >
+                                                <Trash2 size={12} />
+                                                <span className="tablet:inline hidden">
+                                                    삭제
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
 
-            {/* 토스트 알림 */}
-            {toast && (
-                <div className="fixed right-6 bottom-6 z-[100] rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
-                    {toast}
-                </div>
-            )}
+                {/* 토스트 알림 */}
+                {toast && (
+                    <div className="fixed right-6 bottom-6 z-100 rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
+                        {toast}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -21,7 +21,6 @@ import {
     Pencil,
     Trash2,
     AlertTriangle,
-    ChevronDown,
     Settings,
     ExternalLink,
     GripVertical,
@@ -188,7 +187,6 @@ export default function PortfolioPanel({
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [batchJobField, setBatchJobField] = useState("");
     const [batchSaving, setBatchSaving] = useState(false);
-    const [showSortMenu, setShowSortMenu] = useState(false);
     // editor_states count (목록 yellow highlight용)
     const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
     // 토스트 알림
@@ -202,7 +200,6 @@ export default function PortfolioPanel({
     const setSortAndSave = (key: string) => {
         setSortKey(key);
         localStorage.setItem("portfolio_sort", key);
-        setShowSortMenu(false);
     };
 
     // dirty 상태
@@ -574,7 +571,7 @@ export default function PortfolioPanel({
     // ── 편집 화면 (Ghost 에디터 레이아웃) ──
     if (editTarget !== null) {
         return (
-            <div className="flex w-full flex-col pb-20">
+            <div className="tablet:h-full tablet:overflow-hidden tablet:pb-0 flex w-full flex-col pb-20">
                 {/* 헤더 */}
                 <div className="mb-4 flex items-center justify-between">
                     <button
@@ -663,7 +660,7 @@ export default function PortfolioPanel({
                 </div>
 
                 {/* 본문 에디터 */}
-                <div className="min-h-[400px] flex-1">
+                <div className="tablet:min-h-0 min-h-[400px] flex-1">
                     <RichMarkdownEditor
                         value={form.content}
                         onChange={(c) => setForm((f) => ({ ...f, content: c }))}
@@ -675,23 +672,21 @@ export default function PortfolioPanel({
                     />
                 </div>
 
-                {/* 피드백 */}
-                {error && (
-                    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-950/30">
-                        {error}
-                    </p>
-                )}
-                {success && (
-                    <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/30">
-                        {success}
-                    </p>
-                )}
-
-                {/* Sticky 저장 바 */}
+                {/* Sticky 저장 바 — error/success/안내 메시지를 좌측에 overlay */}
                 <AdminSaveBar>
-                    <span className="text-base text-(--color-muted)">
-                        저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
-                    </span>
+                    {error ? (
+                        <span className="text-base font-medium text-red-500">
+                            {error}
+                        </span>
+                    ) : success ? (
+                        <span className="text-base font-medium text-green-600">
+                            {success}
+                        </span>
+                    ) : (
+                        <span className="text-base text-(--color-muted)">
+                            저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                        </span>
+                    )}
                     <div className="flex items-center gap-3">
                         <SaveIndicator
                             saving={autoSaving}
@@ -848,71 +843,165 @@ export default function PortfolioPanel({
         showToast(`${selected.size}개 항목의 직무 분야를 변경했습니다.`);
     };
 
-    const SORT_LABELS: Record<string, string> = {
-        order_idx: "순서 (기본)",
-        title_az: "제목 A→Z",
-        title_za: "제목 Z→A",
-        published_first: "Published 먼저",
-        draft_first: "Draft 먼저",
-        featured_first: "Featured 먼저",
-    };
-
     const featuredCount = items.filter((i) => i.featured).length;
 
     return (
-        <div>
-            {/* 탭 */}
-            <div className="mb-6 flex gap-1 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-1">
-                {(
-                    [
-                        { key: "portfolio", label: "포트폴리오" },
-                        { key: "books", label: "도서" },
-                    ] as const
-                ).map(({ key, label }) => (
-                    <button
-                        key={key}
-                        onClick={() => setTab(key)}
-                        className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                            tab === key
-                                ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
-                                : "text-(--color-muted) hover:text-(--color-foreground)"
-                        }`}
-                    >
-                        {label}
-                    </button>
-                ))}
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="shrink-0 bg-(--color-surface) pb-4">
+                {/* 탭 */}
+                <div className="flex gap-1 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-1">
+                    {(
+                        [
+                            { key: "portfolio", label: "포트폴리오" },
+                            { key: "books", label: "도서" },
+                        ] as const
+                    ).map(({ key, label }) => (
+                        <button
+                            key={key}
+                            onClick={() => setTab(key)}
+                            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                                tab === key
+                                    ? "bg-(--color-surface) text-(--color-foreground) shadow-sm"
+                                    : "text-(--color-muted) hover:text-(--color-foreground)"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
+                {tab === "portfolio" && (
+                    <div className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold text-(--color-foreground)">
+                                    포트폴리오
+                                </h2>
+                                <p className="mt-0.5 text-sm text-(--color-muted)">
+                                    Featured: {featuredCount}/5
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {/* 보기 방식 설정 */}
+                                <button
+                                    onClick={openNew}
+                                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                                >
+                                    + 새 항목
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 필터 + 정렬 */}
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <input
+                                type="text"
+                                value={filterSearch}
+                                onChange={(e) =>
+                                    setFilterSearch(e.target.value)
+                                }
+                                placeholder="제목 또는 slug 검색"
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                            />
+                            <select
+                                value={filterStatus}
+                                onChange={(e) =>
+                                    setFilterStatus(
+                                        e.target.value as
+                                            | "all"
+                                            | "published"
+                                            | "draft"
+                                    )
+                                }
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                            >
+                                <option value="all">전체</option>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                            {jobFields.length > 0 && (
+                                <select
+                                    value={filterJobField}
+                                    onChange={(e) =>
+                                        setFilterJobField(e.target.value)
+                                    }
+                                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
+                                >
+                                    <option value="">직무 분야 전체</option>
+                                    {jobFields.map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.emoji} {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            <div className="ml-auto flex items-center gap-1">
+                                {[
+                                    {
+                                        key: "order_idx",
+                                        icon: (
+                                            <GripVertical className="h-4 w-4" />
+                                        ),
+                                        label: "순서 (기본)",
+                                    },
+                                    {
+                                        key: "title_az",
+                                        icon: <ArrowUpAZ className="h-4 w-4" />,
+                                        label: "제목 A→Z",
+                                    },
+                                    {
+                                        key: "title_za",
+                                        icon: (
+                                            <ArrowDownAZ className="h-4 w-4" />
+                                        ),
+                                        label: "제목 Z→A",
+                                    },
+                                    {
+                                        key: "published_first",
+                                        icon: <Eye className="h-4 w-4" />,
+                                        label: "Published 먼저",
+                                    },
+                                    {
+                                        key: "draft_first",
+                                        icon: <EyeOff className="h-4 w-4" />,
+                                        label: "Draft 먼저",
+                                    },
+                                    {
+                                        key: "featured_first",
+                                        icon: <Star className="h-4 w-4" />,
+                                        label: "Featured 먼저",
+                                    },
+                                ].map(({ key, icon, label }) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setSortAndSave(key)}
+                                        title={label}
+                                        className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+                                            sortKey === key
+                                                ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
+                                                : "border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50"
+                                        }`}
+                                    >
+                                        {icon}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {tab === "books" && (
-                <BooksSubPanel
-                    jobFields={jobFields}
-                    activeJobField={activeJobField}
-                />
+                <div className="min-h-0 flex-1">
+                    <BooksSubPanel
+                        jobFields={jobFields}
+                        activeJobField={activeJobField}
+                    />
+                </div>
             )}
 
             {tab === "portfolio" && (
-                <div>
-                    {/* 헤더 */}
-                    <div className="mb-4 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold text-(--color-foreground)">
-                                포트폴리오
-                            </h2>
-                            <p className="mt-0.5 text-sm text-(--color-muted)">
-                                Featured: {featuredCount}/5
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {/* 보기 방식 설정 */}
-                            <button
-                                onClick={openNew}
-                                className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
-                            >
-                                + 새 항목
-                            </button>
-                        </div>
-                    </div>
-
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     {/* Featured 순서 조정 */}
                     {items.filter((i) => i.featured).length > 0 && (
                         <div className="mb-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
@@ -956,87 +1045,6 @@ export default function PortfolioPanel({
                             </div>
                         </div>
                     )}
-
-                    {/* 필터 + 정렬 */}
-                    <div className="mb-4 flex flex-wrap items-center gap-2">
-                        <input
-                            type="text"
-                            value={filterSearch}
-                            onChange={(e) => setFilterSearch(e.target.value)}
-                            placeholder="제목 또는 slug 검색"
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                        />
-                        <select
-                            value={filterStatus}
-                            onChange={(e) =>
-                                setFilterStatus(
-                                    e.target.value as
-                                        | "all"
-                                        | "published"
-                                        | "draft"
-                                )
-                            }
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
-                        >
-                            <option value="all">전체</option>
-                            <option value="published">Published</option>
-                            <option value="draft">Draft</option>
-                        </select>
-                        {jobFields.length > 0 && (
-                            <select
-                                value={filterJobField}
-                                onChange={(e) =>
-                                    setFilterJobField(e.target.value)
-                                }
-                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
-                            >
-                                <option value="">직무 분야 전체</option>
-                                {jobFields.map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.emoji} {f.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        {/* 정렬 드롭다운 */}
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setShowSortMenu((v) => !v)}
-                                className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-medium text-(--color-foreground) hover:bg-(--color-surface-subtle)"
-                            >
-                                {sortKey === "title_az" ? (
-                                    <ArrowUpAZ size={14} />
-                                ) : sortKey === "title_za" ? (
-                                    <ArrowDownAZ size={14} />
-                                ) : sortKey.includes("date_desc") ? (
-                                    <CalendarArrowDown size={14} />
-                                ) : sortKey.includes("date_asc") ? (
-                                    <CalendarArrowUp size={14} />
-                                ) : null}
-                                {SORT_LABELS[sortKey]}
-                                <ChevronDown size={14} />
-                            </button>
-                            {showSortMenu && (
-                                <div className="absolute top-full right-0 z-20 mt-1 w-44 rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg">
-                                    {Object.entries(SORT_LABELS).map(
-                                        ([key, label]) => (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() =>
-                                                    setSortAndSave(key)
-                                                }
-                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-(--color-surface-subtle) ${sortKey === key ? "font-semibold text-(--color-accent)" : "text-(--color-foreground)"}`}
-                                            >
-                                                {label}
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
                     {/* 배치 액션 바 */}
                     {someSelected && (
@@ -1152,7 +1160,7 @@ export default function PortfolioPanel({
                                             onChange={() =>
                                                 toggleSelect(item.id)
                                             }
-                                            className="h-4 w-4 flex-shrink-0 cursor-pointer rounded"
+                                            className="h-4 w-4 shrink-0 cursor-pointer rounded"
                                         />
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -1296,7 +1304,7 @@ export default function PortfolioPanel({
 
                     {/* 토스트 알림 */}
                     {toast && (
-                        <div className="fixed right-6 bottom-6 z-[100] rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
+                        <div className="fixed right-6 bottom-6 z-100 rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
                             {toast}
                         </div>
                     )}

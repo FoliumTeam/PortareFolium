@@ -302,7 +302,7 @@ export default function AboutPanel() {
     const availableFields = jobFields.filter((f) => !introductions[f.id]);
 
     return (
-        <div className="space-y-6">
+        <div className="tablet:h-full tablet:overflow-y-auto space-y-6">
             {/* 프로필 */}
             <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                 <h3 className="text-xl font-bold text-(--color-foreground)">

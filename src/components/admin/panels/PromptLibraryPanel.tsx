@@ -144,8 +144,8 @@ export default function PromptLibraryPanel() {
     };
 
     return (
-        <div className="mx-auto max-w-4xl space-y-8 pb-12">
-            <div>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden pb-12">
+            <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pb-4">
                 <h1 className="text-3xl font-bold text-(--color-foreground)">
                     프롬프트 라이브러리
                 </h1>
@@ -156,113 +156,118 @@ export default function PromptLibraryPanel() {
                 </p>
             </div>
 
-            <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-(--color-accent)" />
-                    <h2 className="text-xl font-medium">
-                        개발 일지 블로그 포스트 변환
-                    </h2>
-                </div>
-                <p className="text-sm text-(--color-muted)">
-                    Changelog 형태의 개발 일지 마크다운 파일을 입력하면, AI가
-                    날짜별로 상세한 블로그 포스트 초안을 작성하여 데이터베이스에
-                    일괄 저장합니다. 토큰은 보안을 위해 직접 발급받아{" "}
-                    <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code> 위치에
-                    붙여넣어주세요.
-                </p>
-
-                <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
-                    <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
-                        <span className="text-xs font-medium text-(--color-muted)">
-                            System Prompt
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleReset}
-                                className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
-                            >
-                                <RotateCcw className="mr-1 h-3 w-3" />
-                                초기화
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleCopy}
-                                className="h-7 px-2 text-xs text-(--color-accent) hover:bg-(--color-accent)/10"
-                            >
-                                {copied ? (
-                                    <Check className="mr-1 h-3 w-3" />
-                                ) : (
-                                    <Copy className="mr-1 h-3 w-3" />
-                                )}
-                                복사
-                            </Button>
-                        </div>
+            <div className="min-h-0 flex-1 space-y-8 overflow-y-auto">
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5 text-(--color-accent)" />
+                        <h2 className="text-xl font-medium">
+                            개발 일지 블로그 포스트 변환
+                        </h2>
                     </div>
-                    <textarea
-                        value={promptText}
-                        onChange={(e) => setPromptText(e.target.value)}
-                        className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
-                        spellCheck={false}
-                    />
-                </div>
-            </section>
+                    <p className="text-sm text-(--color-muted)">
+                        Changelog 형태의 개발 일지 마크다운 파일을 입력하면,
+                        AI가 날짜별로 상세한 블로그 포스트 초안을 작성하여
+                        데이터베이스에 일괄 저장합니다. 토큰은 보안을 위해 직접
+                        발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
+                        위치에 붙여넣어주세요.
+                    </p>
 
-            <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-(--color-accent)" />
-                    <h2 className="text-xl font-medium">
-                        포트폴리오 아이템 생성
-                    </h2>
-                </div>
-                <p className="text-sm text-(--color-muted)">
-                    프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가
-                    포트폴리오 항목 본문(ColoredTable, 개발 내용, 트러블슈팅
-                    등)을 작성하여 데이터베이스에 저장합니다. 토큰은 보안을 위해
-                    직접 발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
-                    위치에 붙여넣어주세요.
-                </p>
-
-                <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
-                    <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
-                        <span className="text-xs font-medium text-(--color-muted)">
-                            System Prompt
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handlePortfolioReset}
-                                className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
-                            >
-                                <RotateCcw className="mr-1 h-3 w-3" />
-                                초기화
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handlePortfolioCopy}
-                                className="h-7 px-2 text-xs text-(--color-accent) hover:bg-(--color-accent)/10"
-                            >
-                                {portfolioCopied ? (
-                                    <Check className="mr-1 h-3 w-3" />
-                                ) : (
-                                    <Copy className="mr-1 h-3 w-3" />
-                                )}
-                                복사
-                            </Button>
+                    <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
+                        <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
+                            <span className="text-xs font-medium text-(--color-muted)">
+                                System Prompt
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleReset}
+                                    className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
+                                >
+                                    <RotateCcw className="mr-1 h-3 w-3" />
+                                    초기화
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleCopy}
+                                    className="h-7 px-2 text-xs text-(--color-accent) hover:bg-(--color-accent)/10"
+                                >
+                                    {copied ? (
+                                        <Check className="mr-1 h-3 w-3" />
+                                    ) : (
+                                        <Copy className="mr-1 h-3 w-3" />
+                                    )}
+                                    복사
+                                </Button>
+                            </div>
                         </div>
+                        <textarea
+                            value={promptText}
+                            onChange={(e) => setPromptText(e.target.value)}
+                            className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
+                            spellCheck={false}
+                        />
                     </div>
-                    <textarea
-                        value={portfolioPromptText}
-                        onChange={(e) => setPortfolioPromptText(e.target.value)}
-                        className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
-                        spellCheck={false}
-                    />
-                </div>
-            </section>
+                </section>
+
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5 text-(--color-accent)" />
+                        <h2 className="text-xl font-medium">
+                            포트폴리오 아이템 생성
+                        </h2>
+                    </div>
+                    <p className="text-sm text-(--color-muted)">
+                        프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가
+                        포트폴리오 항목 본문(ColoredTable, 개발 내용, 트러블슈팅
+                        등)을 작성하여 데이터베이스에 저장합니다. 토큰은 보안을
+                        위해 직접 발급받아{" "}
+                        <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code> 위치에
+                        붙여넣어주세요.
+                    </p>
+
+                    <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
+                        <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
+                            <span className="text-xs font-medium text-(--color-muted)">
+                                System Prompt
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handlePortfolioReset}
+                                    className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
+                                >
+                                    <RotateCcw className="mr-1 h-3 w-3" />
+                                    초기화
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handlePortfolioCopy}
+                                    className="h-7 px-2 text-xs text-(--color-accent) hover:bg-(--color-accent)/10"
+                                >
+                                    {portfolioCopied ? (
+                                        <Check className="mr-1 h-3 w-3" />
+                                    ) : (
+                                        <Copy className="mr-1 h-3 w-3" />
+                                    )}
+                                    복사
+                                </Button>
+                            </div>
+                        </div>
+                        <textarea
+                            value={portfolioPromptText}
+                            onChange={(e) =>
+                                setPortfolioPromptText(e.target.value)
+                            }
+                            className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
+                            spellCheck={false}
+                        />
+                    </div>
+                </section>
+            </div>
         </div>
     );
 }

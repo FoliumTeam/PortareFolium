@@ -262,14 +262,15 @@ export default function RichMarkdownEditor({
     return (
         <>
             {/* Outer wrapper: invisible placeholder preserves layout space when fullscreen */}
-            <div className={isFullscreen ? "invisible" : ""}>
+            <div className={isFullscreen ? "invisible" : "tablet:h-full"}>
                 {/* Editor container: CSS fixed overlay when fullscreen, inline card otherwise.
-                    visible overrides inherited invisible so the fixed overlay remains visible. */}
+                    visible overrides inherited invisible so the fixed overlay remains visible.
+                    tablet+ 에선 flex-col + h-full 로 내부 scroll 영역 fit, 모바일은 content 높이 그대로. */}
                 <div
                     className={
                         isFullscreen
                             ? "visible fixed inset-0 z-100 flex flex-col bg-zinc-100 dark:bg-zinc-950"
-                            : "relative overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+                            : "tablet:flex tablet:h-full tablet:flex-col relative overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
                     }
                 >
                     {/* 에셋 이전 중 overlay */}
@@ -328,10 +329,15 @@ export default function RichMarkdownEditor({
                         )}
                     </div>
 
-                    {/* Scrollable content area (source + WYSIWYG share same scroll/paper container) */}
+                    {/* Scrollable content area (source + WYSIWYG share same scroll/paper container).
+                        모바일은 page scroll, tablet+ 은 이 영역이 자체 스크롤. */}
                     <div
                         ref={scrollAreaRef}
-                        className={isFullscreen ? "flex-1 overflow-y-auto" : ""}
+                        className={
+                            isFullscreen
+                                ? "flex-1 overflow-y-auto"
+                                : "tablet:flex-1 tablet:overflow-y-auto"
+                        }
                     >
                         {/* Source mode textarea */}
                         {sourceMode && (

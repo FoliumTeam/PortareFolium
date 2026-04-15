@@ -1,5 +1,33 @@
 # CHANGES
 
+## v0.11.41 (2026-04-16)
+
+### fix: Admin PostsPanel 고정 header가 mobile과 tablet+에서 함께 스크롤되던 문제 수정
+
+- `src/components/admin/AdminDashboard.tsx`: `posts` 탭 활성 시 `main`을 `overflow-hidden`으로 전환하고 내부 wrapper에 `h-full min-h-0 flex-col` 적용. `PostsPanel`이 자체 스크롤 컨테이너 높이를 안정적으로 받도록 조정
+- `src/components/admin/panels/PostsPanel.tsx`: 목록 화면 root를 단일 `overflow-y-auto` 컨테이너로 고정하고 상단 title/filter 영역에 `sticky top-0` 적용. 기존 tablet 전용 내부 스크롤 영역 제거
+- `src/components/admin/panels/PostsPanel.tsx`: sticky header의 `-mx-4` / `tablet:-mx-2` 폭 확장 보정을 제거해 mobile과 tablet+에서 발생하던 가로 스크롤 제거
+- `src/components/admin/panels/PostsPanel.tsx`: 목록 화면을 `header 영역`과 `posts list 스크롤 영역`으로 분리. 세로 스크롤바가 패널 전체가 아니라 리스트 영역에만 표시되도록 조정
+- `src/components/admin/panels/PostsPanel.tsx`: `전체 선택` 행을 리스트 스크롤 영역 밖의 고정 구간으로 이동. 포스트 row만 아래에서 스크롤되도록 조정
+- `src/components/admin/AdminDashboard.tsx`: `portfolio` 탭에도 `h-full min-h-0` 높이 컨텍스트를 전달해 패널 내부 스크롤 레이아웃이 동작하도록 조정. 바깥 `main` 스크롤은 유지
+- `src/components/admin/panels/PortfolioPanel.tsx`: tabs와 portfolio title/filter controls를 같은 상단 고정 블록으로 통합. portfolio list 영역은 그 아래 `overflow-y-auto`로 분리
+- `src/components/admin/panels/BooksSubPanel.tsx`: title/filter controls를 상단 고정 구간으로 분리하고, books list만 내부 `overflow-y-auto`로 스크롤되도록 조정. edit 뷰도 새 높이 컨텍스트에 맞게 `h-full/min-h-0` 대응
+- `src/components/admin/panels/PortfolioPanel.tsx`, `src/components/admin/panels/PostsPanel.tsx`: `BooksSubPanel`과 동일한 icon 기반 sort 버튼 UI로 정렬 controls 통일. 기존 dropdown 정렬 메뉴와 관련 state/import 제거
+- `src/components/admin/panels/PostsPanel.tsx`: Published/Draft 상태 badge를 `PortfolioPanel`과 동일한 green/yellow 배경 스타일로 통일
+- `src/components/admin/panels/TagsPanel.tsx`: sticky header의 음수 margin 제거, 상단 controls와 tag/category row를 wrap 가능한 구조로 조정해 horizontal scroll 제거
+- `src/components/admin/panels/TagsPanel.tsx`: tab/new tag/sort controls를 하나의 상단 고정 블록으로 통합하고, 태그 목록만 내부 스크롤되도록 레이아웃 재구성. sort control도 icon-only 버튼으로 통일하고 왼쪽 정렬로 조정
+- `src/components/admin/AdminDashboard.tsx`, `src/components/admin/panels/ResumePanel.tsx`: `resume` 탭도 내부 스크롤 컨텍스트를 사용하도록 조정. `ResumePanel`은 상단 title/save bar만 고정하고, 본문만 내부 `overflow-y-auto`로 스크롤되도록 재구성. 하단 중복 저장 버튼 제거
+- `src/components/admin/panels/MigrationsPanel.tsx`: `max-w-3xl` 폭 제한 제거. `PostsPanel`/`PortfolioPanel`과 같은 패널 폭을 사용하도록 정렬
+- `src/components/admin/AdminDashboard.tsx`, `src/components/admin/panels/MigrationsPanel.tsx`: `migrations` 탭도 내부 스크롤 컨텍스트를 사용하도록 조정. `MigrationsPanel`은 상단 header와 `최신 상태` 메시지를 하나의 고정 블록으로 묶고, migration section 목록만 내부 `overflow-y-auto`로 스크롤되도록 재구성
+- `src/components/admin/AdminDashboard.tsx`, `src/components/admin/panels/SnapshotsPanel.tsx`: `snapshots` 탭도 내부 스크롤 컨텍스트를 사용하도록 조정. `SnapshotsPanel`은 `max-w-3xl` 폭 제한 제거 후, title~refresh controls를 하나의 상단 고정 블록으로 묶고 스냅샷 목록만 내부 `overflow-y-auto`로 스크롤되도록 재구성
+- `src/components/admin/AdminDashboard.tsx`, `src/components/admin/panels/AgentTokensPanel.tsx`: `agent-tokens` 탭도 내부 스크롤 컨텍스트를 사용하도록 조정. `AgentTokensPanel`은 `ContentWrapper width="full"`로 폭 제한을 제거하고, title~refresh block을 상단 고정 영역으로 유지한 채 토큰 목록만 내부 `overflow-y-auto`로 스크롤되도록 재구성
+- `src/components/admin/AdminDashboard.tsx`, `src/components/admin/panels/PromptLibraryPanel.tsx`: `prompts` 탭도 내부 스크롤 컨텍스트를 사용하도록 조정. `PromptLibraryPanel`은 `max-w-4xl` 폭 제한 제거 후, title+description을 하나의 상단 고정 블록으로 묶고 프롬프트 섹션만 내부 `overflow-y-auto`로 스크롤되도록 재구성
+- `src/components/admin/panels/SiteConfigPanel.tsx`: horizontal scroll 원인은 sticky title에 사용한 `tablet:-mx-6` 음수 margin과 `Color Scheme` / `Job Field` 구간의 non-wrapping `flex` row 조합. 수정은 title sticky에서 음수 margin 제거, panel root에 `overflow-x-hidden` 추가, 관련 row를 `flex-wrap` 구조로 전환
+- `src/components/admin/panels/AboutPanel.tsx`: root에 `tablet:h-full tablet:overflow-y-auto` 추가. tablet+ 에서는 About 패널 자체가 내부 스크롤 컨텍스트를 사용하도록 정렬
+- `src/components/admin/RichMarkdownEditor.tsx`: non-fullscreen 에디터를 tablet+ 에선 `h-full + flex-col` 로 전환하고, scroll area에 `tablet:flex-1 tablet:overflow-y-auto` 적용. 모바일은 기존 page scroll 유지. Posts/Portfolio 편집 화면에서 에디터가 `main` 영역 높이에 맞춰 내부 스크롤되도록 조정
+- `e2e/authenticated/admin-editor-viewport.spec.ts` 신규: laptop viewport에서 Posts/Portfolio 편집 화면 진입 시 `document.body.scrollHeight - window.innerHeight ≤ 2` 확인. 외곽 세로 스크롤 회귀 방지
+- 결과: mobile 기본 viewport와 tablet+ viewport 모두에서 `PostsPanel` 상단 header는 고정되고, 포스트 목록만 그 아래에서 스크롤. Posts/Portfolio 편집 화면도 tablet+ 에서 에디터가 main 영역에 fit
+
 ## v0.11.40 (2026-04-15)
 
 ### docs: AGENTS.md Known Pitfalls 섹션에 MDX ↔ tiptap 상호작용 함정 3건 추가 + lib 트리 갱신

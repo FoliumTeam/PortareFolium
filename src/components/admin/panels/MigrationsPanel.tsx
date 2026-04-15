@@ -72,7 +72,7 @@ export default function MigrationsPanel() {
     // db_schema_version 없음 → 초기 설정 안내
     if (dbVersion === null) {
         return (
-            <div className="mx-auto max-w-3xl space-y-6">
+            <div className="space-y-6">
                 <div>
                     <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
                         DB 마이그레이션
@@ -122,101 +122,108 @@ export default function MigrationsPanel() {
     const isUpToDate = pending.length === 0;
 
     return (
-        <div className="mx-auto max-w-3xl space-y-8">
-            {/* 헤더 */}
-            <div className="tablet:gap-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                        DB 마이그레이션
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-(--color-muted)">
-                        <span>
-                            DB 버전:{" "}
-                            <code className="font-mono font-semibold text-(--color-foreground)">
-                                {dbVersion}
-                            </code>
-                        </span>
-                        <span className="text-(--color-border)">·</span>
-                        <span>
-                            앱 버전:{" "}
-                            <code className="font-mono font-semibold text-(--color-foreground)">
-                                {APP_VERSION}
-                            </code>
-                        </span>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="sticky top-0 z-10 shrink-0 space-y-4 bg-(--color-surface) pb-3">
+                {/* 헤더 */}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
+                            DB 마이그레이션
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-(--color-muted)">
+                            <span>
+                                DB 버전:{" "}
+                                <code className="font-mono font-semibold text-(--color-foreground)">
+                                    {dbVersion}
+                                </code>
+                            </span>
+                            <span className="text-(--color-border)">·</span>
+                            <span>
+                                앱 버전:{" "}
+                                <code className="font-mono font-semibold text-(--color-foreground)">
+                                    {APP_VERSION}
+                                </code>
+                            </span>
+                        </div>
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={loadVersion}
+                        disabled={refreshing}
+                    >
+                        {refreshing ? "새로고침 중..." : "새로고침"}
+                    </Button>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadVersion}
-                    disabled={refreshing}
-                >
-                    {refreshing ? "새로고침 중..." : "새로고침"}
-                </Button>
+
+                {/* 최신 상태 */}
+                {isUpToDate && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
+                        DB가 최신 상태입니다.
+                    </div>
+                )}
             </div>
 
-            {/* 미적용 마이그레이션 */}
-            {pending.length > 0 && (
-                <section>
-                    <h3 className="mb-3 text-xs font-bold tracking-widest text-amber-600 uppercase">
-                        미적용 ({pending.length})
-                    </h3>
-                    <div className="mb-4 flex items-center gap-3">
-                        <p className="flex-1 text-sm text-(--color-muted)">
-                            아래 SQL을 Supabase SQL Editor에서 순서대로
-                            실행하거나, 자동 적용 버튼을 누르세요.
-                        </p>
-                        <Button onClick={applyMigrations} disabled={applying}>
-                            {applying ? "적용 중..." : "자동 적용"}
-                        </Button>
-                    </div>
-                    {applyError && (
-                        <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-400">
-                            {applyError}
+            <div className="min-h-0 flex-1 space-y-8 overflow-y-auto">
+                {/* 미적용 마이그레이션 */}
+                {pending.length > 0 && (
+                    <section>
+                        <h3 className="mb-3 text-xs font-bold tracking-widest text-amber-600 uppercase">
+                            미적용 ({pending.length})
+                        </h3>
+                        <div className="mb-4 flex items-center gap-3">
+                            <p className="flex-1 text-sm text-(--color-muted)">
+                                아래 SQL을 Supabase SQL Editor에서 순서대로
+                                실행하거나, 자동 적용 버튼을 누르세요.
+                            </p>
+                            <Button
+                                onClick={applyMigrations}
+                                disabled={applying}
+                            >
+                                {applying ? "적용 중..." : "자동 적용"}
+                            </Button>
                         </div>
-                    )}
-                    <div className="space-y-4">
-                        {pending.map((m) => (
-                            <MigrationCard
-                                key={m.version}
-                                migration={m}
-                                isApplied={false}
-                                isCopied={copied === m.version}
-                                defaultOpen={true}
-                                onCopy={() => copySql(m)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
+                        {applyError && (
+                            <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-400">
+                                {applyError}
+                            </div>
+                        )}
+                        <div className="space-y-4">
+                            {pending.map((m) => (
+                                <MigrationCard
+                                    key={m.version}
+                                    migration={m}
+                                    isApplied={false}
+                                    isCopied={copied === m.version}
+                                    defaultOpen={true}
+                                    onCopy={() => copySql(m)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
-            {/* 최신 상태 */}
-            {isUpToDate && (
-                <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
-                    DB가 최신 상태입니다.
-                </div>
-            )}
-
-            {/* 적용 완료 */}
-            {applied.length > 0 && (
-                <section>
-                    <h3 className="mb-3 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                        적용 완료 ({applied.length})
-                    </h3>
-                    <div className="space-y-3">
-                        {[...applied].reverse().map((m) => (
-                            <MigrationCard
-                                key={m.version}
-                                migration={m}
-                                isApplied={true}
-                                isCopied={copied === m.version}
-                                defaultOpen={false}
-                                onCopy={() => copySql(m)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
+                {/* 적용 완료 */}
+                {applied.length > 0 && (
+                    <section>
+                        <h3 className="mb-3 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
+                            적용 완료 ({applied.length})
+                        </h3>
+                        <div className="space-y-3">
+                            {[...applied].reverse().map((m) => (
+                                <MigrationCard
+                                    key={m.version}
+                                    migration={m}
+                                    isApplied={true}
+                                    isCopied={copied === m.version}
+                                    defaultOpen={false}
+                                    onCopy={() => copySql(m)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </div>
         </div>
     );
 }

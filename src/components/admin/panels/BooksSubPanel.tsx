@@ -417,10 +417,10 @@ export default function BooksSubPanel({
             return true;
         })
         .sort((a, b) => {
-            if (sortKey === "order_idx") return a.order_idx - b.order_idx;
+            if (sortKey === "newest") return a.order_idx - b.order_idx;
             if (sortKey === "alpha_az") return a.title.localeCompare(b.title);
             if (sortKey === "alpha_za") return b.title.localeCompare(a.title);
-            if (sortKey === "newest") return b.order_idx - a.order_idx;
+            if (sortKey === "oldest") return b.order_idx - a.order_idx;
             if (sortKey === "featured")
                 return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
             return 0;
@@ -429,7 +429,7 @@ export default function BooksSubPanel({
     // ── 편집 화면 (Ghost 에디터 레이아웃) ──
     if (editTarget !== null) {
         return (
-            <div className="flex w-full flex-col pb-20">
+            <div className="tablet:h-full tablet:overflow-hidden tablet:pb-0 flex w-full flex-col pb-20">
                 {/* 헤더 */}
                 <div className="mb-4 flex items-center justify-between">
                     <button
@@ -484,7 +484,7 @@ export default function BooksSubPanel({
                 </div>
 
                 {/* 본문 에디터 */}
-                <div className="min-h-[400px] flex-1">
+                <div className="tablet:min-h-0 min-h-[400px] flex-1">
                     <RichMarkdownEditor
                         value={form.content}
                         onChange={(v) => setForm((f) => ({ ...f, content: v }))}
@@ -574,241 +574,247 @@ export default function BooksSubPanel({
 
     /* ── 목록 뷰 ── */
     return (
-        <div>
-            <div className="mb-4 flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-(--color-foreground)">
-                        도서
-                    </h2>
-                    <p className="mt-0.5 text-sm text-(--color-muted)">
-                        Featured: {books.filter((b) => b.featured).length}/5
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+            <div className="shrink-0 pb-4">
+                <div className="mb-4 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold text-(--color-foreground)">
+                            도서
+                        </h2>
+                        <p className="mt-0.5 text-sm text-(--color-muted)">
+                            Featured: {books.filter((b) => b.featured).length}/5
+                        </p>
+                    </div>
+                    <button
+                        onClick={openNew}
+                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                    >
+                        + 새 도서
+                    </button>
+                </div>
+
+                {/* 필터 + 정렬 */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <input
+                        type="text"
+                        value={filterSearch}
+                        onChange={(e) => setFilterSearch(e.target.value)}
+                        placeholder="제목 또는 저자 검색…"
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                    />
+                    <select
+                        value={filterStatus}
+                        onChange={(e) =>
+                            setFilterStatus(
+                                e.target.value as "all" | "published" | "draft"
+                            )
+                        }
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
+                    >
+                        <option value="all">전체</option>
+                        <option value="published">발행됨</option>
+                        <option value="draft">임시저장</option>
+                    </select>
+                    <div className="ml-auto flex items-center gap-1">
+                        {[
+                            {
+                                key: "newest",
+                                icon: <CalendarArrowDown className="h-4 w-4" />,
+                                label: "최신순",
+                            },
+                            {
+                                key: "oldest",
+                                icon: <CalendarArrowUp className="h-4 w-4" />,
+                                label: "오래된순",
+                            },
+                            {
+                                key: "alpha_az",
+                                icon: <ArrowUpAZ className="h-4 w-4" />,
+                                label: "A→Z",
+                            },
+                            {
+                                key: "alpha_za",
+                                icon: <ArrowDownAZ className="h-4 w-4" />,
+                                label: "Z→A",
+                            },
+                            {
+                                key: "featured",
+                                icon: <Star className="h-4 w-4" />,
+                                label: "Featured 먼저",
+                            },
+                        ].map(({ key, icon, label }) => (
+                            <button
+                                key={key}
+                                onClick={() => setSortAndSave(key)}
+                                title={label}
+                                className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+                                    sortKey === key
+                                        ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
+                                        : "border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50"
+                                }`}
+                            >
+                                {icon}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+                {loading ? (
+                    <p className="py-8 text-center text-(--color-muted)">
+                        로딩 중…
                     </p>
-                </div>
-                <button
-                    onClick={openNew}
-                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
-                >
-                    + 새 도서
-                </button>
-            </div>
-
-            {/* 필터 + 정렬 */}
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-                <input
-                    type="text"
-                    value={filterSearch}
-                    onChange={(e) => setFilterSearch(e.target.value)}
-                    placeholder="제목 또는 저자 검색…"
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                />
-                <select
-                    value={filterStatus}
-                    onChange={(e) =>
-                        setFilterStatus(
-                            e.target.value as "all" | "published" | "draft"
-                        )
-                    }
-                    className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
-                >
-                    <option value="all">전체</option>
-                    <option value="published">발행됨</option>
-                    <option value="draft">임시저장</option>
-                </select>
-                <div className="ml-auto flex items-center gap-1">
-                    {[
-                        {
-                            key: "order_idx",
-                            icon: <CalendarArrowDown className="h-4 w-4" />,
-                            label: "순서",
-                        },
-                        {
-                            key: "alpha_az",
-                            icon: <ArrowUpAZ className="h-4 w-4" />,
-                            label: "A→Z",
-                        },
-                        {
-                            key: "alpha_za",
-                            icon: <ArrowDownAZ className="h-4 w-4" />,
-                            label: "Z→A",
-                        },
-                        {
-                            key: "newest",
-                            icon: <CalendarArrowUp className="h-4 w-4" />,
-                            label: "역순",
-                        },
-                        {
-                            key: "featured",
-                            icon: <Star className="h-4 w-4" />,
-                            label: "Featured 먼저",
-                        },
-                    ].map(({ key, icon, label }) => (
-                        <button
-                            key={key}
-                            onClick={() => setSortAndSave(key)}
-                            title={label}
-                            className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
-                                sortKey === key
-                                    ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
-                                    : "border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50"
-                            }`}
-                        >
-                            {icon}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {loading ? (
-                <p className="py-8 text-center text-(--color-muted)">
-                    로딩 중…
-                </p>
-            ) : displayedBooks.length === 0 ? (
-                <p className="py-8 text-center text-(--color-muted)">
-                    도서가 없습니다.
-                </p>
-            ) : (
-                <ul>
-                    {displayedBooks.map((book) => (
-                        <li
-                            key={book.id}
-                            className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
-                                (stateCounts[book.slug] ?? 0) > 0
-                                    ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
-                                    : ""
-                            }`}
-                        >
-                            {book.cover_url && (
-                                <img
-                                    src={book.cover_url}
-                                    alt=""
-                                    className="h-10 w-7 shrink-0 rounded object-cover"
-                                />
-                            )}
-                            <div className="min-w-0 flex-1 space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {book.featured && (
-                                        <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
-                                            <Star className="h-2.5 w-2.5" />{" "}
-                                            Featured
+                ) : displayedBooks.length === 0 ? (
+                    <p className="py-8 text-center text-(--color-muted)">
+                        도서가 없습니다.
+                    </p>
+                ) : (
+                    <ul>
+                        {displayedBooks.map((book) => (
+                            <li
+                                key={book.id}
+                                className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
+                                    (stateCounts[book.slug] ?? 0) > 0
+                                        ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
+                                        : ""
+                                }`}
+                            >
+                                {book.cover_url && (
+                                    <img
+                                        src={book.cover_url}
+                                        alt=""
+                                        className="h-10 w-7 shrink-0 rounded object-cover"
+                                    />
+                                )}
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {book.featured && (
+                                            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                                                <Star className="h-2.5 w-2.5" />{" "}
+                                                Featured
+                                            </span>
+                                        )}
+                                        <span
+                                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
+                                                book.published
+                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                            }`}
+                                        >
+                                            {book.published ? (
+                                                <Eye className="h-2.5 w-2.5" />
+                                            ) : (
+                                                <EyeOff className="h-2.5 w-2.5" />
+                                            )}
+                                            {book.published
+                                                ? "Published"
+                                                : "Draft"}
                                         </span>
-                                    )}
-                                    <span
-                                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
+                                        {!book.job_field?.length && (
+                                            <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
+                                                <AlertTriangle className="h-2.5 w-2.5" />
+                                                직무 분야 없음
+                                            </span>
+                                        )}
+                                        {(stateCounts[book.slug] ?? 0) > 0 && (
+                                            <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                                상태: {stateCounts[book.slug]}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="truncate text-sm font-semibold text-(--color-foreground)">
+                                        {book.title}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {book.author && (
+                                            <span className="text-xs text-(--color-muted)">
+                                                {book.author}
+                                            </span>
+                                        )}
+                                        {book.rating && (
+                                            <span className="flex items-center gap-0.5">
+                                                {Array.from({
+                                                    length: book.rating,
+                                                }).map((_, i) => (
+                                                    <Star
+                                                        key={i}
+                                                        className="h-3 w-3 fill-(--color-accent) text-(--color-accent)"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                        {book.job_field?.length > 0 && (
+                                            <JobFieldBadges
+                                                value={book.job_field}
+                                                fields={jobFields}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                    <button
+                                        onClick={() => toggleFeatured(book)}
+                                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
+                                            book.featured
+                                                ? "bg-slate-500"
+                                                : "bg-(--color-accent)"
+                                        }`}
+                                    >
+                                        {book.featured ? (
+                                            <StarOff className="h-3 w-3" />
+                                        ) : (
+                                            <Star className="h-3 w-3" />
+                                        )}
+                                        <span className="tablet:inline hidden">
+                                            {book.featured
+                                                ? "Featured 해제"
+                                                : "Featured"}
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => togglePublish(book)}
+                                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                             book.published
-                                                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-                                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400"
+                                                ? "bg-amber-500"
+                                                : "bg-green-600"
                                         }`}
                                     >
                                         {book.published ? (
-                                            <Eye className="h-2.5 w-2.5" />
+                                            <EyeOff className="h-3 w-3" />
                                         ) : (
-                                            <EyeOff className="h-2.5 w-2.5" />
+                                            <Eye className="h-3 w-3" />
                                         )}
-                                        {book.published ? "Published" : "Draft"}
-                                    </span>
-                                    {!book.job_field?.length && (
-                                        <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
-                                            <AlertTriangle className="h-2.5 w-2.5" />
-                                            직무 분야 없음
+                                        <span className="tablet:inline hidden">
+                                            {book.published
+                                                ? "Unpublish"
+                                                : "Publish"}
                                         </span>
-                                    )}
-                                    {(stateCounts[book.slug] ?? 0) > 0 && (
-                                        <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
-                                            상태: {stateCounts[book.slug]}
+                                    </button>
+                                    <button
+                                        onClick={() => openEdit(book)}
+                                        className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                    >
+                                        <Pencil className="h-3 w-3" />
+                                        <span className="tablet:inline hidden">
+                                            편집
                                         </span>
-                                    )}
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(book.id)}
+                                        className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                        <span className="tablet:inline hidden">
+                                            삭제
+                                        </span>
+                                    </button>
                                 </div>
-                                <p className="truncate text-sm font-semibold text-(--color-foreground)">
-                                    {book.title}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {book.author && (
-                                        <span className="text-xs text-(--color-muted)">
-                                            {book.author}
-                                        </span>
-                                    )}
-                                    {book.rating && (
-                                        <span className="flex items-center gap-0.5">
-                                            {Array.from({
-                                                length: book.rating,
-                                            }).map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    className="h-3 w-3 fill-(--color-accent) text-(--color-accent)"
-                                                />
-                                            ))}
-                                        </span>
-                                    )}
-                                    {book.job_field?.length > 0 && (
-                                        <JobFieldBadges
-                                            value={book.job_field}
-                                            fields={jobFields}
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                            <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
-                                <button
-                                    onClick={() => toggleFeatured(book)}
-                                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
-                                        book.featured
-                                            ? "bg-slate-500"
-                                            : "bg-(--color-accent)"
-                                    }`}
-                                >
-                                    {book.featured ? (
-                                        <StarOff className="h-3 w-3" />
-                                    ) : (
-                                        <Star className="h-3 w-3" />
-                                    )}
-                                    <span className="tablet:inline hidden">
-                                        {book.featured
-                                            ? "Featured 해제"
-                                            : "Featured"}
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => togglePublish(book)}
-                                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
-                                        book.published
-                                            ? "bg-amber-500"
-                                            : "bg-green-600"
-                                    }`}
-                                >
-                                    {book.published ? (
-                                        <EyeOff className="h-3 w-3" />
-                                    ) : (
-                                        <Eye className="h-3 w-3" />
-                                    )}
-                                    <span className="tablet:inline hidden">
-                                        {book.published
-                                            ? "Unpublish"
-                                            : "Publish"}
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => openEdit(book)}
-                                    className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
-                                >
-                                    <Pencil className="h-3 w-3" />
-                                    <span className="tablet:inline hidden">
-                                        편집
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(book.id)}
-                                    className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                    <span className="tablet:inline hidden">
-                                        삭제
-                                    </span>
-                                </button>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
 
             {/* 토스트 */}
             {toast && (

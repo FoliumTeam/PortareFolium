@@ -71,6 +71,14 @@ export default function AdminDashboard() {
     const [sidebarVisible, setSidebarVisible] = useState(true);
     const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
     const lastActivityRef = useRef(Date.now());
+    const panelOwnsHeight =
+        activeTab === "posts" ||
+        activeTab === "portfolio" ||
+        activeTab === "resume" ||
+        activeTab === "migrations" ||
+        activeTab === "snapshots" ||
+        activeTab === "agent-tokens" ||
+        activeTab === "prompts";
 
     useEffect(() => {
         const suffix = editPath ? `/${editPath}` : "";
@@ -164,45 +172,67 @@ export default function AdminDashboard() {
                 />
 
                 <div className="flex flex-1 flex-col overflow-hidden">
-                    <main className="tablet:p-6 laptop:p-8 flex-1 overflow-y-auto p-4">
-                        {activeTab === "posts" && (
-                            <PostsPanel
-                                key={`posts-${tabKey}`}
-                                editPath={editPath}
-                                onEditPathChange={handleEditPathChange}
-                            />
-                        )}
-                        {activeTab === "portfolio" && (
-                            <PortfolioPanel
-                                key={`portfolio-${tabKey}`}
-                                editPath={editPath}
-                                onEditPathChange={handleEditPathChange}
-                            />
-                        )}
-                        {activeTab === "tags" && (
-                            <TagsPanel key={`tags-${tabKey}`} />
-                        )}
-                        {activeTab === "about" && (
-                            <AboutPanel key={`about-${tabKey}`} />
-                        )}
-                        {activeTab === "resume" && (
-                            <ResumePanel key={`resume-${tabKey}`} />
-                        )}
-                        {activeTab === "migrations" && (
-                            <MigrationsPanel key={`migrations-${tabKey}`} />
-                        )}
-                        {activeTab === "snapshots" && (
-                            <SnapshotsPanel key={`snapshots-${tabKey}`} />
-                        )}
-                        {activeTab === "agent-tokens" && (
-                            <AgentTokensPanel key={`agent-tokens-${tabKey}`} />
-                        )}
-                        {activeTab === "prompts" && (
-                            <PromptLibraryPanel key={`prompts-${tabKey}`} />
-                        )}
-                        {activeTab === "config" && (
-                            <SiteConfigPanel key={`config-${tabKey}`} />
-                        )}
+                    <main
+                        className={`tablet:p-4 laptop:p-6 flex-1 p-2 ${
+                            activeTab === "posts" ||
+                            activeTab === "resume" ||
+                            activeTab === "migrations" ||
+                            activeTab === "snapshots" ||
+                            activeTab === "agent-tokens" ||
+                            activeTab === "prompts"
+                                ? "overflow-hidden"
+                                : "overflow-y-auto"
+                        }`}
+                    >
+                        {/* 패널 컨텐츠, p-2 를 통해 잘리는 ring 없도록 함 */}
+                        <div
+                            className={`tablet:p-2 p-4 ${
+                                panelOwnsHeight
+                                    ? "flex h-full min-h-0 flex-col"
+                                    : ""
+                            }`}
+                        >
+                            {activeTab === "posts" && (
+                                <PostsPanel
+                                    key={`posts-${tabKey}`}
+                                    editPath={editPath}
+                                    onEditPathChange={handleEditPathChange}
+                                />
+                            )}
+                            {activeTab === "portfolio" && (
+                                <PortfolioPanel
+                                    key={`portfolio-${tabKey}`}
+                                    editPath={editPath}
+                                    onEditPathChange={handleEditPathChange}
+                                />
+                            )}
+                            {activeTab === "tags" && (
+                                <TagsPanel key={`tags-${tabKey}`} />
+                            )}
+                            {activeTab === "about" && (
+                                <AboutPanel key={`about-${tabKey}`} />
+                            )}
+                            {activeTab === "resume" && (
+                                <ResumePanel key={`resume-${tabKey}`} />
+                            )}
+                            {activeTab === "migrations" && (
+                                <MigrationsPanel key={`migrations-${tabKey}`} />
+                            )}
+                            {activeTab === "snapshots" && (
+                                <SnapshotsPanel key={`snapshots-${tabKey}`} />
+                            )}
+                            {activeTab === "agent-tokens" && (
+                                <AgentTokensPanel
+                                    key={`agent-tokens-${tabKey}`}
+                                />
+                            )}
+                            {activeTab === "prompts" && (
+                                <PromptLibraryPanel key={`prompts-${tabKey}`} />
+                            )}
+                            {activeTab === "config" && (
+                                <SiteConfigPanel key={`config-${tabKey}`} />
+                            )}
+                        </div>
                     </main>
                     {/* 저장 바 슬롯: AdminSaveBar portal이 여기 렌더링 */}
                     <div id="admin-save-bar-slot" />

@@ -521,8 +521,8 @@ export default function SiteConfigPanel() {
     };
 
     return (
-        <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-(--color-foreground)">
+        <div className="tablet:h-full tablet:overflow-y-auto space-y-8 overflow-x-hidden">
+            <h2 className="tablet:sticky tablet:top-0 tablet:z-10 tablet:bg-(--color-surface) tablet:pb-3 text-3xl font-bold text-(--color-foreground)">
                 사이트 설정
             </h2>
 
@@ -535,7 +535,7 @@ export default function SiteConfigPanel() {
                     새로운 테마를 선택하면 대시보드 화면에 즉시 반영되며, '설정
                     저장' 버튼을 누르면 다른 사용자들에게도 배포됩니다.
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                     {/* 스킴 드롭다운 */}
                     <div className="relative flex-1" ref={schemeDropdownRef}>
                         <button
@@ -642,7 +642,7 @@ export default function SiteConfigPanel() {
                     {jobFields.map((field) => (
                         <div
                             key={field.id}
-                            className={`group flex items-center gap-4`}
+                            className={`group flex flex-wrap items-center gap-4`}
                         >
                             <button
                                 onClick={() => handleSelectJobField(field.id)}
@@ -677,7 +677,7 @@ export default function SiteConfigPanel() {
 
                 {/* 새 job field 추가 폼 */}
                 <div className="space-y-2 pt-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {/* emoji picker */}
                         <div className="relative" ref={pickerRef}>
                             <button
@@ -723,7 +723,7 @@ export default function SiteConfigPanel() {
                     </div>
                     {/* 상속 부모 선택 */}
                     {jobFields.length > 0 && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <span className="shrink-0 text-sm text-(--color-muted)">
                                 상속
                             </span>
