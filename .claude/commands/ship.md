@@ -10,7 +10,27 @@ Commit the current unstaged changes following these rules strictly:
     <type>: <Korean description> (v<version>)
     ```
 
-    Where `<type>` is one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `revert`. The `(v<version>)` suffix is **mandatory** for PortareFolium and must match the bumped `package.json` version (see rule 3).
+    The `(v<version>)` suffix is **mandatory** for PortareFolium and must match the bumped `package.json` version (see rule 3).
+
+    **Commit type table** (Conventional Commits spec — pick the most accurate type; if multiple apply, pick the dominant one based on the _intent_ of the change, not the file count):
+
+    | 타입       | 설명                                           | 사용 예                                                       |
+    | ---------- | ---------------------------------------------- | ------------------------------------------------------------- |
+    | `feat`     | 새로운 기능 추가                               | UI 컴포넌트 신규, API endpoint 추가, 신규 admin 패널          |
+    | `fix`      | 버그 수정                                      | rendering bug, regression, broken navigation                  |
+    | `docs`     | 문서만 변경 (코드 변경 없음)                   | README, AGENTS.md, CHANGES.md, JSDoc, MDX 콘텐츠              |
+    | `style`    | 코드 의미에 영향 없는 변경                     | 포맷팅, 세미콜론, prettier auto-fix only                      |
+    | `refactor` | 기능 추가/버그 수정 아닌 코드 구조 변경        | 함수 분리, 변수명 변경, 타입 정리                             |
+    | `perf`     | 성능 개선                                      | bundle size 감소, query 최적화, render 회수 감소              |
+    | `test`     | 테스트 추가/수정 (테스트만 변경)               | unit, E2E, fixture 추가/변경                                  |
+    | `chore`    | 빌드·설정·도구 등 보조 작업 (코드 동작 무영향) | dependency 업데이트, CI workflow, .claude/skills, lint config |
+    | `revert`   | 이전 커밋 되돌리기                             | `git revert` 결과                                             |
+
+    **타입 선택 가이드**:
+    - 코드 변경 없이 문서만 → `docs`. **단**, AGENTS.md/skills 같은 _agent 동작에 영향을 주는_ 메타-문서는 `chore`로 분류 가능 (project tooling에 더 가깝다고 판단되면).
+    - bug 수정 + 테스트 추가가 같은 PR이면 → `fix` (테스트는 부수적).
+    - refactor 중 발견한 사소한 bug를 함께 고쳤다면 → `fix` (의도가 최종적으로 bug 수정이었으므로).
+    - 모호하면 사용자에게 확인.
 
     **Title rules:**
     - 명령형 현재 시제 (e.g., "추가", "수정" — not "추가했음" or "수정 중").

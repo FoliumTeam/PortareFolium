@@ -50,6 +50,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 판단 기준: **3 commit 이상 예상되거나 ≥3 파일 도메인 영역에 걸쳐 있으면 feature branch 권장**. 그 외엔 main 직접 push.
 - `main`에는 절대 force push 하지 않는다. release tag(`v*.*.0`)는 `main`의 head에서만 생성.
 
+### Commit Conventions
+
+- **형식**: `<type>: <Korean description> (v<version>)` — version suffix는 `package.json`의 bump된 patch 버전과 일치해야 함.
+- **제목 규칙**: 명령형 현재 시제, 첫 글자 소문자, 끝 punctuation 없음, 한글 (파일명·고유명사·기술 용어는 영어 원문 유지).
+- **타입 분류** (Conventional Commits — `<type>` 선택은 변경의 *의도*를 기준으로):
+
+    | 타입       | 설명                                           | 사용 예                                                       |
+    | ---------- | ---------------------------------------------- | ------------------------------------------------------------- |
+    | `feat`     | 새로운 기능 추가                               | UI 컴포넌트 신규, API endpoint 추가, 신규 admin 패널          |
+    | `fix`      | 버그 수정                                      | rendering bug, regression, broken navigation                  |
+    | `docs`     | 문서만 변경 (코드 변경 없음)                   | README, AGENTS.md, CHANGES.md, JSDoc, MDX 콘텐츠              |
+    | `style`    | 코드 의미에 영향 없는 변경                     | 포맷팅, 세미콜론, prettier auto-fix only                      |
+    | `refactor` | 기능 추가/버그 수정 아닌 코드 구조 변경        | 함수 분리, 변수명 변경, 타입 정리                             |
+    | `perf`     | 성능 개선                                      | bundle size 감소, query 최적화, render 회수 감소              |
+    | `test`     | 테스트 추가/수정 (테스트만 변경)               | unit, E2E, fixture 추가/변경                                  |
+    | `chore`    | 빌드·설정·도구 등 보조 작업 (코드 동작 무영향) | dependency 업데이트, CI workflow, .claude/skills, lint config |
+    | `revert`   | 이전 커밋 되돌리기                             | `git revert` 결과                                             |
+
+- **타입 선택 가이드**: bug 수정 + 테스트 추가가 한 commit이면 `fix` (테스트는 부수). refactor 중 사소한 bug 함께 고쳤으면 `fix`. AGENTS.md/skills 같이 _agent 동작에 영향을 주는_ 메타-문서는 `chore`로 분류 가능. 모호하면 사용자 확인.
+- **Commit grouping**: 무관한 변경을 한 commit에 묶지 않는다. 4+ 무관한 파일이 staged면 분리 검토.
+- **Path quoting**: route group `(...)` / dynamic segment `[...]` 포함 경로는 `git add` 시 반드시 `""` 인용. (예: `git add "src/app/(frontend)/blog/[slug]/page.tsx"`)
+- **Co-Authored-By 등 Claude 협력 문구 절대 포함 금지**.
+
 ### PR Conventions
 
 - PR template은 `.github/PULL_REQUEST_TEMPLATE.md`에 위치 — `gh pr create` 시 자동 적용.

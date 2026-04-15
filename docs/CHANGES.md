@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.11.35 (2026-04-15)
+
+### docs: 커밋 타입 분류표 + 선택 가이드를 AGENTS.md & ship.md에 통합
+
+- `AGENTS.md`: 신규 **Commit Conventions** 섹션 추가 — 형식, 제목 규칙, 9개 type 분류표(`feat`/`fix`/`docs`/`style`/`refactor`/`perf`/`test`/`chore`/`revert`) + 사용 예 + 타입 선택 가이드, commit grouping, path quoting, no Co-Authored-By 룰을 한 자리에 정리
+- `.claude/commands/ship.md`: rule 2의 단순 type 나열을 동일한 9개 type 분류표(설명 + 사용 예) + 타입 선택 가이드로 확장 — bug+test 한 commit이면 `fix`, refactor 중 사소한 bug 함께 고치면 `fix`, agent 동작에 영향 주는 메타-문서는 `chore`
+
 ## v0.11.34 (2026-04-15)
 
 ### docs: AGENTS.md + ship/docs skills 보강 + PR template 추가
