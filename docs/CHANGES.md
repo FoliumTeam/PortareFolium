@@ -1,5 +1,20 @@
 # CHANGES
 
+## v0.11.44 (2026-04-16)
+
+### feat: Resume Layout Editor + ResumePanel 통합 + E2E (US-004, US-005, US-006, US-007)
+
+- `src/components/admin/panels/ResumeLayoutEditor.tsx` 신규: 2-pane layout editor. left pane은 `ResumeClassicPreview`/`ResumeModernPreview`로 live preview, right pane은 13개 섹션 key의 drag + checkbox 토글 list
+- `src/components/resume/ResumeClassicPreview.tsx`, `src/components/resume/ResumeModernPreview.tsx` 신규: layout editor 전용 sync preview. markdown 렌더링 + portfolio fetch 스킵 (client-side 렌더 가능하도록)
+- `src/components/admin/panels/ResumePanel.tsx`:
+    - `resume_section_layout` load/save 추가 (site_config upsert)
+    - `layoutEditMode` toggle + 제목 옆 "레이아웃 편집" / "편집 종료" 버튼
+    - 각 섹션 editor block을 `data-resume-section` wrapper div로 감싸 `layout.order`/`disabled` 반영 (CSS `order` + `display: none`)
+    - careerPhases phases-only 조건부 wrapper 제거 → 일반 layout 섹션으로 편입
+    - Theme selector 4개 → 2개 (classic/modern)로 축소
+    - `useUnsavedWarning` 훅 연결로 beforeunload + route navigation 가드. `isLayoutDirty` 계산 + mode toggle off 시 `window.confirm`
+- `e2e/authenticated/resume-layout-editor.spec.ts` 신규: 4개 E2E scenario (skills 비활성화, awards 활성화, work/projects 순서 swap, 일반 모드 disabled editor 미렌더링). afterEach에서 default layout 복구
+
 ## v0.11.43 (2026-04-16)
 
 ### feat: Resume theme 통합 + sectionLayout prop 연결 (US-002, US-003)
