@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.11.42 (2026-04-16)
+
+### feat: Resume layout editor 데이터 모델 추가 (Phase A — 데이터 기반 작업)
+
+- `src/lib/resume-layout.ts`: `ResumeSectionLayout` type, `DEFAULT_RESUME_LAYOUT`, `ALL_RESUME_SECTION_KEYS`, `normalizeLayout`, `resolveSectionOrder` 추가. 기본 활성 섹션: `coreCompetencies`, `work`, `projects`, `education`, `skills`. 비활성: `careerPhases`, `volunteer`, `awards`, `certificates`, `publications`, `languages`, `interests`, `references`
+- `src/__tests__/resume-layout.test.ts`: 12개 unit test — default layout 구조, normalize 엣지 케이스, order/disabled 상호작용, empty entries 스킵 커버
+- 후속 phase (theme 통합, editor UI, panel 통합, E2E)은 별도 commit으로 진행
+
 ## v0.11.41 (2026-04-16)
 
 ### fix: Admin PostsPanel 고정 header가 mobile과 tablet+에서 함께 스크롤되던 문제 수정
