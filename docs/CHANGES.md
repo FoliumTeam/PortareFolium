@@ -1,5 +1,17 @@
 # CHANGES
 
+## v0.11.32 (2026-04-15)
+
+### chore: `/release` slash command 추가 — minor bump + tag push 자동화
+
+- `.claude/commands/release.md` 신규 — 단계별 절차 정의:
+    1. `package.json` 버전 읽고 patch != 0이면 다음 minor로 bump (`0.11.37` → `0.12.0`), patch == 0이면 그대로
+    2. `main` 브랜치 + clean working tree + remote sync 확인
+    3. 버전 bump가 필요하면 `package.json` + `docs/CHANGES.md` 업데이트 후 `release: v<target>` commit + push
+    4. annotated tag `v<target>` 생성 후 push → `release.yml` workflow 자동 발화
+    5. `gh run list` / `gh release view`로 검증
+- 기존 태그 존재 시 abort, 비-main 브랜치 abort 등 안전 가드 포함
+
 ## v0.11.31 (2026-04-15)
 
 ### chore: Release workflow + fork owner 이메일 알림 안내 추가
