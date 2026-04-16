@@ -60,9 +60,9 @@ export default function ResumeLayoutEditor({
     };
 
     return (
-        <div className="flex h-full min-h-0 gap-4">
+        <div className="flex h-full min-h-0 gap-4 overflow-hidden">
             {/* Left — preview */}
-            <div className="flex-1 overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
                 {theme === "classic" ? (
                     <ResumeClassicPreview
                         resume={resume}
@@ -83,7 +83,7 @@ export default function ResumeLayoutEditor({
             </div>
 
             {/* Right — section list */}
-            <div className="flex w-96 shrink-0 flex-col overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
+            <div className="flex min-h-0 w-96 shrink-0 flex-col overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
                 <h3 className="mb-3 text-lg font-bold text-(--color-foreground)">
                     섹션 순서 / 표시 여부
                 </h3>

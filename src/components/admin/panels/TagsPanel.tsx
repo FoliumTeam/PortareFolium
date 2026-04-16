@@ -596,6 +596,7 @@ export default function TagsPanel() {
                                     <Button
                                         onClick={handleSave}
                                         disabled={saving || !form.name.trim()}
+                                        className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
                                         {saving ? "저장 중..." : "저장"}
                                     </Button>
@@ -742,6 +743,7 @@ export default function TagsPanel() {
                                                             saving ||
                                                             !catForm.trim()
                                                         }
+                                                        className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         저장
                                                     </Button>

@@ -1,5 +1,60 @@
 # CHANGES
 
+## v0.11.57 (2026-04-16)
+
+### fix: AgentTokensPanel 만료·폐기 상태 badge를 solid로 변경
+
+- `src/components/admin/panels/AgentTokensPanel.tsx`: `Expired` badge를 amber solid, `Revoked` badge를 red solid로 변경
+
+## v0.11.56 (2026-04-16)
+
+### fix: AgentTokensPanel 폐기 버튼을 red solid로 변경
+
+- `src/components/admin/panels/AgentTokensPanel.tsx`: active 토큰의 `폐기` 버튼을 outline에서 red solid 버튼으로 변경
+
+## v0.11.55 (2026-04-16)
+
+### fix: admin refresh 버튼을 solid 스타일 + 회전 아이콘으로 정리
+
+- `src/components/admin/panels/MigrationsPanel.tsx`: 새로고침 버튼 2곳을 outline에서 solid neutral 버튼으로 변경하고, refresh 중 `RefreshCw` icon 회전 추가
+- `src/components/admin/panels/AgentTokensPanel.tsx`: 토큰 목록 새로고침 버튼을 동일한 solid neutral 버튼으로 변경하고, loading 중 `RefreshCw` icon 회전 추가
+
+## v0.11.54 (2026-04-16)
+
+### fix: admin 저장 버튼의 light/dark green 강도 조정
+
+- 저장 계열 버튼의 green tone을 `light = bg-green-500 / hover:bg-green-400`, `dark = dark:bg-green-600 / dark:hover:bg-green-500`로 재조정
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`, `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel` 반영
+
+## v0.11.53 (2026-04-16)
+
+### fix: admin 저장 버튼을 개별 Tailwind class로 재정의
+
+- `src/styles/global.css`: `admin-save-button` utility 제거
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`: 저장/완료/적용 버튼에 green Tailwind class를 직접 적용하고 `dark:bg-green-*`, `dark:hover:bg-green-*`까지 명시
+- `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel`: modal과 보조 admin 컴포넌트의 저장 계열 버튼도 전역 utility 없이 동일 기준으로 치환
+
+## v0.11.52 (2026-04-16)
+
+### fix: admin 저장 버튼 색상을 green으로 통일
+
+- `src/styles/global.css`: color scheme과 무관하게 admin 저장 계열 버튼이 green을 유지하도록 `admin-save-button` utility 추가
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`: 저장 bar와 inline 저장 버튼을 `admin-save-button`으로 통일
+- `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel`: modal과 보조 admin 컴포넌트의 저장/적용 버튼도 green으로 통일
+
+## v0.11.51 (2026-04-16)
+
+### fix: Resume layout mode 종료 버튼 label 명확화
+
+- `src/components/admin/panels/ResumePanel.tsx`: layout mode 활성 상태의 상단 버튼 label을 `편집 종료`에서 `레이아웃 편집 종료`로 변경
+
+## v0.11.50 (2026-04-16)
+
+### fix: Resume layout editor에서 page scroll 제거
+
+- `src/components/admin/panels/ResumePanel.tsx`: `layoutEditMode` 활성화 시 바깥 본문 컨테이너를 `overflow-hidden`으로 전환하고, `ResumeLayoutEditor` wrapper를 `flex-1 min-h-0`로 변경해 page 자체 scroll 제거
+- `src/components/admin/panels/ResumeLayoutEditor.tsx`: root에 `overflow-hidden` 추가, preview pane과 section list pane에 `min-h-0` 적용으로 내부 두 pane만 독립 scroll 유지
+
 ## v0.11.49 (2026-04-16)
 
 ### chore: PR.md git tracking 제거

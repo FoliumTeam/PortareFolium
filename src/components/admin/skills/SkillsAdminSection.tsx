@@ -706,7 +706,7 @@ export default function SkillsAdminSection({
                 {config.input}
                 <button
                     onClick={applyBatchAction}
-                    className="rounded bg-(--color-accent) px-3 py-1 text-sm font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    className="rounded bg-green-500 px-3 py-1 text-sm font-semibold text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
                     적용
                 </button>

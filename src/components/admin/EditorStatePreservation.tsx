@@ -422,7 +422,7 @@ export default function EditorStatePreservation({
                         <button
                             type="button"
                             onClick={handleBookmark}
-                            className="w-full rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
+                            className="w-full rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
                             현재 상태 저장
                         </button>

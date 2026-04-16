@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Key, Trash2 } from "lucide-react";
+import { Key, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +41,8 @@ export default function AgentTokensPanel() {
     const [error, setError] = useState<string | null>(null);
     const [revoking, setRevoking] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const refreshButtonClassName =
+        "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
 
     const load = async () => {
         setLoading(true);
@@ -168,13 +170,18 @@ export default function AgentTokensPanel() {
                         토큰 목록
                     </h3>
                     <Button
-                        variant="outline"
                         size="sm"
                         onClick={load}
                         disabled={loading}
+                        className={refreshButtonClassName}
                     >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 shrink-0 ${
+                                loading ? "animate-spin" : ""
+                            }`}
+                        />
                         <span className="whitespace-nowrap">
-                            {loading ? "로딩 중..." : "새로고침"}
+                            {loading ? "새로고침 중..." : "새로고침"}
                         </span>
                     </Button>
                 </section>
@@ -212,12 +219,12 @@ export default function AgentTokensPanel() {
                                             </Badge>
                                         )}
                                         {status === "expired" && (
-                                            <Badge variant="outline">
+                                            <Badge className="bg-amber-500 text-white dark:bg-amber-500 dark:text-white">
                                                 Expired
                                             </Badge>
                                         )}
                                         {status === "revoked" && (
-                                            <Badge variant="outline">
+                                            <Badge className="bg-red-600 text-white dark:bg-red-600 dark:text-white">
                                                 Revoked
                                             </Badge>
                                         )}
@@ -241,10 +248,10 @@ export default function AgentTokensPanel() {
                                 </div>
                                 {status === "active" && (
                                     <Button
-                                        variant="outline"
                                         size="sm"
                                         onClick={() => handleRevoke(token.id)}
                                         disabled={revoking === token.id}
+                                        className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
                                     >
                                         <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">

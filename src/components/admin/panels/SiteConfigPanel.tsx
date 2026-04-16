@@ -838,7 +838,7 @@ export default function SiteConfigPanel() {
                     variant="default"
                     onClick={handleSave}
                     disabled={saving}
-                    className="shrink-0 bg-(--color-accent) px-8 text-(--color-on-accent) hover:opacity-90"
+                    className="shrink-0 bg-green-500 px-8 text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
                     {saving ? "저장 중..." : "설정 저장"}
                 </Button>

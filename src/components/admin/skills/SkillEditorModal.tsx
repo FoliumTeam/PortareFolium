@@ -570,7 +570,7 @@ export default function SkillEditorModal({
                     <button
                         disabled={!form.name.trim()}
                         onClick={handleSave}
-                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                     >
                         저장
                     </button>

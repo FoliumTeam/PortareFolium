@@ -531,12 +531,14 @@ export default function ResumePanel() {
                             }}
                             className="rounded-lg bg-(--color-accent) px-4 py-2.5 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
-                            {layoutEditMode ? "편집 종료" : "레이아웃 편집"}
+                            {layoutEditMode
+                                ? "레이아웃 편집 종료"
+                                : "레이아웃 편집"}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={saving || (!isDirty && !isLayoutDirty)}
-                            className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                            className="rounded-lg bg-green-500 px-6 py-2.5 text-base font-semibold text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
                             {saving ? "저장 중..." : "변경사항 저장"}
                         </button>
@@ -544,7 +546,11 @@ export default function ResumePanel() {
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
+            <div
+                className={`flex min-h-0 flex-1 flex-col gap-8 ${
+                    layoutEditMode ? "overflow-hidden" : "overflow-y-auto"
+                }`}
+            >
                 {status && (
                     <p
                         className={`rounded-lg px-3 py-2 text-base ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
@@ -905,7 +911,7 @@ export default function ResumePanel() {
                                             />
                                             <div className="flex gap-2 pt-1">
                                                 <button
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-bold text-(--color-on-accent)"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     onClick={() => {
                                                         const keywords =
                                                             editingCareerPhaseKeywords
@@ -1743,7 +1749,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -2585,7 +2591,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -3148,7 +3154,7 @@ export default function ResumePanel() {
                                                             null
                                                         );
                                                     }}
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
                                                     완료
                                                 </button>
@@ -3510,7 +3516,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -3769,7 +3775,7 @@ export default function ResumePanel() {
                                                             null
                                                         );
                                                     }}
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
                                                     완료
                                                 </button>
@@ -3839,7 +3845,7 @@ export default function ResumePanel() {
 
                 {/* Layout Editor mode */}
                 {layoutEditMode ? (
-                    <div className="min-h-[600px]" style={{ order: 9999 }}>
+                    <div className="min-h-0 flex-1" style={{ order: 9999 }}>
                         <ResumeLayoutEditor
                             resume={resumeData}
                             layout={resumeSectionLayout}

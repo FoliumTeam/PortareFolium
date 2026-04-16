@@ -348,7 +348,7 @@ export default function TiptapImageUpload({
                                 type="button"
                                 onClick={handleUrlUpload}
                                 disabled={!urlInput.trim() || uploading}
-                                className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-medium text-(--color-on-accent) disabled:opacity-50"
+                                className="rounded-lg bg-green-500 px-4 py-2 text-base font-medium text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
                                 {uploading ? "업로드 중..." : "Supabase에 저장"}
                             </button>

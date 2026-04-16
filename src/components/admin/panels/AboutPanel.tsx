@@ -723,7 +723,7 @@ export default function AboutPanel() {
                     variant="default"
                     onClick={handleSave}
                     disabled={saving}
-                    className="shrink-0 bg-green-600 px-8 text-white hover:bg-green-500"
+                    className="shrink-0 bg-green-500 px-8 text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
                     {saving ? "저장 중..." : "변경사항 저장"}
                 </Button>

@@ -11,6 +11,7 @@ import {
 import type { Migration } from "@/lib/migrations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from "lucide-react";
 
 export default function MigrationsPanel() {
     const [dbVersion, setDbVersion] = useState<string | null | undefined>(
@@ -20,6 +21,8 @@ export default function MigrationsPanel() {
     const [refreshing, setRefreshing] = useState(false);
     const [applying, setApplying] = useState(false);
     const [applyError, setApplyError] = useState<string | null>(null);
+    const refreshButtonClassName =
+        "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
 
     const loadVersion = async () => {
         if (!browserClient) return;
@@ -103,11 +106,15 @@ export default function MigrationsPanel() {
                         실행 후 아래 새로고침 버튼을 누르세요.
                     </p>
                     <Button
-                        variant="outline"
                         onClick={loadVersion}
                         disabled={refreshing}
-                        className="mt-4"
+                        className={`mt-4 ${refreshButtonClassName}`}
                     >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 shrink-0 ${
+                                refreshing ? "animate-spin" : ""
+                            }`}
+                        />
                         {refreshing ? "새로고침 중..." : "새로고침"}
                     </Button>
                 </div>
@@ -147,11 +154,16 @@ export default function MigrationsPanel() {
                         </div>
                     </div>
                     <Button
-                        variant="outline"
                         size="sm"
                         onClick={loadVersion}
                         disabled={refreshing}
+                        className={refreshButtonClassName}
                     >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 shrink-0 ${
+                                refreshing ? "animate-spin" : ""
+                            }`}
+                        />
                         {refreshing ? "새로고침 중..." : "새로고침"}
                     </Button>
                 </div>
@@ -179,6 +191,7 @@ export default function MigrationsPanel() {
                             <Button
                                 onClick={applyMigrations}
                                 disabled={applying}
+                                className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
                                 {applying ? "적용 중..." : "자동 적용"}
                             </Button>
