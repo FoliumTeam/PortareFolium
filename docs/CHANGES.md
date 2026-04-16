@@ -1,5 +1,86 @@
 # CHANGES
 
+## v0.11.49 (2026-04-16)
+
+### chore: PR.md git tracking 제거
+
+- `PR.md`를 git 추적 대상에서 제거하고 `.gitignore` 루트 markdown 규칙으로 로컬 전용 파일로 유지
+
+### test: Resume layout E2E 제거
+
+- `e2e/authenticated/resume-layout-editor.spec.ts` 삭제
+- Resume layout test가 `resume_section_layout`를 직접 저장하면서 실제 이력서 편집 상태를 reset하던 흐름 제거
+
+### feat: Core Competencies 섹션에 emoji 지원 추가
+
+- `src/types/resume.ts`: `coreCompetencies` 타입을 배열에서 `{ emoji?, showEmoji?, entries }` 객체 wrapper로 변경. `defaultSectionLabels`에 `coreCompetencies: "핵심역량"` 추가
+- `src/components/admin/panels/ResumePanel.tsx`: `SectionEmojiSelector` + `Switch` 추가. 기존 배열 데이터 하위 호환 정규화
+- `src/lib/resume-layout.ts`: `resolveSectionOrder`에서 배열/객체 양쪽 형식 지원
+- `src/app/(frontend)/resume/page.tsx`: 하위 호환 정규화 (배열 → entries 추출)
+- `ResumeClassic.tsx`, `ResumeModern.tsx`, `ResumeClassicPreview.tsx`, `ResumeModernPreview.tsx`: 하드코딩 "핵심역량" → `getLabel("coreCompetencies")` 변경 (emoji 반영)
+- `ResumeLayoutEditor.tsx`: `EXTRA_LABELS`에서 중복 제거, preview에 `.entries` 전달
+
+## v0.11.48 (2026-04-16)
+
+### refactor: layout edit mode에서 레이아웃 선택 + 기본 정보 섹션 숨김
+
+- `src/components/admin/panels/ResumePanel.tsx`: `layoutEditMode` 활성화 시 레이아웃 selector (classic/modern)와 기본 정보 editor를 `{!layoutEditMode && ...}`로 조건부 렌더링. layout edit mode 진입 시 `ResumeLayoutEditor`만 표시
+
+## v0.11.47 (2026-04-16)
+
+### fix: Firefox E2E 실패 — "편집 종료" handler의 stale state revert 수정
+
+- `src/components/admin/panels/ResumePanel.tsx`: `initialSectionLayoutRef` (ref) 추가. `handleSave`에서 `setInitialSectionLayout`과 동시에 ref를 즉시 갱신. "편집 종료" button handler가 render closure의 stale `initialSectionLayout` 대신 ref를 참조하여 dirty 판정 + revert 수행
+- 원인: Firefox(SpiderMonkey)에서 React batched state update flush 타이밍이 Chromium/WebKit과 달라, save 후 "편집 종료" 클릭 시 `isLayoutDirty`가 stale true → `window.confirm` 발생 → Playwright auto-accept → 저장 전 상태로 revert → disabled section이 `display: block`으로 렌더링
+- `AGENTS.md`, `.claude/commands/ship.md`: push gate E2E 요구를 Chromium-only에서 **Chromium + Firefox + WebKit 3개 엔진 필수**로 강화
+
+## v0.11.46 (2026-04-16)
+
+### fix: admin-editor-viewport E2E 셀렉터 복원 + 빈 DB 회피
+
+- `e2e/authenticated/admin-editor-viewport.spec.ts`: 기존 테스트가 `aria-label="편집"` / `[data-post-slug]` / `[data-portfolio-slug]` 3가지 셀렉터로 편집 진입을 시도했지만 해당 attribute들이 실제 `PostsPanel`/`PortfolioPanel` 마크업에 존재하지 않아 fallback까지 전부 실패 (CI `FoliumTeam/PortareFolium` 회귀). 실제 DOM 구조에 맞춰 `button:has-text('편집')`로 교체하고, Supabase test DB에 posts/portfolio가 없을 때는 `test.skip()`으로 graceful skip
+- 원인: 테스트가 참조하던 `data-*` attribute와 `aria-label`은 코드베이스에 한 번도 존재한 적이 없었음. 과거 CI에서는 fallback까지 도달하기 전에 데이터가 존재해 `editBtn.click()` 경로로 우연히 통과했을 가능성이 높음. PR #32 빌드에서는 fallback에 도달 → timeout → 실패
+- 수정: 실제 존재하는 마크업(`<button>` 내부 `<span>편집</span>`)을 기준으로 `button:has-text('편집')` 단일 셀렉터 사용. 데이터 없는 환경에서는 viewport overflow 검증 자체가 불가하므로 `test.skip()` 처리
+
+## v0.11.45 (2026-04-16)
+
+### refactor: Resume layout editor 코드 정리
+
+- `src/components/admin/panels/ResumeLayoutEditor.tsx`: 로컬 `ensureAllKeys` 헬퍼 제거. `@/lib/resume-layout`의 `normalizeLayout()`을 재사용해 중복 정규화 로직 제거 (-14 lines)
+- 동작 변화 없음. vitest 103/103 pass, `pnpm build` 성공
+
+## v0.11.44 (2026-04-16)
+
+### feat: Resume Layout Editor + ResumePanel 통합 + E2E (US-004, US-005, US-006, US-007)
+
+- `src/components/admin/panels/ResumeLayoutEditor.tsx` 신규: 2-pane layout editor. left pane은 `ResumeClassicPreview`/`ResumeModernPreview`로 live preview, right pane은 13개 섹션 key의 drag + checkbox 토글 list
+- `src/components/resume/ResumeClassicPreview.tsx`, `src/components/resume/ResumeModernPreview.tsx` 신규: layout editor 전용 sync preview. markdown 렌더링 + portfolio fetch 스킵 (client-side 렌더 가능하도록)
+- `src/components/admin/panels/ResumePanel.tsx`:
+    - `resume_section_layout` load/save 추가 (site_config upsert)
+    - `layoutEditMode` toggle + 제목 옆 "레이아웃 편집" / "편집 종료" 버튼
+    - 각 섹션 editor block을 `data-resume-section` wrapper div로 감싸 `layout.order`/`disabled` 반영 (CSS `order` + `display: none`)
+    - careerPhases phases-only 조건부 wrapper 제거 → 일반 layout 섹션으로 편입
+    - Theme selector 4개 → 2개 (classic/modern)로 축소
+    - `useUnsavedWarning` 훅 연결로 beforeunload + route navigation 가드. `isLayoutDirty` 계산 + mode toggle off 시 `window.confirm`
+- `e2e/authenticated/resume-layout-editor.spec.ts` 신규: 4개 E2E scenario (skills 비활성화, awards 활성화, work/projects 순서 swap, 일반 모드 disabled editor 미렌더링). afterEach에서 default layout 복구
+
+## v0.11.43 (2026-04-16)
+
+### feat: Resume theme 통합 + sectionLayout prop 연결 (US-002, US-003)
+
+- `src/components/resume/ResumeMinimal.tsx`, `src/components/resume/ResumePhases.tsx` 삭제
+- `src/components/resume/ResumeModern.tsx`: 구 Phases 구현을 base로 재작성. `sectionLayout?: ResumeSectionLayout` prop 추가, 하드코딩 섹션 순서 제거, `resolveSectionOrder()` 기반 렌더. volunteer/publications/interests/references 신규 generic renderer 추가. `data-pdf-block` + `data-pdf-block-item` attributes 유지
+- `src/components/resume/ResumeClassic.tsx`: left sidebar (basics/contact/location/profiles) 유지, right-side 섹션만 `resolveSectionOrder()` 기반 렌더. `sectionLayout?: ResumeSectionLayout` prop 추가. 하드코딩 섹션 순서 제거
+- `src/app/(frontend)/resume/page.tsx`: `site_config.resume_section_layout` fetch 추가, theme union `"classic" | "modern"`으로 narrow. 레거시 `"minimal"`/`"phases"` 값을 `"modern"`으로 coerce. DB에 row 없을 때 `DEFAULT_RESUME_LAYOUT` fallback
+
+## v0.11.42 (2026-04-16)
+
+### feat: Resume layout editor 데이터 모델 추가 (Phase A — 데이터 기반 작업)
+
+- `src/lib/resume-layout.ts`: `ResumeSectionLayout` type, `DEFAULT_RESUME_LAYOUT`, `ALL_RESUME_SECTION_KEYS`, `normalizeLayout`, `resolveSectionOrder` 추가. 기본 활성 섹션: `coreCompetencies`, `work`, `projects`, `education`, `skills`. 비활성: `careerPhases`, `volunteer`, `awards`, `certificates`, `publications`, `languages`, `interests`, `references`
+- `src/__tests__/resume-layout.test.ts`: 12개 unit test — default layout 구조, normalize 엣지 케이스, order/disabled 상호작용, empty entries 스킵 커버
+- 후속 phase (theme 통합, editor UI, panel 통합, E2E)은 별도 commit으로 진행
+
 ## v0.11.41 (2026-04-16)
 
 ### fix: Admin PostsPanel 고정 header가 mobile과 tablet+에서 함께 스크롤되던 문제 수정

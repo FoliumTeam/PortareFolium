@@ -57,6 +57,9 @@ Commit the current unstaged changes following these rules strictly:
 
 6. **Commit only, do NOT push**: Stage relevant files, commit, and stop. Do not run `git push` unless explicitly prompted by the user.
 
-7. **Run tests**: If there are any code changes, verify tests pass before committing. If they fail, fix or report. If the commit is purely about docs or deleting files, then the test must not be done.
+7. **Testing gate — two-tier**:
+    - **Commit-time (this command's scope)**: If there are any code changes, verify **unit tests** pass (`pnpm exec vitest run`) before committing. Pre-commit hook already enforces this via husky + lint-staged. Docs-only 또는 파일 삭제만 있는 commit에서는 test 생략.
+    - **Push-time (strict — user 요청 시에만 실행, 기본 scope 아님)**: User가 명시적으로 push를 요청하면, push 이전에 **전체 크로스 브라우저 E2E가 통과**해야 한다. 최소 `pnpm exec playwright test --project=chromium --project=firefox --project=webkit --project=authenticated-chromium --project=authenticated-firefox --project=authenticated-webkit` 0 failure. 3개 엔진(Chromium/Firefox/WebKit) 모두 통과 필수. 한 건이라도 실패하면 push 금지 — fix 먼저. `docs`-only / 파일 삭제만 있는 push는 예외적으로 E2E 생략 허용. `--no-verify`로 hook 우회 금지.
+    - 요약: unit은 commit에 충분, E2E는 push에 필수 (strict gate).
 
 $ARGUMENTS

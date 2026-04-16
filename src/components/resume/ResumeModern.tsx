@@ -1,29 +1,23 @@
 import type { Resume } from "@/types/resume";
+import { defaultSectionLabels } from "@/types/resume";
 import type { CoreValue } from "@/types/about";
 import { renderMarkdown } from "@/lib/markdown";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
+import {
+    resolveSectionOrder,
+    type ResumeSectionLayout,
+} from "@/lib/resume-layout";
 
 interface Props {
     resume: Resume;
     coreCompetencies?: CoreValue[];
+    sectionLayout?: ResumeSectionLayout;
+    activeJobField?: string;
 }
 
-const defaultSectionLabels: Record<string, string> = {
-    work: "경력",
-    skills: "기술",
-    education: "학력",
-    projects: "프로젝트",
-    volunteer: "봉사 활동",
-    awards: "수상",
-    certificates: "자격증",
-    publications: "출판물",
-    languages: "언어",
-    interests: "관심사",
-    references: "추천인",
-};
-
+// 날짜 포맷
 const formatDateRange = (
     startDate?: string,
     endDate?: string,
@@ -36,36 +30,18 @@ const formatDateRange = (
 export default async function ResumeModern({
     resume,
     coreCompetencies = [],
+    sectionLayout,
+    activeJobField,
 }: Props) {
     const basics = resume.basics ?? {};
-    const sectionOrder = [
-        "work",
-        "projects",
-        "skills",
-        "education",
-        "volunteer",
-        "awards",
-        "certificates",
-        "publications",
-        "languages",
-        "interests",
-        "references",
-    ];
-    const sections = Object.entries(resume)
-        .filter(([key]) => key !== "basics" && key !== "careerPhases")
-        .map(
-            ([key, val]) =>
-                [key, (val as any)?.entries ?? []] as [string, any[]]
-        )
-        .sort(([a], [b]) => {
-            const ai = sectionOrder.indexOf(a);
-            const bi = sectionOrder.indexOf(b);
-            const aPos = ai === -1 ? sectionOrder.length : ai;
-            const bPos = bi === -1 ? sectionOrder.length : bi;
-            return aPos - bPos;
-        });
+
+    // layout 기반 섹션 순서 결정
+    const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
+
     const getLabel = (key: string) => {
-        const sec = (resume as any)[key];
+        const sec = (resume as Record<string, unknown>)[key] as
+            | { emoji?: string; showEmoji?: boolean }
+            | undefined;
         const emoji = sec?.emoji || "➕";
         const label =
             defaultSectionLabels[key] ||
@@ -74,8 +50,10 @@ export default async function ResumeModern({
         return showEmoji ? `${emoji} ${label}` : label;
     };
 
+    // work markdown 렌더링
+    const workEntries = resume.work?.entries ?? [];
     const workMarkdown = await Promise.all(
-        (resume.work?.entries || []).map(async (w) => {
+        workEntries.map(async (w) => {
             if (!w.markdown) return { summary: null, highlights: null };
             return {
                 summary: w.summary ? await renderMarkdown(w.summary) : null,
@@ -87,6 +65,565 @@ export default async function ResumeModern({
             };
         })
     );
+
+    // 개별 섹션 renderer
+    const renderCoreCompetencies = () => (
+        <section key="coreCompetencies" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("coreCompetencies")}
+            </h2>
+            <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                {coreCompetencies.map((comp, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
+                        data-pdf-block-item
+                    >
+                        <div className="mb-1.5 flex items-center gap-2.5">
+                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                {idx + 1}
+                            </span>
+                            <h3 className="m-0 text-base font-bold text-(--color-foreground)">
+                                {comp.title}
+                            </h3>
+                        </div>
+                        {comp.description && (
+                            <p className="m-0 text-sm text-(--color-muted)">
+                                {comp.description}
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderCareerPhases = () => (
+        <CareerPhasesSection
+            key="careerPhases"
+            phases={resume.careerPhases?.entries ?? []}
+            label={getLabel("careerPhases")}
+        />
+    );
+
+    const renderWork = () => (
+        <section key="work" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("work")}
+            </h2>
+            <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
+                {workEntries.map((workItem, wIdx) => (
+                    <div key={wIdx} className="relative" data-pdf-block-item>
+                        <div
+                            className="absolute h-2.5 w-2.5 rounded-full border-2 border-(--color-surface) bg-(--color-accent)"
+                            style={{
+                                left: "-1.825rem",
+                                top: "0.4rem",
+                                boxShadow: "0 0 0 2px var(--color-accent)",
+                            }}
+                        />
+                        <div>
+                            {(workItem.startDate || workItem.endDate) && (
+                                <p
+                                    className="m-0 mb-0.5 text-sm text-(--color-muted)"
+                                    style={{
+                                        fontVariantNumeric: "tabular-nums",
+                                    }}
+                                >
+                                    {formatDateRange(
+                                        workItem.startDate,
+                                        workItem.endDate,
+                                        workItem.hideDays
+                                    )}
+                                </p>
+                            )}
+                            {workItem.name ? (
+                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                    {workItem.url ? (
+                                        <a
+                                            href={workItem.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-inherit no-underline hover:text-(--color-link)"
+                                        >
+                                            {workItem.name}
+                                        </a>
+                                    ) : (
+                                        workItem.name
+                                    )}
+                                </h3>
+                            ) : null}
+                            {workItem.position ? (
+                                <p className="m-0 mb-2 text-base text-(--color-muted)">
+                                    {workItem.position}
+                                </p>
+                            ) : null}
+                            {workItem.summary ? (
+                                workMarkdown[wIdx]?.summary ? (
+                                    <div
+                                        className="resume-markdown m-0 mb-2 text-base text-(--color-foreground)"
+                                        dangerouslySetInnerHTML={{
+                                            __html: workMarkdown[wIdx].summary!,
+                                        }}
+                                    />
+                                ) : (
+                                    <p className="m-0 mb-2 text-base text-(--color-foreground)">
+                                        {workItem.summary}
+                                    </p>
+                                )
+                            ) : null}
+                            {workItem.highlights &&
+                            workItem.highlights.length > 0 ? (
+                                <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+                                    {workItem.highlights.map((h, hIdx) => (
+                                        <li
+                                            key={hIdx}
+                                            className="mb-1 text-base text-(--color-foreground)"
+                                        >
+                                            {workMarkdown[wIdx]?.highlights?.[
+                                                hIdx
+                                            ] ? (
+                                                <span
+                                                    className="resume-markdown"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: workMarkdown[
+                                                            wIdx
+                                                        ].highlights![hIdx],
+                                                    }}
+                                                />
+                                            ) : (
+                                                `• ${h}`
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : null}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderProjects = () => (
+        <ProjectsSection
+            key="projects"
+            projects={resume.projects?.entries ?? []}
+            label={getLabel("projects")}
+        />
+    );
+
+    const renderSkills = () => (
+        <SkillsSection
+            key="skills"
+            skills={resume.skills?.entries ?? []}
+            works={resume.work?.entries ?? []}
+            projects={resume.projects?.entries ?? []}
+            activeJobField={activeJobField}
+            label={getLabel("skills")}
+            defaultView={
+                (resume.skills?.defaultView ?? "by-job-field") as
+                    | "by-job-field"
+                    | "by-experience"
+                    | "by-category"
+                    | "by-project"
+            }
+        />
+    );
+
+    const renderEducation = () => (
+        <section key="education" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("education")}
+            </h2>
+            <div>
+                {(resume.education?.entries ?? []).map((education, idx) => (
+                    <div
+                        key={idx}
+                        className="mb-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5 last:mb-0"
+                        data-pdf-block-item
+                    >
+                        {education.institution ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {education.url ? (
+                                    <a
+                                        href={education.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-inherit no-underline hover:text-(--color-link)"
+                                    >
+                                        {education.institution}
+                                    </a>
+                                ) : (
+                                    education.institution
+                                )}
+                            </h3>
+                        ) : null}
+                        {(education.studyType || education.area) && (
+                            <div className="mb-0.5 text-base text-(--color-foreground)">
+                                {`${education.studyType || ""}${education.area ? " " + education.area : ""}`}
+                            </div>
+                        )}
+                        {(education.startDate || education.endDate) && (
+                            <div
+                                className="mb-1 text-sm text-(--color-muted)"
+                                style={{
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                {formatDateRange(
+                                    education.startDate,
+                                    education.endDate
+                                )}
+                            </div>
+                        )}
+                        {education.gpa != null ? (
+                            <div className="mb-1 text-sm text-(--color-muted)">
+                                GPA: {education.gpa.toFixed(2)} /{" "}
+                                {(education.gpaMax ?? 4.5).toFixed(2)}
+                            </div>
+                        ) : education.score ? (
+                            <div className="mb-1 text-sm text-(--color-muted)">
+                                GPA: {education.score}
+                            </div>
+                        ) : null}
+                        {education.courses && education.courses.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                                {education.courses.map((course, cIdx) => (
+                                    <span
+                                        key={cIdx}
+                                        className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
+                                    >
+                                        {course}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderVolunteer = () => (
+        <section key="volunteer" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("volunteer")}
+            </h2>
+            <div className="flex flex-col gap-4">
+                {(resume.volunteer?.entries ?? []).map((v, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5"
+                        data-pdf-block-item
+                    >
+                        {v.organization ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {v.url ? (
+                                    <a
+                                        href={v.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-inherit no-underline hover:text-(--color-link)"
+                                    >
+                                        {v.organization}
+                                    </a>
+                                ) : (
+                                    v.organization
+                                )}
+                            </h3>
+                        ) : null}
+                        {v.position ? (
+                            <p className="m-0 mb-0.5 text-base text-(--color-muted)">
+                                {v.position}
+                            </p>
+                        ) : null}
+                        {(v.startDate || v.endDate) && (
+                            <p
+                                className="m-0 mb-1 text-sm text-(--color-muted)"
+                                style={{
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                {formatDateRange(v.startDate, v.endDate)}
+                            </p>
+                        )}
+                        {v.summary ? (
+                            <p className="m-0 mb-1 text-base text-(--color-foreground)">
+                                {v.summary}
+                            </p>
+                        ) : null}
+                        {v.highlights && v.highlights.length > 0 ? (
+                            <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+                                {v.highlights.map((h, hIdx) => (
+                                    <li
+                                        key={hIdx}
+                                        className="text-base text-(--color-foreground)"
+                                    >
+                                        {`• ${h}`}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderAwards = () => (
+        <section key="awards" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("awards")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.awards?.entries ?? []).map((award, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {award.title ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {award.title}
+                            </h3>
+                        ) : null}
+                        {award.awarder ? (
+                            <div className="mb-0.5 text-base text-(--color-muted)">
+                                {award.awarder}
+                            </div>
+                        ) : null}
+                        {award.date ? (
+                            <div
+                                className="mb-1 text-sm text-(--color-muted)"
+                                style={{
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                {award.date}
+                            </div>
+                        ) : null}
+                        {award.summary ? (
+                            <p className="text-base text-(--color-foreground)">
+                                {award.summary}
+                            </p>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderCertificates = () => (
+        <section key="certificates" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("certificates")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.certificates?.entries ?? []).map((cert, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {cert.name ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {cert.name}
+                            </h3>
+                        ) : null}
+                        {cert.issuer ? (
+                            <div className="mb-0.5 text-base text-(--color-muted)">
+                                {cert.issuer}
+                            </div>
+                        ) : null}
+                        {cert.date ? (
+                            <div
+                                className="mb-1 text-sm text-(--color-muted)"
+                                style={{
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                {cert.date}
+                            </div>
+                        ) : null}
+                        {cert.url ? (
+                            <a
+                                href={cert.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-base break-all text-(--color-link) no-underline hover:underline hover:opacity-80"
+                            >
+                                {cert.url}
+                            </a>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderPublications = () => (
+        <section key="publications" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("publications")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.publications?.entries ?? []).map((pub, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {pub.name ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {pub.url ? (
+                                    <a
+                                        href={pub.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-inherit no-underline hover:text-(--color-link)"
+                                    >
+                                        {pub.name}
+                                    </a>
+                                ) : (
+                                    pub.name
+                                )}
+                            </h3>
+                        ) : null}
+                        {pub.publisher ? (
+                            <div className="mb-0.5 text-base text-(--color-muted)">
+                                {pub.publisher}
+                            </div>
+                        ) : null}
+                        {pub.releaseDate ? (
+                            <div
+                                className="mb-1 text-sm text-(--color-muted)"
+                                style={{
+                                    fontVariantNumeric: "tabular-nums",
+                                }}
+                            >
+                                {pub.releaseDate}
+                            </div>
+                        ) : null}
+                        {pub.summary ? (
+                            <p className="text-base text-(--color-foreground)">
+                                {pub.summary}
+                            </p>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderLanguages = () => (
+        <section key="languages" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("languages")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.languages?.entries ?? []).map((lang, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {lang.language ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {lang.language}
+                            </h3>
+                        ) : null}
+                        {lang.fluency ? (
+                            <div className="mb-0.5 text-base text-(--color-muted)">
+                                {lang.fluency}
+                            </div>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderInterests = () => (
+        <section key="interests" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("interests")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.interests?.entries ?? []).map((it, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {it.name ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {it.name}
+                            </h3>
+                        ) : null}
+                        {it.keywords && it.keywords.length > 0 ? (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                {it.keywords.map((kw, kIdx) => (
+                                    <span
+                                        key={kIdx}
+                                        className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
+                                    >
+                                        {kw}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    const renderReferences = () => (
+        <section key="references" className="mb-10" data-pdf-block>
+            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                {getLabel("references")}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                {(resume.references?.entries ?? []).map((ref, idx) => (
+                    <div
+                        key={idx}
+                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                        data-pdf-block-item
+                    >
+                        {ref.name ? (
+                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                {ref.name}
+                            </h3>
+                        ) : null}
+                        {ref.reference ? (
+                            <p className="text-base text-(--color-foreground)">
+                                {ref.reference}
+                            </p>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+
+    // key별 renderer map
+    const rendererMap: Record<string, () => React.ReactNode> = {
+        coreCompetencies: renderCoreCompetencies,
+        careerPhases: renderCareerPhases,
+        work: renderWork,
+        projects: renderProjects,
+        skills: renderSkills,
+        education: renderEducation,
+        volunteer: renderVolunteer,
+        awards: renderAwards,
+        certificates: renderCertificates,
+        publications: renderPublications,
+        languages: renderLanguages,
+        interests: renderInterests,
+        references: renderReferences,
+    };
+
     return (
         <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Header */}
@@ -187,443 +724,11 @@ export default async function ResumeModern({
                 ) : null}
             </header>
 
-            {/* Main content */}
+            {/* Main content — layout 기반 순서 */}
             <main>
-                <CareerPhasesSection
-                    phases={resume.careerPhases?.entries ?? []}
-                />
-                {coreCompetencies.length > 0 && (
-                    <section className="mb-10" data-pdf-block>
-                        <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                            핵심역량
-                        </h2>
-                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                            {coreCompetencies.map((comp, idx) => (
-                                <div
-                                    key={idx}
-                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
-                                >
-                                    <div className="mb-1.5 flex items-center gap-2.5">
-                                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                            {idx + 1}
-                                        </span>
-                                        <h3 className="m-0 text-base font-bold text-(--color-foreground)">
-                                            {comp.title}
-                                        </h3>
-                                    </div>
-                                    {comp.description && (
-                                        <p className="m-0 text-sm text-(--color-muted)">
-                                            {comp.description}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-                {sections.map(([sectionKey, sectionValue]) => {
-                    if (
-                        !sectionValue ||
-                        (Array.isArray(sectionValue) &&
-                            sectionValue.length === 0)
-                    )
-                        return null;
-
-                    if (sectionKey === "work" && Array.isArray(sectionValue)) {
-                        return (
-                            <section
-                                key={sectionKey}
-                                className="mb-10"
-                                data-pdf-block
-                            >
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                                    {getLabel("work")}
-                                </h2>
-                                <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
-                                    {sectionValue.map(
-                                        (workItem, wIdx: number) => (
-                                            <div
-                                                key={wIdx}
-                                                className="relative"
-                                                data-pdf-block
-                                            >
-                                                <div
-                                                    className="absolute h-2.5 w-2.5 rounded-full border-2 border-(--color-surface) bg-(--color-accent)"
-                                                    style={{
-                                                        left: "-1.825rem",
-                                                        top: "0.4rem",
-                                                        boxShadow:
-                                                            "0 0 0 2px var(--color-accent)",
-                                                    }}
-                                                />
-                                                <div>
-                                                    {(workItem.startDate ||
-                                                        workItem.endDate) && (
-                                                        <p
-                                                            className="m-0 mb-0.5 text-sm text-(--color-muted)"
-                                                            style={{
-                                                                fontVariantNumeric:
-                                                                    "tabular-nums",
-                                                            }}
-                                                        >
-                                                            {formatDateRange(
-                                                                workItem.startDate,
-                                                                workItem.endDate,
-                                                                workItem.hideDays
-                                                            )}
-                                                        </p>
-                                                    )}
-                                                    {workItem.name ? (
-                                                        <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
-                                                            {workItem.url ? (
-                                                                <a
-                                                                    href={
-                                                                        workItem.url
-                                                                    }
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-inherit no-underline hover:text-(--color-link)"
-                                                                >
-                                                                    {
-                                                                        workItem.name
-                                                                    }
-                                                                </a>
-                                                            ) : (
-                                                                workItem.name
-                                                            )}
-                                                        </h3>
-                                                    ) : null}
-                                                    {workItem.position ? (
-                                                        <p className="m-0 mb-2 text-base text-(--color-muted)">
-                                                            {workItem.position}
-                                                        </p>
-                                                    ) : null}
-                                                    {workItem.summary ? (
-                                                        workMarkdown[wIdx]
-                                                            ?.summary ? (
-                                                            <div
-                                                                className="resume-markdown m-0 mb-2 text-base text-(--color-foreground)"
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: workMarkdown[
-                                                                        wIdx
-                                                                    ].summary!,
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <p className="m-0 mb-2 text-base text-(--color-foreground)">
-                                                                {
-                                                                    workItem.summary
-                                                                }
-                                                            </p>
-                                                        )
-                                                    ) : null}
-                                                    {workItem.highlights &&
-                                                    workItem.highlights.length >
-                                                        0 ? (
-                                                        <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
-                                                            {workItem.highlights.map(
-                                                                (
-                                                                    highlight: string,
-                                                                    hIdx: number
-                                                                ) => (
-                                                                    <li
-                                                                        key={
-                                                                            hIdx
-                                                                        }
-                                                                        className="mb-1 text-base text-(--color-foreground)"
-                                                                    >
-                                                                        {workMarkdown[
-                                                                            wIdx
-                                                                        ]
-                                                                            ?.highlights?.[
-                                                                            hIdx
-                                                                        ] ? (
-                                                                            <span
-                                                                                className="resume-markdown"
-                                                                                dangerouslySetInnerHTML={{
-                                                                                    __html: workMarkdown[
-                                                                                        wIdx
-                                                                                    ]
-                                                                                        .highlights![
-                                                                                        hIdx
-                                                                                    ],
-                                                                                }}
-                                                                            />
-                                                                        ) : (
-                                                                            `• ${highlight}`
-                                                                        )}
-                                                                    </li>
-                                                                )
-                                                            )}
-                                                        </ul>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-                            </section>
-                        );
-                    }
-
-                    if (
-                        sectionKey === "projects" &&
-                        Array.isArray(sectionValue)
-                    ) {
-                        return (
-                            <ProjectsSection
-                                key={sectionKey}
-                                projects={sectionValue}
-                                label={getLabel("projects")}
-                            />
-                        );
-                    }
-
-                    if (
-                        sectionKey === "skills" &&
-                        Array.isArray(sectionValue)
-                    ) {
-                        return (
-                            <SkillsSection
-                                key={sectionKey}
-                                skills={resume.skills?.entries ?? []}
-                                works={resume.work?.entries ?? []}
-                                projects={resume.projects?.entries ?? []}
-                                defaultView={
-                                    (resume.skills?.defaultView ??
-                                        "by-job-field") as any
-                                }
-                            />
-                        );
-                    }
-
-                    if (
-                        sectionKey === "education" &&
-                        Array.isArray(sectionValue)
-                    ) {
-                        return (
-                            <section
-                                key={sectionKey}
-                                className="mb-10"
-                                data-pdf-block
-                            >
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                                    {getLabel("education")}
-                                </h2>
-                                <div>
-                                    {sectionValue.map((education, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="mb-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5 last:mb-0"
-                                            data-pdf-block
-                                        >
-                                            {education.institution ? (
-                                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
-                                                    {education.url ? (
-                                                        <a
-                                                            href={education.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-inherit no-underline hover:text-(--color-link)"
-                                                        >
-                                                            {
-                                                                education.institution
-                                                            }
-                                                        </a>
-                                                    ) : (
-                                                        education.institution
-                                                    )}
-                                                </h3>
-                                            ) : null}
-                                            {(education.studyType ||
-                                                education.area) && (
-                                                <div className="mb-0.5 text-base text-(--color-foreground)">
-                                                    {`${education.studyType || ""} ${education.area ? " " + education.area : ""}`}
-                                                </div>
-                                            )}
-                                            {(education.startDate ||
-                                                education.endDate) && (
-                                                <div
-                                                    className="mb-1 text-sm text-(--color-muted)"
-                                                    style={{
-                                                        fontVariantNumeric:
-                                                            "tabular-nums",
-                                                    }}
-                                                >
-                                                    {formatDateRange(
-                                                        education.startDate,
-                                                        education.endDate
-                                                    )}
-                                                </div>
-                                            )}
-                                            {education.gpa != null ? (
-                                                <div className="mb-1 text-sm text-(--color-muted)">
-                                                    GPA:{" "}
-                                                    {education.gpa.toFixed(2)} /{" "}
-                                                    {(
-                                                        education.gpaMax ?? 4.5
-                                                    ).toFixed(2)}
-                                                </div>
-                                            ) : education.score ? (
-                                                <div className="mb-1 text-sm text-(--color-muted)">
-                                                    GPA: {education.score}
-                                                </div>
-                                            ) : null}
-                                            {education.courses &&
-                                            education.courses.length > 0 ? (
-                                                <div className="mt-2 flex flex-wrap gap-1">
-                                                    {education.courses.map(
-                                                        (
-                                                            course: string,
-                                                            cIdx: number
-                                                        ) => (
-                                                            <span
-                                                                key={cIdx}
-                                                                className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
-                                                            >
-                                                                {course}
-                                                            </span>
-                                                        )
-                                                    )}
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        );
-                    }
-
-                    if (
-                        Array.isArray(sectionValue) &&
-                        sectionValue.length > 0
-                    ) {
-                        const sectionTitle = getLabel(sectionKey);
-                        return (
-                            <section
-                                key={sectionKey}
-                                className="mb-10"
-                                data-pdf-block
-                            >
-                                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                                    {sectionTitle}
-                                </h2>
-                                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-                                    {sectionValue.map(
-                                        (genericItem: any, idx: number) => (
-                                            <div
-                                                key={idx}
-                                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
-                                            >
-                                                {genericItem.name ||
-                                                genericItem.title ||
-                                                genericItem.organization ||
-                                                genericItem.language ? (
-                                                    <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
-                                                        {genericItem.name ||
-                                                            genericItem.title ||
-                                                            genericItem.organization ||
-                                                            genericItem.language}
-                                                    </h3>
-                                                ) : null}
-                                                {genericItem.position ||
-                                                genericItem.awarder ||
-                                                genericItem.issuer ||
-                                                genericItem.publisher ||
-                                                genericItem.fluency ? (
-                                                    <div className="mb-0.5 text-base text-(--color-muted)">
-                                                        {genericItem.position ||
-                                                            genericItem.awarder ||
-                                                            genericItem.issuer ||
-                                                            genericItem.publisher ||
-                                                            genericItem.fluency}
-                                                    </div>
-                                                ) : null}
-                                                {genericItem.startDate ||
-                                                genericItem.date ||
-                                                genericItem.releaseDate ? (
-                                                    <div
-                                                        className="mb-1 text-sm text-(--color-muted)"
-                                                        style={{
-                                                            fontVariantNumeric:
-                                                                "tabular-nums",
-                                                        }}
-                                                    >
-                                                        {`${genericItem.startDate || genericItem.date || genericItem.releaseDate || ""}${genericItem.endDate ? " ~ " + genericItem.endDate : ""}`}
-                                                    </div>
-                                                ) : null}
-                                                {genericItem.summary ||
-                                                genericItem.description ? (
-                                                    <p className="text-base text-(--color-foreground)">
-                                                        {genericItem.summary ||
-                                                            genericItem.description}
-                                                    </p>
-                                                ) : null}
-                                                {genericItem.highlights &&
-                                                Array.isArray(
-                                                    genericItem.highlights
-                                                ) &&
-                                                genericItem.highlights.length >
-                                                    0 ? (
-                                                    <ul className="pl-2 text-base text-(--color-foreground)">
-                                                        {genericItem.highlights.map(
-                                                            (
-                                                                highlight: string,
-                                                                hIdx: number
-                                                            ) => (
-                                                                <li key={hIdx}>
-                                                                    {`• ${highlight}`}
-                                                                </li>
-                                                            )
-                                                        )}
-                                                    </ul>
-                                                ) : null}
-                                                {genericItem.keywords &&
-                                                Array.isArray(
-                                                    genericItem.keywords
-                                                ) &&
-                                                genericItem.keywords.length >
-                                                    0 ? (
-                                                    <div className="mt-1.5 flex flex-wrap gap-1">
-                                                        {genericItem.keywords.map(
-                                                            (
-                                                                keyword: string,
-                                                                kIdx: number
-                                                            ) => (
-                                                                <span
-                                                                    key={kIdx}
-                                                                    className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
-                                                                >
-                                                                    {keyword}
-                                                                </span>
-                                                            )
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                                {genericItem.url ? (
-                                                    <a
-                                                        href={genericItem.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-base break-all text-(--color-link) no-underline hover:text-(--color-link) hover:underline hover:opacity-80"
-                                                    >
-                                                        {genericItem.url}
-                                                    </a>
-                                                ) : null}
-                                                {genericItem.reference ? (
-                                                    <p>
-                                                        {genericItem.reference}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-                            </section>
-                        );
-                    }
-
-                    return null;
+                {resolvedOrder.map((key) => {
+                    const render = rendererMap[key];
+                    return render ? render() : null;
                 })}
             </main>
         </div>

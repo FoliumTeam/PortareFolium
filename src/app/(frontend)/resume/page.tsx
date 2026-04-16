@@ -3,10 +3,13 @@ import { serverClient } from "@/lib/supabase";
 import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
-import ResumeMinimal from "@/components/resume/ResumeMinimal";
-import ResumePhases from "@/components/resume/ResumePhases";
 import PdfExportButton from "@/components/PdfExportButton";
 import { filterByJobField } from "@/lib/job-field";
+import {
+    DEFAULT_RESUME_LAYOUT,
+    normalizeLayout,
+    type ResumeSectionLayout,
+} from "@/lib/resume-layout";
 
 export const revalidate = false;
 
@@ -21,29 +24,42 @@ function sortByDateDesc<T extends { startDate?: string }>(items: T[]): T[] {
     );
 }
 
+// 레거시 theme 값 정규화
+function coerceTheme(raw: unknown): "classic" | "modern" {
+    if (raw === "classic") return "classic";
+    return "modern";
+}
+
 export default async function ResumePage() {
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
-    let resumeLayout: "classic" | "modern" | "minimal" | "phases" = "modern";
+    let resumeLayout: "classic" | "modern" = "modern";
     let resumeDataRaw: Resume = {} as Resume;
+    let sectionLayout: ResumeSectionLayout = DEFAULT_RESUME_LAYOUT;
 
     if (serverClient) {
-        const [cfgRes, layoutRes, resumeRes] = await Promise.all([
-            serverClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single(),
-            serverClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "resume_layout")
-                .single(),
-            serverClient
-                .from("resume_data")
-                .select("data")
-                .eq("lang", "ko")
-                .single(),
-        ]);
+        const [cfgRes, layoutRes, sectionLayoutRes, resumeRes] =
+            await Promise.all([
+                serverClient
+                    .from("site_config")
+                    .select("value")
+                    .eq("key", "job_field")
+                    .single(),
+                serverClient
+                    .from("site_config")
+                    .select("value")
+                    .eq("key", "resume_layout")
+                    .single(),
+                serverClient
+                    .from("site_config")
+                    .select("value")
+                    .eq("key", "resume_section_layout")
+                    .single(),
+                serverClient
+                    .from("resume_data")
+                    .select("data")
+                    .eq("lang", "ko")
+                    .single(),
+            ]);
 
         if (cfgRes.data?.value) {
             const raw = cfgRes.data.value;
@@ -55,11 +71,13 @@ export default async function ResumePage() {
         }
 
         if (layoutRes.data?.value) {
-            resumeLayout = layoutRes.data.value as
-                | "classic"
-                | "modern"
-                | "minimal"
-                | "phases";
+            resumeLayout = coerceTheme(layoutRes.data.value);
+        }
+
+        if (sectionLayoutRes.data?.value) {
+            sectionLayout = normalizeLayout(
+                sectionLayoutRes.data.value as ResumeSectionLayout
+            );
         }
 
         if (resumeRes.data?.data) {
@@ -67,7 +85,11 @@ export default async function ResumePage() {
         }
     }
 
-    const coreCompetencies = resumeDataRaw.coreCompetencies ?? [];
+    // 하위 호환: 기존 배열 → 객체 wrapper 정규화
+    const rawCC = resumeDataRaw.coreCompetencies;
+    const coreCompetencies = Array.isArray(rawCC)
+        ? rawCC
+        : (rawCC?.entries ?? []);
 
     const resumeData: Resume = {
         ...resumeDataRaw,
@@ -99,26 +121,15 @@ export default async function ResumePage() {
                 <ResumeClassic
                     resume={resumeData}
                     coreCompetencies={coreCompetencies}
+                    sectionLayout={sectionLayout}
                 />
             )}
             {resumeLayout === "modern" && (
                 <ResumeModern
                     resume={resumeData}
                     coreCompetencies={coreCompetencies}
-                />
-            )}
-            {resumeLayout === "minimal" && (
-                <ResumeMinimal
-                    resume={resumeData}
-                    coreCompetencies={coreCompetencies}
-                />
-            )}
-            {/* phases 레이아웃은 jobField 필터 없이 raw 데이터 전달 */}
-            {resumeLayout === "phases" && (
-                <ResumePhases
-                    resume={resumeDataRaw}
+                    sectionLayout={sectionLayout}
                     activeJobField={jobField}
-                    coreCompetencies={coreCompetencies}
                 />
             )}
         </PdfExportButton>

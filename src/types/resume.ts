@@ -4,6 +4,7 @@
  */
 
 export const defaultSectionLabels: Record<string, string> = {
+    coreCompetencies: "핵심역량",
     careerPhases: "커리어 타임라인",
     work: "경력",
     skills: "기술",
@@ -213,5 +214,9 @@ export interface Resume {
     references?: ResumeSection<ResumeReference>;
     projects?: ResumeSection<ResumeProject>;
     careerPhases?: ResumeSection<ResumeCareerPhase>;
-    coreCompetencies?: { title: string; description: string }[];
+    coreCompetencies?: {
+        emoji?: string;
+        showEmoji?: boolean;
+        entries: { title: string; description: string }[];
+    };
 }
