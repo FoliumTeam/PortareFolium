@@ -2,6 +2,10 @@
 
 ## v0.11.49 (2026-04-16)
 
+### chore: PR.md git tracking 제거
+
+- `PR.md`를 git 추적 대상에서 제거하고 `.gitignore` 루트 markdown 규칙으로 로컬 전용 파일로 유지
+
 ### test: Resume layout E2E 제거
 
 - `e2e/authenticated/resume-layout-editor.spec.ts` 삭제
