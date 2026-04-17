@@ -9,18 +9,13 @@ export default function NotFound() {
     const [countdown, setCountdown] = useState(5);
 
     useEffect(() => {
-        const tick = setInterval(() => {
-            setCountdown((n) => {
-                if (n <= 1) {
-                    clearInterval(tick);
-                    router.push("/");
-                    return 0;
-                }
-                return n - 1;
-            });
-        }, 1000);
-        return () => clearInterval(tick);
-    }, [router]);
+        if (countdown <= 0) {
+            router.push("/");
+            return;
+        }
+        const t = setTimeout(() => setCountdown((n) => n - 1), 1000);
+        return () => clearTimeout(t);
+    }, [countdown, router]);
 
     return (
         <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 text-center">

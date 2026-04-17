@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.12.2 (2026-04-17)
+
+### fix: NotFound 페이지 setState-in-render 경고 제거 + Discord ack 지시 추가
+
+- `src/app/not-found.tsx`: `setInterval` 업데이터 내부에서 `router.push` 호출하던 구조를 제거. `setTimeout` + `countdown` 의존성 effect로 변경, redirect는 effect 본문에서 실행 — React의 "Cannot update a component while rendering" 경고 해소
+- `AGENTS.md`: Discord 채널을 통해 수신한 메시지에 대해 작업 시작 전 짧은 ack reply를 보내도록 지시 추가
+
 ## v0.12.1 (2026-04-17)
 
 ### fix: Tiptap 이미지 업로드 모달을 R2로 마이그레이션

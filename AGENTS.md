@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - **Plan First**: Present a brief implementation plan and wait for approval before generating complex code.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
 - **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `USER_TASKS.md` for the user to follow.
+- **Discord Message Acknowledgement**: When a user message arrives via the Discord channel (messages wrapped in `<channel source="plugin:discord:discord" ...>`), send a brief acknowledgement reply (e.g., "확인했습니다 — 작업 시작합니다.") through the Discord `reply` tool before starting the task. The ack should be a single short line so the user sees the message was received; then proceed with the work and send the actual result as a follow-up reply.
 
 ### Coding Rules
 
