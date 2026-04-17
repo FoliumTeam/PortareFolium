@@ -20,6 +20,7 @@ module.exports = {
                 "revert", // 이전 커밋 되돌리기
                 "delete", // 파일/리소스 삭제
                 "merge", // 병합 커밋
+                "release", // 릴리즈
             ],
         ],
         "header-max-length": [2, "always", 100],

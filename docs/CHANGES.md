@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.0 (2026-04-17)
+
+### release: minor 버전 release
+
+- Gantt Chart 전면 개편 — 모달 기반 생성/편집, 카테고리 색상/태그, compact 수평 레이아웃, comments 토글, zoom-invariant JPG export
+- Editor/Thumbnail 개선 — RichMarkdownEditor thumbnail 버튼 위치/스타일 보정, Sonner toast 도입 (top-center, 커스텀 폰트/아이콘)
+- Infra — `R2_PUBLIC_URL` 기반 동적 `remotePatterns`, Supabase storage 제거
+
 ## v0.11.93 (2026-04-17)
 
 ### revert: editor title focus ring 보정 되돌리기
