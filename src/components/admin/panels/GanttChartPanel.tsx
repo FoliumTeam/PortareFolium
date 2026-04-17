@@ -5,13 +5,14 @@ import {
     useEffect,
     useRef,
     useState,
-    type ChangeEvent,
     type PointerEvent as ReactPointerEvent,
     type WheelEvent,
 } from "react";
 import {
     Download,
-    FileUp,
+    Palette,
+    Pencil,
+    Plus,
     RefreshCw,
     Trash2,
     ZoomIn,
@@ -21,28 +22,15 @@ import { browserClient } from "@/lib/supabase";
 import {
     buildGanttTimeline,
     countTaskDays,
-    getGanttArchiveTitle,
     normalizeStoredGanttTasks,
-    parseGanttCsv,
+    type GanttChartArchive,
+    type GanttChartBarStyle,
     type GanttChartTask,
 } from "@/lib/gantt-chart";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
-
-type GanttChartColorSchemeId = "emerald" | "blue" | "amber" | "rose" | "slate";
-type GanttChartBarStyle = "rounded" | "square";
-
-type GanttColorScheme = {
-    label: string;
-    bar: string;
-    barSoft: string;
-    barText: string;
-    barMuted: string;
-    track: string;
-    weekend: string;
-    grid: string;
-    axis: string;
-};
+import GanttChartCreateModal from "./GanttChartCreateModal";
+import GanttChartCategoryColorModal from "./GanttChartCategoryColorModal";
 
 type GanttChartArchiveRow = {
     id: string;
@@ -50,22 +38,10 @@ type GanttChartArchiveRow = {
     source_filename: string;
     csv_content: string;
     tasks: unknown;
-    color_scheme: string | null;
+    category_colors: unknown;
     bar_style: string | null;
     created_at: string;
     updated_at: string;
-};
-
-type GanttChartArchive = {
-    id: string;
-    title: string;
-    sourceFilename: string;
-    csvContent: string;
-    tasks: GanttChartTask[];
-    colorScheme: GanttChartColorSchemeId;
-    barStyle: GanttChartBarStyle;
-    createdAt: string;
-    updatedAt: string;
 };
 
 type StatusMessage = {
@@ -75,77 +51,17 @@ type StatusMessage = {
 
 type GanttChartArchiveDraft = {
     title: string;
-    colorScheme: GanttChartColorSchemeId;
     barStyle: GanttChartBarStyle;
 };
 
 const ARCHIVE_SELECT_FIELDS =
-    "id, title, source_filename, csv_content, tasks, color_scheme, bar_style, created_at, updated_at";
+    "id, title, source_filename, csv_content, tasks, category_colors, bar_style, created_at, updated_at";
 const DAY_WIDTH = 44;
 const BAR_TEXT_MIN_WIDTH = 96;
 const BAR_DAY_COUNT_MIN_WIDTH = 152;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.5;
-const DEFAULT_COLOR_SCHEME: GanttChartColorSchemeId = "emerald";
 const DEFAULT_BAR_STYLE: GanttChartBarStyle = "rounded";
-
-const GANTT_COLOR_SCHEMES: Record<GanttChartColorSchemeId, GanttColorScheme> = {
-    emerald: {
-        label: "Emerald",
-        bar: "#059669",
-        barSoft: "rgba(5, 150, 105, 0.18)",
-        barText: "#ffffff",
-        barMuted: "#d1fae5",
-        track: "#f8fafc",
-        weekend: "#f1f5f9",
-        grid: "#e2e8f0",
-        axis: "#64748b",
-    },
-    blue: {
-        label: "Blue",
-        bar: "#2563eb",
-        barSoft: "rgba(37, 99, 235, 0.18)",
-        barText: "#ffffff",
-        barMuted: "#dbeafe",
-        track: "#f8fafc",
-        weekend: "#eff6ff",
-        grid: "#dbeafe",
-        axis: "#64748b",
-    },
-    amber: {
-        label: "Amber",
-        bar: "#d97706",
-        barSoft: "rgba(217, 119, 6, 0.18)",
-        barText: "#ffffff",
-        barMuted: "#fef3c7",
-        track: "#fffdf7",
-        weekend: "#fef3c7",
-        grid: "#fde68a",
-        axis: "#78716c",
-    },
-    rose: {
-        label: "Rose",
-        bar: "#e11d48",
-        barSoft: "rgba(225, 29, 72, 0.18)",
-        barText: "#ffffff",
-        barMuted: "#ffe4e6",
-        track: "#fffafc",
-        weekend: "#fff1f2",
-        grid: "#fecdd3",
-        axis: "#6b7280",
-    },
-    slate: {
-        label: "Slate",
-        bar: "#334155",
-        barSoft: "rgba(51, 65, 85, 0.18)",
-        barText: "#ffffff",
-        barMuted: "#e2e8f0",
-        track: "#f8fafc",
-        weekend: "#f1f5f9",
-        grid: "#cbd5e1",
-        axis: "#64748b",
-    },
-};
 
 const formatDateTime = (value: string) =>
     new Date(value).toLocaleString("ko-KR");
@@ -158,14 +74,6 @@ const buildDownloadName = (title: string) => {
         .replace(/^-+|-+$/g, "");
     return normalized || "gantt-chart";
 };
-const normalizeColorScheme = (
-    value: string | null
-): GanttChartColorSchemeId => {
-    if (!value) return DEFAULT_COLOR_SCHEME;
-    return value in GANTT_COLOR_SCHEMES
-        ? (value as GanttChartColorSchemeId)
-        : DEFAULT_COLOR_SCHEME;
-};
 const normalizeBarStyle = (value: string | null): GanttChartBarStyle =>
     value === "square" ? "square" : DEFAULT_BAR_STYLE;
 const clampZoom = (value: number) =>
@@ -173,20 +81,22 @@ const clampZoom = (value: number) =>
 const mapArchiveRow = (row: GanttChartArchiveRow): GanttChartArchive => ({
     id: row.id,
     title: row.title,
-    sourceFilename: row.source_filename,
-    csvContent: row.csv_content,
     tasks: normalizeStoredGanttTasks(row.tasks),
-    colorScheme: normalizeColorScheme(row.color_scheme),
-    barStyle: normalizeBarStyle(row.bar_style),
+    categoryColors:
+        typeof row.category_colors === "object" &&
+        row.category_colors !== null &&
+        !Array.isArray(row.category_colors)
+            ? (row.category_colors as Record<string, string>)
+            : {},
+    barStyle: row.bar_style === "square" ? "square" : "rounded",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
 });
 
 const toArchiveDraft = (
-    archive: Pick<GanttChartArchive, "title" | "colorScheme" | "barStyle">
+    archive: Pick<GanttChartArchive, "title" | "barStyle">
 ): GanttChartArchiveDraft => ({
     title: archive.title,
-    colorScheme: archive.colorScheme,
     barStyle: archive.barStyle,
 });
 
@@ -194,7 +104,11 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
     const { days, months } = buildGanttTimeline(archive.tasks);
     const dayIndexMap = new Map(days.map((day, index) => [day.key, index]));
     const timelineWidth = days.length * DAY_WIDTH;
-    const theme = GANTT_COLOR_SCHEMES[archive.colorScheme];
+    const AXIS_COLOR = "#64748b";
+    const GRID_COLOR = "#e2e8f0";
+    const TRACK_COLOR = "#f8fafc";
+    const WEEKEND_COLOR = "#f1f5f9";
+    const DEFAULT_BAR_COLOR = "var(--color-accent)";
 
     return (
         <div className="min-w-max rounded-[2rem] bg-white p-8 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
@@ -202,7 +116,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                 <h3 className="text-3xl font-bold tracking-tight">
                     {archive.title}
                 </h3>
-                <p className="text-sm" style={{ color: theme.axis }}>
+                <p className="text-sm" style={{ color: AXIS_COLOR }}>
                     {archive.tasks.length}개 task ·{" "}
                     {formatDateLabel(days[0]?.key ?? "")} -{" "}
                     {formatDateLabel(days[days.length - 1]?.key ?? "")}
@@ -212,11 +126,11 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                 <div className="space-y-1 pt-2">
                     <p
                         className="text-xs font-semibold tracking-[0.24em] uppercase"
-                        style={{ color: theme.axis }}
+                        style={{ color: AXIS_COLOR }}
                     >
                         Tasks
                     </p>
-                    <p className="text-sm" style={{ color: theme.axis }}>
+                    <p className="text-sm" style={{ color: AXIS_COLOR }}>
                         전체 기간 {days.length}일
                     </p>
                 </div>
@@ -228,7 +142,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                 className="text-sm font-semibold"
                                 style={{
                                     width: month.span * DAY_WIDTH,
-                                    color: theme.axis,
+                                    color: AXIS_COLOR,
                                 }}
                             >
                                 {month.label}
@@ -248,7 +162,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                     </p>
                                     <p
                                         className="text-[10px]"
-                                        style={{ color: theme.axis }}
+                                        style={{ color: AXIS_COLOR }}
                                     >
                                         {day.weekdayLabel}
                                     </p>
@@ -257,7 +171,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                         </div>
                         <div
                             className="pointer-events-none absolute inset-x-0 top-[calc(100%+0.75rem)] h-px"
-                            style={{ backgroundColor: theme.grid }}
+                            style={{ backgroundColor: GRID_COLOR }}
                         />
                     </div>
                 </div>
@@ -269,6 +183,9 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                     const showBarText = barWidth >= BAR_TEXT_MIN_WIDTH;
                     const showDayCount = barWidth >= BAR_DAY_COUNT_MIN_WIDTH;
                     const taskDays = countTaskDays(task);
+                    const barColor =
+                        archive.categoryColors[task.category] ??
+                        DEFAULT_BAR_COLOR;
 
                     return (
                         <Fragment
@@ -280,7 +197,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                 </p>
                                 <p
                                     className="text-xs"
-                                    style={{ color: theme.axis }}
+                                    style={{ color: AXIS_COLOR }}
                                 >
                                     {formatDateLabel(task.startDate)} -{" "}
                                     {formatDateLabel(task.endDate)} ({taskDays}
@@ -299,7 +216,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                 style={{
                                     width: timelineWidth,
                                     height: 64,
-                                    backgroundColor: theme.track,
+                                    backgroundColor: TRACK_COLOR,
                                 }}
                             >
                                 {days.map((day, index) => (
@@ -309,16 +226,16 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                         style={{
                                             left: index * DAY_WIDTH,
                                             width: DAY_WIDTH,
-                                            borderRight: `1px solid ${theme.grid}`,
+                                            borderRight: `1px solid ${GRID_COLOR}`,
                                             backgroundColor: day.isWeekend
-                                                ? theme.weekend
+                                                ? WEEKEND_COLOR
                                                 : "transparent",
                                         }}
                                     />
                                 ))}
                                 <div
-                                    className="absolute inset-x-4 top-1/2 h-px -translate-y-1/2"
-                                    style={{ backgroundColor: theme.grid }}
+                                    className="pointer-events-none absolute inset-x-4 top-1/2 h-px -translate-y-1/2"
+                                    style={{ backgroundColor: GRID_COLOR }}
                                 />
                                 <div
                                     className={`absolute top-1/2 flex h-10 -translate-y-1/2 items-center px-4 text-sm font-semibold whitespace-nowrap shadow-[0_10px_24px_rgba(15,23,42,0.18)] ${
@@ -332,8 +249,8 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                             barWidth - 4,
                                             DAY_WIDTH - 4
                                         ),
-                                        backgroundColor: theme.bar,
-                                        color: theme.barText,
+                                        backgroundColor: barColor,
+                                        color: "#ffffff",
                                     }}
                                 >
                                     {showBarText && (
@@ -345,7 +262,7 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
                                                 <span
                                                     className="ml-auto pl-3 text-xs"
                                                     style={{
-                                                        color: theme.barMuted,
+                                                        color: "rgba(255,255,255,0.75)",
                                                     }}
                                                 >
                                                     {taskDays}d
@@ -365,7 +282,6 @@ const GanttChartPreview = ({ archive }: { archive: GanttChartArchive }) => {
 
 const GanttChartPanel = () => {
     const { confirm } = useConfirmDialog();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const chartRef = useRef<HTMLDivElement | null>(null);
     const shouldFitRef = useRef(true);
@@ -382,7 +298,6 @@ const GanttChartPanel = () => {
     );
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
     const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
@@ -394,6 +309,10 @@ const GanttChartPanel = () => {
     const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
     const [fitZoom, setFitZoom] = useState(1);
     const [zoom, setZoom] = useState(1);
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [editModalArchive, setEditModalArchive] =
+        useState<GanttChartArchive | null>(null);
+    const [categoryColorModalOpen, setCategoryColorModalOpen] = useState(false);
 
     const selectedArchive =
         archives.find((archive) => archive.id === selectedArchiveId) ?? null;
@@ -407,7 +326,6 @@ const GanttChartPanel = () => {
         !!selectedArchive &&
         !!selectedDraft &&
         (selectedDraft.title.trim() !== selectedArchive.title ||
-            selectedDraft.colorScheme !== selectedArchive.colorScheme ||
             selectedDraft.barStyle !== selectedArchive.barStyle);
 
     const syncArchiveList = (
@@ -619,47 +537,6 @@ const GanttChartPanel = () => {
         event.currentTarget.releasePointerCapture(event.pointerId);
     };
 
-    const handleFileSelect = () => fileInputRef.current?.click();
-    const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !browserClient) return;
-        setUploading(true);
-        setStatus(null);
-        try {
-            const csvContent = await file.text();
-            const tasks = parseGanttCsv(csvContent);
-            const title = getGanttArchiveTitle(file.name);
-            const { data, error } = await browserClient
-                .from("gantt_chart_archives")
-                .insert({
-                    title,
-                    source_filename: file.name,
-                    csv_content: csvContent,
-                    tasks,
-                    color_scheme: DEFAULT_COLOR_SCHEME,
-                    bar_style: DEFAULT_BAR_STYLE,
-                })
-                .select(ARCHIVE_SELECT_FIELDS)
-                .single();
-            if (error) throw new Error(error.message);
-            const nextArchive = mapArchiveRow(data as GanttChartArchiveRow);
-            syncArchiveList([nextArchive, ...archives], nextArchive.id);
-            setStatus({
-                ok: true,
-                text: `${file.name} 업로드 및 archive 저장 완료`,
-            });
-        } catch (error) {
-            setStatus({
-                ok: false,
-                text:
-                    error instanceof Error ? error.message : "CSV 업로드 오류",
-            });
-        } finally {
-            setUploading(false);
-            event.target.value = "";
-        }
-    };
-
     const handleExportImage = async () => {
         if (!selectedArchive || !chartRef.current) return;
         setExporting(true);
@@ -720,7 +597,6 @@ const GanttChartPanel = () => {
             .from("gantt_chart_archives")
             .update({
                 title: nextTitle,
-                color_scheme: selectedDraft.colorScheme,
                 bar_style: selectedDraft.barStyle,
             })
             .eq("id", selectedArchive.id)
@@ -807,7 +683,6 @@ const GanttChartPanel = () => {
                             onClick={() => void loadArchives()}
                             disabled={
                                 loading ||
-                                uploading ||
                                 exporting ||
                                 savingSettings ||
                                 deletingIds.size > 0
@@ -823,9 +698,8 @@ const GanttChartPanel = () => {
                         </Button>
                         <Button
                             size="sm"
-                            onClick={handleFileSelect}
+                            onClick={() => setCreateModalOpen(true)}
                             disabled={
-                                uploading ||
                                 loading ||
                                 exporting ||
                                 savingSettings ||
@@ -833,9 +707,9 @@ const GanttChartPanel = () => {
                             }
                             className="bg-green-600 text-white hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
-                            <FileUp className="mr-1.5 h-4 w-4 shrink-0" />
+                            <Plus className="mr-1.5 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
-                                {uploading ? "업로드 중..." : "CSV 업로드"}
+                                새 차트 생성
                             </span>
                         </Button>
                         <Button
@@ -853,9 +727,11 @@ const GanttChartPanel = () => {
                 </div>
                 <div className="space-y-1 text-sm text-(--color-muted)">
                     <p>
-                        CSV 헤더는{" "}
-                        <code>task name,start date,end date,comment</code>{" "}
-                        순서를 따라야 합니다.
+                        "새 차트 생성" 버튼으로 차트를 생성하거나 CSV로 불러올
+                        수 있습니다. CSV 헤더:{" "}
+                        <code>
+                            task name,category,start date,end date,comment
+                        </code>
                     </p>
                     <p>
                         preview는 기본적으로 전체 폭 fit 상태로 열리며, wheel로
@@ -869,13 +745,6 @@ const GanttChartPanel = () => {
                         {status.text}
                     </p>
                 )}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,text/csv"
-                    className="hidden"
-                    onChange={(event) => void handleFileChange(event)}
-                />
             </div>
 
             <div className="mt-4 min-h-0 flex-1 overflow-hidden">
@@ -967,23 +836,8 @@ const GanttChartPanel = () => {
                                                     }
                                                     className="min-w-0 flex-1 text-left"
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className="h-2.5 w-2.5 rounded-full"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    GANTT_COLOR_SCHEMES[
-                                                                        archive
-                                                                            .colorScheme
-                                                                    ].bar,
-                                                            }}
-                                                        />
-                                                        <p className="truncate text-sm font-semibold text-(--color-foreground)">
-                                                            {archive.title}
-                                                        </p>
-                                                    </div>
-                                                    <p className="mt-1 truncate text-xs text-(--color-muted)">
-                                                        {archive.sourceFilename}
+                                                    <p className="truncate text-sm font-semibold text-(--color-foreground)">
+                                                        {archive.title}
                                                     </p>
                                                     <p className="mt-1 text-xs text-(--color-muted)">
                                                         task{" "}
@@ -995,6 +849,17 @@ const GanttChartPanel = () => {
                                                         )}
                                                     </p>
                                                 </button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setEditModalArchive(
+                                                            archive
+                                                        )
+                                                    }
+                                                    className="bg-zinc-900 px-2.5 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5 shrink-0" />
+                                                </Button>
                                                 <Button
                                                     size="sm"
                                                     onClick={() =>
@@ -1023,7 +888,7 @@ const GanttChartPanel = () => {
                                         Gantt Chart 프리뷰 없음
                                     </p>
                                     <p className="mt-2 text-sm text-(--color-muted)">
-                                        CSV를 업로드하거나 archive에서 chart를
+                                        차트를 생성하거나 archive에서 chart를
                                         선택하세요
                                     </p>
                                 </div>
@@ -1052,40 +917,6 @@ const GanttChartPanel = () => {
                                         </div>
                                         <div className="space-y-2">
                                             <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                Color Scheme
-                                            </label>
-                                            <select
-                                                value={
-                                                    selectedDraft?.colorScheme ??
-                                                    DEFAULT_COLOR_SCHEME
-                                                }
-                                                onChange={(event) =>
-                                                    updateSelectedDraft({
-                                                        colorScheme: event
-                                                            .target
-                                                            .value as GanttChartColorSchemeId,
-                                                    })
-                                                }
-                                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
-                                            >
-                                                {(
-                                                    Object.entries(
-                                                        GANTT_COLOR_SCHEMES
-                                                    ) as Array<
-                                                        [
-                                                            GanttChartColorSchemeId,
-                                                            GanttColorScheme,
-                                                        ]
-                                                    >
-                                                ).map(([id, scheme]) => (
-                                                    <option key={id} value={id}>
-                                                        {scheme.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
                                                 Bar Shape
                                             </label>
                                             <select
@@ -1109,6 +940,18 @@ const GanttChartPanel = () => {
                                                 </option>
                                             </select>
                                         </div>
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                setCategoryColorModalOpen(true)
+                                            }
+                                            className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                        >
+                                            <Palette className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                                            <span className="whitespace-nowrap">
+                                                Category Colors
+                                            </span>
+                                        </Button>
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 size="sm"
@@ -1193,9 +1036,6 @@ const GanttChartPanel = () => {
                                                     title: selectedDraft?.title.trim()
                                                         ? selectedDraft.title.trim()
                                                         : selectedArchive.title,
-                                                    colorScheme:
-                                                        selectedDraft?.colorScheme ??
-                                                        selectedArchive.colorScheme,
                                                     barStyle:
                                                         selectedDraft?.barStyle ??
                                                         selectedArchive.barStyle,
@@ -1209,6 +1049,37 @@ const GanttChartPanel = () => {
                     </div>
                 </div>
             </div>
+            {createModalOpen && (
+                <GanttChartCreateModal
+                    mode="create"
+                    onClose={() => setCreateModalOpen(false)}
+                    onSaved={() => {
+                        setCreateModalOpen(false);
+                        void loadArchives();
+                    }}
+                />
+            )}
+            {editModalArchive && (
+                <GanttChartCreateModal
+                    mode="edit"
+                    archive={editModalArchive}
+                    onClose={() => setEditModalArchive(null)}
+                    onSaved={() => {
+                        setEditModalArchive(null);
+                        void loadArchives();
+                    }}
+                />
+            )}
+            {categoryColorModalOpen && selectedArchive && (
+                <GanttChartCategoryColorModal
+                    archive={selectedArchive}
+                    onClose={() => setCategoryColorModalOpen(false)}
+                    onSaved={() => {
+                        setCategoryColorModalOpen(false);
+                        void loadArchives();
+                    }}
+                />
+            )}
         </div>
     );
 };

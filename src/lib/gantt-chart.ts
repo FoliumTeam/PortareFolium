@@ -6,6 +6,18 @@ export type GanttChartTask = {
     comment: string;
 };
 
+export type GanttChartBarStyle = "rounded" | "square";
+
+export type GanttChartArchive = {
+    id: string;
+    title: string;
+    tasks: GanttChartTask[];
+    categoryColors: Record<string, string>;
+    barStyle: GanttChartBarStyle;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type GanttChartDay = {
     key: string;
     dayNumber: number;

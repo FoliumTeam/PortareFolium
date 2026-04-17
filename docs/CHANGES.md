@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.82 (2026-04-17)
+
+### feat: GanttChartPanel 전면 개편 — 모달 기반 생성/편집 + 카테고리 색상
+
+- `src/lib/gantt-chart.ts`: `GanttChartArchive`, `GanttChartBarStyle` 타입 export 추가
+- `src/components/admin/panels/GanttChartCreateModal.tsx`: 차트 생성/편집 겸용 모달 신규 (80vw×80vh, Excel 스타일 테이블, CSV import, 미저장 경고)
+- `src/components/admin/panels/GanttChartCategoryColorModal.tsx`: 카테고리별 이름/색상 편집 모달 신규 (50vw×80vh, native color picker)
+- `src/components/admin/panels/GanttChartPanel.tsx`: CSV 업로드 제거, 생성/편집/Category Colors 버튼 추가, Color Scheme 드롭다운 제거, 카테고리별 bar 색상 렌더링
+
 ## v0.11.81 (2026-04-17)
 
 ### feat: GanttChartTask category 필드 추가 및 5컬럼 CSV 파서
