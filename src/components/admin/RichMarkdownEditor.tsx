@@ -149,7 +149,8 @@ export default function RichMarkdownEditor({
                     return ReactNodeViewRenderer(({ node }: NodeViewProps) => (
                         <NodeViewWrapper
                             as="span"
-                            className="group relative inline-block"
+                            // leading-none + img block으로 wrapper 높이를 이미지에 정확히 맞춤
+                            className="group relative inline-block align-top leading-none"
                         >
                             <img
                                 src={node.attrs.src as string}
@@ -157,6 +158,7 @@ export default function RichMarkdownEditor({
                                 title={
                                     (node.attrs.title as string) || undefined
                                 }
+                                className="block"
                             />
                             {onSetThumbnailRef.current && node.attrs.src && (
                                 <button
@@ -167,7 +169,7 @@ export default function RichMarkdownEditor({
                                             node.attrs.src as string
                                         )
                                     }
-                                    className="absolute top-2 right-2 rounded bg-zinc-900 px-2 py-1 text-xs font-medium whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                    className="absolute top-2 right-2 rounded bg-(--color-accent) px-2 py-1 text-xs font-medium whitespace-nowrap text-(--color-on-accent) opacity-0 transition-opacity group-hover:opacity-100"
                                 >
                                     Set as thumbnail
                                 </button>

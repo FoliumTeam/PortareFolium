@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.11.80 (2026-04-17)
+
+### fix: thumbnail 버튼 이미지 내부 렌더링 위치 및 accent 색상 수정
+
+- `src/components/admin/RichMarkdownEditor.tsx`: NodeViewWrapper에 `align-top leading-none` 추가, `<img>`에 `block` 추가로 버튼이 이미지 내부에 정확히 위치하도록 수정
+- 버튼 배경색을 `--color-accent` / `--color-on-accent` CSS 변수로 교체 (다크/라이트 테마 대응)
+
 ## v0.11.79 (2026-04-17)
 
 ### chore: next.config R2_PUBLIC_URL remotePattern 추가 및 Supabase storage 항목 제거
