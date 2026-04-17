@@ -11,6 +11,7 @@ import type { Editor } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
+import { toast } from "sonner";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -172,11 +173,14 @@ export default function RichMarkdownEditor({
                                             onMouseDown={(e) =>
                                                 e.preventDefault()
                                             }
-                                            onClick={() =>
+                                            onClick={() => {
                                                 onSetThumbnailRef.current?.(
                                                     node.attrs.src as string
-                                                )
-                                            }
+                                                );
+                                                toast.success(
+                                                    "썸네일로 설정됨"
+                                                );
+                                            }}
                                             className="absolute top-3 right-3 z-10 rounded bg-(--color-accent) px-2 py-1 text-xs font-medium whitespace-nowrap text-(--color-on-accent) opacity-0 transition-opacity group-hover:opacity-100"
                                         >
                                             썸네일로 설정

@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 import { getSiteConfig } from "@/lib/queries";
 import { ALL_SCHEME_IDS } from "@/lib/color-schemes";
 import ColoredTableColorSync from "@/components/ColoredTableColorSync";
+import { Toaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -64,6 +65,7 @@ export default async function RootLayout({
             </head>
             <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
                 {children}
+                <Toaster />
                 <ColoredTableColorSync />
                 <SpeedInsights />
                 <Analytics />
