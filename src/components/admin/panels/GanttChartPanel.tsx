@@ -541,9 +541,14 @@ const GanttChartPanel = () => {
         if (!selectedArchive || !chartRef.current) return;
         setExporting(true);
         setStatus(null);
+        const target = chartRef.current;
+        const prevTransform = target.style.transform;
+        const prevOrigin = target.style.transformOrigin;
         try {
             const { default: html2canvas } = await import("html2canvas-pro");
-            const target = chartRef.current;
+            // 줌 transform을 임시 제거해 항상 100% 크기로 캡처
+            target.style.transform = "scale(1)";
+            target.style.transformOrigin = "top left";
             const width = Math.ceil(target.scrollWidth);
             const height = Math.ceil(target.scrollHeight);
             const canvas = await html2canvas(target, {
@@ -580,6 +585,8 @@ const GanttChartPanel = () => {
                     error instanceof Error ? error.message : "JPG export 오류",
             });
         } finally {
+            target.style.transform = prevTransform;
+            target.style.transformOrigin = prevOrigin;
             setExporting(false);
         }
     };

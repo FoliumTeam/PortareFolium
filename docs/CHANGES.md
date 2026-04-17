@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.84 (2026-04-17)
+
+### fix: Gantt Chart JPG export 줌 무관하게 항상 100% 크기로 캡처
+
+- `src/components/admin/panels/GanttChartPanel.tsx`: 캡처 전 `transform`을 `scale(1)`로 임시 교체, `finally`에서 복원 — 줌 상태와 무관하게 여백 없는 전체 차트 export
+
 ## v0.11.83 (2026-04-17)
 
 ### fix: RichMarkdownEditor thumbnail 버튼 위치를 이미지 표시 영역 기준으로 보정
