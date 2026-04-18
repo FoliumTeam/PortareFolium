@@ -11,6 +11,8 @@ const IMAGE_URL_RE =
 export type ImageDropPasteOptions = {
     // folderPath getter — slug rename 대응 위해 매 이벤트마다 호출
     getFolderPath?: () => string | undefined;
+    // multi-image layout modal 오픈
+    onOpenMultiImageLayout?: (files: File[], position: number) => void;
 };
 
 // extension 등록 — folderPath는 매 이벤트마다 getter로 최신값 조회
@@ -18,7 +20,7 @@ export const ImageDropPaste = Extension.create<ImageDropPasteOptions>({
     name: "imageDropPaste",
 
     addOptions() {
-        return { getFolderPath: undefined };
+        return { getFolderPath: undefined, onOpenMultiImageLayout: undefined };
     },
 
     addProseMirrorPlugins() {
@@ -44,6 +46,15 @@ export const ImageDropPaste = Extension.create<ImageDropPasteOptions>({
                             });
                             const startPos =
                                 coords?.pos ?? view.state.selection.from;
+
+                            if (files.length > 1) {
+                                ext.options.onOpenMultiImageLayout?.(
+                                    files,
+                                    startPos
+                                );
+                                return true;
+                            }
+
                             const folderPath = ext.options.getFolderPath?.();
 
                             void Promise.all(
@@ -84,6 +95,15 @@ export const ImageDropPaste = Extension.create<ImageDropPasteOptions>({
                         if (files.length > 0) {
                             event.preventDefault();
                             const startPos = view.state.selection.from;
+
+                            if (files.length > 1) {
+                                ext.options.onOpenMultiImageLayout?.(
+                                    files,
+                                    startPos
+                                );
+                                return true;
+                            }
+
                             const folderPath = ext.options.getFolderPath?.();
                             void Promise.all(
                                 files.map((f) => uploadImage(f, folderPath))

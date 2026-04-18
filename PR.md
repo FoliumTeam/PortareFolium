@@ -66,3 +66,9 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 - [ ] Comments 토글: OFF(기본) → ON 전환 시 comment 노출 및 bar 높이 확장 확인
 - [ ] Sonner toast: 썸네일 설정 클릭 후 top-center 토스트 표시 확인
 - [ ] `pnpm exec vitest run` 전체 통과
+
+---
+
+## 추가 변경 사항
+
+- **v0.12.21**: multi-image layout modal 추가, `개별사진`/`슬라이드` 선택 지원, `ImageGroup` block 기반 source/WYSIWYG/frontend 구조 통일

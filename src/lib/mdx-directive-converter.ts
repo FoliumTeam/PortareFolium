@@ -2,8 +2,8 @@
  * JSX ↔ MDX directive 양방향 변환
  *
  * Supabase에는 표준 MDX(JSX) 형식 저장, MDXEditor에는 remark-directive 형식 사용.
- * - JSX: <YouTube id="x" />, <ColoredTable columns="..." rows="..." />
- * - MDX(Editor): ::youtube[]{id="x"}, ::colored-table[]{columns="..." rows="..."}
+ * - JSX: <YouTube id="x" />, <ColoredTable columns="..." rows="..." />, <ImageGroup layout="stack" images='["..."]' />
+ * - MDX(Editor): ::youtube[]{id="x"}, ::colored-table[]{columns="..." rows="..."}, ::image-group[]{layout="stack" images='["..."]'}
  */
 
 /** JSX → MDX Directives (에디터 로드 시) */
@@ -55,6 +55,27 @@ export function jsxToDirective(content: string): string {
             return `::colored-table[]{${parts.join(" ")}}`;
         }
     );
+
+    // <ImageGroup ... /> → ::image-group[]{layout="..." images='[...]'}
+    out = out.replace(/<ImageGroup\s+([\s\S]*?)\s*\/>/g, (_, attrs) => {
+        const regex =
+            /(\w+)\s*=\s*(?:\{'((?:[^'\\]|\\.)*)'\}|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
+        let layout = "stack";
+        let images = "[]";
+        let match: RegExpExecArray | null;
+
+        while ((match = regex.exec(attrs)) !== null) {
+            const key = match[1];
+            const value = (match[2] ?? match[3] ?? match[4] ?? "")
+                .replace(/\\'/g, "'")
+                .replace(/\\([\[\]])/g, "$1");
+
+            if (key === "layout" && value) layout = value;
+            if (key === "images" && value) images = value;
+        }
+
+        return `::image-group[]{layout="${layout}" images='${images.replace(/'/g, "\\'")}'}`;
+    });
 
     // <Accordion title="X">...</Accordion> → :::accordion[X]\n...\n:::
     out = out.replace(
@@ -143,6 +164,24 @@ export function directiveToJsx(content: string): string {
             return `<ColoredTable ${parts.join(" ")} />`;
         }
     );
+
+    // ::image-group[]{layout="..." images='[...]'} → <ImageGroup ... />
+    out = out.replace(/::image-group(?:\[\])?\{([^}]*)\}/g, (_, attrs) => {
+        const regex = /(\w+)=(['"])([\s\S]*?)\2(?=\s+\w+=|$)/g;
+        let layout = "stack";
+        let images = "[]";
+        let match: RegExpExecArray | null;
+
+        while ((match = regex.exec(attrs)) !== null) {
+            const key = match[1];
+            const value = match[3].replace(/\\"/g, '"').replace(/&#x22;/g, '"');
+
+            if (key === "layout" && value) layout = value;
+            if (key === "images" && value) images = value;
+        }
+
+        return `<ImageGroup layout="${layout}" images='${images.replace(/'/g, "\\'")}' />`;
+    });
 
     // :::accordion[X]\n...\n::: → <Accordion title={'X'}>...</Accordion>
     out = out.replace(

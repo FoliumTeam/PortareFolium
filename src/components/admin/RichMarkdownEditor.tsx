@@ -33,13 +33,21 @@ import {
     AccordionNode,
     accordionDirectiveToHtml,
 } from "@/extensions/AccordionNode";
+import {
+    ImageGroupNode,
+    imageGroupDirectiveToHtml,
+} from "@/extensions/ImageGroupNode";
 import { jsxToDirective, directiveToJsx } from "@/lib/mdx-directive-converter";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import {
     ImageDropPaste,
     bareImageUrlsToMarkdown,
 } from "@/extensions/ImageDropPaste";
+import { uploadImage } from "@/lib/image-upload";
+import type { ImageGroupLayout } from "@/components/ImageGroup";
 import EditorToolbar from "@/components/admin/EditorToolbar";
+import ImageLayoutModal from "@/components/admin/ImageLayoutModal";
+import type { MultiImageLayout } from "@/components/admin/ImageLayoutModal";
 import TiptapImageUpload from "@/components/admin/TiptapImageUpload";
 
 interface RichMarkdownEditorProps {
@@ -54,6 +62,22 @@ interface RichMarkdownEditorProps {
     onSetThumbnail?: (url: string) => void;
     // Trigger 1 — 본문에서 image 노드가 제거되면 호출 (1초 debounce, coalesced URL 배열)
     onImagesRemoved?: (urls: string[]) => void;
+}
+
+type PendingMultiImageInsert = {
+    files: File[];
+    position: number;
+};
+
+// directive → HTML 전처리
+function preprocessDirectiveContent(content: string): string {
+    return accordionDirectiveToHtml(
+        latexDirectiveToHtml(
+            imageGroupDirectiveToHtml(
+                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(content))
+            )
+        )
+    );
 }
 
 export default function RichMarkdownEditor({
@@ -72,6 +96,8 @@ export default function RichMarkdownEditor({
 
     // 이미지 업로드 모달 상태
     const [imageUploadOpen, setImageUploadOpen] = useState(false);
+    const [pendingMultiImageInsert, setPendingMultiImageInsert] =
+        useState<PendingMultiImageInsert | null>(null);
 
     // source 편집 모드
     const [sourceMode, setSourceMode] = useState(false);
@@ -129,13 +155,8 @@ export default function RichMarkdownEditor({
         // bare image URL → ![](url) markdown 변환 (paste된 URL이 image로 렌더링되도록)
         const normalized = bareImageUrlsToMarkdown(sourceText);
         const jsxContent = directiveToJsx(normalized);
-        // directive → HTML 전처리 (YoutubeEmbed, ColoredTableNode parseHTML 호환)
         const directives = jsxToDirective(jsxContent);
-        const preprocessed = accordionDirectiveToHtml(
-            latexDirectiveToHtml(
-                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(directives))
-            )
-        );
+        const preprocessed = preprocessDirectiveContent(directives);
         onChange(jsxContent);
         // setContent를 useEffect로 defer — React 렌더 완료 후 실행 (flushSync 충돌 방지)
         pendingContent.current = preprocessed;
@@ -155,6 +176,14 @@ export default function RichMarkdownEditor({
     // folderPath 최신값 ref (ImageDropPaste extension closure)
     const folderPathRef = useRef(folderPath);
     folderPathRef.current = folderPath;
+
+    // multi-image layout modal 오픈
+    const handleOpenMultiImageLayout = useCallback(
+        (files: File[], position: number) => {
+            setPendingMultiImageInsert({ files, position });
+        },
+        []
+    );
 
     // Trigger 1 image-removal 추적 + 1000ms global debounce
     const onImagesRemovedRef = useRef(onImagesRemoved);
@@ -177,6 +206,14 @@ export default function RichMarkdownEditor({
                 typeof node.attrs.src === "string"
             ) {
                 srcs.add(node.attrs.src);
+            }
+            if (
+                node.type.name === "imageGroup" &&
+                Array.isArray(node.attrs.images)
+            ) {
+                node.attrs.images.forEach((image: unknown) => {
+                    if (typeof image === "string") srcs.add(image);
+                });
             }
         });
         return srcs;
@@ -266,13 +303,8 @@ export default function RichMarkdownEditor({
             }
         }
         // JSX → directive 변환 후 Tiptap에 로드 (JSX를 그대로 넘기면 FoliumTable 등이 소실됨)
-        // directive → HTML 변환 (YoutubeEmbed, ColoredTableNode parseHTML 호환)
         const directives = jsxToDirective(value);
-        return accordionDirectiveToHtml(
-            latexDirectiveToHtml(
-                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(directives))
-            )
-        );
+        return preprocessDirectiveContent(directives);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -292,12 +324,20 @@ export default function RichMarkdownEditor({
             ColoredTableNode,
             LatexNode,
             AccordionNode,
+            ImageGroupNode.configure({
+                hasThumbnailAction: () => Boolean(onSetThumbnailRef.current),
+                onSetThumbnail: (url) => {
+                    onSetThumbnailRef.current?.(url);
+                    toast.success("썸네일로 설정됨");
+                },
+            }),
             Placeholder.configure({
                 placeholder: placeholder ?? "Start writing...",
             }),
             ColoredTableExtension.configure({ resizable: true }),
             ImageDropPaste.configure({
                 getFolderPath: () => folderPathRef.current,
+                onOpenMultiImageLayout: handleOpenMultiImageLayout,
             }),
         ],
         content: initialContent,
@@ -321,6 +361,56 @@ export default function RichMarkdownEditor({
             }
         },
     });
+
+    // multi-image group 삽입
+    const handleInsertImageGroup = useCallback(
+        async (layout: MultiImageLayout) => {
+            if (!editor || !pendingMultiImageInsert) return;
+            try {
+                const folder = folderPathRef.current;
+                const uploadedImages = await Promise.all(
+                    pendingMultiImageInsert.files.map((file) =>
+                        uploadImage(file, folder)
+                    )
+                );
+
+                if (layout === "individual") {
+                    let position = pendingMultiImageInsert.position;
+
+                    uploadedImages.forEach((src) => {
+                        const node = editor.state.schema.nodes.image.create({
+                            src,
+                        });
+                        const tr = editor.state.tr.insert(position, node);
+                        editor.view.dispatch(tr);
+                        position += node.nodeSize;
+                    });
+                } else {
+                    editor
+                        .chain()
+                        .focus()
+                        .insertContentAt(pendingMultiImageInsert.position, {
+                            type: "imageGroup",
+                            attrs: {
+                                layout: layout as ImageGroupLayout,
+                                images: uploadedImages,
+                            },
+                        })
+                        .run();
+                }
+
+                setPendingMultiImageInsert(null);
+            } catch (error) {
+                console.error(
+                    "[RichMarkdownEditor::handleInsertImageGroup] group insert 실패",
+                    error
+                );
+                toast.error("다중 이미지 삽입 실패");
+                throw error;
+            }
+        },
+        [editor, pendingMultiImageInsert]
+    );
 
     // editor 준비 시 imagesBefore 초기 snapshot
     useEffect(() => {
@@ -553,6 +643,13 @@ export default function RichMarkdownEditor({
                 isOpen={imageUploadOpen}
                 onClose={() => setImageUploadOpen(false)}
                 folderPath={folderPath}
+            />
+
+            <ImageLayoutModal
+                files={pendingMultiImageInsert?.files ?? []}
+                isOpen={pendingMultiImageInsert !== null}
+                onClose={() => setPendingMultiImageInsert(null)}
+                onSubmit={handleInsertImageGroup}
             />
         </>
     );

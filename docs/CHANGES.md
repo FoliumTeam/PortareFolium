@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.21 (2026-04-19)
+
+### feat: multi-image layout modal + ImageGroup block 추가
+
+- `src/components/admin/RichMarkdownEditor.tsx`: multi-image drop/paste 시 layout modal을 먼저 열도록 변경, `개별사진`은 기존처럼 일반 image node 연속 삽입, `슬라이드`만 `imageGroup` block으로 삽입
+- `src/components/admin/ImageLayoutModal.tsx` 신규: `개별사진`, `슬라이드` 2개 레이아웃 선택 modal 추가
+- `src/extensions/ImageDropPaste.ts`, `src/extensions/ImageGroupNode.tsx` 신규: multi-image 전용 modal 트리거와 `::image-group[]{...}` 직렬화/파싱 node 추가, group 내부 각 이미지 hover 액션과 group 전체 삭제 버튼 추가
+- `src/components/ImageGroup.tsx`, `src/lib/markdown.tsx`, `src/lib/mdx-directive-converter.ts`: source/WYSIWYG/frontend가 같은 `ImageGroup` 구조를 공유하도록 통일, slider 이미지 wrapper 카드 스타일 제거
+- `src/__tests__/mdx-directive-converter.test.ts`: `ImageGroup` directive ↔ JSX 변환 및 roundtrip 회귀 테스트 추가
+
 ## v0.12.20 (2026-04-18)
 
 ### fix: multi-image dnd source markdown를 multiline으로 정규화
