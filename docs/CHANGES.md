@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.5 (2026-04-18)
+
+### fix: admin metadata settings modal 가로 overflow 보정
+
+- `src/components/admin/ThumbnailUploadField.tsx`: tablet 이상 가로 row에 `min-w-0` 추가, URL input에도 `min-w-0` 추가 — 긴 썸네일 URL이 modal 본문을 오른쪽으로 밀어내던 문제 완화
+- `src/components/admin/MetadataSheet.tsx`: settings modal `DialogContent`에 `overflow-x-hidden` 추가 — 내부 필드 overflow가 가로 스크롤로 드러나지 않도록 보정
+- `src/components/ui/dialog.tsx`: 존재하지 않는 `sm:max-w-lg`를 `tablet:max-w-lg`로 교체 — 프로젝트 breakpoint 규칙과 공용 Dialog 기본 폭 일치
+
 ## v0.12.4 (2026-04-18)
 
 ### feat: 본문 이미지 lightbox

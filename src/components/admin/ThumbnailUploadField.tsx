@@ -83,7 +83,7 @@ export default function ThumbnailUploadField({
                 </div>
             )}
 
-            <div className="tablet:flex-row flex flex-col gap-2">
+            <div className="tablet:flex-row flex min-w-0 flex-col gap-2">
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -108,7 +108,7 @@ export default function ThumbnailUploadField({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
-                    className="flex-1 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 font-mono text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 font-mono text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
                 />
             </div>
 
