@@ -24,6 +24,7 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import { normalizeJobFieldList } from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -99,7 +100,7 @@ function itemToForm(item: BookItem): BookForm {
         content: item.content,
         rating: item.rating,
         tags: item.tags.join(", "),
-        jobField: item.job_field ?? [],
+        jobField: normalizeJobFieldList(item.job_field),
         published: item.published,
         featured: item.featured,
         order_idx: item.order_idx,

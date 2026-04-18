@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
+import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
     revalidateHome,
     revalidateResume,
@@ -333,7 +334,9 @@ export default function ResumePanel() {
                     activeJfRow?.value &&
                     typeof activeJfRow.value === "string"
                 ) {
-                    setActiveJobField(activeJfRow.value);
+                    setActiveJobField(
+                        normalizeJobFieldValue(activeJfRow.value)
+                    );
                 }
             }
         );

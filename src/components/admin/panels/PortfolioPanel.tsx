@@ -31,6 +31,7 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import { normalizeJobFieldList, normalizeJobFieldValue } from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -130,11 +131,9 @@ function itemToForm(item: PortfolioItem): ItemForm {
         accomplishments: Array.isArray(d.accomplishments)
             ? (d.accomplishments as string[]).join("\n")
             : "",
-        jobField: Array.isArray(d.jobField)
-            ? (d.jobField as string[])
-            : d.jobField
-              ? [d.jobField as string]
-              : [],
+        jobField: normalizeJobFieldList(
+            d.jobField as string | string[] | null | undefined
+        ),
         meta_title: item.meta_title ?? "",
         meta_description: item.meta_description ?? "",
         og_image: item.og_image ?? "",
@@ -261,7 +260,7 @@ export default function PortfolioPanel({
                 .single()
                 .then(({ data }) => {
                     if (data?.value && typeof data.value === "string")
-                        setActiveJobField(data.value);
+                        setActiveJobField(normalizeJobFieldValue(data.value));
                 });
         }
     }, []);
@@ -302,7 +301,9 @@ export default function PortfolioPanel({
         featured: form.featured,
         order_idx: form.order_idx,
         published: form.published,
-        job_field: form.jobField.length ? form.jobField : null,
+        job_field: form.jobField.length
+            ? normalizeJobFieldList(form.jobField)
+            : null,
         data: {
             startDate: form.startDate || undefined,
             endDate: form.endDate || undefined,
@@ -317,7 +318,9 @@ export default function PortfolioPanel({
                       .map((s) => s.trim())
                       .filter(Boolean)
                 : undefined,
-            jobField: form.jobField.length ? form.jobField : undefined,
+            jobField: form.jobField.length
+                ? normalizeJobFieldList(form.jobField)
+                : undefined,
         },
         meta_title: form.meta_title || null,
         meta_description: form.meta_description || null,

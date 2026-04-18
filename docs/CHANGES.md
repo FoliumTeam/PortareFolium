@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.8 (2026-04-18)
+
+### fix: active job field 저장값의 이중 문자열화 제거
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: `site_config.job_field` 저장 시 `JSON.stringify()` 제거 — active job field가 `"game"` 형태로 저장되던 문제 수정
+- `src/lib/job-field.ts`: 저장된 `job_field` 문자열과 배열을 정규화하는 helper 추가
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`, `ResumePanel.tsx`: active job field 및 기존 `job_field` 값을 로드/저장할 때 정규화 적용 — 이미 잘못 저장된 `"game"` 값도 신규 생성 기본값과 재저장 경로에서 `game`으로 보정
+
 ## v0.12.7 (2026-04-18)
 
 ### feat: settings modal thumbnail clear 버튼 추가

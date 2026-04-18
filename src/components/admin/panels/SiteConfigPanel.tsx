@@ -9,6 +9,7 @@ import {
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { browserClient } from "@/lib/supabase";
+import { normalizeJobFieldValue } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -116,7 +117,8 @@ export default function SiteConfigPanel() {
                             );
                         }
                     }
-                    if (row.key === "job_field") setActiveJobField(v as string);
+                    if (row.key === "job_field")
+                        setActiveJobField(normalizeJobFieldValue(v as string));
                     if (row.key === "job_fields")
                         setJobFields(v as JobFieldItem[]);
                     if (row.key === "site_name" && typeof v === "string") {
@@ -181,7 +183,7 @@ export default function SiteConfigPanel() {
                 },
                 {
                     key: "job_field",
-                    value: JSON.stringify(active),
+                    value: active,
                 },
             ],
             { onConflict: "key" }
@@ -474,7 +476,7 @@ export default function SiteConfigPanel() {
         if (!browserClient) return;
         await browserClient
             .from("site_config")
-            .upsert([{ key: "job_field", value: JSON.stringify(id) }], {
+            .upsert([{ key: "job_field", value: id }], {
                 onConflict: "key",
             });
         await revalidateHome();

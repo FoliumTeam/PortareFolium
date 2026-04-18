@@ -28,6 +28,7 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import { normalizeJobFieldList, normalizeJobFieldValue } from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -219,7 +220,7 @@ export default function PostsPanel({
                 .single()
                 .then(({ data }) => {
                     if (data?.value && typeof data.value === "string")
-                        setActiveJobField(data.value);
+                        setActiveJobField(normalizeJobFieldValue(data.value));
                 });
             browserClient
                 .from("site_config")
@@ -279,7 +280,9 @@ export default function PostsPanel({
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-        job_field: form.jobField.length ? form.jobField : null,
+        job_field: form.jobField.length
+            ? normalizeJobFieldList(form.jobField)
+            : null,
         thumbnail: form.thumbnail || null,
         content: form.content,
         published: form.published,
@@ -302,7 +305,7 @@ export default function PostsPanel({
                 .slice(0, 16),
             category: post.category ?? "",
             tags: post.tags.join(", "),
-            jobField: Array.isArray(jf) ? jf : jf ? [jf] : [],
+            jobField: normalizeJobFieldList(jf),
             thumbnail: post.thumbnail ?? "",
             content: post.content,
             published: post.published,
