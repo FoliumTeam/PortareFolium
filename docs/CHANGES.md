@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.12.7 (2026-04-18)
+
+### feat: settings modal thumbnail clear 버튼 추가
+
+- `src/components/admin/ThumbnailUploadField.tsx`: 썸네일 값이 있을 때 `삭제` 버튼 표시, 클릭 시 `onChange("")`로 thumbnail field 즉시 비움
+
 ## v0.12.6 (2026-04-18)
 
 ### fix: metadata settings modal 본문 clipping 보정

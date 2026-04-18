@@ -103,6 +103,16 @@ export default function ThumbnailUploadField({
                 >
                     {uploading ? "업로드 중..." : "파일 선택"}
                 </label>
+                {value && (
+                    <button
+                        type="button"
+                        onClick={() => onChange("")}
+                        disabled={uploading}
+                        className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        삭제
+                    </button>
+                )}
                 <input
                     type="text"
                     value={value}
