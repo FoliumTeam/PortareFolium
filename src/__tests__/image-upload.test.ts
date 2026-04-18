@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { toWebPBlob, uploadImage, getStoragePath } from "@/lib/image-upload";
+import {
+    toWebPBlob,
+    uploadImage,
+    getStoragePath,
+    getSidecarPath,
+} from "@/lib/image-upload";
 
 // Mock Supabase Client (getAccessToken에서 세션 토큰 조회용)
 vi.mock("@/lib/supabase", () => {
@@ -91,6 +96,20 @@ describe("이미지 업로드 및 변환 (Image Upload & Conversion)", () => {
         });
     });
 
+    describe("getSidecarPath", () => {
+        it("thumb sidecar path 생성", () => {
+            expect(getSidecarPath("blog/post/abc.webp", "thumb")).toBe(
+                "blog/post/abc.thumb.webp"
+            );
+        });
+
+        it("gif도 poster sidecar path 생성", () => {
+            expect(getSidecarPath("blog/post/abc.gif", "poster")).toBe(
+                "blog/post/abc.poster.webp"
+            );
+        });
+    });
+
     describe("toWebPBlob", () => {
         it("일반 이미지(Blob/File)를 WebP Blob으로 변환", async () => {
             const mockFile = new File(["dummy png block"], "test.png", {
@@ -118,20 +137,31 @@ describe("이미지 업로드 및 변환 (Image Upload & Conversion)", () => {
                         url: "https://pub-xxx.r2.dev/misc/2026/04/mock.webp",
                     }),
             });
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        url: "https://pub-xxx.r2.dev/misc/2026/04/mock.thumb.webp",
+                    }),
+            });
 
             const url = await uploadImage(mockFile);
 
             expect(url).toBe("https://pub-xxx.r2.dev/misc/2026/04/mock.webp");
-            expect(mockFetch).toHaveBeenCalledWith(
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+            expect(mockFetch).toHaveBeenNthCalledWith(
+                1,
                 "/api/upload-image",
                 expect.objectContaining({
                     method: "POST",
                     headers: { Authorization: "Bearer mock-token" },
                 })
             );
+            const secondBody = mockFetch.mock.calls[1]?.[1]?.body as FormData;
+            expect(String(secondBody.get("path"))).toMatch(/\.thumb\.webp$/);
         });
 
-        it("이미 WebP 형식인 파일은 변환 과정을 생략하고 즉시 업로드", async () => {
+        it("이미 WebP 형식인 파일도 thumb sidecar를 함께 업로드", async () => {
             const mockWebpFile = new File(["original webp"], "fast.webp", {
                 type: "image/webp",
             });
@@ -143,12 +173,55 @@ describe("이미지 업로드 및 변환 (Image Upload & Conversion)", () => {
                         url: "https://pub-xxx.r2.dev/misc/2026/04/fast.webp",
                     }),
             });
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        url: "https://pub-xxx.r2.dev/misc/2026/04/fast.thumb.webp",
+                    }),
+            });
 
             const url = await uploadImage(mockWebpFile);
 
             expect(url).toBe("https://pub-xxx.r2.dev/misc/2026/04/fast.webp");
-            // WebP는 변환 생략
-            expect(global.URL.createObjectURL).not.toHaveBeenCalled();
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+        });
+
+        it("gif는 thumb와 poster sidecar를 함께 업로드", async () => {
+            const mockGifFile = new File(["gif bytes"], "anim.gif", {
+                type: "image/gif",
+            });
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        url: "https://pub-xxx.r2.dev/misc/2026/04/anim.gif",
+                    }),
+            });
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        url: "https://pub-xxx.r2.dev/misc/2026/04/anim.thumb.webp",
+                    }),
+            });
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        url: "https://pub-xxx.r2.dev/misc/2026/04/anim.poster.webp",
+                    }),
+            });
+
+            const url = await uploadImage(mockGifFile);
+
+            expect(url).toBe("https://pub-xxx.r2.dev/misc/2026/04/anim.gif");
+            expect(mockFetch).toHaveBeenCalledTimes(3);
+            const secondBody = mockFetch.mock.calls[1]?.[1]?.body as FormData;
+            const thirdBody = mockFetch.mock.calls[2]?.[1]?.body as FormData;
+            expect(String(secondBody.get("path"))).toMatch(/\.thumb\.webp$/);
+            expect(String(thirdBody.get("path"))).toMatch(/\.poster\.webp$/);
         });
 
         it("API 오류 발생 시 예외를 던짐", async () => {

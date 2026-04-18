@@ -73,3 +73,4 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 
 - **v0.12.21**: multi-image layout modal 추가, `개별사진`/`슬라이드` 선택 지원, `ImageGroup` block 기반 source/WYSIWYG/frontend 구조 통일
 - **v0.12.22**: image orphan cleanup 문서 추가, 이미지/이미지 그룹 삭제 시 미리보기 포함 confirm dialog 적용, slider `ImageGroup` hover 버튼 위치 보정
+- **v0.12.23**: lightbox v2 Sub-A~D 반영 — 모바일 swipe, gif `poster.webp`/filmstrip `thumb.webp` sidecar, sidecar cleanup 회귀 테스트, lightbox E2E 시나리오 추가

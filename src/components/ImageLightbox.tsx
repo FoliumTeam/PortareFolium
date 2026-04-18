@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -15,6 +15,140 @@ type ImageLightboxProps = {
 
 const FILMSTRIP_RADIUS = 5;
 const FILMSTRIP_WINDOW = FILMSTRIP_RADIUS * 2 + 1;
+const SWIPE_THRESHOLD = 50;
+
+// filmstrip sidecar path 계산
+function replaceWithSidecar(src: string, suffix: "poster" | "thumb"): string {
+    const url = new URL(src, window.location.origin);
+    const pathname = url.pathname.replace(/\.[^./?#]+$/, `.${suffix}.webp`);
+    url.pathname = pathname;
+    return url.toString();
+}
+
+// gif 판별
+function isGifSource(src: string): boolean {
+    return /\.gif(?:[?#]|$)/i.test(src);
+}
+
+// gif 정적 preview 생성
+async function createStaticGifPreview(src: string): Promise<string | null> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            try {
+                const canvas = document.createElement("canvas");
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                const scale =
+                    Math.max(width, height) > 256
+                        ? 256 / Math.max(width, height)
+                        : 1;
+
+                canvas.width = Math.max(1, Math.round(width * scale));
+                canvas.height = Math.max(1, Math.round(height * scale));
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    resolve(null);
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/webp", 0.75));
+            } catch {
+                resolve(null);
+            }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+}
+
+type FilmstripThumbnailProps = {
+    active: boolean;
+    image: LightboxImage;
+    onSelect: () => void;
+    runtimePreviewCacheRef: React.MutableRefObject<Map<string, string>>;
+};
+
+// filmstrip thumbnail 렌더
+function FilmstripThumbnail({
+    active,
+    image,
+    onSelect,
+    runtimePreviewCacheRef,
+}: FilmstripThumbnailProps) {
+    const candidates = useMemo(() => {
+        const list = [replaceWithSidecar(image.src, "thumb")];
+        if (isGifSource(image.src)) {
+            list.push(replaceWithSidecar(image.src, "poster"));
+        }
+        return list;
+    }, [image.src]);
+    const [candidateIndex, setCandidateIndex] = useState(0);
+    const [thumbSrc, setThumbSrc] = useState(() => {
+        const cached = runtimePreviewCacheRef.current.get(image.src);
+        return cached ?? candidates[0] ?? image.src;
+    });
+
+    useEffect(() => {
+        const cached = runtimePreviewCacheRef.current.get(image.src);
+        setCandidateIndex(0);
+        setThumbSrc(cached ?? candidates[0] ?? image.src);
+    }, [candidates, image.src, runtimePreviewCacheRef]);
+
+    const handleError = useCallback(async () => {
+        const nextIndex = candidateIndex + 1;
+        if (nextIndex < candidates.length) {
+            setCandidateIndex(nextIndex);
+            setThumbSrc(candidates[nextIndex]);
+            return;
+        }
+
+        if (isGifSource(image.src)) {
+            const cached = runtimePreviewCacheRef.current.get(image.src);
+            if (cached) {
+                setThumbSrc(cached);
+                return;
+            }
+
+            const generated = await createStaticGifPreview(image.src);
+            if (generated) {
+                runtimePreviewCacheRef.current.set(image.src, generated);
+                setThumbSrc(generated);
+                return;
+            }
+        }
+
+        setThumbSrc(image.src);
+    }, [candidateIndex, candidates, image.src, runtimePreviewCacheRef]);
+
+    return (
+        <button
+            type="button"
+            aria-label="filmstrip 이미지로 이동"
+            aria-current={active ? "true" : undefined}
+            onClick={onSelect}
+            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-all ${
+                active
+                    ? "scale-110 border-(--color-accent)"
+                    : "border-white/20 opacity-60 hover:opacity-100"
+            }`}
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                src={thumbSrc}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                onError={() => {
+                    void handleError();
+                }}
+                className="h-full w-full object-cover"
+            />
+        </button>
+    );
+}
 
 // 본문 이미지 lightbox — contentSelector 하위 img 스캔 후 click wiring
 export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
@@ -22,6 +156,8 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [fullLoaded, setFullLoaded] = useState(false);
     const mountedRef = useRef(false);
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const runtimePreviewCacheRef = useRef(new Map<string, string>());
 
     // 본문 img 스캔 + 각 img에 click handler 부착
     const scanImages = useCallback(() => {
@@ -191,6 +327,37 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             <div
                 className="flex flex-1 items-center justify-center px-16 py-8"
                 onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    if (!touch) return;
+                    touchStartRef.current = {
+                        x: touch.clientX,
+                        y: touch.clientY,
+                    };
+                }}
+                onTouchEnd={(e) => {
+                    const touch = e.changedTouches[0];
+                    const start = touchStartRef.current;
+                    touchStartRef.current = null;
+                    if (!touch || !start) return;
+
+                    const deltaX = touch.clientX - start.x;
+                    const deltaY = touch.clientY - start.y;
+
+                    if (
+                        Math.abs(deltaX) < SWIPE_THRESHOLD ||
+                        Math.abs(deltaX) <= Math.abs(deltaY)
+                    ) {
+                        return;
+                    }
+
+                    if (deltaX > 0) {
+                        goPrev();
+                        return;
+                    }
+
+                    goNext();
+                }}
             >
                 <div className="relative flex max-h-[80vh] max-w-[80vw] items-center justify-center">
                     {/* blur-up 배경 */}
@@ -241,24 +408,16 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                         const realIdx = winStart + i;
                         const active = realIdx === openIndex;
                         return (
-                            <button
+                            <FilmstripThumbnail
                                 key={realIdx}
-                                type="button"
-                                aria-label={`${realIdx + 1}번 이미지로 이동`}
-                                aria-current={active ? "true" : undefined}
-                                onClick={() => {
+                                image={img}
+                                active={active}
+                                runtimePreviewCacheRef={runtimePreviewCacheRef}
+                                onSelect={() => {
                                     setOpenIndex(realIdx);
                                     setFullLoaded(false);
                                 }}
-                                className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-all ${active ? "scale-110 border-(--color-accent)" : "border-white/20 opacity-60 hover:opacity-100"}`}
-                            >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={img.src}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                />
-                            </button>
+                            />
                         );
                     })}
                 </div>

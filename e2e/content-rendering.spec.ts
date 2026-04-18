@@ -44,6 +44,53 @@ test.describe("콘텐츠 렌더링", () => {
         }
     });
 
+    test("lightbox open/close", async ({ page }) => {
+        test.skip(!blogSlug, "블로그 글 없음");
+        await page.goto(blogSlug!);
+        const images = page.locator(".post-content img");
+        const count = await images.count();
+        if (count === 0) return;
+
+        await images.first().click();
+        const dialog = page.locator(
+            '[role="dialog"][aria-label="이미지 확대 보기"]'
+        );
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText(`1 / ${count}`)).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+    });
+
+    test("lightbox navigation + filmstrip", async ({ page }) => {
+        test.skip(!blogSlug, "블로그 글 없음");
+        await page.goto(blogSlug!);
+        const images = page.locator(".post-content img");
+        const count = await images.count();
+        if (count < 2) return;
+
+        await images.first().click();
+        const dialog = page.locator(
+            '[role="dialog"][aria-label="이미지 확대 보기"]'
+        );
+        await expect(dialog).toBeVisible();
+
+        await dialog.getByRole("button", { name: "다음 이미지" }).click();
+        await expect(dialog.getByText(`2 / ${count}`)).toBeVisible();
+
+        const filmstripButtons = dialog.getByRole("button", {
+            name: "filmstrip 이미지로 이동",
+        });
+        const filmstripCount = await filmstripButtons.count();
+        expect(filmstripCount).toBeGreaterThan(0);
+
+        const targetIndex = Math.min(1, filmstripCount - 1);
+        await filmstripButtons.nth(targetIndex).click();
+        await expect(dialog).toBeVisible();
+
+        await dialog.click({ position: { x: 10, y: 10 } });
+        await expect(dialog).toBeHidden();
+    });
+
     test("목차 (TOC) 생성", async ({ page }) => {
         test.skip(!blogSlug, "블로그 글 없음");
         await page.goto(blogSlug!);

@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.23 (2026-04-19)
+
+### feat: lightbox v2 Sub-A~D 추가
+
+- `src/components/ImageLightbox.tsx`: 모바일 swipe navigation 추가, filmstrip thumbnail이 `{base}.thumb.webp`를 우선 사용하고 gif는 `{base}.poster.webp`와 runtime static preview로 fallback 하도록 확장
+- `src/lib/image-upload.ts`: 업로드 시 `thumb.webp` sidecar를 병행 생성하고 gif는 `poster.webp` sidecar도 추가 생성
+- `src/__tests__/image-upload.test.ts`, `src/__tests__/orphan-cleanup.test.ts`: sidecar 업로드 및 `ImageGroup`/sidecar cleanup 회귀 테스트 추가
+- `e2e/content-rendering.spec.ts`: lightbox open/close, next navigation, filmstrip 이동 시나리오 추가
+
 ## v0.12.22 (2026-04-19)
 
 ### feat: image orphan cleanup 문서화 + 이미지 삭제 confirm dialog 추가

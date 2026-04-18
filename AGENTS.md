@@ -281,6 +281,7 @@ src/
 │   ├── GithubToc.tsx                   # GitHub 스타일 목차
 │   ├── MermaidRenderer.tsx             # Mermaid 다이어그램 렌더러
 │   ├── ImageLightbox.tsx               # 본문 이미지 lightbox (blog/portfolio slug 전용, portal + DOM scan)
+│   ├── ImageGroup.tsx                  # 본문/에디터 공용 다중 이미지 렌더러 (stack/slider)
 │   ├── MarkdownImage.tsx               # MDX img 대체 (SSR 호환 — plain img, lazy loading)
 │   ├── ColoredTable.tsx                # 커스텀 테이블 컴포넌트
 │   ├── ColoredTableColorSync.tsx       # 테이블 컬러 테마 동기화
@@ -303,6 +304,8 @@ src/
 │       ├── CommandPalette.tsx          # Cmd+K 커맨드 팔레트
 │       ├── LoginForm.tsx               # returnUrl 지원
 │       ├── RichMarkdownEditor.tsx      # Tiptap 기반 에디터
+│       ├── ImageLayoutModal.tsx        # 다중 이미지 레이아웃 선택 모달
+│       ├── ImageDeleteConfirmDialog.tsx # 이미지/이미지 그룹 삭제 확인 모달
 │       ├── TiptapImageUpload.tsx       # 이미지 업로드 모달
 │       ├── LatexEditorModal.tsx        # KaTeX 수식 편집 모달
 │       ├── ImageUploader.tsx
@@ -343,7 +346,7 @@ src/
 │   ├── agent-token.ts                  # Agent 토큰 검증 유틸
 │   ├── toc.ts                          # 목차 생성
 │   ├── r2.ts                           # Cloudflare R2 S3 호환 client (Vercel 서버 런타임)
-│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + 에셋 이전/삭제 + deleteStorageKeys
+│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + thumb/poster sidecar 생성 + 에셋 이전/삭제 + deleteStorageKeys
 │   ├── orphan-cleanup.ts               # content/thumbnail/snapshot 참조 union 기반 true-orphan R2 key 삭제 (sidecar-aware)
 │   ├── snapshot-cleanup.ts             # editor_states snapshot 조회 + slug rename 시 URL 재작성 + editor open 시 안전망 cleanup
 │   ├── gantt-chart.ts                  # Gantt Chart CSV 파싱 + timeline 빌드 + bar/color scheme 정의
@@ -395,6 +398,7 @@ supabase/
 └── migration-whole.sql                 # 구버전 DB → 현재 스키마 일괄 업데이트
 public/                                 # 정적 에셋 (favicon 등)
 docs/CHANGES.md                         # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
+docs/IMAGE_ORPHAN_CLEANUP.md            # true-orphan cleanup 트리거/판정 규칙 문서
 docs/TEST.md                            # 테스트 전략 (수동 체크리스트 + E2E 구조 + 확장 기준)
 docs/SEO.md                             # Google + NAVER 검색 엔진 등록 가이드
 ```

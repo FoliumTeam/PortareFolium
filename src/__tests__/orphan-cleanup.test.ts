@@ -96,6 +96,14 @@ describe("extractKeysFromText", () => {
     it("returns empty for empty text", () => {
         expect(extractKeysFromText("", "blog/my-post")).toEqual([]);
     });
+
+    it("extracts imageGroup images array URLs", () => {
+        const text = `<ImageGroup layout="slider" images='["https://pub-xxx.r2.dev/blog/my-post/a.webp","https://pub-xxx.r2.dev/blog/my-post/b.thumb.webp"]' />`;
+        expect(extractKeysFromText(text, "blog/my-post")).toEqual([
+            "blog/my-post/a.webp",
+            "blog/my-post/b.thumb.webp",
+        ]);
+    });
 });
 
 describe("cleanupTrueOrphans", () => {
@@ -148,6 +156,7 @@ describe("cleanupTrueOrphans", () => {
         mockedList.mockResolvedValue([
             "blog/my-post/orphan.webp",
             "blog/my-post/orphan.thumb.webp",
+            "blog/my-post/orphan.poster.webp",
             "blog/my-post/keep.webp",
         ]);
         await cleanupTrueOrphans({
@@ -157,7 +166,21 @@ describe("cleanupTrueOrphans", () => {
         expect(mockedDelete).toHaveBeenCalledWith([
             "blog/my-post/orphan.webp",
             "blog/my-post/orphan.thumb.webp",
+            "blog/my-post/orphan.poster.webp",
         ]);
+    });
+
+    it("preserves gif sidecars when gif base is referenced", async () => {
+        mockedList.mockResolvedValue([
+            "blog/my-post/anim.gif",
+            "blog/my-post/anim.thumb.webp",
+            "blog/my-post/anim.poster.webp",
+        ]);
+        await cleanupTrueOrphans({
+            ...baseArgs,
+            currentContent: "https://r2.dev/blog/my-post/anim.gif",
+        });
+        expect(mockedDelete).not.toHaveBeenCalled();
     });
 
     it("limits scope to candidates filter", async () => {
