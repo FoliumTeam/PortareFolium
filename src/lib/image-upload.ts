@@ -13,7 +13,8 @@ async function getAccessToken(): Promise<string> {
 // 이미지 파일/Blob → WebP Blob 변환
 export async function toWebPBlob(
     source: File | Blob,
-    quality = 0.85
+    quality = 0.85,
+    maxEdge?: number
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -25,15 +26,21 @@ export async function toWebPBlob(
 
         img.onload = () => {
             const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            const scale =
+                maxEdge && Math.max(width, height) > maxEdge
+                    ? maxEdge / Math.max(width, height)
+                    : 1;
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
             const ctx = canvas.getContext("2d");
             if (!ctx) {
                 cleanup();
                 reject(new Error("Canvas context unavailable"));
                 return;
             }
-            ctx.drawImage(img, 0, 0);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(
                 (blob) => {
                     cleanup();
@@ -67,21 +74,22 @@ export function getStoragePath(
     return `misc/${y}/${m}/${uuid}.${ext}`;
 }
 
-// R2에 이미지 업로드, public URL 반환
-export async function uploadImage(
-    file: File,
-    folderPath?: string
-): Promise<string> {
-    const isGif =
-        file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
-    const blob =
-        file.type === "image/webp" || isGif ? file : await toWebPBlob(file);
-    const ext = isGif ? "gif" : "webp";
-    const path = getStoragePath(folderPath, ext);
+// sidecar path 생성
+export function getSidecarPath(
+    path: string,
+    suffix: "poster" | "thumb"
+): string {
+    return path.replace(/\.[^./]+$/, `.${suffix}.webp`);
+}
 
-    const token = await getAccessToken();
+// R2 업로드 요청
+async function uploadBlobToPath(
+    blob: Blob,
+    path: string,
+    token: string
+): Promise<string> {
     const formData = new FormData();
-    formData.append("file", blob, `upload.${ext}`);
+    formData.append("file", blob, path.split("/").pop() ?? "upload.webp");
     formData.append("path", path);
 
     const res = await fetch("/api/upload-image", {
@@ -96,6 +104,53 @@ export async function uploadImage(
     }
 
     const { url } = await res.json();
+    return url;
+}
+
+// R2에 이미지 업로드, public URL 반환
+export async function uploadImage(
+    file: File,
+    folderPath?: string
+): Promise<string> {
+    const isGif =
+        file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
+    const blob =
+        file.type === "image/webp" || isGif ? file : await toWebPBlob(file);
+    const ext = isGif ? "gif" : "webp";
+    const path = getStoragePath(folderPath, ext);
+
+    const token = await getAccessToken();
+    const url = await uploadBlobToPath(blob, path, token);
+
+    const sidecarJobs: Promise<unknown>[] = [];
+    sidecarJobs.push(
+        toWebPBlob(file, 0.75, 256).then((thumbBlob) =>
+            uploadBlobToPath(thumbBlob, getSidecarPath(path, "thumb"), token)
+        )
+    );
+
+    if (isGif) {
+        sidecarJobs.push(
+            toWebPBlob(file, 0.8).then((posterBlob) =>
+                uploadBlobToPath(
+                    posterBlob,
+                    getSidecarPath(path, "poster"),
+                    token
+                )
+            )
+        );
+    }
+
+    const results = await Promise.allSettled(sidecarJobs);
+    results.forEach((result) => {
+        if (result.status === "rejected") {
+            console.error(
+                "[image-upload::uploadImage] sidecar 업로드 실패",
+                result.reason
+            );
+        }
+    });
+
     return url;
 }
 
@@ -145,6 +200,20 @@ export async function deleteStorageFolder(folder: string): Promise<void> {
             Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ action: "delete", prefix: folder }),
+    });
+}
+
+// R2 특정 key 목록 삭제
+export async function deleteStorageKeys(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    const token = await getAccessToken();
+    await fetch("/api/storage-ops", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: "delete-keys", keys }),
     });
 }
 

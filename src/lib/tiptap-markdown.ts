@@ -5,12 +5,20 @@ import type { Editor } from "@tiptap/react";
 export function getCleanMarkdown(editor: Editor): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = (editor.storage as any).markdown.getMarkdown() as string;
-    return unescapeJsxBrackets(raw);
+    return normalizeAdjacentImageMarkdown(unescapeJsxBrackets(raw));
 }
 
 // JSX 태그 내부의 \[, \] 만 원상 복원. tag 바깥 markdown link escape는 미건드림
 export function unescapeJsxBrackets(markdown: string): string {
     return markdown.replace(/<[A-Z]\w*[\s\S]*?\/?>/g, (tag) =>
         tag.replace(/\\([\[\]])/g, "$1")
+    );
+}
+
+// 연속 image markdown 줄바꿈 정규화
+export function normalizeAdjacentImageMarkdown(markdown: string): string {
+    return markdown.replace(
+        /(!\[[^\]]*]\([^)\n]+\))(?=!\[[^\]]*]\([^)\n]+\))/g,
+        "$1\n\n"
     );
 }

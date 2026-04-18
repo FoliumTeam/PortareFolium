@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
 import { browserClient } from "@/lib/supabase";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
+import { triggerSnapshotCleanup } from "@/lib/snapshot-cleanup";
 import StatePreviewModal from "@/components/admin/StatePreviewModal";
 
 interface EditorSnapshot {
@@ -25,6 +26,9 @@ interface EditorStatePreservationProps {
     onClose: () => void;
     // total = 전체 snapshot 수, baseline = 6 (Initial 1 + Auto max 5)
     onSnapshotCountChange?: (total: number, baseline: number) => void;
+    // Trigger 2 — snapshot 삭제 시 true-orphan cleanup 호출용 (post/portfolio만)
+    folderPath?: string;
+    thumbnail?: string;
 }
 
 const MAX_AUTO_SNAPSHOTS = 5;
@@ -167,7 +171,28 @@ export default function EditorStatePreservation({
     isOpen,
     onClose,
     onSnapshotCountChange,
+    folderPath,
+    thumbnail,
 }: EditorStatePreservationProps) {
+    // currentContent / thumbnail 최신 ref — async cleanup 호출 시 stale 회피
+    const contentRef = useRef(currentContent);
+    contentRef.current = currentContent;
+    const thumbRef = useRef(thumbnail ?? "");
+    thumbRef.current = thumbnail ?? "";
+
+    // Trigger 2 — snapshot 삭제 후 true-orphan cleanup
+    // post/portfolio만 적용 (book entity는 scope 외)
+    const fireCleanup = useCallback(() => {
+        if (!folderPath) return;
+        if (entityType !== "post" && entityType !== "portfolio") return;
+        triggerSnapshotCleanup({
+            folderPath,
+            entityType,
+            entitySlug,
+            currentContent: contentRef.current,
+            thumbnail: thumbRef.current,
+        });
+    }, [folderPath, entityType, entitySlug]);
     const [snapshots, setSnapshots] = useState<EditorSnapshot[]>([]);
     const [previewSnapshot, setPreviewSnapshot] =
         useState<EditorSnapshot | null>(null);
@@ -195,6 +220,8 @@ export default function EditorStatePreservation({
             }
             const loaded = await loadSnapshots(entityType, entitySlug);
             setSnapshots(loaded);
+            // cleanupExpired/upsertInitial이 snapshot을 지웠을 수 있으므로 cleanup
+            fireCleanup();
         };
         init();
     }, [editor, entityType, entitySlug, currentContent]);
@@ -217,6 +244,8 @@ export default function EditorStatePreservation({
             if (snap) {
                 const loaded = await loadSnapshots(entityType, entitySlug);
                 setSnapshots(loaded);
+                // evictOldAutoSaves가 FIFO eviction한 경우 cleanup
+                fireCleanup();
             }
         }, AUTOSAVE_INTERVAL);
 
@@ -262,8 +291,9 @@ export default function EditorStatePreservation({
             await deleteSnapshotById(id);
             const loaded = await loadSnapshots(entityType, entitySlug);
             setSnapshots(loaded);
+            fireCleanup();
         },
-        [entityType, entitySlug]
+        [entityType, entitySlug, fireCleanup]
     );
 
     // 섹션 전체 삭제 (Auto-save 또는 Bookmark)
@@ -275,8 +305,9 @@ export default function EditorStatePreservation({
             }
             const loaded = await loadSnapshots(entityType, entitySlug);
             setSnapshots(loaded);
+            fireCleanup();
         },
-        [snapshots, entityType, entitySlug]
+        [snapshots, entityType, entitySlug, fireCleanup]
     );
 
     // badge label 표시 텍스트
@@ -396,7 +427,7 @@ export default function EditorStatePreservation({
         <>
             {/* 모달 backdrop */}
             <div
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+                className="fixed inset-0 z-100 flex items-center justify-center bg-black/50"
                 onClick={onClose}
             >
                 <div

@@ -25,6 +25,10 @@ import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 import {
+    getInitialJobFieldSelection,
+    normalizeJobFieldList,
+} from "@/lib/job-field";
+import {
     JobFieldBadges,
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
@@ -99,7 +103,7 @@ function itemToForm(item: BookItem): BookForm {
         content: item.content,
         rating: item.rating,
         tags: item.tags.join(", "),
-        jobField: item.job_field ?? [],
+        jobField: normalizeJobFieldList(item.job_field),
         published: item.published,
         featured: item.featured,
         order_idx: item.order_idx,
@@ -231,7 +235,7 @@ export default function BooksSubPanel({
         const base: BookForm = {
             ...EMPTY_FORM,
             order_idx: books.length,
-            jobField: activeJobField ? [activeJobField] : [],
+            jobField: getInitialJobFieldSelection(activeJobField),
         };
         initialFormRef.current = base;
         setForm(base);

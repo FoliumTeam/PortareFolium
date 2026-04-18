@@ -10,6 +10,7 @@ import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import GithubToc from "@/components/GithubToc";
 import MermaidRenderer from "@/components/MermaidRenderer";
+import ImageLightbox from "@/components/ImageLightbox";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -279,6 +280,7 @@ export default async function PortfolioDetailPage({
                 selector=".portfolio-markdoc-body"
                 label="portfolio slug"
             />
+            <ImageLightbox contentSelector=".portfolio-markdoc-body" />
         </div>
     );
 }

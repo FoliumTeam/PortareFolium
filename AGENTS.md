@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     - **Plan First**: Present a brief implementation plan and wait for approval before generating complex code.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
 - **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `USER_TASKS.md` for the user to follow.
+- **Discord Message Acknowledgement**: When a user message arrives via the Discord channel (messages wrapped in `<channel source="plugin:discord:discord" ...>`), send a brief acknowledgement reply (e.g., "확인했습니다 — 작업 시작합니다.") through the Discord `reply` tool before starting the task. The ack should be a single short line so the user sees the message was received; then proceed with the work and send the actual result as a follow-up reply.
 
 ### Coding Rules
 
@@ -52,14 +53,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing Gate
 
-- **Commit gate (느슨)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook(husky + lint-staged)이 이미 이 수준을 강제함. 빠른 iteration을 위해 E2E는 요구하지 않는다.
-- **Push gate (엄격)**: `git push` 전에는 반드시 **전체 크로스 브라우저 E2E**를 통과시켜야 한다.
-    - 최소 요구: `pnpm exec playwright test --project=chromium --project=firefox --project=webkit --project=authenticated-chromium --project=authenticated-firefox --project=authenticated-webkit` 0 failure. 3개 엔진(Chromium/Firefox/WebKit) 모두 통과 필수 — 단일 엔진만 실행하여 push하지 말 것.
-    - 변경 범위가 admin / resume / portfolio / blog 등 특정 도메인에 한정되면 해당 spec만 집중 실행 가능하지만, 3개 엔진 모두에서 한 건이라도 실패하면 push 금지.
-    - `test.skip()`이 늘어나면 원인을 기록 (CI DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
-    - CI가 fail하면 push 후에라도 즉시 재현 → 수정 → push 루프를 실행한다.
-- **예외**: `docs`-only 또는 파일 삭제만 있는 push에서는 E2E 스킵 허용. 그 외 코드/설정 변경을 포함한 push는 전부 엄격 모드.
-- **Push 중 regression 발견 시**: origin 반영 전 로컬에서 고칠 것. `--no-verify`로 hook/검증을 건너뛰지 않는다.
+- **Commit gate (로컬)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook(husky + lint-staged)이 이미 이 수준을 강제함.
+- **Push gate (CI-driven)**: 로컬 E2E는 필수 아님. `git push` 이후 GitHub Actions (`.github/workflows/e2e.yml`)가 크로스 브라우저 Playwright E2E를 자동 실행. CI fail 시 follow-up fix commit으로 대응 — `--no-verify`로 hook 우회 금지.
+- `test.skip()`이 늘어나면 원인을 기록 (CI DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
 
 ### Commit Conventions
 
@@ -90,6 +86,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **PR 제목 형식**: `<source> → <target>: <설명>` (예: `feature/blog-search → main: Blog 검색 모달 + 키보드 단축키`). 70자 이하.
 - **Test plan checklist**는 항상 채울 것 (`pnpm build`, `pnpm test`, E2E 등 해당 변경에 맞춰 조정).
 - **Claude 협력 문구 (Co-Authored-By 등) 절대 포함 금지**.
+- **HARD: `gh pr create` body 전달 시 `--body "$(cat ...)"` 또는 HEREDOC 절대 사용 금지.** Bash 도구가 파일 내용을 conversation context로 다시 읽어들여 토큰 낭비. 반드시 `--body-file <path>` 옵션 사용:
+    ```bash
+    gh pr create --base main --head <branch> \
+      --title "<title>" \
+      --body-file PR_<branch>.md
+    ```
+    이 규칙은 `gh pr edit --body-file`, `gh issue create --body-file` 등 모든 gh 명령에 동일 적용.
 
 ### Implementation Specifics
 
@@ -277,6 +280,8 @@ src/
 │   ├── TableOfContents.tsx             # 인라인 목차
 │   ├── GithubToc.tsx                   # GitHub 스타일 목차
 │   ├── MermaidRenderer.tsx             # Mermaid 다이어그램 렌더러
+│   ├── ImageLightbox.tsx               # 본문 이미지 lightbox (blog/portfolio slug 전용, portal + DOM scan)
+│   ├── ImageGroup.tsx                  # 본문/에디터 공용 다중 이미지 렌더러 (stack/slider)
 │   ├── MarkdownImage.tsx               # MDX img 대체 (SSR 호환 — plain img, lazy loading)
 │   ├── ColoredTable.tsx                # 커스텀 테이블 컴포넌트
 │   ├── ColoredTableColorSync.tsx       # 테이블 컬러 테마 동기화
@@ -299,6 +304,8 @@ src/
 │       ├── CommandPalette.tsx          # Cmd+K 커맨드 팔레트
 │       ├── LoginForm.tsx               # returnUrl 지원
 │       ├── RichMarkdownEditor.tsx      # Tiptap 기반 에디터
+│       ├── ImageLayoutModal.tsx        # 다중 이미지 레이아웃 선택 모달
+│       ├── ImageDeleteConfirmDialog.tsx # 이미지/이미지 그룹 삭제 확인 모달
 │       ├── TiptapImageUpload.tsx       # 이미지 업로드 모달
 │       ├── LatexEditorModal.tsx        # KaTeX 수식 편집 모달
 │       ├── ImageUploader.tsx
@@ -339,7 +346,9 @@ src/
 │   ├── agent-token.ts                  # Agent 토큰 검증 유틸
 │   ├── toc.ts                          # 목차 생성
 │   ├── r2.ts                           # Cloudflare R2 S3 호환 client (Vercel 서버 런타임)
-│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + 에셋 이전/삭제
+│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + thumb/poster sidecar 생성 + 에셋 이전/삭제 + deleteStorageKeys
+│   ├── orphan-cleanup.ts               # content/thumbnail/snapshot 참조 union 기반 true-orphan R2 key 삭제 (sidecar-aware)
+│   ├── snapshot-cleanup.ts             # editor_states snapshot 조회 + slug rename 시 URL 재작성 + editor open 시 안전망 cleanup
 │   ├── gantt-chart.ts                  # Gantt Chart CSV 파싱 + timeline 빌드 + bar/color scheme 정의
 │   ├── job-field.ts                    # 직군 필드 유틸
 │   ├── mermaid-render.ts               # Mermaid 렌더링
@@ -367,7 +376,9 @@ src/
     ├── mermaid-themes.test.ts
     ├── tailwind-colors.test.ts
     ├── gantt-chart.test.ts
-    └── tiptap-utils.test.ts
+    ├── tiptap-utils.test.ts
+    ├── orphan-cleanup.test.ts
+    └── image-url-conversion.test.ts
 
 e2e/                                    # Playwright E2E 테스트
 ├── auth.setup.ts                       # Supabase 로그인 + storageState 저장
@@ -387,6 +398,7 @@ supabase/
 └── migration-whole.sql                 # 구버전 DB → 현재 스키마 일괄 업데이트
 public/                                 # 정적 에셋 (favicon 등)
 docs/CHANGES.md                         # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
+docs/IMAGE_ORPHAN_CLEANUP.md            # true-orphan cleanup 트리거/판정 규칙 문서
 docs/TEST.md                            # 테스트 전략 (수동 체크리스트 + E2E 구조 + 확장 기준)
 docs/SEO.md                             # Google + NAVER 검색 엔진 등록 가이드
 ```

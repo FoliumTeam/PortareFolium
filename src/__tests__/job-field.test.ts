@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { filterByJobField, matchesJobField } from "@/lib/job-field";
+import {
+    filterByJobField,
+    matchesJobField,
+    normalizeJobFieldValue,
+    normalizeJobFieldList,
+    getInitialJobFieldSelection,
+} from "@/lib/job-field";
 
 // ─────────────────────────────────────────────
 // filterByJobField
@@ -92,5 +98,61 @@ describe("matchesJobField", () => {
 
     it("빈 문자열 jobField이면 false", () => {
         expect(matchesJobField("", "game")).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────
+// normalize / initial selection helpers (v0.12.9)
+// ─────────────────────────────────────────────
+// 잘못 저장된 `"game"` (JSON.stringify 결과) 형태의 값이
+// `game`으로 정규화되고, 신규 생성 기본값이 `["game"]`이 되는지 검증.
+
+describe("normalizeJobFieldValue", () => {
+    it("이중 문자열화된 값을 원래 문자열로 복원", () => {
+        expect(normalizeJobFieldValue('"game"')).toBe("game");
+    });
+
+    it("정상 문자열은 그대로 반환", () => {
+        expect(normalizeJobFieldValue("game")).toBe("game");
+    });
+
+    it("null/undefined/빈 문자열은 빈 문자열 반환", () => {
+        expect(normalizeJobFieldValue(null)).toBe("");
+        expect(normalizeJobFieldValue(undefined)).toBe("");
+        expect(normalizeJobFieldValue("")).toBe("");
+    });
+});
+
+describe("normalizeJobFieldList", () => {
+    it("배열의 각 원소를 정규화", () => {
+        expect(normalizeJobFieldList(['"game"', "web"])).toEqual([
+            "game",
+            "web",
+        ]);
+    });
+
+    it("단일 문자열을 1-원소 배열로 변환 후 정규화", () => {
+        expect(normalizeJobFieldList('"game"')).toEqual(["game"]);
+    });
+
+    it("null/undefined는 빈 배열", () => {
+        expect(normalizeJobFieldList(null)).toEqual([]);
+        expect(normalizeJobFieldList(undefined)).toEqual([]);
+    });
+});
+
+describe("getInitialJobFieldSelection", () => {
+    it("이중 문자열화된 active 값도 ['game']으로 정규화", () => {
+        expect(getInitialJobFieldSelection('"game"')).toEqual(["game"]);
+    });
+
+    it("정상 active 값은 1-원소 배열로 래핑", () => {
+        expect(getInitialJobFieldSelection("game")).toEqual(["game"]);
+    });
+
+    it("active 값이 비어있으면 빈 배열", () => {
+        expect(getInitialJobFieldSelection(null)).toEqual([]);
+        expect(getInitialJobFieldSelection(undefined)).toEqual([]);
+        expect(getInitialJobFieldSelection("")).toEqual([]);
     });
 });

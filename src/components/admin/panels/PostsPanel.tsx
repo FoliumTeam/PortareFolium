@@ -7,6 +7,15 @@ import {
     deleteStorageFolder,
     replaceImageUrls,
 } from "@/lib/image-upload";
+import {
+    cleanupTrueOrphans,
+    extractKeysFromText,
+    baseKey,
+} from "@/lib/orphan-cleanup";
+import {
+    rewriteSnapshotUrls,
+    maybeCleanupOnOpen,
+} from "@/lib/snapshot-cleanup";
 import { toSlug, uniqueSlug } from "@/lib/slug";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
 import {
@@ -28,6 +37,11 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import {
+    getInitialJobFieldSelection,
+    normalizeJobFieldList,
+    normalizeJobFieldValue,
+} from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -219,7 +233,7 @@ export default function PostsPanel({
                 .single()
                 .then(({ data }) => {
                     if (data?.value && typeof data.value === "string")
-                        setActiveJobField(data.value);
+                        setActiveJobField(normalizeJobFieldValue(data.value));
                 });
             browserClient
                 .from("site_config")
@@ -279,7 +293,9 @@ export default function PostsPanel({
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-        job_field: form.jobField.length ? form.jobField : null,
+        job_field: form.jobField.length
+            ? normalizeJobFieldList(form.jobField)
+            : null,
         thumbnail: form.thumbnail || null,
         content: form.content,
         published: form.published,
@@ -288,8 +304,15 @@ export default function PostsPanel({
         og_image: form.og_image || null,
     });
 
-    // 편집 화면 열기
+    // 편집 화면 열기 — T3 안전망: snapshot 0건이면 full true-orphan cleanup
     const openEdit = (post: Post) => {
+        void maybeCleanupOnOpen("post", post.slug, {
+            folderPath: `blog/${post.slug}`,
+            entityType: "post",
+            entitySlug: post.slug,
+            currentContent: post.content,
+            thumbnail: post.thumbnail ?? "",
+        });
         const jf = post.job_field;
         const f: PostForm = {
             slug: post.slug,
@@ -302,7 +325,7 @@ export default function PostsPanel({
                 .slice(0, 16),
             category: post.category ?? "",
             tags: post.tags.join(", "),
-            jobField: Array.isArray(jf) ? jf : jf ? [jf] : [],
+            jobField: normalizeJobFieldList(jf),
             thumbnail: post.thumbnail ?? "",
             content: post.content,
             published: post.published,
@@ -324,7 +347,7 @@ export default function PostsPanel({
     const openNew = () => {
         const base: PostForm = {
             ...EMPTY_FORM,
-            jobField: activeJobField ? [activeJobField] : [],
+            jobField: getInitialJobFieldSelection(activeJobField),
         };
         initialFormRef.current = base;
         savedSlugRef.current = "";
@@ -344,6 +367,12 @@ export default function PostsPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(`blog/${oldSlug}`, `blog/${newSlug}`);
+            await rewriteSnapshotUrls(
+                "post",
+                oldSlug,
+                `blog/${oldSlug}`,
+                `blog/${newSlug}`
+            );
             const updated = replaceImageUrls(
                 form.content,
                 `blog/${oldSlug}`,
@@ -615,6 +644,29 @@ export default function PostsPanel({
                         onSetThumbnail={(url) =>
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
+                        onImagesRemoved={(urls) => {
+                            const folder = `blog/${form.slug || "untitled"}`;
+                            const keys = urls.flatMap((u) =>
+                                extractKeysFromText(u, folder)
+                            );
+                            if (keys.length === 0) return;
+                            const bases = Array.from(
+                                new Set(keys.map(baseKey))
+                            );
+                            cleanupTrueOrphans({
+                                folderPath: folder,
+                                entityType: "post",
+                                entitySlug: form.slug || "new",
+                                currentContent: form.content,
+                                thumbnail: form.thumbnail,
+                                candidates: bases,
+                            }).catch((e) => {
+                                console.error(
+                                    "[PostsPanel::onImagesRemoved] cleanup 실패",
+                                    e
+                                );
+                            });
+                        }}
                     />
                 </div>
 
@@ -700,6 +752,8 @@ export default function PostsPanel({
                     isOpen={stateModalOpen}
                     onClose={() => setStateModalOpen(false)}
                     onSnapshotCountChange={(total) => setSnapshotCount(total)}
+                    folderPath={`blog/${form.slug || "untitled"}`}
+                    thumbnail={form.thumbnail}
                 />
             </div>
         );

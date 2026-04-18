@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeJobFieldList } from "@/lib/job-field";
 export type JobFieldItem = { id: string; name: string; emoji?: string };
 
 // job field 다중 선택 toggle 버튼 그룹
@@ -12,8 +13,7 @@ export function JobFieldSelector({
     fields: JobFieldItem[];
     onChange: (v: string[]) => void;
 }) {
-    const selected =
-        value == null ? [] : Array.isArray(value) ? value : [value];
+    const selected = normalizeJobFieldList(value);
     return (
         <div className="flex flex-col space-y-1">
             <label className="text-sm font-medium text-(--color-muted)">
@@ -60,7 +60,7 @@ export function JobFieldBadges({
     value: string | string[] | null | undefined;
     fields: JobFieldItem[];
 }) {
-    const ids = Array.isArray(value) ? value : value ? [value] : [];
+    const ids = normalizeJobFieldList(value);
     if (ids.length === 0) return null;
     return (
         <div className="flex flex-wrap gap-2">

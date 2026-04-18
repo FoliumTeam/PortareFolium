@@ -12,6 +12,7 @@ import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import GithubToc from "@/components/GithubToc";
 import MermaidRenderer from "@/components/MermaidRenderer";
+import ImageLightbox from "@/components/ImageLightbox";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -179,6 +180,7 @@ export default async function BlogPostPage({
                 <TableOfContents entries={tocEntries} />
             )}
             <MermaidRenderer selector=".post-content" label="blog post" />
+            <ImageLightbox contentSelector=".post-content" />
         </div>
     );
 }

@@ -15,6 +15,7 @@ import {
 } from "@/lib/mdx-directive-converter";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import MarkdownImage from "@/components/MarkdownImage";
+import ImageGroup from "@/components/ImageGroup";
 
 function YouTube({ id }: { id?: string }) {
     if (!id) return null;
@@ -192,6 +193,7 @@ const components = {
     img: MarkdownImage,
     // 콘텐츠 내 <Image> JSX 사용 시 next/image 대신 안전한 컴포넌트로 대체
     Image: MarkdownImage,
+    ImageGroup,
 };
 
 // 코드 블록 밖의 홀로 남은 { } 를 라인 단위로 이스케이프

@@ -40,6 +40,13 @@ Commit the current unstaged changes following these rules strictly:
 
 2a. **Commit grouping**: 여러 무관한 변경을 하나의 commit에 묶지 말 것. 기능별·관심사별로 분리해 commit. 한 번에 4개 이상의 무관한 파일이 staged 상태면, 분리 가능 여부를 검토하고 필요하면 user에게 확인.
 
+    **여러 독립 변경이 동시에 있을 때**:
+    - 각 변경을 별도 commit으로 순차 처리
+    - commit마다 해당 변경에 필요한 파일만 stage
+    - `package.json` version, `docs/CHANGES.md`, `PR.md`는 **각 commit 범위에 맞게 따로** 반영
+    - 첫 번째 commit을 만든 뒤 남은 변경이 있으면, 같은 절차를 반복해 다음 commit 생성
+    - 서로 다른 변경을 하나의 version bump나 하나의 CHANGES 항목으로 합치지 말 것
+
 2b. **Path quoting**: Next.js route group `(frontend)` 와 dynamic segment `[slug]` 는 shell metacharacter이므로 `git add` 시 반드시 큰따옴표로 감쌀 것:
 
     ```bash
@@ -57,9 +64,8 @@ Commit the current unstaged changes following these rules strictly:
 
 6. **Commit only, do NOT push**: Stage relevant files, commit, and stop. Do not run `git push` unless explicitly prompted by the user.
 
-7. **Testing gate — two-tier**:
-    - **Commit-time (this command's scope)**: If there are any code changes, verify **unit tests** pass (`pnpm exec vitest run`) before committing. Pre-commit hook already enforces this via husky + lint-staged. Docs-only 또는 파일 삭제만 있는 commit에서는 test 생략.
-    - **Push-time (strict — user 요청 시에만 실행, 기본 scope 아님)**: User가 명시적으로 push를 요청하면, push 이전에 **전체 크로스 브라우저 E2E가 통과**해야 한다. 최소 `pnpm exec playwright test --project=chromium --project=firefox --project=webkit --project=authenticated-chromium --project=authenticated-firefox --project=authenticated-webkit` 0 failure. 3개 엔진(Chromium/Firefox/WebKit) 모두 통과 필수. 한 건이라도 실패하면 push 금지 — fix 먼저. `docs`-only / 파일 삭제만 있는 push는 예외적으로 E2E 생략 허용. `--no-verify`로 hook 우회 금지.
-    - 요약: unit은 commit에 충분, E2E는 push에 필수 (strict gate).
+7. **Testing gate — commit-time only**:
+    - If there are any code changes, verify **unit tests** pass (`pnpm exec vitest run`) before committing. Pre-commit hook already enforces this via husky + lint-staged. Docs-only 또는 파일 삭제만 있는 commit에서는 test 생략.
+    - Push-time E2E는 GitHub Actions CI가 자동 처리하므로 local E2E 실행 불요. CI 실패 시 follow-up fix. `--no-verify`로 hook 우회 금지.
 
 $ARGUMENTS

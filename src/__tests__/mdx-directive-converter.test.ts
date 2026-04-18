@@ -64,6 +64,18 @@ describe("jsxToDirective", () => {
         });
     });
 
+    describe("ImageGroup 변환", () => {
+        it("<ImageGroup ... /> → ::image-group[]{...}", () => {
+            const input = `<ImageGroup layout="collage" images='["https://example.com/a.webp","https://example.com/b.webp"]' />`;
+            const result = jsxToDirective(input);
+            expect(result).toContain("::image-group[]");
+            expect(result).toContain('layout="collage"');
+            expect(result).toContain(
+                `images='["https://example.com/a.webp","https://example.com/b.webp"]'`
+            );
+        });
+    });
+
     describe("코드 블록 보호", () => {
         it("코드 블록 내부 LaTeX($$...$$)는 변환하지 않음", () => {
             const input = "```\n$$E=mc^2$$\n```\nOutside $$x+y$$";
@@ -126,6 +138,17 @@ describe("directiveToJsx", () => {
         });
     });
 
+    describe("ImageGroup 변환", () => {
+        it("::image-group[]{...} → <ImageGroup ... />", () => {
+            const input = `::image-group[]{layout="slider" images='["https://example.com/a.webp","https://example.com/b.webp"]'}`;
+            const result = directiveToJsx(input);
+            expect(result).toContain(`<ImageGroup layout="slider"`);
+            expect(result).toContain(
+                `images='["https://example.com/a.webp","https://example.com/b.webp"]'`
+            );
+        });
+    });
+
     describe("이스케이프 제거", () => {
         it("directive 라인의 백슬래시 이스케이프 제거", () => {
             // MDXEditor가 삽입하는 이스케이프 처리
@@ -146,6 +169,16 @@ describe("왕복 변환 일관성", () => {
         const directive = jsxToDirective(original);
         const restored = directiveToJsx(directive);
         expect(restored.trim()).toContain('<YouTube id="dQw4w9WgXcQ" />');
+    });
+
+    it("ImageGroup: jsxToDirective → directiveToJsx 왕복", () => {
+        const original = `<ImageGroup layout="stack" images='["https://example.com/a.webp","https://example.com/b.webp"]' />`;
+        const directive = jsxToDirective(original);
+        const restored = directiveToJsx(directive);
+        expect(restored.trim()).toContain(`<ImageGroup layout="stack"`);
+        expect(restored).toContain(
+            `images='["https://example.com/a.webp","https://example.com/b.webp"]'`
+        );
     });
 });
 

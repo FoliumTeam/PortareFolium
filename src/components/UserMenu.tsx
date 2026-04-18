@@ -23,12 +23,30 @@ export default function UserMenu() {
         if (!browserClient) return;
 
         // getSession은 network 호출 없이 local session 확인
-        browserClient.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setUser({ id: session.user.id });
-                loadProfileImage();
-            }
-        });
+        // refresh token이 stale/invalid인 경우 local 세션 clear
+        browserClient.auth
+            .getSession()
+            .then(({ data: { session }, error }) => {
+                if (error) {
+                    console.warn(
+                        "[UserMenu::getSession] stale session cleared:",
+                        error.message
+                    );
+                    browserClient?.auth.signOut({ scope: "local" });
+                    return;
+                }
+                if (session?.user) {
+                    setUser({ id: session.user.id });
+                    loadProfileImage();
+                }
+            })
+            .catch((error: unknown) => {
+                console.warn(
+                    "[UserMenu::getSession] refresh failed, clearing:",
+                    error
+                );
+                browserClient?.auth.signOut({ scope: "local" });
+            });
 
         const { data: listener } = browserClient.auth.onAuthStateChange(
             (_event, session) => {

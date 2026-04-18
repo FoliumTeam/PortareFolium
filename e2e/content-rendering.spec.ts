@@ -1,7 +1,45 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 // 콘텐츠 렌더링 검증 — 블로그 글에서 MDX 렌더링 요소 확인
 // 블로그 목록에서 첫 번째 글을 사용 (데이터 독립적)
+
+test.describe.configure({ mode: "serial" });
+
+// lightbox 대상 이미지 탐색
+async function getVisibleLightboxImage(page: Page) {
+    await expect
+        .poll(
+            async () =>
+                page.locator(".post-content img[data-lightbox-idx]").count(),
+            { timeout: 10_000 }
+        )
+        .toBeGreaterThan(0);
+
+    const candidates = page.locator(".post-content img[data-lightbox-idx]");
+    const count = await candidates.count();
+
+    for (let i = 0; i < count; i += 1) {
+        const candidate = candidates.nth(i);
+        await candidate.scrollIntoViewIfNeeded();
+
+        await expect
+            .poll(
+                async () =>
+                    candidate.evaluate((el) =>
+                        el instanceof HTMLImageElement
+                            ? el.complete && el.naturalWidth > 0
+                            : false
+                    ),
+                { timeout: 10_000 }
+            )
+            .toBe(true);
+
+        return candidate;
+    }
+
+    return null;
+}
 
 test.describe("콘텐츠 렌더링", () => {
     let blogSlug: string | null = null;
@@ -9,7 +47,9 @@ test.describe("콘텐츠 렌더링", () => {
     test.beforeAll(async ({ browser }) => {
         const page = await browser.newPage();
         await page.goto("/blog");
+        await page.waitForLoadState("domcontentloaded");
         const firstLink = page.locator('a[href^="/blog/"]').first();
+        await expect(firstLink).toBeVisible({ timeout: 10_000 });
         const href = await firstLink.getAttribute("href").catch(() => null);
         blogSlug = href;
         await page.close();
@@ -42,6 +82,57 @@ test.describe("콘텐츠 렌더링", () => {
             const lazyCount = await lazyImages.count();
             expect(lazyCount).toBeGreaterThan(0);
         }
+    });
+
+    test("lightbox open/close", async ({ page }) => {
+        test.skip(!blogSlug, "블로그 글 없음");
+        await page.goto(blogSlug!);
+        const images = page.locator(".post-content img[data-lightbox-idx]");
+        const count = await images.count();
+        if (count === 0) return;
+
+        const target = await getVisibleLightboxImage(page);
+        expect(target).not.toBeNull();
+        await target!.click({ force: true });
+        const dialog = page.locator(
+            '[role="dialog"][aria-label="이미지 확대 보기"]'
+        );
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByText(`1 / ${count}`)).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+    });
+
+    test("lightbox navigation + filmstrip", async ({ page }) => {
+        test.skip(!blogSlug, "블로그 글 없음");
+        await page.goto(blogSlug!);
+        const images = page.locator(".post-content img[data-lightbox-idx]");
+        const count = await images.count();
+        if (count < 2) return;
+
+        const target = await getVisibleLightboxImage(page);
+        expect(target).not.toBeNull();
+        await target!.click({ force: true });
+        const dialog = page.locator(
+            '[role="dialog"][aria-label="이미지 확대 보기"]'
+        );
+        await expect(dialog).toBeVisible();
+
+        await dialog.getByRole("button", { name: "다음 이미지" }).click();
+        await expect(dialog.getByText(`2 / ${count}`)).toBeVisible();
+
+        const filmstripButtons = dialog.getByRole("button", {
+            name: "filmstrip 이미지로 이동",
+        });
+        const filmstripCount = await filmstripButtons.count();
+        expect(filmstripCount).toBeGreaterThan(0);
+
+        const targetIndex = Math.min(1, filmstripCount - 1);
+        await filmstripButtons.nth(targetIndex).click();
+        await expect(dialog).toBeVisible();
+
+        await dialog.click({ position: { x: 10, y: 10 } });
+        await expect(dialog).toBeHidden();
     });
 
     test("목차 (TOC) 생성", async ({ page }) => {

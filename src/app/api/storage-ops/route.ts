@@ -99,5 +99,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
     }
 
+    if (action === "delete-keys") {
+        const keys = Array.isArray(body.keys)
+            ? (body.keys as string[]).filter(
+                  (k): k is string => typeof k === "string" && k.length > 0
+              )
+            : [];
+        if (keys.length === 0) {
+            return NextResponse.json({ ok: true, deleted: 0 });
+        }
+        // S3 DeleteObjects 배치 한도 1000
+        let deleted = 0;
+        for (let i = 0; i < keys.length; i += 1000) {
+            const chunk = keys.slice(i, i + 1000);
+            await r2Client.send(
+                new DeleteObjectsCommand({
+                    Bucket: R2_BUCKET,
+                    Delete: { Objects: chunk.map((Key) => ({ Key })) },
+                })
+            );
+            deleted += chunk.length;
+        }
+        return NextResponse.json({ ok: true, deleted });
+    }
+
     return NextResponse.json({ error: "unknown action" }, { status: 400 });
 }

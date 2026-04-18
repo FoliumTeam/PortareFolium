@@ -1,5 +1,198 @@
 # CHANGES
 
+## v0.12.24 (2026-04-19)
+
+### fix: Firefox WebKit lightbox E2E 클릭 타이밍 회귀 보정
+
+- `e2e/content-rendering.spec.ts`: `content-rendering` suite를 serial로 고정해 `beforeAll`의 `/blog` 접근 타이밍 충돌을 방지
+- `e2e/content-rendering.spec.ts`: lightbox 대상 이미지를 `.post-content img[data-lightbox-idx]` 기준으로 기다린 뒤 `scrollIntoViewIfNeeded()`와 `complete/naturalWidth` poll을 거쳐 선택하도록 helper 보강
+- `e2e/content-rendering.spec.ts`: Firefox/WebKit의 visibility 판정 차이를 피하기 위해 lightbox 이미지 클릭을 `force: true`로 변경
+
+## v0.12.23 (2026-04-19)
+
+### feat: lightbox v2 Sub-A~D 추가
+
+- `src/components/ImageLightbox.tsx`: 모바일 swipe navigation 추가, filmstrip thumbnail이 `{base}.thumb.webp`를 우선 사용하고 gif는 `{base}.poster.webp`와 runtime static preview로 fallback 하도록 확장
+- `src/lib/image-upload.ts`: 업로드 시 `thumb.webp` sidecar를 병행 생성하고 gif는 `poster.webp` sidecar도 추가 생성
+- `src/__tests__/image-upload.test.ts`, `src/__tests__/orphan-cleanup.test.ts`: sidecar 업로드 및 `ImageGroup`/sidecar cleanup 회귀 테스트 추가
+- `e2e/content-rendering.spec.ts`: lightbox open/close, next navigation, filmstrip 이동 시나리오 추가
+
+## v0.12.22 (2026-04-19)
+
+### feat: image orphan cleanup 문서화 + 이미지 삭제 confirm dialog 추가
+
+- `docs/IMAGE_ORPHAN_CLEANUP.md` 신규: true-orphan 판정 규칙, Trigger 1/2/3, source mode에서 `ImageGroup` 삭제 시 child 이미지 반영, sidecar/baseKey 규칙, safety guard를 상세 문서화
+- `src/components/admin/ImageDeleteConfirmDialog.tsx` 신규: 삭제 직전 대상 이미지를 미리 보여주는 custom confirm dialog 추가
+- `src/components/admin/RichMarkdownEditor.tsx`: standalone 이미지 delete 버튼을 confirm dialog 뒤에만 실행되도록 변경
+- `src/extensions/ImageGroupNode.tsx`: group 전체 삭제, group 내부 이미지 삭제 모두 confirm dialog 뒤에 실행되도록 변경, slider NodeView의 `img`를 `block`으로 고정하고 하단 padding 제거로 hover 버튼 위치 보정
+
+## v0.12.21 (2026-04-19)
+
+### feat: multi-image layout modal + ImageGroup block 추가
+
+- `src/components/admin/RichMarkdownEditor.tsx`: multi-image drop/paste 시 layout modal을 먼저 열도록 변경, `개별사진`은 기존처럼 일반 image node 연속 삽입, `슬라이드`만 `imageGroup` block으로 삽입
+- `src/components/admin/ImageLayoutModal.tsx` 신규: `개별사진`, `슬라이드` 2개 레이아웃 선택 modal 추가
+- `src/extensions/ImageDropPaste.ts`, `src/extensions/ImageGroupNode.tsx` 신규: multi-image 전용 modal 트리거와 `::image-group[]{...}` 직렬화/파싱 node 추가, group 내부 각 이미지 hover 액션과 group 전체 삭제 버튼 추가
+- `src/components/ImageGroup.tsx`, `src/lib/markdown.tsx`, `src/lib/mdx-directive-converter.ts`: source/WYSIWYG/frontend가 같은 `ImageGroup` 구조를 공유하도록 통일, slider 이미지 wrapper 카드 스타일 제거
+- `src/__tests__/mdx-directive-converter.test.ts`: `ImageGroup` directive ↔ JSX 변환 및 roundtrip 회귀 테스트 추가
+
+## v0.12.20 (2026-04-18)
+
+### fix: multi-image dnd source markdown를 multiline으로 정규화
+
+- `src/components/admin/RichMarkdownEditor.tsx`: image extension이 `inline: true`라서 dnd/paste로 연속 삽입된 image node가 같은 inline 흐름으로 직렬화되고 source mode에서 `![](...)![](...)` 한 줄로 붙는 원인 확인
+- `src/lib/tiptap-markdown.ts`: `normalizeAdjacentImageMarkdown()` 추가 — tiptap serializer 결과의 연속 image markdown만 `\n\n`으로 분리해서 source mode, autosave, DB 저장 문자열이 모두 multiline 유지
+- `src/__tests__/tiptap-markdown.test.ts`: 연속 image 분리, 기존 줄바꿈 유지, link 뒤 image 비변경 회귀 테스트 추가
+
+## v0.12.19 (2026-04-18)
+
+### chore: gh PR body 전달 시 cat/HEREDOC 금지 + body-file 강제
+
+- `AGENTS.md` PR Conventions: `--body "$(cat ...)"` 및 HEREDOC 패턴 금지 HARD 규칙 추가, `--body-file <path>` 사용 강제 — Bash 도구가 파일 내용을 conversation context로 다시 읽어 토큰 낭비하는 문제 차단
+- `.claude/commands/custom-release.md` Step 4b: HEREDOC 예시 제거, 본문을 임시 파일 저장 후 `--body-file` 사용하도록 변경
+
+## v0.12.18 (2026-04-18)
+
+### test: WYSIWYG ↔ source mode roundtrip 회귀 테스트 추가 (SVG fixture)
+
+- `src/__tests__/image-url-conversion.test.ts`: dummy SVG URL 기반 roundtrip 6개 케이스 추가 — single roundtrip, 10회 연속 변환 멱등성, 다중 SVG 보존, query/fragment 유지, legacy double-wrap repair 후 안정성, bare URL → wrapped 변환 후 멱등
+
+## v0.12.17 (2026-04-18)
+
+### fix: source → WYSIWYG 전환 시 이미지 double-wrap 방지
+
+- `src/extensions/ImageDropPaste.ts` `bareImageUrlsToMarkdown`: lead 정규식에서 `(` 제거 — 이전엔 기존 `![](url)`의 URL이 한 번 더 wrap돼 `![](![](url))` 손상 발생. 이제 `^` / `\s` 만 lead로 인식
+- `repairDoubleWrappedImages` 신규: 과거 버그로 손상된 `![](![](url))` / `![](![]\(url\))` 형태를 `![](url)`로 복원. exitSourceMode에서 자동 적용
+- `src/__tests__/image-url-conversion.test.ts`: 11개 회귀 케이스 (기존 markdown image 보존, 다중 이미지, 확장자 종류, escape 처리)
+
+## v0.12.16 (2026-04-18)
+
+### feat: 본문 이미지 hover 시 trash 삭제 버튼 추가
+
+- `src/components/admin/RichMarkdownEditor.tsx`: image NodeView에 trash 아이콘 삭제 버튼 추가 — 기존 "썸네일로 설정" 버튼 옆 (`flex gap-2`) 우상단에 배치, group-hover 시 동시 표시. 클릭 시 NodeView `deleteNode()` 호출 → 정밀 backspace 없이 노드 단위 삭제, T1 cleanup 자연 트리거
+
+## v0.12.15 (2026-04-18)
+
+### feat: editor open T3 안전망 + slug rename snapshot URL rewrite
+
+- `src/lib/snapshot-cleanup.ts`:
+    - `maybeCleanupOnOpen(entityType, entitySlug, args)` — `editor_states.count = 0`인 경우만 full true-orphan cleanup 실행 (count > 0이면 R2 호출 0). 외부에서 snapshot이 clear된 엣지 케이스 복구
+    - `rewriteSnapshotUrls(entityType, entitySlug, oldFolder, newFolder)` — slug rename 시 Initial/Auto-save/Bookmark 모든 snapshot.content의 folder prefix를 새 slug로 일괄 치환
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`:
+    - `openEdit`에서 `maybeCleanupOnOpen` 호출 (T3 안전망)
+    - `migrateAssetsIfNeeded`에서 `moveStorageFolder` 뒤에 `rewriteSnapshotUrls` 호출 — slug rename 후 snapshot이 옛 prefix를 참조해 false-orphan 판정되는 문제 제거
+- `src/components/admin/EditorStatePreservation.tsx`: backdrop `z-[100]` → `z-100` Tailwind 네이티브 syntax로 정리
+
+## v0.12.14 (2026-04-18)
+
+### feat: snapshot-delete + 본문 image-remove 시 true-orphan cleanup 연동
+
+- `src/lib/snapshot-cleanup.ts`: `triggerSnapshotCleanup(args)` helper — fire-and-forget cleanup 호출
+- `src/components/admin/EditorStatePreservation.tsx`:
+    - `folderPath` / `thumbnail` props 추가 (post/portfolio 한정 cleanup 활성화)
+    - `fireCleanup` callback 통합 — init 종료, autosave eviction, `handleDelete`, `handleDeleteAll` 4개 지점에서 호출
+    - `currentContent` / `thumbnail` ref로 stale 회피
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`:
+    - `EditorStatePreservation`에 `folderPath` + `thumbnail` 전달
+    - `RichMarkdownEditor`에 `onImagesRemoved` 핸들러 — 1초 debounce 후 받은 URL 배열을 `extractKeysFromText` + `baseKey`로 변환해 `cleanupTrueOrphans({ candidates })` 호출 (Trigger 1 parent-side wiring)
+
+## v0.12.13 (2026-04-18)
+
+### feat: RichMarkdownEditor drag-drop + paste 이미지 업로드 + URL handling
+
+- `src/extensions/ImageDropPaste.ts` 신규: Tiptap ProseMirror extension — drop / paste-with-files 이미지를 R2에 업로드 후 drop 위치에 image node 삽입. 다중 drop = `Promise.all` 병렬 업로드 + 원래 순서 sequential insert (pos는 매 insert마다 `node.nodeSize` 증가). text-only image URL paste는 R2 업로드 없이 image node로 삽입. `getFolderPath` getter로 slug rename 후에도 최신 folder 사용
+- `src/extensions/ImageDropPaste.ts` `bareImageUrlsToMarkdown(text)` helper: source mode → WYSIWYG 전환 시 bare image URL을 `![](url)` markdown으로 변환
+- `src/components/admin/RichMarkdownEditor.tsx`:
+    - `ImageDropPaste.configure({ getFolderPath })` extension 등록
+    - `onUpdate`에서 image 노드 src diff → 1000ms global debounce 후 `onImagesRemoved(urls)` 콜백 (Trigger 1)
+    - `exitSourceMode`에서 `bareImageUrlsToMarkdown` preprocess
+    - `onImagesRemoved` prop 추가
+- `src/components/admin/TiptapImageUpload.tsx`: URL 탭 단순화 — "R2에 저장" 경로 (`handleUrlUpload`) 제거, "URL 그대로" → "URL 삽입" 단일 버튼으로 통합. 외부 URL은 R2 업로드 없이 그대로 본문 삽입
+
+## v0.12.12 (2026-04-18)
+
+### feat: true-orphan cleanup + snapshot-aware lib
+
+- `src/lib/orphan-cleanup.ts` 신규: `cleanupTrueOrphans` / `cleanupSingleKey` 단일 알고리즘 — content + thumbnail + 모든 snapshot 합집합으로 referenced base set 구성, sidecar (`baseKey` regex로 `.thumb.webp` / `.poster.webp` strip + 확장자 strip)는 base가 살아있으면 보존
+- `src/lib/snapshot-cleanup.ts` 신규: `loadSnapshotsContent`로 entity의 모든 snapshot.content 조회, `deleteSnapshotsAndCleanup` 으로 snapshot 삭제 + 후속 cleanup wrapper 통합
+- 안전 가드: list 빈/throw 시 skip, referenced 빈 + content 비-empty 시 skip (parser 오류 wipe 방지)
+- dev mode 한정 `console.log` 진단 출력 (`process.env.NODE_ENV === "development"`)
+- `src/__tests__/orphan-cleanup.test.ts` 신규: baseKey/extractKeysFromText/cleanupTrueOrphans 21개 회귀 케이스
+
+## v0.12.11 (2026-04-18)
+
+### feat: storage-ops delete-keys action + deleteStorageKeys helper
+
+- `src/app/api/storage-ops/route.ts`: `action === "delete-keys"` 분기 추가 — 명시 key 배열만 R2에서 삭제. S3 DeleteObjects 한도 1000 chunk 처리. 빈 배열 안전 처리
+- `src/lib/image-upload.ts`: `deleteStorageKeys(keys)` helper 추가 — orphan-cleanup이 base + sidecar key 정밀 삭제할 수 있는 client API
+
+## v0.12.10 (2026-04-18)
+
+### chore: ship command의 분리 commit 규칙 명시
+
+- `.claude/commands/ship.md`: 여러 독립 변경이 동시에 있을 때 각 변경별로 별도 commit, 별도 version/CHANGES/PR 반영을 하도록 규칙 추가
+
+## v0.12.9 (2026-04-18)
+
+### test: active job field 정규화 회귀 테스트 추가
+
+- `src/lib/job-field.ts`: 신규 생성 기본값 helper `getInitialJobFieldSelection()` 추가
+- `src/__tests__/job-field.test.ts`: `"game"` 형태의 잘못 저장된 값이 정규화되고 신규 생성 기본값으로 `["game"]`이 되는지 검증하는 테스트 추가
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: 신규 생성 기본 job field를 helper로 통일
+
+## v0.12.8 (2026-04-18)
+
+### fix: active job field 저장값의 이중 문자열화 제거
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: `site_config.job_field` 저장 시 `JSON.stringify()` 제거 — active job field가 `"game"` 형태로 저장되던 문제 수정
+- `src/lib/job-field.ts`: 저장된 `job_field` 문자열과 배열을 정규화하는 helper 추가
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`, `ResumePanel.tsx`: active job field 및 기존 `job_field` 값을 로드/저장할 때 정규화 적용 — 이미 잘못 저장된 `"game"` 값도 신규 생성 기본값과 재저장 경로에서 `game`으로 보정
+
+## v0.12.7 (2026-04-18)
+
+### feat: settings modal thumbnail clear 버튼 추가
+
+- `src/components/admin/ThumbnailUploadField.tsx`: 썸네일 값이 있을 때 `삭제` 버튼 표시, 클릭 시 `onChange("")`로 thumbnail field 즉시 비움
+
+## v0.12.6 (2026-04-18)
+
+### fix: metadata settings modal 본문 clipping 보정
+
+- `src/components/admin/MetadataSheet.tsx`: `DialogHeader`와 본문 wrapper에 `min-w-0` 추가 — `DialogContent`의 grid 직계 자식이 긴 field의 min-content width 때문에 오른쪽으로 잘리던 문제 보정
+
+## v0.12.5 (2026-04-18)
+
+### fix: admin metadata settings modal 가로 overflow 보정
+
+- `src/components/admin/ThumbnailUploadField.tsx`: tablet 이상 가로 row에 `min-w-0` 추가, URL input에도 `min-w-0` 추가 — 긴 썸네일 URL이 modal 본문을 오른쪽으로 밀어내던 문제 완화
+- `src/components/admin/MetadataSheet.tsx`: settings modal `DialogContent`에 `overflow-x-hidden` 추가 — 내부 필드 overflow가 가로 스크롤로 드러나지 않도록 보정
+- `src/components/ui/dialog.tsx`: 존재하지 않는 `sm:max-w-lg`를 `tablet:max-w-lg`로 교체 — 프로젝트 breakpoint 규칙과 공용 Dialog 기본 폭 일치
+
+## v0.12.4 (2026-04-18)
+
+### feat: 본문 이미지 lightbox
+
+- `src/components/ImageLightbox.tsx` 신규: blog/portfolio 상세 페이지 본문 이미지 클릭 시 lightbox 모달로 full-resolution 표시. backdrop `z-[120] bg-black/80`, 이미지 `max-w-[80vw] max-h-[80vh] object-contain`
+- 네비게이션: 좌/우 arrow 버튼 + ArrowLeft/ArrowRight 키, 첫/마지막에서 disabled (wrap 없음), Escape / backdrop click 으로 닫기
+- Filmstrip: 현재 index 기준 ±5 고정 11개 window, 현재 항목 accent border + scale 강조
+- Blur-up loading: 동일 src를 `blur-xl` 배경으로 먼저 표시 후 full-res fade-in
+- Caption: 이미지 `alt` 텍스트 lightbox 하단에 표시
+- DOM scan + click delegation + `MutationObserver` 로 Mermaid/lazy-load late render 대응
+- `src/app/(frontend)/blog/[slug]/page.tsx`, `src/app/(frontend)/portfolio/[slug]/page.tsx` 에 mount — 상단 thumbnail은 content wrapper 외부라 자동 제외
+
+## v0.12.3 (2026-04-17)
+
+### fix: stale refresh token 에러 처리
+
+- `src/components/UserMenu.tsx`: `browserClient.auth.getSession()` 반환의 `error` 및 promise rejection을 처리. `AuthApiError: Invalid Refresh Token: Refresh Token Not Found`가 발생하면 `signOut({ scope: "local" })`로 localStorage의 stale 토큰만 정리 — 원격 세션은 건드리지 않음
+
+## v0.12.2 (2026-04-17)
+
+### fix: NotFound 페이지 setState-in-render 경고 제거 + Discord ack 지시 추가
+
+- `src/app/not-found.tsx`: `setInterval` 업데이터 내부에서 `router.push` 호출하던 구조를 제거. `setTimeout` + `countdown` 의존성 effect로 변경, redirect는 effect 본문에서 실행 — React의 "Cannot update a component while rendering" 경고 해소
+- `AGENTS.md`: Discord 채널을 통해 수신한 메시지에 대해 작업 시작 전 짧은 ack reply를 보내도록 지시 추가
+
 ## v0.12.1 (2026-04-17)
 
 ### fix: Tiptap 이미지 업로드 모달을 R2로 마이그레이션

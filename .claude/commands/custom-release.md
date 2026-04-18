@@ -71,16 +71,18 @@ Keep the whole body in Korean (프로젝트 기본 언어 정책) except for cod
 
 ### 4b. Create the PR
 
-작성한 body를 HEREDOC으로 전달:
+**HARD: `--body "$(cat ...)"` 또는 HEREDOC 절대 금지.** Bash 도구가 파일 내용을 conversation context로 다시 읽어들여 토큰 낭비. 반드시 본문을 임시 파일로 저장한 뒤 `--body-file` 옵션 사용.
 
 ```bash
+# Step 4a에서 작성한 본문을 Write 도구로 임시 파일에 저장
+# (예: .omc/release-notes-v<target>.md)
+
 gh pr create --base main --head release/v<target> \
   --title "release: v<target>" \
-  --body "$(cat <<'EOF'
-<Step 4a에서 작성한 전체 본문>
-EOF
-)"
+  --body-file .omc/release-notes-v<target>.md
 ```
+
+PR 생성 후 임시 파일은 그대로 두거나 정리. 동일 규칙은 `gh pr edit --body-file`, `gh issue create --body-file` 등 모든 gh 명령에 적용.
 
 PR URL을 사용자에게 보고하고 **여기서 멈춘다**. 자동 머지 금지 — 사용자가 PR이 `main`에 머지됐음을 확인해 줄 때까지 대기.
 

@@ -7,6 +7,15 @@ import {
     deleteStorageFolder,
     replaceImageUrls,
 } from "@/lib/image-upload";
+import {
+    cleanupTrueOrphans,
+    extractKeysFromText,
+    baseKey,
+} from "@/lib/orphan-cleanup";
+import {
+    rewriteSnapshotUrls,
+    maybeCleanupOnOpen,
+} from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
 import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
 import {
@@ -31,6 +40,11 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import {
+    getInitialJobFieldSelection,
+    normalizeJobFieldList,
+    normalizeJobFieldValue,
+} from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -130,11 +144,9 @@ function itemToForm(item: PortfolioItem): ItemForm {
         accomplishments: Array.isArray(d.accomplishments)
             ? (d.accomplishments as string[]).join("\n")
             : "",
-        jobField: Array.isArray(d.jobField)
-            ? (d.jobField as string[])
-            : d.jobField
-              ? [d.jobField as string]
-              : [],
+        jobField: normalizeJobFieldList(
+            d.jobField as string | string[] | null | undefined
+        ),
         meta_title: item.meta_title ?? "",
         meta_description: item.meta_description ?? "",
         og_image: item.og_image ?? "",
@@ -261,7 +273,7 @@ export default function PortfolioPanel({
                 .single()
                 .then(({ data }) => {
                     if (data?.value && typeof data.value === "string")
-                        setActiveJobField(data.value);
+                        setActiveJobField(normalizeJobFieldValue(data.value));
                 });
         }
     }, []);
@@ -302,7 +314,9 @@ export default function PortfolioPanel({
         featured: form.featured,
         order_idx: form.order_idx,
         published: form.published,
-        job_field: form.jobField.length ? form.jobField : null,
+        job_field: form.jobField.length
+            ? normalizeJobFieldList(form.jobField)
+            : null,
         data: {
             startDate: form.startDate || undefined,
             endDate: form.endDate || undefined,
@@ -317,7 +331,9 @@ export default function PortfolioPanel({
                       .map((s) => s.trim())
                       .filter(Boolean)
                 : undefined,
-            jobField: form.jobField.length ? form.jobField : undefined,
+            jobField: form.jobField.length
+                ? normalizeJobFieldList(form.jobField)
+                : undefined,
         },
         meta_title: form.meta_title || null,
         meta_description: form.meta_description || null,
@@ -325,6 +341,13 @@ export default function PortfolioPanel({
     });
 
     const openEdit = (item: PortfolioItem) => {
+        void maybeCleanupOnOpen("portfolio", item.slug, {
+            folderPath: `portfolio/${item.slug}`,
+            entityType: "portfolio",
+            entitySlug: item.slug,
+            currentContent: item.content,
+            thumbnail: item.thumbnail ?? "",
+        });
         const f = itemToForm(item);
         initialFormRef.current = f;
         savedSlugRef.current = item.slug;
@@ -340,7 +363,7 @@ export default function PortfolioPanel({
         const base: ItemForm = {
             ...EMPTY_FORM,
             order_idx: items.length,
-            jobField: activeJobField ? [activeJobField] : [],
+            jobField: getInitialJobFieldSelection(activeJobField),
         };
         initialFormRef.current = base;
         savedSlugRef.current = "";
@@ -360,6 +383,12 @@ export default function PortfolioPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(
+                `portfolio/${oldSlug}`,
+                `portfolio/${newSlug}`
+            );
+            await rewriteSnapshotUrls(
+                "portfolio",
+                oldSlug,
                 `portfolio/${oldSlug}`,
                 `portfolio/${newSlug}`
             );
@@ -681,6 +710,29 @@ export default function PortfolioPanel({
                         onSetThumbnail={(url) =>
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
+                        onImagesRemoved={(urls) => {
+                            const folder = `portfolio/${form.slug || "untitled"}`;
+                            const keys = urls.flatMap((u) =>
+                                extractKeysFromText(u, folder)
+                            );
+                            if (keys.length === 0) return;
+                            const bases = Array.from(
+                                new Set(keys.map(baseKey))
+                            );
+                            cleanupTrueOrphans({
+                                folderPath: folder,
+                                entityType: "portfolio",
+                                entitySlug: form.slug || "new",
+                                currentContent: form.content,
+                                thumbnail: form.thumbnail,
+                                candidates: bases,
+                            }).catch((e) => {
+                                console.error(
+                                    "[PortfolioPanel::onImagesRemoved] cleanup 실패",
+                                    e
+                                );
+                            });
+                        }}
                     />
                 </div>
 
@@ -756,6 +808,8 @@ export default function PortfolioPanel({
                     isOpen={stateModalOpen}
                     onClose={() => setStateModalOpen(false)}
                     onSnapshotCountChange={(total) => setSnapshotCount(total)}
+                    folderPath={`portfolio/${form.slug || "untitled"}`}
+                    thumbnail={form.thumbnail}
                 />
             </div>
         );

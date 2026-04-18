@@ -105,40 +105,7 @@ export default function TiptapImageUpload({
         }
     };
 
-    // URL fetch → R2 업로드 시도, 실패 시 URL 그대로 삽입
-    const handleUrlUpload = async () => {
-        const url = urlInput.trim();
-        if (!url) return;
-
-        try {
-            new URL(url);
-        } catch {
-            setError("올바른 URL 입력 필요");
-            return;
-        }
-
-        setUploading(true);
-        setError(null);
-
-        try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const fetched = new File([blob], "remote-image", {
-                type: blob.type || "image/png",
-            });
-            const uploadedUrl = await uploadImage(fetched, folderPath);
-            insertImage(uploadedUrl, altInput.trim());
-            handleClose();
-        } catch {
-            // R2 업로드 실패 시 원본 URL fallback
-            insertImage(url, altInput.trim());
-            handleClose();
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    // URL 그대로 삽입 (변환 없이)
+    // URL 그대로 삽입 — 외부 URL은 R2에 업로드 안 함
     const handleInsertUrlAsIs = () => {
         const url = urlInput.trim();
         if (!url) return;
@@ -259,7 +226,8 @@ export default function TiptapImageUpload({
                             className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-base text-(--color-foreground)"
                         />
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            R2 업로드 시도 후, 실패하면 URL 그대로 삽입
+                            외부 이미지 URL을 그대로 본문에 삽입 (R2 업로드 안
+                            함)
                         </p>
                     </div>
                 )}
@@ -286,24 +254,14 @@ export default function TiptapImageUpload({
                             {uploading ? "업로드 중..." : "삽입"}
                         </button>
                     ) : (
-                        <>
-                            <button
-                                type="button"
-                                onClick={handleInsertUrlAsIs}
-                                disabled={!urlInput.trim()}
-                                className="rounded-lg border border-(--color-border) px-4 py-2 text-base text-(--color-foreground) hover:bg-(--color-surface-subtle) disabled:opacity-50"
-                            >
-                                URL 그대로
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleUrlUpload}
-                                disabled={!urlInput.trim() || uploading}
-                                className="rounded-lg bg-green-500 px-4 py-2 text-base font-medium text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
-                            >
-                                {uploading ? "업로드 중..." : "R2에 저장"}
-                            </button>
-                        </>
+                        <button
+                            type="button"
+                            onClick={handleInsertUrlAsIs}
+                            disabled={!urlInput.trim()}
+                            className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-medium text-(--color-on-accent) disabled:opacity-50"
+                        >
+                            URL 삽입
+                        </button>
                     )}
                 </div>
             </div>

@@ -29,3 +29,34 @@ export function matchesJobField(
         ? jobField.includes(filter)
         : jobField === filter;
 }
+
+// 저장된 job field 문자열 정규화
+export function normalizeJobFieldValue(
+    value: string | null | undefined
+): string {
+    if (!value) return "";
+    try {
+        const parsed = JSON.parse(value) as unknown;
+        return typeof parsed === "string" ? parsed : value;
+    } catch {
+        return value;
+    }
+}
+
+// 저장된 job field 목록 정규화
+export function normalizeJobFieldList(
+    value: string | string[] | null | undefined
+): string[] {
+    if (!value) return [];
+    return (Array.isArray(value) ? value : [value])
+        .map((item) => normalizeJobFieldValue(item))
+        .filter(Boolean);
+}
+
+// 신규 생성 기본 job field 목록 생성
+export function getInitialJobFieldSelection(
+    activeJobField: string | null | undefined
+): string[] {
+    const normalized = normalizeJobFieldValue(activeJobField);
+    return normalized ? [normalized] : [];
+}

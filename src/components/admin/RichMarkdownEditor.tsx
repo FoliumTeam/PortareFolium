@@ -12,6 +12,7 @@ import type { NodeViewProps } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -32,9 +33,22 @@ import {
     AccordionNode,
     accordionDirectiveToHtml,
 } from "@/extensions/AccordionNode";
+import {
+    ImageGroupNode,
+    imageGroupDirectiveToHtml,
+} from "@/extensions/ImageGroupNode";
 import { jsxToDirective, directiveToJsx } from "@/lib/mdx-directive-converter";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
+import {
+    ImageDropPaste,
+    bareImageUrlsToMarkdown,
+} from "@/extensions/ImageDropPaste";
+import { uploadImage } from "@/lib/image-upload";
+import type { ImageGroupLayout } from "@/components/ImageGroup";
 import EditorToolbar from "@/components/admin/EditorToolbar";
+import ImageDeleteConfirmDialog from "@/components/admin/ImageDeleteConfirmDialog";
+import ImageLayoutModal from "@/components/admin/ImageLayoutModal";
+import type { MultiImageLayout } from "@/components/admin/ImageLayoutModal";
 import TiptapImageUpload from "@/components/admin/TiptapImageUpload";
 
 interface RichMarkdownEditorProps {
@@ -47,6 +61,24 @@ interface RichMarkdownEditorProps {
     onEditorReady?: (editor: Editor) => void;
     transferring?: boolean;
     onSetThumbnail?: (url: string) => void;
+    // Trigger 1 — 본문에서 image 노드가 제거되면 호출 (1초 debounce, coalesced URL 배열)
+    onImagesRemoved?: (urls: string[]) => void;
+}
+
+type PendingMultiImageInsert = {
+    files: File[];
+    position: number;
+};
+
+// directive → HTML 전처리
+function preprocessDirectiveContent(content: string): string {
+    return accordionDirectiveToHtml(
+        latexDirectiveToHtml(
+            imageGroupDirectiveToHtml(
+                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(content))
+            )
+        )
+    );
 }
 
 export default function RichMarkdownEditor({
@@ -59,11 +91,14 @@ export default function RichMarkdownEditor({
     onEditorReady,
     transferring = false,
     onSetThumbnail,
+    onImagesRemoved,
 }: RichMarkdownEditorProps) {
     const AUTOSAVE_KEY = `portare_autosave_editor_${storageKey ?? "default"}`;
 
     // 이미지 업로드 모달 상태
     const [imageUploadOpen, setImageUploadOpen] = useState(false);
+    const [pendingMultiImageInsert, setPendingMultiImageInsert] =
+        useState<PendingMultiImageInsert | null>(null);
 
     // source 편집 모드
     const [sourceMode, setSourceMode] = useState(false);
@@ -118,14 +153,11 @@ export default function RichMarkdownEditor({
     const exitSourceMode = () => {
         if (!editor) return;
         saveScrollRatio();
-        const jsxContent = directiveToJsx(sourceText);
-        // directive → HTML 전처리 (YoutubeEmbed, ColoredTableNode parseHTML 호환)
+        // bare image URL → ![](url) markdown 변환 (paste된 URL이 image로 렌더링되도록)
+        const normalized = bareImageUrlsToMarkdown(sourceText);
+        const jsxContent = directiveToJsx(normalized);
         const directives = jsxToDirective(jsxContent);
-        const preprocessed = accordionDirectiveToHtml(
-            latexDirectiveToHtml(
-                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(directives))
-            )
-        );
+        const preprocessed = preprocessDirectiveContent(directives);
         onChange(jsxContent);
         // setContent를 useEffect로 defer — React 렌더 완료 후 실행 (flushSync 충돌 방지)
         pendingContent.current = preprocessed;
@@ -142,53 +174,136 @@ export default function RichMarkdownEditor({
     const onSetThumbnailRef = useRef(onSetThumbnail);
     onSetThumbnailRef.current = onSetThumbnail;
 
-    // Image extension with NodeView: WYSIWYG hover 시 thumbnail 선택 버튼 표시
+    // folderPath 최신값 ref (ImageDropPaste extension closure)
+    const folderPathRef = useRef(folderPath);
+    folderPathRef.current = folderPath;
+
+    // multi-image layout modal 오픈
+    const handleOpenMultiImageLayout = useCallback(
+        (files: File[], position: number) => {
+            setPendingMultiImageInsert({ files, position });
+        },
+        []
+    );
+
+    // Trigger 1 image-removal 추적 + 1000ms global debounce
+    const onImagesRemovedRef = useRef(onImagesRemoved);
+    onImagesRemovedRef.current = onImagesRemoved;
+    const imagesBeforeRef = useRef<Set<string>>(new Set());
+    const removedQueueRef = useRef<Set<string>>(new Set());
+    const removeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const flushRemoved = useCallback(() => {
+        removeTimerRef.current = null;
+        const urls = Array.from(removedQueueRef.current);
+        removedQueueRef.current.clear();
+        if (urls.length === 0) return;
+        onImagesRemovedRef.current?.(urls);
+    }, []);
+    const collectImageSrcs = useCallback((e: Editor): Set<string> => {
+        const srcs = new Set<string>();
+        e.state.doc.descendants((node) => {
+            if (
+                node.type.name === "image" &&
+                typeof node.attrs.src === "string"
+            ) {
+                srcs.add(node.attrs.src);
+            }
+            if (
+                node.type.name === "imageGroup" &&
+                Array.isArray(node.attrs.images)
+            ) {
+                node.attrs.images.forEach((image: unknown) => {
+                    if (typeof image === "string") srcs.add(image);
+                });
+            }
+        });
+        return srcs;
+    }, []);
+
+    // Image extension with NodeView: WYSIWYG hover 시 thumbnail/delete 버튼 표시
     const ImageWithThumbnail = useMemo(
         () =>
             Image.extend({
                 addNodeView() {
-                    return ReactNodeViewRenderer(({ node }: NodeViewProps) => (
-                        <NodeViewWrapper
-                            as="span"
-                            className="editor-image-node group inline-block max-w-full align-top"
-                        >
-                            <span
-                                contentEditable={false}
-                                className="relative inline-flex max-w-full align-top leading-none"
+                    return ReactNodeViewRenderer(function ImageNodePreview({
+                        node,
+                        deleteNode,
+                    }: NodeViewProps) {
+                        const [confirmOpen, setConfirmOpen] = useState(false);
+
+                        return (
+                            <NodeViewWrapper
+                                as="span"
+                                className="editor-image-node group inline-block max-w-full align-top"
                             >
-                                <img
-                                    src={node.attrs.src as string}
-                                    alt={(node.attrs.alt as string) ?? ""}
-                                    title={
-                                        (node.attrs.title as string) ||
-                                        undefined
-                                    }
-                                    className="block h-auto max-w-full"
-                                />
-                                {onSetThumbnailRef.current &&
-                                    node.attrs.src && (
+                                <span
+                                    contentEditable={false}
+                                    className="relative inline-flex max-w-full align-top leading-none"
+                                >
+                                    <img
+                                        src={node.attrs.src as string}
+                                        alt={(node.attrs.alt as string) ?? ""}
+                                        title={
+                                            (node.attrs.title as string) ||
+                                            undefined
+                                        }
+                                        className="block h-auto max-w-full"
+                                    />
+                                    <span
+                                        contentEditable={false}
+                                        className="absolute top-3 right-3 z-10 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100"
+                                    >
+                                        {onSetThumbnailRef.current &&
+                                            node.attrs.src && (
+                                                <button
+                                                    type="button"
+                                                    contentEditable={false}
+                                                    onMouseDown={(e) =>
+                                                        e.preventDefault()
+                                                    }
+                                                    onClick={() => {
+                                                        onSetThumbnailRef.current?.(
+                                                            node.attrs
+                                                                .src as string
+                                                        );
+                                                        toast.success(
+                                                            "썸네일로 설정됨"
+                                                        );
+                                                    }}
+                                                    className="rounded bg-(--color-accent) px-2 py-1 text-xs font-medium whitespace-nowrap text-(--color-on-accent)"
+                                                >
+                                                    썸네일로 설정
+                                                </button>
+                                            )}
                                         <button
                                             type="button"
                                             contentEditable={false}
+                                            aria-label="이미지 삭제"
                                             onMouseDown={(e) =>
                                                 e.preventDefault()
                                             }
-                                            onClick={() => {
-                                                onSetThumbnailRef.current?.(
-                                                    node.attrs.src as string
-                                                );
-                                                toast.success(
-                                                    "썸네일로 설정됨"
-                                                );
-                                            }}
-                                            className="absolute top-3 right-3 z-10 rounded bg-(--color-accent) px-2 py-1 text-xs font-medium whitespace-nowrap text-(--color-on-accent) opacity-0 transition-opacity group-hover:opacity-100"
+                                            onClick={() => setConfirmOpen(true)}
+                                            className="rounded bg-red-600 p-1.5 text-white transition-opacity hover:opacity-90"
                                         >
-                                            썸네일로 설정
+                                            <Trash2 className="h-3.5 w-3.5" />
                                         </button>
-                                    )}
-                            </span>
-                        </NodeViewWrapper>
-                    ));
+                                    </span>
+                                </span>
+                                <ImageDeleteConfirmDialog
+                                    open={confirmOpen}
+                                    onOpenChange={setConfirmOpen}
+                                    title="이미지 삭제 확인"
+                                    description="이 이미지를 본문에서 삭제할지 확인합니다. cleanup trigger가 실행되면 참조가 사라진 R2 이미지도 정리 대상이 됩니다."
+                                    images={[
+                                        typeof node.attrs.src === "string"
+                                            ? node.attrs.src
+                                            : "",
+                                    ].filter(Boolean)}
+                                    onConfirm={() => deleteNode()}
+                                />
+                            </NodeViewWrapper>
+                        );
+                    });
                 },
             }).configure({ inline: true, allowBase64: true }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,13 +321,8 @@ export default function RichMarkdownEditor({
             }
         }
         // JSX → directive 변환 후 Tiptap에 로드 (JSX를 그대로 넘기면 FoliumTable 등이 소실됨)
-        // directive → HTML 변환 (YoutubeEmbed, ColoredTableNode parseHTML 호환)
         const directives = jsxToDirective(value);
-        return accordionDirectiveToHtml(
-            latexDirectiveToHtml(
-                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(directives))
-            )
-        );
+        return preprocessDirectiveContent(directives);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -232,10 +342,21 @@ export default function RichMarkdownEditor({
             ColoredTableNode,
             LatexNode,
             AccordionNode,
+            ImageGroupNode.configure({
+                hasThumbnailAction: () => Boolean(onSetThumbnailRef.current),
+                onSetThumbnail: (url) => {
+                    onSetThumbnailRef.current?.(url);
+                    toast.success("썸네일로 설정됨");
+                },
+            }),
             Placeholder.configure({
                 placeholder: placeholder ?? "Start writing...",
             }),
             ColoredTableExtension.configure({ resizable: true }),
+            ImageDropPaste.configure({
+                getFolderPath: () => folderPathRef.current,
+                onOpenMultiImageLayout: handleOpenMultiImageLayout,
+            }),
         ],
         content: initialContent,
         editable: !disabled,
@@ -243,8 +364,83 @@ export default function RichMarkdownEditor({
             const md = getCleanMarkdown(e);
             // directive → JSX 변환 후 저장 (DB에는 항상 JSX 형식 유지)
             onChange(directiveToJsx(md));
+
+            // Trigger 1 — image 노드 제거 감지, debounce 후 onImagesRemoved 호출
+            const after = collectImageSrcs(e);
+            const before = imagesBeforeRef.current;
+            for (const src of before) {
+                if (!after.has(src)) removedQueueRef.current.add(src);
+            }
+            imagesBeforeRef.current = after;
+            if (removedQueueRef.current.size > 0) {
+                if (removeTimerRef.current)
+                    clearTimeout(removeTimerRef.current);
+                removeTimerRef.current = setTimeout(flushRemoved, 1000);
+            }
         },
     });
+
+    // multi-image group 삽입
+    const handleInsertImageGroup = useCallback(
+        async (layout: MultiImageLayout) => {
+            if (!editor || !pendingMultiImageInsert) return;
+            try {
+                const folder = folderPathRef.current;
+                const uploadedImages = await Promise.all(
+                    pendingMultiImageInsert.files.map((file) =>
+                        uploadImage(file, folder)
+                    )
+                );
+
+                if (layout === "individual") {
+                    let position = pendingMultiImageInsert.position;
+
+                    uploadedImages.forEach((src) => {
+                        const node = editor.state.schema.nodes.image.create({
+                            src,
+                        });
+                        const tr = editor.state.tr.insert(position, node);
+                        editor.view.dispatch(tr);
+                        position += node.nodeSize;
+                    });
+                } else {
+                    editor
+                        .chain()
+                        .focus()
+                        .insertContentAt(pendingMultiImageInsert.position, {
+                            type: "imageGroup",
+                            attrs: {
+                                layout: layout as ImageGroupLayout,
+                                images: uploadedImages,
+                            },
+                        })
+                        .run();
+                }
+
+                setPendingMultiImageInsert(null);
+            } catch (error) {
+                console.error(
+                    "[RichMarkdownEditor::handleInsertImageGroup] group insert 실패",
+                    error
+                );
+                toast.error("다중 이미지 삽입 실패");
+                throw error;
+            }
+        },
+        [editor, pendingMultiImageInsert]
+    );
+
+    // editor 준비 시 imagesBefore 초기 snapshot
+    useEffect(() => {
+        if (editor) imagesBeforeRef.current = collectImageSrcs(editor);
+    }, [editor, collectImageSrcs]);
+
+    // unmount 시 debounce timer 정리
+    useEffect(() => {
+        return () => {
+            if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+        };
+    }, []);
 
     // editor 준비 콜백
     useEffect(() => {
@@ -465,6 +661,13 @@ export default function RichMarkdownEditor({
                 isOpen={imageUploadOpen}
                 onClose={() => setImageUploadOpen(false)}
                 folderPath={folderPath}
+            />
+
+            <ImageLayoutModal
+                files={pendingMultiImageInsert?.files ?? []}
+                isOpen={pendingMultiImageInsert !== null}
+                onClose={() => setPendingMultiImageInsert(null)}
+                onSubmit={handleInsertImageGroup}
             />
         </>
     );
