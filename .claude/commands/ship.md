@@ -40,6 +40,13 @@ Commit the current unstaged changes following these rules strictly:
 
 2a. **Commit grouping**: 여러 무관한 변경을 하나의 commit에 묶지 말 것. 기능별·관심사별로 분리해 commit. 한 번에 4개 이상의 무관한 파일이 staged 상태면, 분리 가능 여부를 검토하고 필요하면 user에게 확인.
 
+    **여러 독립 변경이 동시에 있을 때**:
+    - 각 변경을 별도 commit으로 순차 처리
+    - commit마다 해당 변경에 필요한 파일만 stage
+    - `package.json` version, `docs/CHANGES.md`, `PR.md`는 **각 commit 범위에 맞게 따로** 반영
+    - 첫 번째 commit을 만든 뒤 남은 변경이 있으면, 같은 절차를 반복해 다음 commit 생성
+    - 서로 다른 변경을 하나의 version bump나 하나의 CHANGES 항목으로 합치지 말 것
+
 2b. **Path quoting**: Next.js route group `(frontend)` 와 dynamic segment `[slug]` 는 shell metacharacter이므로 `git add` 시 반드시 큰따옴표로 감쌀 것:
 
     ```bash

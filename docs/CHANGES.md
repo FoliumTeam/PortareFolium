@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.12.10 (2026-04-18)
+
+### chore: ship command의 분리 commit 규칙 명시
+
+- `.claude/commands/ship.md`: 여러 독립 변경이 동시에 있을 때 각 변경별로 별도 commit, 별도 version/CHANGES/PR 반영을 하도록 규칙 추가
+
 ## v0.12.9 (2026-04-18)
 
 ### test: active job field 정규화 회귀 테스트 추가
