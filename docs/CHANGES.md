@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.12.6 (2026-04-18)
+
+### fix: metadata settings modal 본문 clipping 보정
+
+- `src/components/admin/MetadataSheet.tsx`: `DialogHeader`와 본문 wrapper에 `min-w-0` 추가 — `DialogContent`의 grid 직계 자식이 긴 field의 min-content width 때문에 오른쪽으로 잘리던 문제 보정
+
 ## v0.12.5 (2026-04-18)
 
 ### fix: admin metadata settings modal 가로 overflow 보정

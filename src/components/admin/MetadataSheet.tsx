@@ -132,14 +132,14 @@ export default function MetadataSheet(props: MetadataSheetProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="laptop:max-w-4xl desktop:max-w-7xl max-h-[85vh] w-full overflow-x-hidden overflow-y-auto bg-(--color-surface)">
-                <DialogHeader>
+                <DialogHeader className="min-w-0">
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
                         메타데이터 및 발행 설정
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 px-4 pb-8">
+                <div className="min-w-0 space-y-6 px-4 pb-8">
                     {/* 발행 설정 */}
                     <section className="space-y-4">
                         <h4 className="text-sm font-semibold text-(--color-foreground)">
