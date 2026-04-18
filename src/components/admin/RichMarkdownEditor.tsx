@@ -46,6 +46,7 @@ import {
 import { uploadImage } from "@/lib/image-upload";
 import type { ImageGroupLayout } from "@/components/ImageGroup";
 import EditorToolbar from "@/components/admin/EditorToolbar";
+import ImageDeleteConfirmDialog from "@/components/admin/ImageDeleteConfirmDialog";
 import ImageLayoutModal from "@/components/admin/ImageLayoutModal";
 import type { MultiImageLayout } from "@/components/admin/ImageLayoutModal";
 import TiptapImageUpload from "@/components/admin/TiptapImageUpload";
@@ -224,8 +225,13 @@ export default function RichMarkdownEditor({
         () =>
             Image.extend({
                 addNodeView() {
-                    return ReactNodeViewRenderer(
-                        ({ node, deleteNode }: NodeViewProps) => (
+                    return ReactNodeViewRenderer(function ImageNodePreview({
+                        node,
+                        deleteNode,
+                    }: NodeViewProps) {
+                        const [confirmOpen, setConfirmOpen] = useState(false);
+
+                        return (
                             <NodeViewWrapper
                                 as="span"
                                 className="editor-image-node group inline-block max-w-full align-top"
@@ -276,16 +282,28 @@ export default function RichMarkdownEditor({
                                             onMouseDown={(e) =>
                                                 e.preventDefault()
                                             }
-                                            onClick={() => deleteNode()}
+                                            onClick={() => setConfirmOpen(true)}
                                             className="rounded bg-red-600 p-1.5 text-white transition-opacity hover:opacity-90"
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
                                         </button>
                                     </span>
                                 </span>
+                                <ImageDeleteConfirmDialog
+                                    open={confirmOpen}
+                                    onOpenChange={setConfirmOpen}
+                                    title="이미지 삭제 확인"
+                                    description="이 이미지를 본문에서 삭제할지 확인합니다. cleanup trigger가 실행되면 참조가 사라진 R2 이미지도 정리 대상이 됩니다."
+                                    images={[
+                                        typeof node.attrs.src === "string"
+                                            ? node.attrs.src
+                                            : "",
+                                    ].filter(Boolean)}
+                                    onConfirm={() => deleteNode()}
+                                />
                             </NodeViewWrapper>
-                        )
-                    );
+                        );
+                    });
                 },
             }).configure({ inline: true, allowBase64: true }),
         // eslint-disable-next-line react-hooks/exhaustive-deps

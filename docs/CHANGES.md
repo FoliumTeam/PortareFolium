@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.22 (2026-04-19)
+
+### feat: image orphan cleanup 문서화 + 이미지 삭제 confirm dialog 추가
+
+- `docs/IMAGE_ORPHAN_CLEANUP.md` 신규: true-orphan 판정 규칙, Trigger 1/2/3, source mode에서 `ImageGroup` 삭제 시 child 이미지 반영, sidecar/baseKey 규칙, safety guard를 상세 문서화
+- `src/components/admin/ImageDeleteConfirmDialog.tsx` 신규: 삭제 직전 대상 이미지를 미리 보여주는 custom confirm dialog 추가
+- `src/components/admin/RichMarkdownEditor.tsx`: standalone 이미지 delete 버튼을 confirm dialog 뒤에만 실행되도록 변경
+- `src/extensions/ImageGroupNode.tsx`: group 전체 삭제, group 내부 이미지 삭제 모두 confirm dialog 뒤에 실행되도록 변경, slider NodeView의 `img`를 `block`으로 고정하고 하단 padding 제거로 hover 버튼 위치 보정
+
 ## v0.12.21 (2026-04-19)
 
 ### feat: multi-image layout modal + ImageGroup block 추가

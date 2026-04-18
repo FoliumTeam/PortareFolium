@@ -7,6 +7,8 @@ import {
     type ReactNodeViewProps,
 } from "@tiptap/react";
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import ImageDeleteConfirmDialog from "@/components/admin/ImageDeleteConfirmDialog";
 
 type ImageGroupAttributes = {
     images: string[];
@@ -31,6 +33,12 @@ function ImageGroupPreview({
         typeof node.attrs.layout === "string" ? node.attrs.layout : "stack";
     const options = extension.options as ImageGroupNodeOptions;
     const showThumbnailButton = options.hasThumbnailAction?.() ?? false;
+    const [confirmTarget, setConfirmTarget] = useState<{
+        images: string[];
+        mode: "group" | "single";
+        target?: string;
+        index?: number;
+    } | null>(null);
 
     const removeImage = (target: string, index: number) => {
         const nextImages = images.filter(
@@ -65,7 +73,12 @@ function ImageGroupPreview({
                         <button
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => deleteNode()}
+                            onClick={() =>
+                                setConfirmTarget({
+                                    mode: "group",
+                                    images,
+                                })
+                            }
                             className="rounded bg-red-600 p-1.5 text-white transition-opacity hover:opacity-90"
                             aria-label="이미지 그룹 삭제"
                         >
@@ -76,7 +89,7 @@ function ImageGroupPreview({
                 <div
                     className={
                         layout === "slider"
-                            ? "flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
+                            ? "flex snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-visible"
                             : "flex flex-col gap-4"
                     }
                 >
@@ -85,7 +98,7 @@ function ImageGroupPreview({
                             key={`${src}-${index}`}
                             className={
                                 layout === "slider"
-                                    ? "group relative inline-block w-[78%] max-w-none shrink-0 snap-center"
+                                    ? "group relative inline-flex w-[78%] max-w-none shrink-0 snap-center align-top leading-none"
                                     : "group relative block max-w-full"
                             }
                         >
@@ -94,7 +107,7 @@ function ImageGroupPreview({
                                 alt=""
                                 className={
                                     layout === "slider"
-                                        ? "h-auto w-full rounded"
+                                        ? "block h-auto w-full rounded"
                                         : "h-auto max-w-full rounded"
                                 }
                             />
@@ -114,7 +127,14 @@ function ImageGroupPreview({
                                 <button
                                     type="button"
                                     onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => removeImage(src, index)}
+                                    onClick={() =>
+                                        setConfirmTarget({
+                                            mode: "single",
+                                            images: [src],
+                                            target: src,
+                                            index,
+                                        })
+                                    }
                                     className="rounded bg-red-600 p-1.5 text-white transition-opacity hover:opacity-90"
                                     aria-label="그룹 내부 이미지 삭제"
                                 >
@@ -124,6 +144,39 @@ function ImageGroupPreview({
                         </span>
                     ))}
                 </div>
+                <ImageDeleteConfirmDialog
+                    open={confirmTarget !== null}
+                    onOpenChange={(open) => {
+                        if (!open) setConfirmTarget(null);
+                    }}
+                    title={
+                        confirmTarget?.mode === "group"
+                            ? "이미지 그룹 삭제 확인"
+                            : "이미지 삭제 확인"
+                    }
+                    description={
+                        confirmTarget?.mode === "group"
+                            ? "이 이미지 그룹 전체를 본문에서 삭제할지 확인합니다. cleanup trigger가 실행되면 참조가 사라진 child 이미지도 R2 정리 대상이 됩니다."
+                            : "이 이미지를 그룹에서 삭제할지 확인합니다. cleanup trigger가 실행되면 참조가 사라진 R2 이미지도 정리 대상이 됩니다."
+                    }
+                    images={confirmTarget?.images ?? []}
+                    onConfirm={() => {
+                        if (!confirmTarget) return;
+                        if (confirmTarget.mode === "group") {
+                            deleteNode();
+                            return;
+                        }
+                        if (
+                            typeof confirmTarget.target === "string" &&
+                            typeof confirmTarget.index === "number"
+                        ) {
+                            removeImage(
+                                confirmTarget.target,
+                                confirmTarget.index
+                            );
+                        }
+                    }}
+                />
             </div>
         </NodeViewWrapper>
     );
