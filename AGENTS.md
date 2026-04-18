@@ -366,7 +366,9 @@ src/
     ├── mermaid-themes.test.ts
     ├── tailwind-colors.test.ts
     ├── gantt-chart.test.ts
-    └── tiptap-utils.test.ts
+    ├── tiptap-utils.test.ts
+    ├── orphan-cleanup.test.ts
+    └── image-url-conversion.test.ts
 
 e2e/                                    # Playwright E2E 테스트
 ├── auth.setup.ts                       # Supabase 로그인 + storageState 저장
