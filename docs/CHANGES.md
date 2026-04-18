@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.20 (2026-04-18)
+
+### fix: multi-image dnd source markdown를 multiline으로 정규화
+
+- `src/components/admin/RichMarkdownEditor.tsx`: image extension이 `inline: true`라서 dnd/paste로 연속 삽입된 image node가 같은 inline 흐름으로 직렬화되고 source mode에서 `![](...)![](...)` 한 줄로 붙는 원인 확인
+- `src/lib/tiptap-markdown.ts`: `normalizeAdjacentImageMarkdown()` 추가 — tiptap serializer 결과의 연속 image markdown만 `\n\n`으로 분리해서 source mode, autosave, DB 저장 문자열이 모두 multiline 유지
+- `src/__tests__/tiptap-markdown.test.ts`: 연속 image 분리, 기존 줄바꿈 유지, link 뒤 image 비변경 회귀 테스트 추가
+
 ## v0.12.19 (2026-04-18)
 
 ### chore: gh PR body 전달 시 cat/HEREDOC 금지 + body-file 강제

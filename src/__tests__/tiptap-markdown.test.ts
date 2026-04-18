@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
+import {
+    normalizeAdjacentImageMarkdown,
+    unescapeJsxBrackets,
+} from "@/lib/tiptap-markdown";
 
 describe("unescapeJsxBrackets", () => {
     it("JSX 속성값 내부 \\[ \\] 복원", () => {
@@ -27,5 +30,27 @@ describe("unescapeJsxBrackets", () => {
     it("소문자로 시작하는 태그는 대상 외", () => {
         const input = "<img src=\\[foo\\] />";
         expect(unescapeJsxBrackets(input)).toBe(input);
+    });
+});
+
+describe("normalizeAdjacentImageMarkdown", () => {
+    it("연속 image markdown 사이를 blank line으로 분리", () => {
+        const input =
+            "![](https://example.com/a.webp)![](https://example.com/b.webp)";
+        expect(normalizeAdjacentImageMarkdown(input)).toBe(
+            "![](https://example.com/a.webp)\n\n![](https://example.com/b.webp)"
+        );
+    });
+
+    it("이미 줄바꿈이 있으면 유지", () => {
+        const input =
+            "![](https://example.com/a.webp)\n\n![](https://example.com/b.webp)";
+        expect(normalizeAdjacentImageMarkdown(input)).toBe(input);
+    });
+
+    it("link 뒤 image는 건드리지 않음", () => {
+        const input =
+            "[ref](https://example.com)![](https://example.com/a.webp)";
+        expect(normalizeAdjacentImageMarkdown(input)).toBe(input);
     });
 });
