@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.43 (2026-04-20)
+
+### test: E2E runtime error 수집에 http 4xx URL 포함
+
+- `e2e/content-rendering.spec.ts`: `trackRuntimeErrors`에 `page.on("response")` hook을 추가해 4xx/5xx status의 실제 URL을 `http <status>: <url>` 형식으로 `runtimeErrors`에 수집. Chromium console이 "Failed to load resource" 메시지에 URL을 포함하지 않는 문제를 보완해 CI failure log에서 문제 resource를 즉시 식별 가능
+- `e2e/content-rendering.spec.ts`: `ALLOWED_4XX_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"]` 허용 목록 도입 — external CDN transient 4xx는 assertion 실패에서 제외, 자체 자원의 4xx는 strict하게 유지해 frontend runtime gate 정책 유지
+- `package.json`: patch version `0.12.43`로 증가
+
 ## v0.12.42 (2026-04-20)
 
 ### refactor: shadcn/ui token registration via @theme inline + AGENTS.md directive

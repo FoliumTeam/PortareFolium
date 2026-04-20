@@ -41,6 +41,9 @@ async function getVisibleLightboxImage(page: Page) {
     return null;
 }
 
+// external CDN transient 4xx는 assertion에서 제외
+const ALLOWED_4XX_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
+
 // 브라우저 런타임 에러 수집
 function trackRuntimeErrors(page: Page) {
     const runtimeErrors: string[] = [];
@@ -52,6 +55,15 @@ function trackRuntimeErrors(page: Page) {
     page.on("console", (message) => {
         if (message.type() !== "error") return;
         runtimeErrors.push(`console: ${message.text()}`);
+    });
+
+    // failed subresource URL capture (console.error만으로는 URL 특정 불가)
+    page.on("response", (response) => {
+        const status = response.status();
+        if (status < 400) return;
+        const url = response.url();
+        if (ALLOWED_4XX_HOSTS.some((host) => url.includes(host))) return;
+        runtimeErrors.push(`http ${status}: ${url}`);
     });
 
     return runtimeErrors;
