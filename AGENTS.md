@@ -54,10 +54,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing Gate
 
 - **Commit gate (로컬)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook(husky + lint-staged)이 이미 이 수준을 강제함.
-- **Push gate (CI-driven)**: 로컬 E2E는 필수 아님. `git push` 이후 GitHub Actions (`.github/workflows/e2e.yml`)가 크로스 브라우저 Playwright E2E를 자동 실행. CI fail 시 follow-up fix commit으로 대응 — `--no-verify`로 hook 우회 금지.
+- **Push gate (로컬 strict)**: `git push` 전에 `.husky/pre-push`가 `pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. E2E 통과 못 하면 push 차단. CI E2E workflow (`.github/workflows/e2e.yml`)는 v0.12.50에서 제거됨 — Cloudflare R2 `pub-*.r2.dev` 가 GitHub Actions IP를 abuse filter로 차단해 Next.js image optimization이 항상 400 반환하던 문제 때문. local push gate가 유일한 E2E 통과 검증 수단이므로 `--no-verify`로 hook 우회 금지.
 - **Frontend runtime gate (필수)**: frontend route, `src/components/**/*.tsx` client component, lightbox/editor 같은 브라우저 인터랙션 코드를 수정했으면 `pnpm dev` 기준으로 실제 대상 route를 열어 browser console error / `pageerror` / redbox 0개를 직접 확인해야 함. build 통과만으로 런타임 검증을 대체하지 말 것.
 - **E2E runtime assertions**: 새 E2E나 기존 E2E를 수정할 때는 가능하면 browser console error 와 `pageerror`를 수집해 assertion에 포함. 단순 visibility check만으로 "all tests good" 판단 금지.
-- `test.skip()`이 늘어나면 원인을 기록 (CI DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
+- `test.skip()`이 늘어나면 원인을 기록 (DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
 
 ### Commit Conventions
 

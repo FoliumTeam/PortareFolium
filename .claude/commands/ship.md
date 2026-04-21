@@ -64,8 +64,8 @@ Commit the current unstaged changes following these rules strictly:
 
 6. **Commit only, do NOT push**: Stage relevant files, commit, and stop. Do not run `git push` unless explicitly prompted by the user.
 
-7. **Testing gate — commit-time only**:
-    - If there are any code changes, verify **unit tests** pass (`pnpm exec vitest run`) before committing. Pre-commit hook already enforces this via husky + lint-staged. Docs-only 또는 파일 삭제만 있는 commit에서는 test 생략.
-    - Push-time E2E는 GitHub Actions CI가 자동 처리하므로 local E2E 실행 불요. CI 실패 시 follow-up fix. `--no-verify`로 hook 우회 금지.
+7. **Testing gate**:
+    - **Commit-time (unit)**: If there are any code changes, verify **unit tests** pass (`pnpm exec vitest run`) before committing. Pre-commit hook already enforces this via husky + lint-staged. Docs-only 또는 파일 삭제만 있는 commit에서는 test 생략.
+    - **Push-time (E2E, 로컬 strict)**: `git push` 시 `.husky/pre-push`가 `pnpm exec playwright test --project=chromium --project=authenticated-chromium` 를 자동 실행. E2E 실패 시 push 차단. CI E2E workflow는 v0.12.50에서 제거됨 (R2 `pub-*.r2.dev` 가 GitHub Actions IP를 abuse filter로 차단). `--no-verify`로 commit/push hook 우회 금지.
 
 $ARGUMENTS

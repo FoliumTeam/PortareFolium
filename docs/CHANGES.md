@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.51 (2026-04-21)
+
+### chore: GitHub Actions E2E workflow 제거 + local pre-push gate 전환
+
+- Root cause: Cloudflare R2 `pub-*.r2.dev` public URL이 GitHub Actions runner IP range를 abuse filter로 차단. Next.js `/_next/image` optimization이 R2 upstream fetch 실패 (ECONNRESET) → 400 반환 → CI E2E strict assertion 매번 fail. `R2_PUBLIC_URL` secret 주입 + `remotePatterns` 조정으로는 network-level 차단 해결 불가
+- 결정: 개인 portfolio 규모에서 R2 custom domain 도입 비용 대비 이득 낮음. CI E2E 포기, 로컬 Husky pre-push hook으로 strict gate 대체
+- `.github/workflows/e2e.yml` 제거
+- `.husky/pre-push` 신규 — `pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. E2E 실패 시 push 차단
+- `AGENTS.md`, `.claude/commands/ship.md`, `docs/TEST.md`, `README.md`: Testing Gate / Push gate 섹션을 CI-driven에서 로컬 strict로 재작성. `R2_PUBLIC_URL` 을 필수 `.env.local` 항목에 추가
+- `package.json`: patch version `0.12.51`로 증가
+
 ## v0.12.50 (2026-04-21)
 
 ### docs: SQLite refuge 계획에 local server boundary 설명 추가

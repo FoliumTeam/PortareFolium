@@ -1,0 +1,4 @@
+#!/bin/sh
+# Husky pre-push: 로컬 E2E (chromium + authenticated-chromium) 통과 검증
+# CI E2E workflow 제거에 따른 push gate 강제 (--no-verify 우회 금지)
+pnpm exec playwright test --project=chromium --project=authenticated-chromium

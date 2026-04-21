@@ -2,11 +2,11 @@
 
 ## 테스트 인프라
 
-| 도구                     | 용도                                         | 실행 명령어                 |
-| ------------------------ | -------------------------------------------- | --------------------------- |
-| Vitest + Testing Library | 단위 테스트 (유틸 함수, 데이터 변환)         | `pnpm test`                 |
-| Playwright               | E2E 테스트 (크로스 브라우저 + 반응형 + 인증) | `pnpm test:e2e`             |
-| GitHub Actions           | CI — push/PR 시 자동 실행                    | `.github/workflows/e2e.yml` |
+| 도구                     | 용도                                         | 실행 명령어       |
+| ------------------------ | -------------------------------------------- | ----------------- |
+| Vitest + Testing Library | 단위 테스트 (유틸 함수, 데이터 변환)         | `pnpm test`       |
+| Playwright               | E2E 테스트 (크로스 브라우저 + 반응형 + 인증) | `pnpm test:e2e`   |
+| Husky pre-push           | 로컬 strict E2E gate (push 시 자동 실행)     | `.husky/pre-push` |
 
 ## Playwright 구조
 
@@ -109,20 +109,20 @@ pnpm test:e2e:ui           # Playwright UI 모드 (디버깅)
 
 - PDF 내보내기 버튼 표시 + 모달 열림 + 페이지 수 표시
 
-## CI (GitHub Actions)
+## Push Gate (로컬 Husky pre-push)
 
-`.github/workflows/e2e.yml` — `main`/`test` 브랜치 push, `main` PR 시 자동 실행.
+v0.12.50부터 GitHub Actions E2E workflow (`.github/workflows/e2e.yml`)는 제거됨. Cloudflare R2 `pub-*.r2.dev` 가 GitHub Actions runner IP를 abuse filter로 상시 차단해 Next.js image optimization이 항상 400 반환, CI E2E 통과 불가였기 때문.
 
+대체 gate: `.husky/pre-push`
+
+```sh
+pnpm exec playwright test --project=chromium --project=authenticated-chromium
 ```
-Install → Build → Vitest 단위 테스트 → Playwright E2E
-```
 
-브라우저 3개 (Chromium/Firefox/WebKit) 병렬 매트릭스. 각 job에서 공개 + 인증 테스트 모두 실행. 실패 시 `playwright-report` artifact 7일 보존.
-
-필요 GitHub Secrets:
-
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — 빌드 + 런타임
-- `E2E_EMAIL`, `E2E_PASSWORD` — 인증 E2E 테스트
+- `git push` 시 자동 실행
+- Chromium + authenticated-chromium 프로젝트만 (Firefox/WebKit/mobile은 로컬 수동 실행)
+- 실패 시 push 차단. `--no-verify` 우회 금지 — 유일한 E2E 통과 검증 수단
+- 필요 `.env.local` 항목: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `E2E_EMAIL`, `E2E_PASSWORD`, `R2_PUBLIC_URL`
 
 ## 수동 테스트 체크리스트
 

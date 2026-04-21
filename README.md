@@ -166,32 +166,27 @@ Vercel 프로젝트 → **Settings** → **Environment Variables**에서 아래 
 
 ---
 
-## 개발자용: GitHub Actions CI 설정
+## 개발자용: 로컬 테스트 gate
 
 > 이 섹션은 이 저장소를 **clone하여 직접 개발**하는 분을 위한 내용임. Fork 배포 또는 원클릭 배포로 사이트만 운영하는 경우 설정할 필요 없음.
 
-이 프로젝트는 `main` 또는 `test` 브랜치에 push하거나, `main`으로 PR을 생성하면 GitHub Actions가 자동으로 빌드 + E2E 테스트(Chromium/Firefox/WebKit)를 실행함. CI가 정상 동작하려면 GitHub Secrets에 Supabase 인증 정보를 등록해야 함.
+GitHub Actions CI E2E workflow는 v0.12.50에서 제거됐음. Cloudflare R2 `pub-*.r2.dev` 가 GitHub Actions runner IP를 abuse filter로 차단해 Next.js image optimization이 항상 400 반환, CI E2E 통과 불가였기 때문. 대신 로컬 Husky hook으로 gate를 대체.
 
-### 설정 방법
+### Husky 훅
 
-1. GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** 클릭
-2. **New repository secret** 버튼으로 아래 3개를 각각 추가:
+| 훅                  | 실행 시점    | 검증 항목                                                                             |
+| ------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| `.husky/pre-commit` | `git commit` | `pnpm exec lint-staged` + `pnpm vitest run` (Prettier + unit tests)                   |
+| `.husky/pre-push`   | `git push`   | `pnpm exec playwright test --project=chromium --project=authenticated-chromium` (E2E) |
 
-| Secret 이름                     | 값                              | 어디서 찾나                              |
-| ------------------------------- | ------------------------------- | ---------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase 프로젝트 URL           | Supabase → Settings → API → Project URL  |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public 키         | Supabase → Settings → API → anon public  |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase service_role secret 키 | Supabase → Settings → API → service_role |
+`--no-verify`로 hook 우회 금지 — push gate가 유일한 E2E 통과 검증.
 
-1. 설정 완료 후 push하면 **Actions** 탭에서 테스트 실행 결과를 확인할 수 있음.
+### 필요 로컬 env (`.env.local`)
 
-### CI가 실행하는 항목
-
-| 단계      | 내용                                               |
-| --------- | -------------------------------------------------- |
-| Install   | `pnpm install --frozen-lockfile`                   |
-| Build     | `pnpm build` (Next.js 정적 생성)                   |
-| Unit Test | `pnpm test run` (Vitest)                           |
-| E2E Test  | Chromium / Firefox / WebKit 병렬 실행 (Playwright) |
-
-테스트가 실패하면 PR에 ❌가 표시되고, **Actions** 탭에서 실패 로그와 Playwright 리포트를 다운로드할 수 있음.
+| 변수                            | 용도                         |
+| ------------------------------- | ---------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase 프로젝트 URL        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public 키      |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase service_role secret |
+| `R2_PUBLIC_URL`                 | Cloudflare R2 public URL     |
+| `E2E_EMAIL`, `E2E_PASSWORD`     | 인증 E2E 로그인 자격         |
