@@ -54,7 +54,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing Gate
 
 - **Commit gate (로컬)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook(husky + lint-staged)이 이미 이 수준을 강제함.
-- **Push gate (로컬 strict)**: `git push` 전에 `.husky/pre-push`가 `pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. E2E 통과 못 하면 push 차단. CI E2E workflow (`.github/workflows/e2e.yml`)는 v0.12.50에서 제거됨 — Cloudflare R2 `pub-*.r2.dev` 가 GitHub Actions IP를 abuse filter로 차단해 Next.js image optimization이 항상 400 반환하던 문제 때문. local push gate가 유일한 E2E 통과 검증 수단이므로 `--no-verify`로 hook 우회 금지.
+- **Push gate (로컬 strict)**: `git push` 전에 `.husky/pre-push`가 `pnpm build` 후 `BASE_URL=http://127.0.0.1:3100 E2E_SERVER_MODE=start pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. E2E 통과 못 하면 push 차단. CI E2E workflow (`.github/workflows/e2e.yml`)는 v0.12.50에서 제거됨 — Cloudflare R2 `pub-*.r2.dev` 가 GitHub Actions IP를 abuse filter로 차단해 Next.js image optimization이 항상 400 반환하던 문제 때문. local push gate가 유일한 E2E 통과 검증 수단이므로 `--no-verify`로 hook 우회 금지.
 - **Frontend runtime gate (필수)**: frontend route, `src/components/**/*.tsx` client component, lightbox/editor 같은 브라우저 인터랙션 코드를 수정했으면 `pnpm dev` 기준으로 실제 대상 route를 열어 browser console error / `pageerror` / redbox 0개를 직접 확인해야 함. build 통과만으로 런타임 검증을 대체하지 말 것.
 - **E2E runtime assertions**: 새 E2E나 기존 E2E를 수정할 때는 가능하면 browser console error 와 `pageerror`를 수집해 assertion에 포함. 단순 visibility check만으로 "all tests good" 판단 금지.
 - `test.skip()`이 늘어나면 원인을 기록 (DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
@@ -233,7 +233,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Deployment: Vercel
 - Package Manager: pnpm 10
 - Testing: Vitest + Testing Library (unit) / Playwright (E2E)
-- CI: GitHub Actions (`.github/workflows/e2e.yml` — push/PR 시 크로스 브라우저 E2E)
+- Auth: NextAuth v5 (Google OAuth + legacy migration bridge + E2E credentials)
 - Editor: Tiptap (Rich Markdown Editor)
 - Diagrams: Mermaid 11
 - Code Highlighting: Shiki
@@ -261,22 +261,35 @@ src/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   ├── login/page.tsx
+│   │   ├── migrate/page.tsx
 │   │   └── actions/                    # Server Actions
+│   │       ├── about.ts                # About bootstrap + 저장
 │   │       ├── agent-tokens.ts         # Agent token CRUD
+│   │       ├── books.ts                # Books bootstrap + CRUD
+│   │       ├── editor-states.ts        # editor_states bootstrap + CRUD + snapshot rewrite
+│   │       ├── gantt-chart.ts          # Gantt Chart archive CRUD
 │   │       ├── lightbox-sidecars.ts    # Lightbox sidecar backfill 실행
+│   │       ├── portfolio.ts            # Portfolio bootstrap + CRUD
+│   │       ├── posts.ts                # Posts bootstrap + CRUD
+│   │       ├── public-data.ts          # 공개 태그/검색/bootstrap read
 │   │       ├── revalidate.ts           # On-Demand revalidation (revalidatePost, revalidatePortfolioItem, revalidateBook, revalidateHome, revalidateResume)
+│   │       ├── resume.ts               # Resume bootstrap + 저장
+│   │       ├── site-config.ts          # SiteConfig bootstrap + 저장
 │   │       └── snapshots.ts            # DB 스냅샷 관리
 │   └── api/
+│       ├── auth/[...nextauth]/route.ts # NextAuth 엔드포인트
 │       ├── mcp/route.ts                # MCP 서버 엔드포인트
 │       ├── upload-image/route.ts       # R2 이미지 업로드 (admin 인증 + S3 SDK)
 │       ├── storage-ops/route.ts        # R2 파일 list/move/delete (admin 인증)
 │       └── run-migrations/route.ts
+├── auth.ts                              # NextAuth 설정 (Google/E2E credentials/JWT admin 세션)
 ├── components/
 │   ├── Header.tsx                      # 네비게이션 + UserMenu + ThemeToggle
 │   ├── Footer.tsx                      # 저작권 + GitHub 링크
 │   ├── ContentWrapper.tsx              # CVA 기반 max-width 래퍼 (default/wide/full)
 │   ├── ThemeToggle.tsx                 # dark/light/system 토글
 │   ├── UserMenu.tsx                    # 로그인/프로필 드롭다운
+│   ├── AuthSessionProvider.tsx         # NextAuth SessionProvider 래퍼
 │   ├── GlobalSearch.tsx                # Header global search (posts + portfolio, job_field 기반)
 │   ├── AboutView.tsx                   # About 페이지 렌더러
 │   ├── PortfolioView.tsx               # Portfolio 상세 렌더러
@@ -297,8 +310,6 @@ src/
 │   ├── resume/                         # 이력서 테마 — Server Component
 │   │   ├── ResumeClassic.tsx
 │   │   ├── ResumeModern.tsx
-│   │   ├── ResumeMinimal.tsx
-│   │   ├── ResumePhases.tsx            # 웹→게임 전환 내러티브 테마
 │   │   ├── SkillsSection.tsx           # Phases 전용 스킬 렌더러 (직무별/카테고리별 토글)
 │   │   └── SkillBadge.tsx
 │   └── admin/                          # 관리자 UI — "use client" React 컴포넌트
@@ -306,9 +317,11 @@ src/
 │       ├── AdminHeader.tsx             # 전체 너비 헤더 + ⌘K 단축키
 │       ├── AdminSidebar.tsx            # 토글 가능 사이드바
 │       ├── AdminSaveBar.tsx            # sticky 저장 바 (portal → #admin-save-bar-slot)
-│       ├── AuthGuard.tsx
+│       ├── AdminAccessGate.tsx         # legacy Supabase bridge 확인용 admin gate
 │       ├── CommandPalette.tsx          # Cmd+K 커맨드 팔레트
+│       ├── EditorStatePreservation.tsx # editor_states 자동저장/북마크 UI
 │       ├── LoginForm.tsx               # returnUrl 지원
+│       ├── MigrationGuide.tsx          # legacy Supabase → NextAuth 전환 안내
 │       ├── RichMarkdownEditor.tsx      # Tiptap 기반 에디터
 │       ├── ImageLayoutModal.tsx        # 다중 이미지 레이아웃 선택 모달
 │       ├── ImageDeleteConfirmDialog.tsx # 이미지/이미지 그룹 삭제 확인 모달
@@ -339,6 +352,7 @@ src/
 │           ├── SnapshotsPanel.tsx      # DB 스냅샷 관리
 │           └── GanttChartPanel.tsx     # Gantt Chart archive 관리 (CSV import + 미리보기)
 ├── lib/                                # 유틸리티 모듈
+│   ├── admin-auth.ts                   # 관리자 allowlist / session 판별
 │   ├── supabase.ts                     # serverClient (service_role) + browserClient (anon)
 │   ├── queries.ts                      # React cache() 기반 Supabase 쿼리
 │   ├── blog.ts                         # 블로그 유틸 (날짜 포맷, 요약 추출)
@@ -361,6 +375,8 @@ src/
 │   ├── job-field.ts                    # 직군 필드 유틸
 │   ├── mermaid-render.ts               # Mermaid 렌더링
 │   ├── mermaid-themes.ts               # Mermaid 테마 설정 (컬러 스킴 동기화)
+│   ├── resume-layout.ts                # Resume section layout 정규화/순서 계산
+│   ├── server-admin.ts                 # NextAuth 관리자 세션 강제 helper
 │   ├── tailwind-colors.ts              # Tailwind 컬러 유틸
 │   ├── utils.ts                        # 공용 유틸
 │   └── hooks/                          # React 커스텀 훅
@@ -389,7 +405,7 @@ src/
     └── image-url-conversion.test.ts
 
 e2e/                                    # Playwright E2E 테스트
-├── auth.setup.ts                       # Supabase 로그인 + storageState 저장
+├── auth.setup.ts                       # NextAuth E2E credentials 로그인 + storageState 저장
 ├── smoke.spec.ts                       # 주요 페이지 로딩 + 404
 ├── navigation.spec.ts                  # 헤더 네비게이션 + 페이지 이동
 ├── theme.spec.ts                       # 다크/라이트 모드 토글
@@ -399,7 +415,7 @@ e2e/                                    # Playwright E2E 테스트
 ├── blog-views.spec.ts                  # Blog list/block toggle, search, pagination
 └── authenticated/                      # 인증 필요 테스트
     └── pdf-export.spec.ts              # PDF export 프리뷰 + grid 검증
-playwright.config.ts                    # Playwright 설정 (5 + authenticated 3 projects)
+playwright.config.ts                    # Playwright 설정 (수동 dev / push gate build+start 분기)
 .github/workflows/e2e.yml              # CI: push/PR 시 크로스 브라우저 E2E 자동 실행
 supabase/
 ├── setup.sql                           # 전체 스키마 초기화 (신규 설치용)

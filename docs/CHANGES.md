@@ -5,7 +5,8 @@
 ### chore: pre-push E2E를 build + start 기준으로 전환
 
 - `.husky/pre-push`: `pnpm build` 후 `BASE_URL=http://127.0.0.1:3100`, `E2E_SERVER_MODE=start`로 chromium/authenticated-chromium E2E 실행
-- `playwright.config.ts`: 로컬 수동 실행은 `pnpm dev`, push gate/CI 성격 실행은 `pnpm start -- --hostname 127.0.0.1 --port 3100`을 사용하도록 분기 추가
+- `playwright.config.ts`: 로컬 수동 실행은 `pnpm dev`, push gate/CI 성격 실행은 `pnpm exec next start -H 127.0.0.1 -p 3100`을 사용하도록 분기 추가
+- `playwright.config.ts`: start 모드에서 `NEXTAUTH_SECRET`가 비어 있으면 `e2e-nextauth-secret` 기본값을 주입해 session API 500 방지
 - dev cold-start성 500 false positive를 줄이고 push gate를 production 유사 환경으로 정렬
 - `package.json`: patch version `0.12.68`로 증가
 
