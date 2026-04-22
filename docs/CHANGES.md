@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.12.66 (2026-04-22)
+
+### docs: NextAuth 전환 후 수동 작업 체크리스트 추가
+
+- `USER_TASKS.md`: Google OAuth redirect URI, `NEXTAUTH_SECRET`, `AUTH_ADMIN_EMAILS`, legacy bridge 토글, E2E 계정 변수 설정 순서를 추가
+- `package.json`: patch version `0.12.66`로 증가
+
 ## v0.12.65 (2026-04-22)
 
 ### fix: admin gate 마감과 legacy bridge 경로 정리
