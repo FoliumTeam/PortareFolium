@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.60 (2026-04-22)
+
+### refactor: Gantt Chart admin archive CRUD를 server action 경계로 이동
+
+- `src/app/admin/actions/gantt-chart.ts` 신규: `gantt_chart_archives` 목록 조회, 생성, 편집, 설정 저장, category color 저장, 삭제를 관리자 server action으로 통합
+- `src/components/admin/panels/GanttChartPanel.tsx`: browserClient 기반 archive 로드/설정 저장/삭제 제거, server action 호출 기반으로 전환
+- `src/components/admin/panels/GanttChartCreateModal.tsx`: create/edit 저장을 server action 호출 기반으로 전환
+- `src/components/admin/panels/GanttChartCategoryColorModal.tsx`: category color 저장을 server action 호출 기반으로 전환
+- `package.json`: patch version `0.12.60`로 증가
+
 ## v0.12.59 (2026-04-22)
 
 ### refactor: editor_states / BooksSubPanel 경계 이관과 revalidate 보강
