@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { browserClient } from "@/lib/supabase";
+import { signOut } from "next-auth/react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import CommandPalette from "@/components/admin/CommandPalette";
@@ -114,9 +114,7 @@ export default function AdminDashboard() {
             const remaining = INACTIVITY_LIMIT_MS - elapsed;
             if (remaining <= 0) {
                 clearInterval(tick);
-                if (browserClient)
-                    await browserClient.auth.signOut({ scope: "global" });
-                window.location.href = "/admin/login";
+                await signOut({ callbackUrl: "/admin/login" });
             } else {
                 setRemainingMs(remaining);
             }
@@ -148,9 +146,7 @@ export default function AdminDashboard() {
 
     // 모든 기기에서 로그아웃
     const handleLogout = async () => {
-        if (!browserClient) return;
-        await browserClient.auth.signOut({ scope: "global" });
-        window.location.href = "/admin/login";
+        await signOut({ callbackUrl: "/admin/login" });
     };
 
     return (

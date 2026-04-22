@@ -6,7 +6,7 @@
  * URL 쿼리 ?category=...&tag=... 로 필터 공유 가능.
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { browserClient } from "@/lib/supabase";
+import { useSession } from "next-auth/react";
 
 /** 태그 색상으로 사용해도 안전한 CSS 값인지 검사 (hex 3/6/8자리, rgb, rgba만 허용) */
 function isSafeCssColor(value: string): boolean {
@@ -148,15 +148,9 @@ function GridIcon({ className }: { className?: string }) {
 }
 
 export default function BlogPage({ posts, categories, tags }: Props) {
-    // 로그인 상태 확인 → 관리 버튼 표시 (렌더 비차단)
-    const [showManagePost, setShowManagePost] = useState(false);
-    useEffect(() => {
-        if (!browserClient) return;
-        // getSession은 network 호출 없이 local session 확인
-        browserClient.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) setShowManagePost(true);
-        });
-    }, []);
+    const { data: session, status } = useSession();
+    const showManagePost =
+        status === "authenticated" && session?.user?.isAdmin === true;
 
     const categoryNames = useMemo(
         () => categories.map((c) => c.name),

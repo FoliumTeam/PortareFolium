@@ -5,62 +5,36 @@ import { browserClient } from "@/lib/supabase";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 // 프로필 이미지 placeholder
 const PLACEHOLDER_IMG = "/avatar-placeholder.svg";
 
 export default function UserMenu() {
-    const [user, setUser] = useState<{ id: string } | null>(null);
     const [profileImg, setProfileImg] = useState<string>(PLACEHOLDER_IMG);
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [legacyAuthed, setLegacyAuthed] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+    const { data: session, status } = useSession();
+    const isAuthed = status === "authenticated" && session?.user?.isAdmin;
 
     // 인증 상태 + 프로필 이미지 로드
     useEffect(() => {
         setMounted(true);
-        if (!browserClient) return;
+        if (!isAuthed) return;
+        void loadProfileImage();
+    }, [isAuthed]);
 
-        // getSession은 network 호출 없이 local session 확인
-        // refresh token이 stale/invalid인 경우 local 세션 clear
-        browserClient.auth
-            .getSession()
-            .then(({ data: { session }, error }) => {
-                if (error) {
-                    console.warn(
-                        "[UserMenu::getSession] stale session cleared:",
-                        error.message
-                    );
-                    browserClient?.auth.signOut({ scope: "local" });
-                    return;
-                }
-                if (session?.user) {
-                    setUser({ id: session.user.id });
-                    loadProfileImage();
-                }
-            })
-            .catch((error: unknown) => {
-                console.warn(
-                    "[UserMenu::getSession] refresh failed, clearing:",
-                    error
-                );
-                browserClient?.auth.signOut({ scope: "local" });
-            });
-
-        const { data: listener } = browserClient.auth.onAuthStateChange(
-            (_event, session) => {
-                if (session?.user) {
-                    setUser({ id: session.user.id });
-                    loadProfileImage();
-                } else {
-                    setUser(null);
-                }
-            }
-        );
-
-        return () => listener.subscription.unsubscribe();
-    }, []);
+    useEffect(() => {
+        if (!browserClient || isAuthed) return;
+        browserClient.auth.getUser().then(({ data }) => {
+            const legacyEmail = data.user?.email ?? null;
+            setLegacyAuthed(Boolean(legacyEmail && isAdminEmail(legacyEmail)));
+        });
+    }, [isAuthed]);
 
     // resume_data에서 프로필 이미지 fetch (sessionStorage cache)
     const loadProfileImage = async () => {
@@ -102,13 +76,17 @@ export default function UserMenu() {
     }
 
     // 미인증: 로그인 버튼
-    if (!user) {
+    if (!isAuthed) {
         return (
             <Link
-                href={`/admin/login?returnUrl=${encodeURIComponent(pathname)}`}
+                href={
+                    legacyAuthed
+                        ? "/admin/migrate"
+                        : `/admin/login?returnUrl=${encodeURIComponent(pathname)}`
+                }
                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
             >
-                로그인
+                {legacyAuthed ? "계정 전환" : "로그인"}
             </Link>
         );
     }
@@ -147,8 +125,7 @@ export default function UserMenu() {
                             type="button"
                             onClick={async () => {
                                 setOpen(false);
-                                await browserClient?.auth.signOut();
-                                setUser(null);
+                                await signOut({ callbackUrl: "/" });
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-(--color-surface-subtle)"
                         >

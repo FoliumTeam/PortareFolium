@@ -1,5 +1,21 @@
 # CHANGES
 
+## v0.12.53 (2026-04-21)
+
+### feat: Supabase Auth 제거용 NextAuth Google OAuth 기반 1차 전환
+
+- `src/auth.ts`, `src/app/api/auth/[...nextauth]/route.ts`, `src/types/next-auth.d.ts`: NextAuth v5 Google OAuth + JWT session 기반 auth 골격 추가. `AUTH_ADMIN_EMAILS` allowlist로 관리자 로그인 제한
+- `src/components/AuthSessionProvider.tsx`, `src/app/layout.tsx`: 전역 `SessionProvider` 추가
+- `src/app/admin/page.tsx`, `src/components/admin/AdminAccessGate.tsx`, `src/app/admin/migrate/page.tsx`, `src/components/admin/MigrationGuide.tsx`: NextAuth admin session 우선, legacy Supabase 로그인은 `/admin/migrate`로만 보내는 1회 migration bridge 추가
+- `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`: Google OAuth 기본 로그인 추가. bridge 기간 동안만 legacy Supabase 이메일/패스워드 로그인 1회 허용
+- `src/components/admin/AdminDashboard.tsx`, `src/components/UserMenu.tsx`, `src/components/PdfExportButton.tsx`, `src/components/BlogPage.tsx`: Supabase Auth 의존 제거, NextAuth session/signOut 기반 affordance로 교체
+- `src/app/api/upload-image/route.ts`, `src/app/api/storage-ops/route.ts`, `src/lib/image-upload.ts`: Supabase bearer token 검증 제거, NextAuth cookie session 기반 admin 인증으로 변경
+- `src/__tests__/admin-auth.test.ts` 신규: 관리자 allowlist / session helper 검증 추가
+- `src/__tests__/image-upload.test.ts`: bearer header 제거에 맞춰 테스트 갱신
+- `src/lib/server-admin.ts`, `src/app/admin/actions/revalidate.ts`, `src/app/admin/actions/agent-tokens.ts`, `src/app/admin/actions/snapshots.ts`, `src/app/admin/actions/lightbox-sidecars.ts`: 민감 server action에 관리자 세션 가드 추가
+- `.env.example`: `NEXTAUTH_SECRET`, `GOOGLE_ID`, `GOOGLE_SECRET`, `AUTH_ADMIN_EMAILS`, `SUPABASE_LEGACY_LOGIN_ENABLED` 예시 추가
+- `package.json`: `next-auth@5.0.0-beta.31` 추가, patch version `0.12.53`로 증가
+
 ## v0.12.52 (2026-04-21)
 
 ### perf: R2 image upload immutable cache header + robots aggressive bot 차단

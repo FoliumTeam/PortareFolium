@@ -1,14 +1,4 @@
 // 이미지 업로드 유틸: WebP 변환 + Cloudflare R2
-import { browserClient } from "@/lib/supabase";
-
-// Supabase 세션 토큰 (API route 인증용)
-async function getAccessToken(): Promise<string> {
-    if (!browserClient) throw new Error("Supabase가 설정되지 않았습니다.");
-    const { data } = await browserClient.auth.getSession();
-    const token = data?.session?.access_token;
-    if (!token) throw new Error("인증 세션 없음");
-    return token;
-}
 
 // 이미지 파일/Blob → WebP Blob 변환
 export async function toWebPBlob(
@@ -80,18 +70,13 @@ export function getSidecarPath(path: string, suffix: "thumb"): string {
 }
 
 // R2 업로드 요청
-async function uploadBlobToPath(
-    blob: Blob,
-    path: string,
-    token: string
-): Promise<string> {
+async function uploadBlobToPath(blob: Blob, path: string): Promise<string> {
     const formData = new FormData();
     formData.append("file", blob, path.split("/").pop() ?? "upload.webp");
     formData.append("path", path);
 
     const res = await fetch("/api/upload-image", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
     });
 
@@ -116,13 +101,12 @@ export async function uploadImage(
     const ext = isGif ? "gif" : "webp";
     const path = getStoragePath(folderPath, ext);
 
-    const token = await getAccessToken();
-    const url = await uploadBlobToPath(blob, path, token);
+    const url = await uploadBlobToPath(blob, path);
 
     const sidecarJobs: Promise<unknown>[] = [];
     sidecarJobs.push(
         toWebPBlob(file, 0.75, 256).then((thumbBlob) =>
-            uploadBlobToPath(thumbBlob, getSidecarPath(path, "thumb"), token)
+            uploadBlobToPath(thumbBlob, getSidecarPath(path, "thumb"))
         )
     );
 
@@ -141,13 +125,9 @@ export async function uploadImage(
 
 // R2 폴더 내 파일 목록 조회
 export async function listStorageFiles(folder: string): Promise<string[]> {
-    const token = await getAccessToken();
     const res = await fetch("/api/storage-ops", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "list", prefix: folder }),
     });
     if (!res.ok) return [];
@@ -160,13 +140,9 @@ export async function moveStorageFolder(
     oldFolder: string,
     newFolder: string
 ): Promise<void> {
-    const token = await getAccessToken();
     await fetch("/api/storage-ops", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             action: "move",
             oldPrefix: oldFolder,
@@ -177,13 +153,9 @@ export async function moveStorageFolder(
 
 // R2 폴더 전체 삭제
 export async function deleteStorageFolder(folder: string): Promise<void> {
-    const token = await getAccessToken();
     await fetch("/api/storage-ops", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete", prefix: folder }),
     });
 }
@@ -191,13 +163,9 @@ export async function deleteStorageFolder(folder: string): Promise<void> {
 // R2 특정 key 목록 삭제
 export async function deleteStorageKeys(keys: string[]): Promise<void> {
     if (keys.length === 0) return;
-    const token = await getAccessToken();
     await fetch("/api/storage-ops", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete-keys", keys }),
     });
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Download } from "lucide-react";
-import { browserClient } from "@/lib/supabase";
+import { useSession } from "next-auth/react";
 import PdfPreviewModal, { type PdfSection } from "@/components/PdfPreviewModal";
 
 interface Props {
@@ -18,19 +18,8 @@ export default function PdfExportButton({
 }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
-    const [authed, setAuthed] = useState(false);
-
-    // 인증 상태 확인 (getSession: network 호출 없이 local session 확인)
-    useEffect(() => {
-        if (!browserClient) return;
-        browserClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) setAuthed(true);
-        });
-        const { data: listener } = browserClient.auth.onAuthStateChange(
-            (_event, session) => setAuthed(!!session?.user)
-        );
-        return () => listener.subscription.unsubscribe();
-    }, []);
+    const { data: session, status } = useSession();
+    const authed = status === "authenticated" && session?.user?.isAdmin;
 
     return (
         <>

@@ -1,5 +1,6 @@
 "use server";
 
+import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
 export type DatabaseSnapshot = {
@@ -20,6 +21,7 @@ export type SnapshotDownload = {
 
 // Snapshot 목록 조회
 export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
+    await requireAdminSession();
     if (!serverClient) return [];
 
     const { data, error } = await serverClient
@@ -40,6 +42,7 @@ export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
 export async function createSnapshot(): Promise<
     DatabaseSnapshot | { error: string }
 > {
+    await requireAdminSession();
     if (!serverClient) return { error: "serverClient 없음" };
 
     const { data, error } = await serverClient
@@ -58,6 +61,7 @@ export async function createSnapshot(): Promise<
 export async function getSnapshotDownload(
     id: string
 ): Promise<SnapshotDownload | { error: string }> {
+    await requireAdminSession();
     if (!serverClient) return { error: "serverClient 없음" };
 
     const { data, error } = await serverClient
@@ -87,6 +91,7 @@ export async function getSnapshotDownload(
 export async function deleteSnapshot(
     id: string
 ): Promise<{ success: boolean } | { error: string }> {
+    await requireAdminSession();
     if (!serverClient) return { error: "serverClient 없음" };
 
     const { error } = await serverClient

@@ -1,56 +1,87 @@
 "use client";
 
-/**
- * LoginForm
- *
- * Supabase Auth 이메일/패스워드 로그인 폼.
- * 로그인 성공 시 /admin 으로 리다이렉트한다.
- */
 import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { browserClient } from "@/lib/supabase";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 export default function LoginForm({
     siteName = "",
     returnUrl,
+    googleEnabled = false,
+    legacyEnabled = false,
 }: {
     siteName?: string;
     returnUrl?: string;
+    googleEnabled?: boolean;
+    legacyEnabled?: boolean;
 }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const { data: session, status } = useSession();
 
     // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
     useEffect(() => {
-        if (!browserClient) return;
+        if (status !== "authenticated" || !session?.user?.isAdmin) return;
+        window.location.href = returnUrl || "/admin";
+    }, [returnUrl, session, status]);
+
+    // legacy Supabase 세션 있으면 migration 화면으로 이동
+    useEffect(() => {
+        if (!legacyEnabled || !browserClient) return;
         browserClient.auth.getUser().then(({ data }) => {
-            if (data.user) {
-                window.location.href = "/";
+            const legacyEmail = data.user?.email ?? null;
+            if (legacyEmail && isAdminEmail(legacyEmail)) {
+                window.location.href = "/admin/migrate";
             }
         });
-    }, []);
+    }, [legacyEnabled]);
 
-    /** 폼 제출 — Supabase signInWithPassword 호출 */
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Google OAuth 로그인 시작
+    const handleGoogleSignIn = async () => {
+        if (!googleEnabled) {
+            setError("Google OAuth 환경변수가 설정되지 않았습니다.");
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            await signIn("google", {
+                callbackUrl: returnUrl || "/admin",
+            });
+        } catch {
+            setError("로그인에 실패했습니다. 관리자 이메일 설정을 확인하세요.");
+            setLoading(false);
+        }
+    };
+
+    // legacy Supabase 이메일/패스워드 로그인
+    const handleLegacySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!browserClient) {
-            setError("Supabase 설정이 없습니다. .env.local을 확인하세요.");
+        if (!legacyEnabled || !browserClient) {
+            setError("Legacy 로그인 비활성화 상태");
             return;
         }
 
         setLoading(true);
         setError(null);
 
-        const { error: authError } =
+        const { data, error: authError } =
             await browserClient.auth.signInWithPassword({ email, password });
 
-        if (authError) {
-            setError("이메일 또는 패스워드가 올바르지 않습니다.");
+        const legacyEmail = data.user?.email ?? null;
+        if (authError || !legacyEmail || !isAdminEmail(legacyEmail)) {
+            if (data.user) {
+                await browserClient.auth.signOut();
+            }
+            setError("기존 관리자 계정 로그인에 실패했습니다.");
             setLoading(false);
-        } else {
-            window.location.href = returnUrl || "/admin";
+            return;
         }
+
+        window.location.href = "/admin/migrate";
     };
 
     return (
@@ -83,45 +114,10 @@ export default function LoginForm({
 
                 {/* 로그인 카드 */}
                 <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-7 shadow-sm ring-1 ring-(--color-border)/40">
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="mb-2 block text-sm font-semibold text-(--color-foreground)"
-                            >
-                                이메일
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
-                                placeholder="admin@example.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label
-                                htmlFor="password"
-                                className="mb-2 block text-sm font-semibold text-(--color-foreground)"
-                            >
-                                패스워드
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
-                                placeholder="••••••••"
-                            />
-                        </div>
-
+                    <div className="space-y-5">
+                        <p className="text-sm text-(--color-muted)">
+                            Google OAuth 기반 관리자 로그인
+                        </p>
                         {/* 에러 메시지 */}
                         {error && (
                             <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
@@ -129,14 +125,61 @@ export default function LoginForm({
                             </p>
                         )}
 
+                        {legacyEnabled && (
+                            <form
+                                onSubmit={handleLegacySubmit}
+                                className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
+                            >
+                                <p className="text-sm font-semibold text-(--color-foreground)">
+                                    기존 Supabase 로그인 1회 허용
+                                </p>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="admin@example.com"
+                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
+                                    placeholder="••••••••"
+                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) py-3 text-sm font-bold text-(--color-foreground) transition-all hover:-translate-y-0.5 hover:border-(--color-accent) disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {loading
+                                        ? "확인 중..."
+                                        : "기존 계정으로 로그인"}
+                                </button>
+                            </form>
+                        )}
+
                         <button
-                            type="submit"
-                            disabled={loading}
+                            type="button"
+                            onClick={() => void handleGoogleSignIn()}
+                            disabled={loading || !googleEnabled}
                             className="w-full rounded-2xl bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loading ? "로그인 중..." : "로그인"}
+                            {loading ? "로그인 중..." : "Google로 로그인"}
                         </button>
-                    </form>
+                        {!googleEnabled && (
+                            <p className="text-sm text-(--color-muted)">
+                                Google OAuth 환경변수 설정 후 사용 가능
+                            </p>
+                        )}
+                        {legacyEnabled && (
+                            <p className="text-xs text-(--color-muted)">
+                                기존 로그인은 계정 전환 1회용
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* 홈으로 돌아가기 */}
