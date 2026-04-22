@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.57 (2026-04-22)
+
+### refactor: PortfolioPanel data plane을 server action 경계로 이동
+
+- `src/app/admin/actions/portfolio.ts` 신규: PortfolioPanel bootstrap 조회, 저장, 삭제, publish/featured 토글, featured reorder, batch publish/jobField 변경을 server action으로 통합
+- `src/components/admin/panels/PortfolioPanel.tsx`: browserClient 기반 `portfolio_items` / `editor_states` / `site_config` 직접 CRUD 제거, server action 호출 기반으로 전환
+- `package.json`: patch version `0.12.57`로 증가
+
 ## v0.12.56 (2026-04-22)
 
 ### fix: 공개 로그인 버튼 제거 후 /admin/login 수동 진입만 허용
