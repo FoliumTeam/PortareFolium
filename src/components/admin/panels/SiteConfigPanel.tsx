@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-    revalidateHome,
-    revalidateLayout,
-    revalidateResume,
-} from "@/app/admin/actions/revalidate";
+    addSiteJobField,
+    deleteSiteJobField,
+    saveSiteConfig,
+    setActiveSiteJobField,
+} from "@/app/admin/actions/site-config";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { browserClient } from "@/lib/supabase";
@@ -169,361 +170,96 @@ export default function SiteConfigPanel() {
         return () => document.removeEventListener("mousedown", handleClick);
     }, [schemeDropdownOpen]);
 
-    // job_fields + job_field upsert
-    const saveJobFields = async (
-        fields: JobFieldItem[],
-        active: string
-    ): Promise<boolean> => {
-        if (!browserClient) return false;
-        const { error } = await browserClient.from("site_config").upsert(
-            [
-                {
-                    key: "job_fields",
-                    value: fields,
-                },
-                {
-                    key: "job_field",
-                    value: active,
-                },
-            ],
-            { onConflict: "key" }
-        );
-        return !error;
-    };
-
-    // parentId job_field를 가진 모든 항목에 newId 추가
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const addFieldToItems = (jf: any, parentId: string, newId: string): any => {
-        if (!jf) return jf;
-        if (Array.isArray(jf))
-            return jf.includes(parentId) ? [...jf, newId] : jf;
-        return jf === parentId ? [jf, newId] : jf;
-    };
-
-    // 상속 cascade: parentId를 가진 posts, portfolio_items.data, resume_data 항목에 newId 추가
-    const applyInheritance = async (parentId: string, newId: string) => {
-        if (!browserClient) return;
-
-        // posts.job_field 업데이트 (TEXT 또는 TEXT[] 모두 처리)
-        const { data: allPosts } = await browserClient
-            .from("posts")
-            .select("id, job_field");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const postsToUpdate = ((allPosts ?? []) as any[]).filter((p) => {
-            const jf = p.job_field;
-            if (!jf) return false;
-            return Array.isArray(jf) ? jf.includes(parentId) : jf === parentId;
-        });
-        if (postsToUpdate.length) {
-            await Promise.all(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                postsToUpdate.map((p: any) => {
-                    const jf = p.job_field;
-                    const existing: string[] = Array.isArray(jf)
-                        ? jf
-                        : jf
-                          ? [jf]
-                          : [];
-                    return (
-                        browserClient!
-                            .from("posts")
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            .update({ job_field: [...existing, newId] } as any)
-                            .eq("id", p.id)
-                    );
-                })
-            );
-        }
-
-        // portfolio_items.data.jobField (JSONB) 업데이트
-        const { data: portfolioData } = await browserClient
-            .from("portfolio_items")
-            .select("id, data");
-        if (portfolioData?.length) {
-            const toUpdate = (
-                portfolioData as { id: string; data: Record<string, unknown> }[]
-            ).filter((item) => {
-                const jf = item.data?.jobField;
-                if (!jf) return false;
-                if (Array.isArray(jf)) return jf.includes(parentId);
-                return jf === parentId;
-            });
-            await Promise.all(
-                toUpdate.map((item) => {
-                    const jf = item.data?.jobField;
-                    const existing: string[] = Array.isArray(jf)
-                        ? (jf as string[])
-                        : jf
-                          ? [jf as string]
-                          : [];
-                    return browserClient!
-                        .from("portfolio_items")
-                        .update({
-                            data: {
-                                ...item.data,
-                                jobField: [...existing, newId],
-                            },
-                        })
-                        .eq("id", item.id);
-                })
-            );
-        }
-
-        // resume_data work + projects (lang=ko) 업데이트
-        const { data: resumeRow } = await browserClient
-            .from("resume_data")
-            .select("id, data")
-            .eq("lang", "ko")
-            .single();
-        if (resumeRow?.data) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resume = resumeRow.data as any;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updatedWork = (resume.work ?? []).map((w: any) => ({
-                ...w,
-                jobField: addFieldToItems(w.jobField, parentId, newId),
-            }));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updatedProjects = (resume.projects ?? []).map((p: any) => ({
-                ...p,
-                jobField: addFieldToItems(p.jobField, parentId, newId),
-            }));
-            await browserClient
-                .from("resume_data")
-                .update({
-                    data: {
-                        ...resume,
-                        work: updatedWork,
-                        projects: updatedProjects,
-                    },
-                })
-                .eq("id", resumeRow.id);
-        }
-    };
-
     // job field 추가
     const handleAddJobField = async () => {
         const trimmed = newName.trim();
         if (!trimmed) return;
-        const id = trimmed.toLowerCase().replace(/\s+/g, "-");
-        if (jobFields.some((f) => f.id === id)) {
-            setStatus({ type: "error", msg: `"${id}" ID가 이미 존재합니다` });
+
+        setSaving(true);
+        setStatus(null);
+
+        const result = await addSiteJobField({
+            name: trimmed,
+            emoji: newEmoji,
+            inheritFrom,
+        });
+
+        setSaving(false);
+
+        if (!result.success) {
+            setStatus({ type: "error", msg: result.error });
             return;
         }
-        const next = [...jobFields, { id, name: trimmed, emoji: newEmoji }];
-        const ok = await saveJobFields(next, activeJobField);
-        if (!ok) {
-            setStatus({ type: "error", msg: "저장 실패" });
-            return;
-        }
-        setJobFields(next);
-        await revalidateHome();
-        await revalidateResume();
-        if (inheritFrom) await applyInheritance(inheritFrom, id);
+
+        setJobFields(result.jobFields);
+        setActiveJobField(result.activeJobField);
         setNewName("");
         setNewEmoji("✨");
         setInheritFrom("");
         setStatus({ type: "success", msg: "직무 분야가 추가됐습니다" });
     };
 
-    // job field 삭제 + cascade 처리 (TEXT[] 기준)
+    // job field 삭제 + cascade 처리
     const handleDeleteJobField = async (id: string) => {
-        if (!browserClient) return;
-
-        // posts.job_field cascade (TEXT 또는 TEXT[] 모두 처리)
-        const { data: allPosts } = await browserClient
-            .from("posts")
-            .select("id, job_field");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const postsWithField = ((allPosts ?? []) as any[]).filter((p) => {
-            const jf = p.job_field;
-            if (!jf) return false;
-            return Array.isArray(jf) ? jf.includes(id) : jf === id;
-        });
-        if (postsWithField.length) {
-            await Promise.all(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                postsWithField.map((p: any) => {
-                    const jf = p.job_field;
-                    const next = Array.isArray(jf)
-                        ? jf.filter((f: string) => f !== id)
-                        : [];
-                    return (
-                        browserClient!
-                            .from("posts")
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            .update({
-                                job_field: next.length ? next : null,
-                            } as any)
-                            .eq("id", p.id)
-                    );
-                })
-            );
-        }
-
-        // portfolio_items.job_field 컬럼 + data.jobField (JSONB) cascade
-        const { data: allPortfolio } = await browserClient
-            .from("portfolio_items")
-            .select("id, job_field, data");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const portfolioToUpdate = ((allPortfolio ?? []) as any[]).filter(
-            (p) => {
-                const col = p.job_field;
-                const jsonb = p.data?.jobField;
-                const inCol = col
-                    ? Array.isArray(col)
-                        ? col.includes(id)
-                        : col === id
-                    : false;
-                const inJsonb = jsonb
-                    ? Array.isArray(jsonb)
-                        ? jsonb.includes(id)
-                        : jsonb === id
-                    : false;
-                return inCol || inJsonb;
-            }
-        );
-        if (portfolioToUpdate.length) {
-            await Promise.all(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                portfolioToUpdate.map((p: any) => {
-                    const col = p.job_field;
-                    const nextCol = Array.isArray(col)
-                        ? col.filter((f: string) => f !== id)
-                        : [];
-                    const jf = p.data?.jobField;
-                    const nextJf = Array.isArray(jf)
-                        ? jf.filter((f: string) => f !== id)
-                        : jf === id
-                          ? []
-                          : jf;
-                    return (
-                        browserClient!
-                            .from("portfolio_items")
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            .update({
-                                job_field: nextCol.length ? nextCol : null,
-                                data: {
-                                    ...p.data,
-                                    jobField: nextJf?.length
-                                        ? nextJf
-                                        : undefined,
-                                },
-                            } as any)
-                            .eq("id", p.id)
-                    );
-                })
-            );
-        }
-
-        // resume_data work + projects (lang=ko) cascade
-        const { data: resumeRow } = await browserClient
-            .from("resume_data")
-            .select("id, data")
-            .eq("lang", "ko")
-            .single();
-        if (resumeRow?.data) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resume = resumeRow.data as any;
-            const removeField = (jf: string | string[] | undefined) => {
-                if (!jf) return jf;
-                if (Array.isArray(jf)) {
-                    const next = jf.filter((f) => f !== id);
-                    return next.length ? next : undefined;
-                }
-                return jf === id ? undefined : jf;
-            };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updatedWork = (resume.work ?? []).map((w: any) => ({
-                ...w,
-                jobField: removeField(w.jobField),
-            }));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updatedProjects = (resume.projects ?? []).map((p: any) => ({
-                ...p,
-                jobField: removeField(p.jobField),
-            }));
-            await browserClient
-                .from("resume_data")
-                .update({
-                    data: {
-                        ...resume,
-                        work: updatedWork,
-                        projects: updatedProjects,
-                    },
-                })
-                .eq("id", resumeRow.id);
-        }
-
-        const next = jobFields.filter((f) => f.id !== id);
-        const nextActive =
-            activeJobField === id ? (next[0]?.id ?? "") : activeJobField;
-        const ok = await saveJobFields(next, nextActive);
-        if (ok) {
-            setJobFields(next);
-            setActiveJobField(nextActive);
-            setStatus({ type: "success", msg: "직무 분야가 삭제됐습니다" });
-            await revalidateHome();
-            await revalidateResume();
-        } else {
-            setStatus({ type: "error", msg: "삭제 실패" });
-        }
-    };
-
-    // active job field 변경 (즉시 저장)
-    const handleSelectJobField = async (id: string) => {
-        setActiveJobField(id);
-        if (!browserClient) return;
-        await browserClient
-            .from("site_config")
-            .upsert([{ key: "job_field", value: id }], {
-                onConflict: "key",
-            });
-        await revalidateHome();
-        await revalidateResume();
-    };
-
-    // site_config upsert (색상 + SEO)
-    const handleSave = async () => {
-        if (!browserClient) return;
         setSaving(true);
         setStatus(null);
 
-        const rows = [
-            { key: "color_scheme", value: JSON.stringify(colorScheme) },
-            { key: "plain_mode", value: plainMode },
-            // site_name: 사이트명 단일 출처
-            { key: "site_name", value: JSON.stringify(seoConfig.defaultTitle) },
-            {
-                key: "seo_config",
-                value: {
-                    default_description: seoConfig.defaultDescription,
-                    default_og_image: seoConfig.defaultOgImage,
-                },
-            },
-            { key: "github_url", value: JSON.stringify(githubUrl.trim()) },
-        ];
-
-        const { error } = await browserClient
-            .from("site_config")
-            .upsert(rows, { onConflict: "key" });
-
-        if (!error) {
-            localStorage.setItem("folium_plain_mode", String(plainMode));
-            await revalidateHome();
-            await revalidateResume();
-            await revalidateLayout();
-        }
+        const result = await deleteSiteJobField(id);
 
         setSaving(false);
-        setStatus(
-            error
-                ? { type: "error", msg: error.message }
-                : {
-                      type: "success",
-                      msg: "설정이 저장됐습니다. 변경 사항이 사이트에 반영됐습니다.",
-                  }
-        );
+
+        if (!result.success) {
+            setStatus({ type: "error", msg: result.error });
+            return;
+        }
+
+        setJobFields(result.jobFields);
+        setActiveJobField(result.activeJobField);
+        setStatus({ type: "success", msg: "직무 분야가 삭제됐습니다" });
+    };
+
+    // active job field 변경
+    const handleSelectJobField = async (id: string) => {
+        setSaving(true);
+        setStatus(null);
+
+        const result = await setActiveSiteJobField(id);
+
+        setSaving(false);
+
+        if (!result.success) {
+            setStatus({ type: "error", msg: result.error });
+            return;
+        }
+
+        setActiveJobField(result.activeJobField);
+        setStatus({ type: "success", msg: "기본 직무 분야가 변경됐습니다" });
+    };
+
+    // site_config 저장
+    const handleSave = async () => {
+        setSaving(true);
+        setStatus(null);
+
+        const result = await saveSiteConfig({
+            colorScheme,
+            plainMode,
+            seoConfig,
+            githubUrl,
+        });
+
+        setSaving(false);
+
+        if (!result.success) {
+            setStatus({ type: "error", msg: result.error });
+            return;
+        }
+
+        localStorage.setItem("folium_plain_mode", String(plainMode));
+        setStatus({
+            type: "success",
+            msg: "설정이 저장됐습니다. 변경 사항이 사이트에 반영됐습니다.",
+        });
     };
 
     return (
@@ -751,7 +487,10 @@ export default function SiteConfigPanel() {
                                                                     field.id
                                                                 )
                                                             }
-                                                            disabled={isActive}
+                                                            disabled={
+                                                                saving ||
+                                                                isActive
+                                                            }
                                                             className="bg-green-500 text-white hover:bg-green-400 disabled:bg-green-500/60 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                         >
                                                             {isActive
@@ -761,6 +500,7 @@ export default function SiteConfigPanel() {
                                                         <Button
                                                             variant="default"
                                                             size="sm"
+                                                            disabled={saving}
                                                             onClick={async () => {
                                                                 const ok =
                                                                     await confirm(
@@ -889,7 +629,7 @@ export default function SiteConfigPanel() {
 
                                     <Button
                                         onClick={handleAddJobField}
-                                        disabled={!newName.trim()}
+                                        disabled={saving || !newName.trim()}
                                         className="w-full bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
                                         <Plus className="mr-2 h-4 w-4" />

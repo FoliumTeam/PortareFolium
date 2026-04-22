@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.61 (2026-04-22)
+
+### refactor: SiteConfigPanel write 경계를 server action으로 이동
+
+- `src/app/admin/actions/site-config.ts` 신규: `site_config` 저장, 활성 직무 분야 변경, 직무 분야 추가/삭제와 posts·portfolio_items·resume_data cascade를 관리자 server action으로 이동
+- `src/components/admin/panels/SiteConfigPanel.tsx`: browserClient 직접 write 제거, SiteConfigPanel read는 유지하면서 저장/직무 분야 변경을 server action 호출 기반으로 전환
+- `package.json`: patch version `0.12.61`로 증가
+
 ## v0.12.60 (2026-04-22)
 
 ### refactor: Gantt Chart admin archive CRUD를 server action 경계로 이동
