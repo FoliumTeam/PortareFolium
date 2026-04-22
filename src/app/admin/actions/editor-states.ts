@@ -41,6 +41,42 @@ async function listSnapshots(
     return ((data as EditorSnapshotRow[] | null) ?? []).map(mapSnapshot);
 }
 
+// snapshot content 목록 조회
+export async function listEditorSnapshotContents(
+    entityType: string,
+    entitySlug: string
+): Promise<string[]> {
+    await requireAdminSession();
+    if (!serverClient) return [];
+
+    const { data } = await serverClient
+        .from("editor_states")
+        .select("content")
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug);
+
+    return ((data as { content: string | null }[] | null) ?? [])
+        .map((row) => row.content)
+        .filter((content): content is string => Boolean(content));
+}
+
+// entity snapshot 개수 조회
+export async function countEditorSnapshots(
+    entityType: string,
+    entitySlug: string
+): Promise<number> {
+    await requireAdminSession();
+    if (!serverClient) return 0;
+
+    const { count } = await serverClient
+        .from("editor_states")
+        .select("id", { count: "exact", head: true })
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug);
+
+    return count ?? 0;
+}
+
 // editor_states 초기 정리 + Initial snapshot 보장
 export async function initializeEditorSnapshots(
     entityType: string,

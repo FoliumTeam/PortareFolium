@@ -1,6 +1,6 @@
 // slug 생성 + 중복 검사 유틸
 import { slugify } from "transliteration";
-import { browserClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase";
 
 // title → URL-safe slug (한글 → romanization)
 export function toSlug(title: string): string {
@@ -19,11 +19,11 @@ export async function uniqueSlug(
     table: string,
     excludeId?: string
 ): Promise<string> {
-    if (!browserClient) return slug;
+    if (!serverClient) return slug;
     let candidate = slug;
     let suffix = 1;
     for (;;) {
-        let query = browserClient
+        let query = serverClient
             .from(table)
             .select("id")
             .eq("slug", candidate)

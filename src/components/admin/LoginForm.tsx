@@ -98,18 +98,15 @@ export default function LoginForm({
         const result = await signIn("e2e-credentials", {
             email: e2eEmail,
             password: e2ePassword,
+            redirect: false,
             callbackUrl: "/admin",
         });
-        if (
-            result &&
-            typeof result === "object" &&
-            "error" in result &&
-            result.error
-        ) {
+        if (result?.error) {
             setError("테스트 로그인 실패");
             setLoading(false);
             return;
         }
+        window.location.href = result?.url || "/admin";
     };
 
     return (

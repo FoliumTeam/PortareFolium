@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.65 (2026-04-22)
+
+### fix: admin gate 마감과 legacy bridge 경로 정리
+
+- `src/app/admin/page.tsx`, `src/app/admin/migrate/page.tsx`: NextAuth 관리자 세션과 legacy bridge 설정을 서버에서 먼저 판별하도록 변경
+- `src/components/admin/LoginForm.tsx`: E2E credentials 로그인 결과를 `redirect: false`로 처리하고 성공 시 명시적으로 `/admin` 이동
+- `src/app/admin/actions/editor-states.ts`, `src/lib/snapshot-cleanup.ts`: `editor_states` count/content 조회를 server action 경유로 통일해 browser-side read 제거
+- `src/lib/slug.ts`, `src/__tests__/slug.test.ts`: `uniqueSlug()` 조회를 `serverClient` 기준으로 정리하고 테스트 mock 갱신
+- `package.json`: patch version `0.12.65`로 증가
+
 ## v0.12.64 (2026-04-22)
 
 ### feat: bootstrap read server화와 auth E2E 경로 정리
