@@ -13,7 +13,7 @@ for (const vp of viewports) {
         test.use({ viewport: { width: vp.width, height: vp.height } });
 
         test("홈 페이지 렌더링", async ({ page }) => {
-            await page.goto("/");
+            await page.goto("/", { waitUntil: "domcontentloaded" });
             // 수평 스크롤바 없음 확인 (레이아웃 overflow 감지)
             const scrollWidth = await page.evaluate(
                 () => document.documentElement.scrollWidth
@@ -25,7 +25,7 @@ for (const vp of viewports) {
         });
 
         test("Resume 페이지 렌더링", async ({ page }) => {
-            await page.goto("/resume");
+            await page.goto("/resume", { waitUntil: "domcontentloaded" });
             const scrollWidth = await page.evaluate(
                 () => document.documentElement.scrollWidth
             );
@@ -36,7 +36,7 @@ for (const vp of viewports) {
         });
 
         test("Portfolio 페이지 렌더링", async ({ page }) => {
-            await page.goto("/portfolio");
+            await page.goto("/portfolio", { waitUntil: "domcontentloaded" });
             const scrollWidth = await page.evaluate(
                 () => document.documentElement.scrollWidth
             );

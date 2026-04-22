@@ -14,16 +14,15 @@ setup("Admin 로그인 + storageState 저장", async ({ page }) => {
 
     await page.goto("/admin/login");
 
-    // 이메일/패스워드 입력 (id="email", id="password")
-    await page.locator("#email").fill(email);
-    await page.locator("#password").fill(password);
+    // E2E credentials 입력
+    await page.locator("#e2e-email").fill(email);
+    await page.locator("#e2e-password").fill(password);
 
-    // 로그인 버튼 클릭
-    await page.getByRole("button", { name: /로그인/i }).click();
+    // 테스트 로그인 버튼 클릭
+    await page.getByRole("button", { name: /테스트 계정으로 로그인/i }).click();
 
     // /admin으로 리다이렉트 대기
-    await page.waitForURL("**/admin", { timeout: 15_000 });
-    await expect(page).toHaveURL(/\/admin/);
+    await expect(page).toHaveURL(/\/admin/, { timeout: 15_000 });
 
     // storageState 저장
     await page.context().storageState({ path: authFile });

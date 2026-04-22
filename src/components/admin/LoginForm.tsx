@@ -10,14 +10,18 @@ export default function LoginForm({
     returnUrl,
     googleEnabled = false,
     legacyEnabled = false,
+    e2eEnabled = false,
 }: {
     siteName?: string;
     returnUrl?: string;
     googleEnabled?: boolean;
     legacyEnabled?: boolean;
+    e2eEnabled?: boolean;
 }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [e2eEmail, setE2eEmail] = useState("");
+    const [e2ePassword, setE2ePassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { data: session, status } = useSession();
@@ -82,6 +86,30 @@ export default function LoginForm({
         }
 
         window.location.href = "/admin/migrate";
+    };
+
+    // E2E credentials 로그인
+    const handleE2ESubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!e2eEnabled) return;
+
+        setLoading(true);
+        setError(null);
+        const result = await signIn("e2e-credentials", {
+            email: e2eEmail,
+            password: e2ePassword,
+            callbackUrl: "/admin",
+        });
+        if (
+            result &&
+            typeof result === "object" &&
+            "error" in result &&
+            result.error
+        ) {
+            setError("테스트 로그인 실패");
+            setLoading(false);
+            return;
+        }
     };
 
     return (
@@ -157,6 +185,44 @@ export default function LoginForm({
                                     {loading
                                         ? "확인 중..."
                                         : "기존 계정으로 로그인"}
+                                </button>
+                            </form>
+                        )}
+
+                        {e2eEnabled && (
+                            <form
+                                onSubmit={handleE2ESubmit}
+                                className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
+                            >
+                                <p className="text-sm font-semibold text-(--color-foreground)">
+                                    테스트 로그인
+                                </p>
+                                <input
+                                    id="e2e-email"
+                                    type="email"
+                                    value={e2eEmail}
+                                    onChange={(e) =>
+                                        setE2eEmail(e.target.value)
+                                    }
+                                    placeholder="e2e@example.com"
+                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                />
+                                <input
+                                    id="e2e-password"
+                                    type="password"
+                                    value={e2ePassword}
+                                    onChange={(e) =>
+                                        setE2ePassword(e.target.value)
+                                    }
+                                    placeholder="••••••••"
+                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) py-3 text-sm font-bold text-(--color-foreground) transition-all hover:-translate-y-0.5 hover:border-(--color-accent) disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    테스트 계정으로 로그인
                                 </button>
                             </form>
                         )}

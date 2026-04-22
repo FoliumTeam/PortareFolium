@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import { normalizeJobFieldValue } from "@/lib/job-field";
-import { saveResumePanel, saveResumeTheme } from "@/app/admin/actions/resume";
+import {
+    getResumeBootstrap,
+    saveResumePanel,
+    saveResumeTheme,
+} from "@/app/admin/actions/resume";
 import { uploadImage } from "@/lib/image-upload";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField } from "@/lib/job-field";
@@ -242,101 +245,46 @@ export default function ResumePanel() {
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
     useEffect(() => {
-        if (!browserClient) return;
-        Promise.all([
-            browserClient
-                .from("resume_data")
-                .select("id, data")
-                .eq("lang", "ko")
-                .limit(1)
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "resume_layout")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "resume_section_layout")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_fields")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single(),
-        ]).then(
-            ([
-                { data: row, error },
-                { data: layoutRow },
-                { data: sectionLayoutRow },
-                { data: jfRow },
-                { data: activeJfRow },
-            ]) => {
-                const defaultResume: Resume = {
-                    basics: {
-                        name: "",
-                        label: "",
-                        image: "",
-                        summary: "",
-                        email: "",
-                        phone: "",
-                        url: "",
-                    },
+        getResumeBootstrap().then((result) => {
+            const defaultResume: Resume = {
+                basics: {
+                    name: "",
+                    label: "",
+                    image: "",
+                    summary: "",
+                    email: "",
+                    phone: "",
+                    url: "",
+                },
+            };
+            if (result.resumeData) {
+                setRowId(result.rowId);
+                const raw = {
+                    ...defaultResume,
+                    ...(result.resumeData as Resume),
                 };
-                if (!error && row) {
-                    setRowId(row.id);
-                    const raw = {
-                        ...defaultResume,
-                        ...(row.data as Resume),
+                if (Array.isArray(raw.coreCompetencies)) {
+                    raw.coreCompetencies = {
+                        entries: raw.coreCompetencies as unknown as {
+                            title: string;
+                            description: string;
+                        }[],
                     };
-                    // 하위 호환: 기존 배열 → 객체 wrapper
-                    if (Array.isArray(raw.coreCompetencies)) {
-                        raw.coreCompetencies = {
-                            entries: raw.coreCompetencies as unknown as {
-                                title: string;
-                                description: string;
-                            }[],
-                        };
-                    }
-                    const loaded = normalizeSkills(raw);
-                    savedDataRef.current = JSON.stringify(loaded);
-                    setResumeData(loaded);
-                } else {
-                    setResumeData(defaultResume);
                 }
-                if (layoutRow?.value) {
-                    const rawTheme = layoutRow.value as string;
-                    const coerced: ResumeLayout =
-                        rawTheme === "classic" ? "classic" : "modern";
-                    setResumeLayout(coerced);
-                }
-                if (sectionLayoutRow?.value) {
-                    const normalized = normalizeLayout(
-                        sectionLayoutRow.value as ResumeSectionLayout
-                    );
-                    setResumeSectionLayout(normalized);
-                    setInitialSectionLayout(normalized);
-                    initialSectionLayoutRef.current = normalized;
-                }
-                if (Array.isArray(jfRow?.value)) {
-                    setJobFields(jfRow.value as JobFieldItem[]);
-                }
-                if (
-                    activeJfRow?.value &&
-                    typeof activeJfRow.value === "string"
-                ) {
-                    setActiveJobField(
-                        normalizeJobFieldValue(activeJfRow.value)
-                    );
-                }
+                const loaded = normalizeSkills(raw);
+                savedDataRef.current = JSON.stringify(loaded);
+                setResumeData(loaded);
+            } else {
+                setResumeData(defaultResume);
             }
-        );
+
+            setResumeLayout(result.resumeLayout as ResumeLayout);
+            setResumeSectionLayout(result.resumeSectionLayout);
+            setInitialSectionLayout(result.resumeSectionLayout);
+            initialSectionLayoutRef.current = result.resumeSectionLayout;
+            setJobFields(result.jobFields);
+            setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+        });
     }, []);
 
     // dirty 상태 감지

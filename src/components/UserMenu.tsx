@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { getAdminProfileImage } from "@/app/admin/actions/public-data";
 import Link from "next/link";
 import { LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -26,23 +26,15 @@ export default function UserMenu() {
 
     // resume_data에서 프로필 이미지 fetch (sessionStorage cache)
     const loadProfileImage = async () => {
-        if (!browserClient) return;
         const cached = sessionStorage.getItem("profile_image_url");
         if (cached) {
             setProfileImg(cached);
             return;
         }
-        const { data } = await browserClient
-            .from("resume_data")
-            .select("data")
-            .eq("lang", "ko")
-            .single();
-        const img = (data?.data as Record<string, unknown>)?.basics as
-            | { image?: string }
-            | undefined;
-        if (img?.image) {
-            setProfileImg(img.image);
-            sessionStorage.setItem("profile_image_url", img.image);
+        const image = await getAdminProfileImage();
+        if (image) {
+            setProfileImg(image);
+            sessionStorage.setItem("profile_image_url", image);
         }
     };
 

@@ -27,6 +27,9 @@ export default async function AdminLoginPage({
         process.env.GOOGLE_ID && process.env.GOOGLE_SECRET
     );
     const legacyEnabled = process.env.SUPABASE_LEGACY_LOGIN_ENABLED !== "false";
+    const e2eEnabled = Boolean(
+        process.env.E2E_EMAIL && process.env.E2E_PASSWORD
+    );
     if (serverClient) {
         const { data } = await serverClient
             .from("site_config")
@@ -45,6 +48,7 @@ export default async function AdminLoginPage({
             returnUrl={returnUrl}
             googleEnabled={googleEnabled}
             legacyEnabled={legacyEnabled}
+            e2eEnabled={e2eEnabled}
         />
     );
 }

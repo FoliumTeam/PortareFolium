@@ -134,6 +134,31 @@ async function getJobFieldConfig() {
     };
 }
 
+// SiteConfigPanel 초기 데이터 조회
+export async function getSiteConfigBootstrap(): Promise<{
+    rows: { key: string; value: unknown }[];
+}> {
+    await requireAdminSession();
+    if (!serverClient) return { rows: [] };
+
+    const { data } = await serverClient
+        .from("site_config")
+        .select("key, value")
+        .in("key", [
+            "color_scheme",
+            "plain_mode",
+            "job_field",
+            "job_fields",
+            "site_name",
+            "seo_config",
+            "github_url",
+        ]);
+
+    return {
+        rows: (data as { key: string; value: unknown }[] | null) ?? [],
+    };
+}
+
 async function saveJobFieldConfig(
     jobFields: JobFieldItem[],
     activeJobField: string

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { getPublicDbSchemaVersion } from "@/app/admin/actions/public-data";
 import {
     MIGRATIONS,
     APP_VERSION,
@@ -25,14 +25,9 @@ export default function MigrationsPanel() {
         "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
 
     const loadVersion = async () => {
-        if (!browserClient) return;
         setRefreshing(true);
-        const { data } = await browserClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "db_schema_version")
-            .single();
-        setDbVersion(data?.value ?? null);
+        const version = await getPublicDbSchemaVersion();
+        setDbVersion(version);
         setRefreshing(false);
     };
 

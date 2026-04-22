@@ -128,7 +128,7 @@ test.describe("콘텐츠 렌더링", () => {
     test("코드 블록 (Shiki) 하이라이팅", async ({ page }) => {
         test.skip(!blogSlug, "블로그 글 없음");
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto(blogSlug!);
+        await page.goto(blogSlug!, { waitUntil: "domcontentloaded" });
         // Shiki가 렌더링한 코드 블록: pre > code with data-language
         const codeBlock = page.locator("pre code[data-language]");
         // 코드 블록이 없는 글일 수 있으므로 soft check
@@ -144,7 +144,7 @@ test.describe("콘텐츠 렌더링", () => {
     test("이미지 lazy loading", async ({ page }) => {
         test.skip(!blogSlug, "블로그 글 없음");
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto(blogSlug!);
+        await page.goto(blogSlug!, { waitUntil: "domcontentloaded" });
         const images = page.locator(".post-content img");
         const count = await images.count();
         if (count > 0) {
@@ -161,7 +161,7 @@ test.describe("콘텐츠 렌더링", () => {
     test("lightbox open/close", async ({ page }) => {
         test.skip(!blogSlug, "블로그 글 없음");
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto(blogSlug!);
+        await page.goto(blogSlug!, { waitUntil: "domcontentloaded" });
         const images = page.locator(".post-content img[data-lightbox-idx]");
         const count = await images.count();
         if (count === 0) return;

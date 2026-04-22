@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { auth } from "@/auth";
+import { isAdminSession } from "@/lib/admin-auth";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
 import { serverClient } from "@/lib/supabase";
@@ -16,6 +18,7 @@ interface BookItem {
 }
 
 export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     title: "Portfolio",
@@ -23,6 +26,8 @@ export const metadata: Metadata = {
 };
 
 export default async function PortfolioPage() {
+    const session = await auth();
+    const initialAuthed = isAdminSession(session);
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     if (serverClient) {
         const { data: cfg } = await serverClient
@@ -99,6 +104,7 @@ export default async function PortfolioPage() {
     return (
         <PdfExportButton
             fileName="portfolio"
+            initialAuthed={initialAuthed}
             sections={[
                 {
                     key: "books",

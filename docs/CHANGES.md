@@ -1,5 +1,18 @@
 # CHANGES
 
+## v0.12.64 (2026-04-22)
+
+### feat: bootstrap read server화와 auth E2E 경로 정리
+
+- `src/app/admin/actions/public-data.ts`: 공개 태그, 공개 검색, 관리자 프로필 이미지, db_schema_version 조회를 server action으로 추가
+- `src/app/admin/actions/about.ts`, `src/app/admin/actions/resume.ts`, `src/app/admin/actions/site-config.ts`: About/Resume/SiteConfig bootstrap read helper 추가
+- `src/components/admin/panels/AboutPanel.tsx`, `src/components/admin/panels/ResumePanel.tsx`, `src/components/admin/panels/SiteConfigPanel.tsx`, `src/components/admin/panels/MigrationsPanel.tsx`: browserClient 기반 초기 로드를 server action 호출로 전환
+- `src/components/GlobalSearch.tsx`, `src/components/UserMenu.tsx`, `src/components/admin/TagSelector.tsx`: browserClient read 제거, public-data server action 기반으로 전환
+- `src/auth.ts`, `src/components/admin/LoginForm.tsx`, `src/app/admin/login/page.tsx`, `.env.example`: E2E용 Credentials provider와 테스트 로그인 폼 추가
+- `src/components/PdfExportButton.tsx`, `src/app/(frontend)/resume/page.tsx`, `src/app/(frontend)/portfolio/page.tsx`: server-side `auth()` 기반 `initialAuthed` 전달로 authenticated PDF export 버튼 표시 보강
+- `e2e/auth.setup.ts`, `e2e/admin-auth-migration.spec.ts`, `e2e/authenticated/*.spec.ts`, `e2e/navigation.spec.ts`, `e2e/responsive.spec.ts`, `e2e/content-rendering.spec.ts`, `e2e/seo.spec.ts`: auth migration / credentials / timeout 안정화에 맞춰 갱신
+- `package.json`: patch version `0.12.64`로 증가
+
 ## v0.12.63 (2026-04-22)
 
 ### fix: snapshot slug rewrite를 server action 경계로 이동

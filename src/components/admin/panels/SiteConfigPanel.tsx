@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import {
     addSiteJobField,
     deleteSiteJobField,
+    getSiteConfigBootstrap,
     saveSiteConfig,
     setActiveSiteJobField,
 } from "@/app/admin/actions/site-config";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
-import { browserClient } from "@/lib/supabase";
 import { normalizeJobFieldValue } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -70,21 +70,8 @@ export default function SiteConfigPanel() {
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
-        if (!browserClient) return;
-        browserClient
-            .from("site_config")
-            .select("key, value")
-            .in("key", [
-                "color_scheme",
-                "plain_mode",
-                "job_field",
-                "job_fields",
-                "site_name",
-                "seo_config",
-                "github_url",
-            ])
-            .then(({ data: rows }) => {
-                if (!rows) return;
+        getSiteConfigBootstrap().then(
+            ({ rows }: { rows: { key: string; value: unknown }[] }) => {
                 const ordered = [...rows].sort((a) =>
                     a.key === "site_name" ? -1 : 1
                 );
@@ -129,16 +116,20 @@ export default function SiteConfigPanel() {
                         setSeoConfig((prev) => ({
                             ...prev,
                             defaultDescription:
-                                v.default_description ||
+                                (v as { default_description?: string })
+                                    .default_description ||
                                 "포트폴리오 & 기술 블로그",
-                            defaultOgImage: v.default_og_image || "",
+                            defaultOgImage:
+                                (v as { default_og_image?: string })
+                                    .default_og_image || "",
                         }));
                     }
                     if (row.key === "github_url" && typeof v === "string") {
                         setGithubUrl(v);
                     }
                 }
-            });
+            }
+        );
     }, []);
 
     // picker 외부 클릭 시 닫기

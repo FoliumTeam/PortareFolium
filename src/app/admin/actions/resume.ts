@@ -7,7 +7,11 @@ import {
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
 import type { Resume } from "@/types/resume";
-import type { ResumeSectionLayout } from "@/lib/resume-layout";
+import {
+    DEFAULT_RESUME_LAYOUT,
+    normalizeLayout,
+    type ResumeSectionLayout,
+} from "@/lib/resume-layout";
 
 type SaveResumeInput = {
     resumeData: Resume;
@@ -19,6 +23,78 @@ type SaveResumeInput = {
 type SaveResumeResult =
     | { success: true; rowId: string | null }
     | { success: false; error: string };
+
+type JobFieldItem = { id: string; name: string; emoji: string };
+
+// ResumePanel 초기 데이터 조회
+export async function getResumeBootstrap(): Promise<{
+    rowId: string | null;
+    resumeData: Resume | null;
+    resumeLayout: "classic" | "modern";
+    resumeSectionLayout: ResumeSectionLayout;
+    jobFields: JobFieldItem[];
+    activeJobField: string;
+}> {
+    await requireAdminSession();
+    if (!serverClient) {
+        return {
+            rowId: null,
+            resumeData: null,
+            resumeLayout: "modern",
+            resumeSectionLayout: DEFAULT_RESUME_LAYOUT,
+            jobFields: [],
+            activeJobField: "",
+        };
+    }
+
+    const [
+        { data: row },
+        { data: layoutRow },
+        { data: sectionLayoutRow },
+        { data: jfRow },
+        { data: activeJfRow },
+    ] = await Promise.all([
+        serverClient
+            .from("resume_data")
+            .select("id, data")
+            .eq("lang", "ko")
+            .limit(1)
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "resume_layout")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "resume_section_layout")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "job_fields")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "job_field")
+            .single(),
+    ]);
+
+    return {
+        rowId: row?.id ?? null,
+        resumeData: (row?.data as Resume | undefined) ?? null,
+        resumeLayout: layoutRow?.value === "classic" ? "classic" : "modern",
+        resumeSectionLayout: normalizeLayout(
+            (sectionLayoutRow?.value as ResumeSectionLayout | undefined) ??
+                DEFAULT_RESUME_LAYOUT
+        ),
+        jobFields: (jfRow?.value as JobFieldItem[] | undefined) ?? [],
+        activeJobField:
+            typeof activeJfRow?.value === "string" ? activeJfRow.value : "",
+    };
+}
 
 // resume_data + layout 설정 저장
 export async function saveResumePanel(

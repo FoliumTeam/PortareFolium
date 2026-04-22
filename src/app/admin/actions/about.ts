@@ -21,6 +21,77 @@ type SaveAboutResult =
     | { success: true; aboutRowId: string | null }
     | { success: false; error: string };
 
+type AboutBootstrap = {
+    aboutRowId: string | null;
+    aboutData: AboutData | null;
+    resumeRowId: string | null;
+    resumeData: Record<string, unknown> | null;
+    jobFields: { id: string; name: string; emoji: string }[];
+    githubUrl: string;
+};
+
+// AboutPanel 초기 데이터 조회
+export async function getAboutBootstrap(): Promise<AboutBootstrap> {
+    await requireAdminSession();
+    if (!serverClient) {
+        return {
+            aboutRowId: null,
+            aboutData: null,
+            resumeRowId: null,
+            resumeData: null,
+            jobFields: [],
+            githubUrl: "",
+        };
+    }
+
+    const [{ data: aboutRow }, { data: resumeRow }, { data: configs }] =
+        await Promise.all([
+            serverClient
+                .from("about_data")
+                .select("id, data")
+                .limit(1)
+                .single(),
+            serverClient
+                .from("resume_data")
+                .select("id, data")
+                .eq("lang", "ko")
+                .single(),
+            serverClient
+                .from("site_config")
+                .select("key, value")
+                .in("key", ["job_fields", "github_url"]),
+        ]);
+
+    let githubUrl = "";
+    let jobFields: { id: string; name: string; emoji: string }[] = [];
+    for (const cfg of configs ?? []) {
+        let value = cfg.value;
+        if (typeof value === "string" && value.startsWith('"')) {
+            try {
+                value = JSON.parse(value);
+            } catch {
+                // noop
+            }
+        }
+        if (cfg.key === "job_fields" && Array.isArray(value)) {
+            jobFields = value as { id: string; name: string; emoji: string }[];
+        }
+        if (cfg.key === "github_url" && typeof value === "string") {
+            githubUrl = value;
+        }
+    }
+
+    return {
+        aboutRowId: aboutRow?.id ?? null,
+        aboutData: (aboutRow?.data as AboutData | undefined) ?? null,
+        resumeRowId: resumeRow?.id ?? null,
+        resumeData:
+            (resumeRow?.data as Record<string, unknown> | undefined) ?? null,
+        jobFields,
+        githubUrl,
+    };
+}
+
 // About / resume basics.image / github_url 저장
 export async function saveAboutPanel(
     input: SaveAboutInput

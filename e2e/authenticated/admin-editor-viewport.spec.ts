@@ -5,10 +5,10 @@ test.describe("Admin editor viewport fit", () => {
         page,
     }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await page.goto("/admin#posts");
+        await page.goto("/admin#posts", { waitUntil: "domcontentloaded" });
 
         // posts list 안정화 대기
-        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(1000);
 
         // 편집 버튼 텍스트 기반 탐색 (PostsPanel 목록 행의 편집 버튼)
         const editBtn = page.locator("button:has-text('편집')").first();
@@ -36,9 +36,9 @@ test.describe("Admin editor viewport fit", () => {
         page,
     }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await page.goto("/admin#portfolio");
+        await page.goto("/admin#portfolio", { waitUntil: "domcontentloaded" });
 
-        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(1000);
 
         const editBtn = page.locator("button:has-text('편집')").first();
         const hasEditBtn = await editBtn.isVisible().catch(() => false);
