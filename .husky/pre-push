@@ -1,7 +1,8 @@
 #!/bin/sh
 # Husky pre-push: production 유사 환경(build + start)에서 chromium/authenticated-chromium 검증
 # CI E2E workflow 제거에 따른 push gate 강제 (--no-verify 우회 금지)
-pnpm build &&
+rm -rf .next &&
+  pnpm build &&
   BASE_URL=http://127.0.0.1:3100 \
   E2E_SERVER_MODE=start \
   pnpm exec playwright test --project=chromium --project=authenticated-chromium

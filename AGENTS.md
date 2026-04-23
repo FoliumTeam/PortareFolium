@@ -233,7 +233,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Deployment: Vercel
 - Package Manager: pnpm 10
 - Testing: Vitest + Testing Library (unit) / Playwright (E2E)
-- Auth: NextAuth v5 (Google OAuth + legacy migration bridge + E2E credentials)
+- Auth: NextAuth v5 (admin credentials + E2E credentials)
 - Editor: Tiptap (Rich Markdown Editor)
 - Diagrams: Mermaid 11
 - Code Highlighting: Shiki
@@ -261,7 +261,6 @@ src/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   ├── login/page.tsx
-│   │   ├── migrate/page.tsx
 │   │   └── actions/                    # Server Actions
 │   │       ├── about.ts                # About bootstrap + 저장
 │   │       ├── agent-tokens.ts         # Agent token CRUD
@@ -282,7 +281,7 @@ src/
 │       ├── upload-image/route.ts       # R2 이미지 업로드 (admin 인증 + S3 SDK)
 │       ├── storage-ops/route.ts        # R2 파일 list/move/delete (admin 인증)
 │       └── run-migrations/route.ts
-├── auth.ts                              # NextAuth 설정 (Google/E2E credentials/JWT admin 세션)
+├── auth.ts                              # NextAuth 설정 (admin/E2E credentials/JWT admin 세션)
 ├── components/
 │   ├── Header.tsx                      # 네비게이션 + UserMenu + ThemeToggle
 │   ├── Footer.tsx                      # 저작권 + GitHub 링크
@@ -317,11 +316,9 @@ src/
 │       ├── AdminHeader.tsx             # 전체 너비 헤더 + ⌘K 단축키
 │       ├── AdminSidebar.tsx            # 토글 가능 사이드바
 │       ├── AdminSaveBar.tsx            # sticky 저장 바 (portal → #admin-save-bar-slot)
-│       ├── AdminAccessGate.tsx         # legacy Supabase bridge 확인용 admin gate
 │       ├── CommandPalette.tsx          # Cmd+K 커맨드 팔레트
 │       ├── EditorStatePreservation.tsx # editor_states 자동저장/북마크 UI
 │       ├── LoginForm.tsx               # returnUrl 지원
-│       ├── MigrationGuide.tsx          # legacy Supabase → NextAuth 전환 안내
 │       ├── RichMarkdownEditor.tsx      # Tiptap 기반 에디터
 │       ├── ImageLayoutModal.tsx        # 다중 이미지 레이아웃 선택 모달
 │       ├── ImageDeleteConfirmDialog.tsx # 이미지/이미지 그룹 삭제 확인 모달

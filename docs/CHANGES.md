@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.70 (2026-04-23)
+
+### refactor: Google·legacy migration 경로 제거와 credentials 문서 정리
+
+- `src/components/admin/AdminAccessGate.tsx`, `src/components/admin/MigrationGuide.tsx`, `src/app/admin/migrate/page.tsx`: Google OAuth/legacy Supabase migration bridge 삭제
+- `e2e/admin-auth-migration.spec.ts`: migration 검증 대신 credentials 로그인 화면 검증으로 갱신
+- `.env.example`, `USER_TASKS.md`: `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD_HASH`, `NEXTAUTH_SECRET` 기준 setup 안내로 교체
+- `AGENTS.md`: auth / admin 구조 설명을 credentials-only 상태로 정리
+- `.husky/pre-push`: route 삭제 뒤 `.next/dev/types` 잔재가 push gate를 깨지 않도록 build 전 `.next` 정리 추가
+- `package.json`: patch version `0.12.70`로 증가
+
 ## v0.12.69 (2026-04-23)
 
 ### feat: Credentials 기반 관리자 로그인과 env setup 안내 추가
