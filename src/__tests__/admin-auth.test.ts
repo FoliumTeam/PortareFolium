@@ -2,21 +2,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { isAdminEmail, isAdminSession } from "@/lib/admin-auth";
 
 describe("admin auth helpers", () => {
-    const original = process.env.AUTH_ADMIN_EMAILS;
+    const original = process.env.AUTH_ADMIN_EMAIL;
 
     afterEach(() => {
-        process.env.AUTH_ADMIN_EMAILS = original;
+        process.env.AUTH_ADMIN_EMAIL = original;
         vi.unstubAllEnvs();
     });
 
-    it("allowlist에 포함된 이메일만 관리자 권한 반환", () => {
-        vi.stubEnv(
-            "AUTH_ADMIN_EMAILS",
-            "admin@example.com, second@example.com"
-        );
+    it("단일 관리자 이메일과 일치할 때만 관리자 권한 반환", () => {
+        vi.stubEnv("AUTH_ADMIN_EMAIL", "admin@example.com");
 
         expect(isAdminEmail("admin@example.com")).toBe(true);
-        expect(isAdminEmail("SECOND@example.com")).toBe(true);
+        expect(isAdminEmail("ADMIN@example.com")).toBe(true);
         expect(isAdminEmail("user@example.com")).toBe(false);
     });
 

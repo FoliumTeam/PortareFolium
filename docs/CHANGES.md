@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.69 (2026-04-23)
+
+### feat: Credentials 기반 관리자 로그인과 env setup 안내 추가
+
+- `src/auth.ts`: Google OAuth 대신 `admin-credentials` provider를 추가하고 admin email/password 검증 기반 session 발급으로 전환
+- `src/lib/admin-auth.ts`, `src/lib/admin-credentials.ts`: 단일 관리자 이메일 판별과 `AUTH_ADMIN_PASSWORD_HASH` scrypt 검증 helper 추가
+- `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`: Google/legacy 분기 대신 email/password 로그인 폼과 누락 env 안내 UI 추가
+- `src/app/admin/page.tsx`: legacy bridge gate 제거, 비인증 상태는 `/admin/login`으로 직접 redirect
+- `src/__tests__/admin-auth.test.ts`, `src/__tests__/admin-credentials.test.ts`: 단일 관리자 email 판별과 credentials 검증 테스트 추가
+- `package.json`: patch version `0.12.69`로 증가
+
 ## v0.12.68 (2026-04-22)
 
 ### chore: pre-push E2E를 build + start 기준으로 전환

@@ -1,19 +1,42 @@
 import NextAuth from "next-auth";
-import type { Provider } from "next-auth/providers";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { isAdminEmail } from "@/lib/admin-auth";
+import { verifyAdminCredentials } from "@/lib/admin-credentials";
 
-const providers: Provider[] = [];
+const providers = [
+    CredentialsProvider({
+        id: "admin-credentials",
+        name: "Admin Credentials",
+        credentials: {
+            email: { label: "Email", type: "email" },
+            password: { label: "Password", type: "password" },
+        },
+        async authorize(credentials) {
+            const email =
+                typeof credentials?.email === "string"
+                    ? credentials.email
+                    : undefined;
+            const password =
+                typeof credentials?.password === "string"
+                    ? credentials.password
+                    : undefined;
 
-if (process.env.GOOGLE_ID && process.env.GOOGLE_SECRET) {
-    providers.push(
-        GoogleProvider({
-            clientId: process.env.GOOGLE_ID,
-            clientSecret: process.env.GOOGLE_SECRET,
-        })
-    );
-}
+            if (!email || !password) {
+                return null;
+            }
+
+            if (!verifyAdminCredentials(email, password)) {
+                return null;
+            }
+
+            return {
+                id: "admin-user",
+                email,
+                name: "Admin",
+            };
+        },
+    }),
+];
 
 if (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) {
     providers.push(
@@ -50,11 +73,7 @@ if (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    secret:
-        process.env.NEXTAUTH_SECRET ||
-        (process.env.NODE_ENV !== "production"
-            ? "local-dev-nextauth-secret"
-            : undefined),
+    secret: process.env.NEXTAUTH_SECRET || "local-dev-nextauth-secret",
     trustHost: true,
     pages: {
         signIn: "/admin/login",
@@ -65,7 +84,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     providers,
     callbacks: {
         async signIn({ user, account }) {
-            if (account?.provider === "e2e-credentials") {
+            if (
+                account?.provider === "e2e-credentials" ||
+                account?.provider === "admin-credentials"
+            ) {
                 return true;
             }
             return isAdminEmail(user.email);
@@ -78,7 +100,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.authProvider = account.provider;
             }
             token.isAdmin =
-                token.authProvider === "e2e-credentials"
+                token.authProvider === "e2e-credentials" ||
+                token.authProvider === "admin-credentials"
                     ? true
                     : isAdminEmail(nextEmail);
             return token;

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import LoginForm from "@/components/admin/LoginForm";
 import { isAdminSession } from "@/lib/admin-auth";
+import { getAdminCredentialSetup } from "@/lib/admin-credentials";
 import { serverClient } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -23,13 +24,10 @@ export default async function AdminLoginPage({
     }
 
     let siteName = "";
-    const googleEnabled = Boolean(
-        process.env.GOOGLE_ID && process.env.GOOGLE_SECRET
-    );
-    const legacyEnabled = process.env.SUPABASE_LEGACY_LOGIN_ENABLED !== "false";
     const e2eEnabled = Boolean(
         process.env.E2E_EMAIL && process.env.E2E_PASSWORD
     );
+    const setupState = getAdminCredentialSetup();
     if (serverClient) {
         const { data } = await serverClient
             .from("site_config")
@@ -46,9 +44,8 @@ export default async function AdminLoginPage({
         <LoginForm
             siteName={siteName}
             returnUrl={returnUrl}
-            googleEnabled={googleEnabled}
-            legacyEnabled={legacyEnabled}
             e2eEnabled={e2eEnabled}
+            setupState={setupState}
         />
     );
 }
