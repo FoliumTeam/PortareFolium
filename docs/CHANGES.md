@@ -251,14 +251,6 @@
 - `AGENTS.md`, `.claude/commands/ship.md`, `docs/TEST.md`, `README.md`: Testing Gate / Push gate 섹션을 CI-driven에서 로컬 strict로 재작성. `R2_PUBLIC_URL` 을 필수 `.env.local` 항목에 추가
 - `package.json`: patch version `0.12.51`로 증가
 
-## v0.12.50 (2026-04-21)
-
-### docs: SQLite refuge 계획에 local server boundary 설명 추가
-
-- `PLAN_SQLITE_REFUGE.md`: "server 경유"가 Supabase가 아니라 Next.js local server runtime 경유임을 명시
-- `PLAN_SQLITE_REFUGE.md`: refuge mode write flow를 브라우저 → Route Handler / Server Action → local SQLite 구조로 문서화
-- `package.json`: patch version `0.12.50`로 증가
-
 ## v0.12.49 (2026-04-21)
 
 ### fix: CI E2E에서 R2 pub URL 400을 env-driven으로 허용
@@ -269,20 +261,7 @@
 - 장기 계획: R2 custom domain 전환 시 abuse filter 우회되므로 이 ALLOWED entry 삭제 예정. 개인 portfolio 규모에선 `.r2.dev` 유지로 충분
 - `package.json`: patch version `0.12.49`로 증가
 
-## v0.12.48 (2026-04-21)
-
-### docs: SQLite refuge 계획에 editor_states / gantt_chart_archives 포함
-
-- `PLAN_SQLITE_REFUGE.md`: `editor_states`, `gantt_chart_archives`를 Release 1 SQLite refuge 대상 테이블로 승격
-- `PLAN_SQLITE_REFUGE.md`: `EditorStatePreservation`, `GanttChartPanel` 관련 지원 write scope, journal identity key, conflict baseline, replay policy, 테스트 계획, acceptance criteria 반영
-- `package.json`: patch version `0.12.48`로 증가
-
 ## v0.12.47 (2026-04-20)
-
-### docs: SQLite refuge 구현 계획 문서 추가
-
-- `PLAN_SQLITE_REFUGE.md`: local SQLite refuge mode의 release 1 계획 추가. supported surface, degraded surface, activation contract, guarded push-back, expanded test plan, acceptance criteria를 문서화
-- `package.json`: patch version `0.12.47`로 증가
 
 ## v0.12.46 (2026-04-20)
 
