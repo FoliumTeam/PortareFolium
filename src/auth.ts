@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { isAdminEmail } from "@/lib/admin-auth";
 import { verifyAdminCredentials } from "@/lib/admin-credentials";
 
 const providers = [
@@ -38,40 +37,6 @@ const providers = [
     }),
 ];
 
-if (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) {
-    providers.push(
-        CredentialsProvider({
-            id: "e2e-credentials",
-            name: "E2E Credentials",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" },
-            },
-            async authorize(credentials) {
-                const email =
-                    typeof credentials?.email === "string"
-                        ? credentials.email
-                        : undefined;
-                const password =
-                    typeof credentials?.password === "string"
-                        ? credentials.password
-                        : undefined;
-                if (
-                    email === process.env.E2E_EMAIL &&
-                    password === process.env.E2E_PASSWORD
-                ) {
-                    return {
-                        id: "e2e-admin",
-                        email,
-                        name: "E2E Admin",
-                    };
-                }
-                return null;
-            },
-        })
-    );
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
     secret: process.env.NEXTAUTH_SECRET || "local-dev-nextauth-secret",
     trustHost: true,
@@ -83,14 +48,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     providers,
     callbacks: {
-        async signIn({ user, account }) {
-            if (
-                account?.provider === "e2e-credentials" ||
-                account?.provider === "admin-credentials"
-            ) {
-                return true;
-            }
-            return isAdminEmail(user.email);
+        async signIn({ account }) {
+            return account?.provider === "admin-credentials";
         },
         async jwt({ token, user, account }) {
             const nextEmail =
@@ -99,11 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (account?.provider) {
                 token.authProvider = account.provider;
             }
-            token.isAdmin =
-                token.authProvider === "e2e-credentials" ||
-                token.authProvider === "admin-credentials"
-                    ? true
-                    : isAdminEmail(nextEmail);
+            token.isAdmin = token.authProvider === "admin-credentials";
             return token;
         },
         async session({ session, token }) {

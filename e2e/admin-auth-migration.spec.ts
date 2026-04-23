@@ -15,6 +15,8 @@ test.describe("Admin login", () => {
             page.getByRole("button", { name: /^로그인$/i })
         ).toBeVisible();
         await expect(page.getByPlaceholder("admin@example.com")).toBeVisible();
-        await expect(page.getByText(/signup은 비활성화 상태/i)).toBeVisible();
+        await expect(
+            page.getByText(/관리자 계정으로 로그인하세요/i)
+        ).toBeVisible();
     });
 });

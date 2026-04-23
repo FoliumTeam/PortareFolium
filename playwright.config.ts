@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomBytes, scryptSync } from "node:crypto";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -11,6 +12,16 @@ const e2eServerMode =
 
 if (e2eServerMode === "start" && !process.env.NEXTAUTH_SECRET) {
     process.env.NEXTAUTH_SECRET = "e2e-nextauth-secret";
+}
+
+if (!process.env.AUTH_ADMIN_EMAIL && process.env.E2E_EMAIL) {
+    process.env.AUTH_ADMIN_EMAIL = process.env.E2E_EMAIL;
+}
+
+if (!process.env.AUTH_ADMIN_PASSWORD_HASH && process.env.E2E_PASSWORD) {
+    const salt = randomBytes(16).toString("hex");
+    const hash = scryptSync(process.env.E2E_PASSWORD, salt, 64).toString("hex");
+    process.env.AUTH_ADMIN_PASSWORD_HASH = `scrypt$${salt}$${hash}`;
 }
 
 const baseURL =

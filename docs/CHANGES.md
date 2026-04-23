@@ -11,6 +11,17 @@
 - `.husky/pre-push`: route 삭제 뒤 `.next/dev/types` 잔재가 push gate를 깨지 않도록 build 전 `.next` 정리 추가
 - `package.json`: patch version `0.12.70`로 증가
 
+## v0.12.71 (2026-04-23)
+
+### fix: 로그인 페이지의 테스트 계정 UI 제거와 E2E 관리자 로그인 정렬
+
+- `src/auth.ts`: 별도 `e2e-credentials` provider 제거, 관리자 credentials provider 하나만 유지
+- `src/components/admin/LoginForm.tsx`: 테스트 계정 섹션과 `signup은 비활성화 상태` 문구 제거
+- `e2e/auth.setup.ts`: 테스트 전용 계정 대신 실제 관리자 로그인 폼에 `AUTH_ADMIN_EMAIL`, `E2E_PASSWORD` 입력하도록 변경
+- `playwright.config.ts`: `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD_HASH`가 없을 때 `E2E_EMAIL`, `E2E_PASSWORD`로 E2E 전용 관리자 credentials를 보정
+- `.env.example`, `USER_TASKS.md`: `E2E_EMAIL` 제거, E2E는 관리자 이메일 + 평문 비밀번호를 사용하도록 안내 갱신
+- `package.json`: patch version `0.12.71`로 증가
+
 ## v0.12.69 (2026-04-23)
 
 ### feat: Credentials 기반 관리자 로그인과 env setup 안내 추가

@@ -24,9 +24,6 @@ export default async function AdminLoginPage({
     }
 
     let siteName = "";
-    const e2eEnabled = Boolean(
-        process.env.E2E_EMAIL && process.env.E2E_PASSWORD
-    );
     const setupState = getAdminCredentialSetup();
     if (serverClient) {
         const { data } = await serverClient
@@ -44,7 +41,6 @@ export default async function AdminLoginPage({
         <LoginForm
             siteName={siteName}
             returnUrl={returnUrl}
-            e2eEnabled={e2eEnabled}
             setupState={setupState}
         />
     );

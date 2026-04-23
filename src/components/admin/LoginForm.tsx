@@ -7,18 +7,14 @@ import type { getAdminCredentialSetup } from "@/lib/admin-credentials";
 export default function LoginForm({
     siteName = "",
     returnUrl,
-    e2eEnabled = false,
     setupState,
 }: {
     siteName?: string;
     returnUrl?: string;
-    e2eEnabled?: boolean;
     setupState: ReturnType<typeof getAdminCredentialSetup>;
 }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [e2eEmail, setE2eEmail] = useState("");
-    const [e2ePassword, setE2ePassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { data: session, status } = useSession();
@@ -52,27 +48,6 @@ export default function LoginForm({
             return;
         }
         window.location.href = result?.url || returnUrl || "/admin";
-    };
-
-    // E2E credentials 로그인
-    const handleE2ESubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!e2eEnabled) return;
-
-        setLoading(true);
-        setError(null);
-        const result = await signIn("e2e-credentials", {
-            email: e2eEmail,
-            password: e2ePassword,
-            redirect: false,
-            callbackUrl: "/admin",
-        });
-        if (result?.error) {
-            setError("테스트 로그인 실패");
-            setLoading(false);
-            return;
-        }
-        window.location.href = result?.url || "/admin";
     };
 
     return (
@@ -176,48 +151,6 @@ export default function LoginForm({
                                 {loading ? "로그인 중..." : "로그인"}
                             </button>
                         </form>
-
-                        {e2eEnabled && (
-                            <form
-                                onSubmit={handleE2ESubmit}
-                                className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
-                            >
-                                <p className="text-sm font-semibold text-(--color-foreground)">
-                                    테스트 로그인
-                                </p>
-                                <input
-                                    id="e2e-email"
-                                    type="email"
-                                    value={e2eEmail}
-                                    onChange={(e) =>
-                                        setE2eEmail(e.target.value)
-                                    }
-                                    placeholder="e2e@example.com"
-                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
-                                />
-                                <input
-                                    id="e2e-password"
-                                    type="password"
-                                    value={e2ePassword}
-                                    onChange={(e) =>
-                                        setE2ePassword(e.target.value)
-                                    }
-                                    placeholder="••••••••"
-                                    className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) py-3 text-sm font-bold text-(--color-foreground) transition-all hover:-translate-y-0.5 hover:border-(--color-accent) disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    테스트 계정으로 로그인
-                                </button>
-                            </form>
-                        )}
-
-                        <p className="text-xs text-(--color-muted)">
-                            signup은 비활성화 상태
-                        </p>
                     </div>
                 </div>
 
