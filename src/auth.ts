@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-login-rate-limit";
 import { isAdminEmail } from "@/lib/admin-auth";
 import {
+    getAuthSecret,
     isAdminCredentialSetupComplete,
     verifyAdminCredentials,
 } from "@/lib/admin-credentials";
@@ -74,7 +75,7 @@ const providers = [
 ];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: getAuthSecret() || undefined,
     trustHost: true,
     pages: {
         signIn: "/admin/login",

@@ -14,7 +14,7 @@ const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
         purpose: "관리자 비밀번호를 평문 대신 저장하는 scrypt hash",
         setup: "아래 예시 명령으로 hash 생성 후 그대로 env에 입력",
     },
-    NEXTAUTH_SECRET: {
+    AUTH_SECRET: {
         purpose: "로그인 세션과 쿠키 암호화에 쓰는 secret",
         setup: "충분히 긴 랜덤 문자열을 생성해 env에 입력",
     },
@@ -23,7 +23,7 @@ const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
 const COMMANDS = {
     AUTH_ADMIN_PASSWORD_HASH:
         "node -e \"const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log('scrypt$' + salt + '$' + hash)\"",
-    NEXTAUTH_SECRET:
+    AUTH_SECRET:
         "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
 } as const;
 
@@ -212,27 +212,27 @@ export default function LoginForm({
                                         </div>
                                         <div className="space-y-1 text-xs">
                                             <p className="font-semibold">
-                                                `NEXTAUTH_SECRET` 생성 명령
+                                                `AUTH_SECRET` 생성 명령
                                             </p>
                                             <div className="space-y-2">
                                                 <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
-                                                    {COMMANDS.NEXTAUTH_SECRET}
+                                                    {COMMANDS.AUTH_SECRET}
                                                 </code>
                                                 <button
                                                     type="button"
                                                     onClick={() =>
                                                         void handleCopyCommand(
-                                                            "NEXTAUTH_SECRET"
+                                                            "AUTH_SECRET"
                                                         )
                                                     }
                                                     disabled={
                                                         copiedCommand ===
-                                                        "NEXTAUTH_SECRET"
+                                                        "AUTH_SECRET"
                                                     }
                                                     className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
                                                 >
                                                     {copiedCommand ===
-                                                    "NEXTAUTH_SECRET" ? (
+                                                    "AUTH_SECRET" ? (
                                                         <>
                                                             <svg
                                                                 className="h-3.5 w-3.5"

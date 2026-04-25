@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.91 (2026-04-26)
+
+### chore: AUTH_SECRET 컨벤션 정렬 + trustHost 운영 노트
+
+- `src/lib/admin-credentials.ts`: `getAuthSecret()` 신규 — `AUTH_SECRET` 우선, 없으면 `NEXTAUTH_SECRET` fallback. setup 검사도 `AUTH_SECRET`을 누락 키로 보고
+- `src/auth.ts`: NextAuth `secret`을 `getAuthSecret()`로 주입해 두 키 모두 지원
+- `src/components/admin/LoginForm.tsx`, `src/__tests__/admin-credentials.test.ts`, `src/__tests__/login-form-guide.test.tsx`: env 키 라벨을 `AUTH_SECRET`으로 갱신
+- `.env.example`: `AUTH_SECRET` 권장 + `NEXTAUTH_SECRET`이 backward-compatible fallback임을 명시
+- `USER_TASKS.md`: `AUTH_SECRET` rename 가이드, MCP token rotation, trustHost 운영 가정 추가
+- `package.json`: patch version `0.12.91`로 증가
+
 ## v0.12.90 (2026-04-26)
 
 ### fix: nextauth signIn 검증 강화 + LIKE escape + agent token 필터

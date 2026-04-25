@@ -6,22 +6,28 @@ type AdminCredentialSetup = {
     missingEnvKeys: string[];
 };
 
+// AUTH_SECRET 우선, NEXTAUTH_SECRET fallback
+export function getAuthSecret(): string {
+    return (
+        (process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "") as string
+    ).trim();
+}
+
 function getAdminCredentialEnv() {
     const adminEmail = (process.env.AUTH_ADMIN_EMAIL ?? "").trim();
     const passwordHash = (process.env.AUTH_ADMIN_PASSWORD_HASH ?? "").trim();
-    const nextAuthSecret = (process.env.NEXTAUTH_SECRET ?? "").trim();
+    const authSecret = getAuthSecret();
 
-    return { adminEmail, passwordHash, nextAuthSecret };
+    return { adminEmail, passwordHash, authSecret };
 }
 
 // admin auth env 상태 수집
 export function getAdminCredentialSetup(): AdminCredentialSetup {
-    const { adminEmail, passwordHash, nextAuthSecret } =
-        getAdminCredentialEnv();
+    const { adminEmail, passwordHash, authSecret } = getAdminCredentialEnv();
     const missingEnvKeys = [
         !adminEmail ? "AUTH_ADMIN_EMAIL" : null,
         !passwordHash ? "AUTH_ADMIN_PASSWORD_HASH" : null,
-        !nextAuthSecret ? "NEXTAUTH_SECRET" : null,
+        !authSecret ? "AUTH_SECRET" : null,
     ].filter((value): value is string => value !== null);
 
     return { missingEnvKeys };

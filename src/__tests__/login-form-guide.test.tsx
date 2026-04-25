@@ -27,7 +27,7 @@ describe("login form env guide", () => {
                     missingEnvKeys: [
                         "AUTH_ADMIN_EMAIL",
                         "AUTH_ADMIN_PASSWORD_HASH",
-                        "NEXTAUTH_SECRET",
+                        "AUTH_SECRET",
                     ],
                 }}
             />
@@ -51,7 +51,7 @@ describe("login form env guide", () => {
             screen.getByText(/`AUTH_ADMIN_PASSWORD_HASH` 생성 명령/i)
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/`NEXTAUTH_SECRET` 생성 명령/i)
+            screen.getByText(/`AUTH_SECRET` 생성 명령/i)
         ).toBeInTheDocument();
 
         const copyButtons = screen.getAllByRole("button", { name: "복사" });
@@ -79,7 +79,7 @@ describe("login form env guide", () => {
                     missingEnvKeys: [
                         "AUTH_ADMIN_EMAIL",
                         "AUTH_ADMIN_PASSWORD_HASH",
-                        "NEXTAUTH_SECRET",
+                        "AUTH_SECRET",
                     ],
                 }}
             />
@@ -89,7 +89,7 @@ describe("login form env guide", () => {
             screen.queryByText(/`AUTH_ADMIN_PASSWORD_HASH` 생성 명령/i)
         ).not.toBeInTheDocument();
         expect(
-            screen.queryByText(/`NEXTAUTH_SECRET` 생성 명령/i)
+            screen.queryByText(/`AUTH_SECRET` 생성 명령/i)
         ).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "복사" })).toBeNull();
     });

@@ -19,18 +19,18 @@ describe("admin credentials helpers", () => {
     it("누락된 env key 목록 반환", () => {
         vi.stubEnv("AUTH_ADMIN_EMAIL", "");
         vi.stubEnv("AUTH_ADMIN_PASSWORD_HASH", "");
-        vi.stubEnv("NEXTAUTH_SECRET", "");
+        vi.stubEnv("AUTH_SECRET", "");
 
         expect(getAdminCredentialSetup().missingEnvKeys).toEqual([
             "AUTH_ADMIN_EMAIL",
             "AUTH_ADMIN_PASSWORD_HASH",
-            "NEXTAUTH_SECRET",
+            "AUTH_SECRET",
         ]);
     });
 
     it("email과 password hash가 일치할 때만 검증 통과", () => {
         vi.stubEnv("AUTH_ADMIN_EMAIL", "admin@example.com");
-        vi.stubEnv("NEXTAUTH_SECRET", "secret");
+        vi.stubEnv("AUTH_SECRET", "secret");
         vi.stubEnv(
             "AUTH_ADMIN_PASSWORD_HASH",
             createPasswordHash("correct-password")
