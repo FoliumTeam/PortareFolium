@@ -10,6 +10,15 @@ const BLOCK_MS = 15 * 60 * 1000;
 
 const attemptStore = new Map<string, LoginAttemptState>();
 
+// 로그인 제한 key 생성
+export function getAdminLoginRateLimitKeys(
+    ip: string,
+    email: string
+): string[] {
+    const normalizedEmail = email.trim().toLowerCase();
+    return [`account:${normalizedEmail}`, `ip:${ip}:${normalizedEmail}`];
+}
+
 function pruneExpiredState(now: number) {
     for (const [key, value] of attemptStore.entries()) {
         const expiredWindow = now - value.firstAttemptAt > WINDOW_MS;

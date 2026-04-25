@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.82 (2026-04-25)
+
+### fix: admin 로그인 rate limit key 보강
+
+- `src/lib/admin-login-rate-limit.ts`: IP 기반 key와 별도로 email account 기반 key를 생성해 forwarded IP 변경만으로 실패 횟수를 우회하지 못하도록 보강
+- `src/auth.ts`: credentials 실패/성공 기록을 account key와 IP key에 함께 반영
+- `src/__tests__/admin-login-rate-limit.test.ts`: account key 포함 회귀 테스트 추가
+- `package.json`: patch version `0.12.82`로 증가
+
 ## v0.12.81 (2026-04-25)
 
 ### fix: admin 로그인 returnUrl redirect 제한

@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { getAdminAuthVersion } from "@/lib/admin-auth-version";
 import {
     clearAdminLoginFailures,
+    getAdminLoginRateLimitKeys,
     getAdminLoginRateLimitState,
     recordAdminLoginFailure,
 } from "@/lib/admin-login-rate-limit";
@@ -38,18 +39,21 @@ const providers = [
                 return null;
             }
 
-            const rateLimitKey = `${ip}:${email.trim().toLowerCase()}`;
-            const rateLimitState = getAdminLoginRateLimitState(rateLimitKey);
-            if (rateLimitState.blocked) {
+            const rateLimitKeys = getAdminLoginRateLimitKeys(ip, email);
+            if (
+                rateLimitKeys.some(
+                    (key) => getAdminLoginRateLimitState(key).blocked
+                )
+            ) {
                 return null;
             }
 
             if (!verifyAdminCredentials(email, password)) {
-                recordAdminLoginFailure(rateLimitKey);
+                rateLimitKeys.forEach((key) => recordAdminLoginFailure(key));
                 return null;
             }
 
-            clearAdminLoginFailures(rateLimitKey);
+            rateLimitKeys.forEach((key) => clearAdminLoginFailures(key));
             return {
                 id: "admin-user",
                 email,
