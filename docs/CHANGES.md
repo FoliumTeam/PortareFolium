@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.85 (2026-04-25)
+
+### fix: admin 로그인 rate limit 공유 저장소 추가
+
+- `src/lib/admin-login-rate-limit.ts`: Supabase `admin_login_attempts` 테이블을 우선 사용하고 실패 시 in-memory fallback으로 동작하도록 변경
+- `src/auth.ts`: async rate limit 조회/기록/정리를 반영해 credentials 로그인 흐름 갱신
+- `src/lib/migrations.ts`, `supabase/setup.sql`, `supabase/migration-whole.sql`: hashed key 기반 `admin_login_attempts` 테이블과 RLS 설정 추가
+- `src/__tests__/admin-login-rate-limit.test.ts`: Supabase 없이 fallback 저장소로 검증되도록 mock 정리
+- `package.json`: patch version `0.12.85`로 증가
+
 ## v0.12.84 (2026-04-25)
 
 ### fix: production dependency audit 취약점 해소

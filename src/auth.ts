@@ -40,20 +40,21 @@ const providers = [
             }
 
             const rateLimitKeys = getAdminLoginRateLimitKeys(ip, email);
-            if (
-                rateLimitKeys.some(
-                    (key) => getAdminLoginRateLimitState(key).blocked
-                )
-            ) {
-                return null;
+            for (const key of rateLimitKeys) {
+                const state = await getAdminLoginRateLimitState(key);
+                if (state.blocked) return null;
             }
 
             if (!verifyAdminCredentials(email, password)) {
-                rateLimitKeys.forEach((key) => recordAdminLoginFailure(key));
+                await Promise.all(
+                    rateLimitKeys.map((key) => recordAdminLoginFailure(key))
+                );
                 return null;
             }
 
-            rateLimitKeys.forEach((key) => clearAdminLoginFailures(key));
+            await Promise.all(
+                rateLimitKeys.map((key) => clearAdminLoginFailures(key))
+            );
             return {
                 id: "admin-user",
                 email,

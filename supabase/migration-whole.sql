@@ -178,6 +178,20 @@ CREATE TABLE IF NOT EXISTS ai_agent_tokens (
 );
 ALTER TABLE ai_agent_tokens ENABLE ROW LEVEL SECURITY;
 
+-- ── admin_login_attempts 테이블 (v0.12.85) ──────────────────
+
+CREATE TABLE IF NOT EXISTS admin_login_attempts (
+    key_hash         TEXT        PRIMARY KEY,
+    count            INTEGER     NOT NULL DEFAULT 0,
+    first_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    blocked_until    TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_first_attempt_at
+    ON admin_login_attempts (first_attempt_at);
+
+ALTER TABLE admin_login_attempts ENABLE ROW LEVEL SECURITY;
+
 -- ── editor_states 테이블 (v0.8.3) ────────────────────────────
 
 CREATE TABLE IF NOT EXISTS editor_states (
