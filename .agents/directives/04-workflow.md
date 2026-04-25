@@ -28,7 +28,7 @@
 - **PR 제목 형식**: `<source> → <target>: <설명>`. 70자 이하.
 - **Test plan checklist**는 항상 채울 것.
 - **Claude 협력 문구 절대 포함 금지**.
-- **Branch별 PR 파일 강제**: project root의 PR 본문 파일은 반드시 현재 branch 이름 기반 `PR_<branch-name>.md` 형식만 사용.
+- **Branch별 PR 파일 강제**: PR 본문 파일은 반드시 `docs/pr/<branch-name>.md` 위치에 생성. branch name 의 `/` 는 `-` 로 치환. repo root 에는 절대 PR 본문 `.md` 를 만들지 않는다.
 - **HARD: `gh pr create` body 전달 시 `--body "$(cat ...)"` 또는 HEREDOC 절대 사용 금지.** 반드시 `--body-file <path>` 옵션 사용. (토큰 낭비 방지)
 
 ## Documentation Requirements
@@ -36,6 +36,7 @@
 - Add brief docstrings in Korean for newly created functions.
 - Concisely document what changes you have done in the `docs/CHANGES.md` file.
 - Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change. Only update 1st/2nd if explicitly requested.
-- Planning-only 문서 작업(`PLAN_*.md`, 조사 메모 등)에서는 `package.json` version과 `CHANGES.md`를 변경하지 않는다.
-- `PLAN_*.md`, `PR_*.md` 파일은 사용자가 요구하지 않는 한 커밋하지 않는다.
+- Planning-only 문서 작업(`docs/plans/**/*.md`, 조사 메모 등)에서는 `package.json` version과 `CHANGES.md`를 변경하지 않는다.
+- Plan 파일은 `docs/plans/active/<slug>.md` (진행 중) 또는 `docs/plans/archive/<slug>.md` (완료/보류) 위치에만 생성한다. `PLAN_` prefix 사용 금지 — 폴더가 의미를 담당.
+- `docs/plans/`, `docs/pr/`, `docs/TODO.md`, `docs/USER_TASKS.md` 는 gitignored 라 사용자가 명시적으로 요구하지 않는 한 commit 하지 않는다.
 - If a task requires a blueprint edit from the user, don't try to forcefully solve it by code; outright tell the user what to do with detailed instructions.

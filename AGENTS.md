@@ -29,7 +29,23 @@ User directives take precedence over OMC directives on conflict.
 ## Other shared resources
 
 - `.agents/prompts/` — reusable prompt templates.
-- `.agents/prompt-assets/` — reference images for prompts.
+- `.agents/prompt-assets/` — reference images for prompts (gitignored).
+
+## File locations (must follow)
+
+| Kind                      | Location                                      |
+| ------------------------- | --------------------------------------------- |
+| Active plan               | `docs/plans/active/<slug>.md` (gitignored)    |
+| Archived plan             | `docs/plans/archive/<slug>.md` (gitignored)   |
+| PR body per branch        | `docs/pr/<branch-name>.md` (gitignored)       |
+| Working TODO              | `docs/TODO.md` (gitignored)                   |
+| Operator notes            | `docs/USER_TASKS.md` (gitignored)             |
+| Vendored 3rd-party source | `vendor/<package>-<version>/` (gitignored)    |
+| Shared agent assets       | `.agents/{directives,prompts,prompt-assets}/` |
+
+Never create `.md` at repo root except whitelist (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `README.md`).
+Plan slugs use kebab-case without `PLAN_` prefix — folder location encodes status.
+Detailed naming and commit policy: see [.agents/directives/04-workflow.md](.agents/directives/04-workflow.md).
 
 ## Tool-specific entry points
 

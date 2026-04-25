@@ -1,5 +1,23 @@
 # 05. Architecture & Pitfalls
 
+## File location conventions
+
+모든 plan, PR body, working note, vendored source 는 정해진 경로에서만 관리한다. repo root 에는 `.md` 파일을 새로 만들지 않는다 (whitelist: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `README.md`).
+
+| Kind                      | Location                                                                      | Tracked? | Notes                                |
+| ------------------------- | ----------------------------------------------------------------------------- | -------- | ------------------------------------ |
+| Active plan               | `docs/plans/active/<slug>.md`                                                 | ❌       | kebab-case slug, `PLAN_` prefix 금지 |
+| Archived plan             | `docs/plans/archive/<slug>.md`                                                | ❌       | 완료/보류 시 active → archive 이동   |
+| PR body per branch        | `docs/pr/<branch-name>.md`                                                    | ❌       | branch 의 `/` 는 `-` 로 치환         |
+| Working TODO              | `docs/TODO.md`                                                                | ❌       | 단일 파일, task 진행 추적            |
+| Operator notes            | `docs/USER_TASKS.md`                                                          | ❌       | 운영자가 직접 처리할 항목            |
+| Vendored 3rd-party source | `vendor/<package>-<version>/`                                                 | ❌       | 예: `vendor/keditor-0.7.21/`         |
+| Shared agent directives   | `.agents/directives/` (canonical) + `.agents/directives/omc/` (sync snapshot) | ✅       | OMC 는 `.claude/rules/` 갱신         |
+| Shared prompt templates   | `.agents/prompts/`                                                            | ✅       | 재사용 prompt 본문                   |
+| Prompt reference assets   | `.agents/prompt-assets/`                                                      | ❌       | 이미지 등 참고 자산                  |
+
+폴더가 의미를 담당한다 — 예전 `PLAN_*.md` / `PR_*.md` prefix 컨벤션은 폐기됨.
+
 ## Project Structure
 
 **Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트

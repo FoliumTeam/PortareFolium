@@ -1,5 +1,23 @@
 # CHANGES
 
+## v0.12.96 (2026-04-26)
+
+### chore: root cleanup — vendor 분리 + plans/pr/TODO 위치 정리
+
+- `vendor/keditor-0.7.21/` 신설 (← `KEDITOR-0.7.21/`)
+- `.agents/prompts/` 신설 (← `prompt-templates/`)
+- `.agents/prompt-assets/` 신설 (← `prompt/`, gitignored)
+- `docs/plans/active/`, `docs/plans/archive/`, `docs/pr/` 신설 + 각 폴더 `README.md` (gitignored 폴더의 의미 안내)
+- root 의 모든 `PLAN_*.md`, `PR_*.md`, `TODO.md`, `USER_TASKS.md` → `docs/plans/{active,archive}/`, `docs/pr/`, `docs/TODO.md`, `docs/USER_TASKS.md` 로 이동
+- `PLAN_SECURITY.md` 삭제 — v0.12.87~v0.12.94 commit 으로 모든 항목 해소
+- `PR_PROVIDER_API.md` 삭제 — 현 사용량 대비 ROI 낮음
+- `.gitignore`: `prompt/`, `KEDITOR-0.7.21/`, `PROMPT_*.md` 룰 제거 + `vendor/`, `docs/plans/`, `docs/pr/`, `docs/TODO.md`, `docs/USER_TASKS.md`, `.agents/prompt-assets/` 룰 추가 + `docs/plans/README.md`, `docs/pr/README.md` 화이트리스트
+- `AGENTS.md`: "File locations" 표 추가 — root `.md` 화이트리스트 + plan/PR/TODO 위치 명시
+- `.agents/directives/01-behavior.md`: `TODO.md` → `docs/TODO.md`, `USER_TASKS.md` → `docs/USER_TASKS.md`
+- `.agents/directives/04-workflow.md`: PR 본문 위치 → `docs/pr/<branch>.md`, plan 위치 → `docs/plans/{active,archive}/<slug>.md`, `PLAN_` prefix 폐기
+- `.agents/directives/05-architecture.md`: "File location conventions" 표 추가 (상세)
+- `package.json`: patch version `0.12.96`로 증가
+
 ## v0.12.95 (2026-04-26)
 
 ### feat: shared agent directive 폴더 .agents/ 도입

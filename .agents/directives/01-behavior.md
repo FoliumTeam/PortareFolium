@@ -13,13 +13,13 @@
 - **Token Efficiency**:
     - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
-- **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `USER_TASKS.md` for the user to follow.
+- **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `docs/USER_TASKS.md` for the user to follow.
 - **Discord Message Acknowledgement**: When a user message arrives via the Discord channel (messages wrapped in `<channel source="plugin:discord:discord" ...>`), send a brief acknowledgement reply (e.g., "확인했습니다 — 작업 시작합니다.") through the Discord `reply` tool before starting the task. The ack should be a single short line so the user sees the message was received; then proceed with the work and send the actual result as a follow-up reply.
 
 ## Autonomous Workflow & Goal-Driven Execution
 
-- **TODO.md Driven (Mandatory)**: Before starting ANY task, automatically analyze requirements and create/update a `TODO.md` file with a checklist. Check off items as you complete them. Only report "Done" when the checklist is fully verified. This avoids massive single git commits and keeps the user informed without requiring them to micro-manage.
-- **Plan & Execute**: Present a brief implementation plan in `TODO.md` and _proceed automatically_. Do not pause and wait for approval for routine coding tasks unless you are completely blocked.
+- **TODO.md Driven (Mandatory)**: Before starting ANY task, automatically analyze requirements and create/update a `docs/TODO.md` file with a checklist. Check off items as you complete them. Only report "Done" when the checklist is fully verified. This avoids massive single git commits and keeps the user informed without requiring them to micro-manage.
+- **Plan & Execute**: Present a brief implementation plan in `docs/TODO.md` and _proceed automatically_. Do not pause and wait for approval for routine coding tasks unless you are completely blocked.
 - **Self-Correction Loop**: Define strong success criteria. If you encounter build errors, lint errors, or failing tests, do NOT immediately stop and ask the user. Read the error logs and attempt to fix the issue autonomously at least 3 times before requesting help.
 - **State Assumptions**: State your assumptions explicitly. If multiple interpretations exist, present them. If a simpler approach exists, say so and push back when warranted.
 
