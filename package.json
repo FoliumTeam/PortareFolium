@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.82",
+    "version": "0.12.83",
     "engines": {
         "node": ">=24.13.0"
     },

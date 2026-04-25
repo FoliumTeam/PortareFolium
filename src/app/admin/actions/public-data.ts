@@ -1,6 +1,7 @@
 "use server";
 
 import { serverClient } from "@/lib/supabase";
+import { sanitizePublicJobField } from "@/lib/public-job-field";
 
 // 공개 태그 목록 조회
 export async function listPublicTags(): Promise<
@@ -28,6 +29,9 @@ export async function searchPublicContent(
     if (!serverClient || !query.trim()) return [];
 
     const q = query.trim().toLowerCase();
+    const safeJobField = sanitizePublicJobField(jobField);
+    if (safeJobField === null) return [];
+
     const postQuery = serverClient
         .from("posts")
         .select("slug, title")
@@ -36,8 +40,8 @@ export async function searchPublicContent(
         .order("pub_date", { ascending: false })
         .limit(5);
 
-    if (jobField) {
-        postQuery.or(`job_field.eq.${jobField},job_field.is.null`);
+    if (safeJobField) {
+        postQuery.or(`job_field.eq.${safeJobField},job_field.is.null`);
     }
 
     const portfolioQuery = serverClient
@@ -48,8 +52,8 @@ export async function searchPublicContent(
         .order("order_idx", { ascending: true })
         .limit(5);
 
-    if (jobField) {
-        portfolioQuery.or(`job_field.eq.${jobField},job_field.is.null`);
+    if (safeJobField) {
+        portfolioQuery.or(`job_field.eq.${safeJobField},job_field.is.null`);
     }
 
     const [postsRes, portfolioRes] = await Promise.all([

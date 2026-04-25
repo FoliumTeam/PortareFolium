@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.83 (2026-04-25)
+
+### fix: public search jobField filter 검증 추가
+
+- `src/lib/public-job-field.ts` 신규: public search에서 PostgREST raw filter에 들어가는 jobField를 slug-safe 문자로 제한
+- `src/app/admin/actions/public-data.ts`: 잘못된 jobField는 빈 검색 결과로 처리하고 안전한 값만 `.or()` filter에 사용
+- `src/__tests__/public-job-field.test.ts`: filter 구분 문자 차단 회귀 테스트 추가
+- `package.json`: patch version `0.12.83`로 증가
+
 ## v0.12.82 (2026-04-25)
 
 ### fix: admin 로그인 rate limit key 보강
