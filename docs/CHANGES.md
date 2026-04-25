@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.89 (2026-04-26)
+
+### fix: admin 로그인 rate limit DB 부재 시 fail-closed
+
+- `src/lib/admin-login-rate-limit.ts`: in-memory fallback 제거 — Supabase store가 없거나 조회 실패하면 `store-unavailable` 사유로 차단 상태 반환
+- `src/auth.ts`: rate limit 조회가 fail-closed로 차단되면 그대로 로그인 거부 (다중 instance에서 분산 brute force 회피 차단)
+- `src/__tests__/admin-login-rate-limit.test.ts`: in-memory store mock으로 정상 흐름 검증 + serverClient 없을 때 fail-closed 회귀 테스트 추가
+- `package.json`: patch version `0.12.89`로 증가
+
 ## v0.12.88 (2026-04-26)
 
 ### fix: NEXTAUTH_SECRET fallback 제거 + admin 로그인 setup gate

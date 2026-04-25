@@ -7,11 +7,15 @@ type LoginAttemptState = {
     blockedUntil: number;
 };
 
+export type LoginRateLimitState = {
+    blocked: boolean;
+    retryAfterMs: number;
+    reason?: "rate-limit" | "store-unavailable";
+};
+
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 10;
 const BLOCK_MS = 10 * 60 * 1000;
-
-const attemptStore = new Map<string, LoginAttemptState>();
 
 type DbLoginAttemptRow = {
     count: number;
@@ -32,37 +36,13 @@ function hashRateLimitKey(key: string): string {
     return createHash("sha256").update(key).digest("hex");
 }
 
-function pruneExpiredState(now: number) {
-    for (const [key, value] of attemptStore.entries()) {
-        const expiredWindow = now - value.firstAttemptAt > WINDOW_MS;
-        const expiredBlock =
-            value.blockedUntil !== 0 && value.blockedUntil <= now;
-        if (expiredWindow && (value.blockedUntil === 0 || expiredBlock)) {
-            attemptStore.delete(key);
-        }
-    }
-}
-
-function getMemoryRateLimitState(key: string, now: number) {
-    pruneExpiredState(now);
-    const state = attemptStore.get(key);
-    if (!state) {
-        return { blocked: false, retryAfterMs: 0 };
-    }
-
-    if (state.blockedUntil > now) {
-        return {
-            blocked: true,
-            retryAfterMs: state.blockedUntil - now,
-        };
-    }
-
-    if (now - state.firstAttemptAt > WINDOW_MS) {
-        attemptStore.delete(key);
-        return { blocked: false, retryAfterMs: 0 };
-    }
-
-    return { blocked: false, retryAfterMs: 0 };
+// store unavailable sentinel
+function storeUnavailableState(): LoginRateLimitState {
+    return {
+        blocked: true,
+        retryAfterMs: 0,
+        reason: "store-unavailable",
+    };
 }
 
 async function getDbLoginAttempt(
@@ -89,7 +69,10 @@ async function getDbLoginAttempt(
     };
 }
 
-async function saveDbLoginAttempt(key: string, state: LoginAttemptState) {
+async function saveDbLoginAttempt(
+    key: string,
+    state: LoginAttemptState
+): Promise<boolean> {
     if (!serverClient) return false;
 
     const { error } = await serverClient.from("admin_login_attempts").upsert({
@@ -105,7 +88,7 @@ async function saveDbLoginAttempt(key: string, state: LoginAttemptState) {
     return !error;
 }
 
-async function deleteDbLoginAttempt(key: string) {
+async function deleteDbLoginAttempt(key: string): Promise<boolean> {
     if (!serverClient) return false;
 
     const { error } = await serverClient
@@ -116,14 +99,14 @@ async function deleteDbLoginAttempt(key: string) {
     return !error;
 }
 
-// 로그인 시도 제한 상태 확인
+// 로그인 시도 제한 상태 확인 — DB 없으면 fail-closed
 export async function getAdminLoginRateLimitState(
     key: string,
     now = Date.now()
-) {
+): Promise<LoginRateLimitState> {
     const dbState = await getDbLoginAttempt(key);
     if (dbState === undefined) {
-        return getMemoryRateLimitState(key, now);
+        return storeUnavailableState();
     }
 
     if (!dbState) {
@@ -134,6 +117,7 @@ export async function getAdminLoginRateLimitState(
         return {
             blocked: true,
             retryAfterMs: dbState.blockedUntil - now,
+            reason: "rate-limit",
         };
     }
 
@@ -164,29 +148,17 @@ function getNextFailureState(
     };
 }
 
-function recordMemoryLoginFailure(key: string, now: number) {
-    pruneExpiredState(now);
-    const current = attemptStore.get(key);
-    attemptStore.set(key, getNextFailureState(current ?? null, now));
-}
-
-// 로그인 실패 기록
-export async function recordAdminLoginFailure(key: string, now = Date.now()) {
+// 로그인 실패 기록 — DB 없으면 noop (fail-closed가 이미 차단)
+export async function recordAdminLoginFailure(
+    key: string,
+    now = Date.now()
+): Promise<void> {
     const dbState = await getDbLoginAttempt(key);
-    if (dbState === undefined) {
-        recordMemoryLoginFailure(key, now);
-        return;
-    }
-
-    const saved = await saveDbLoginAttempt(
-        key,
-        getNextFailureState(dbState, now)
-    );
-    if (!saved) recordMemoryLoginFailure(key, now);
+    if (dbState === undefined) return;
+    await saveDbLoginAttempt(key, getNextFailureState(dbState, now));
 }
 
 // 로그인 성공 시 실패 기록 정리
-export async function clearAdminLoginFailures(key: string) {
-    attemptStore.delete(key);
+export async function clearAdminLoginFailures(key: string): Promise<void> {
     await deleteDbLoginAttempt(key);
 }
