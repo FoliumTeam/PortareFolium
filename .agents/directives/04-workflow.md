@@ -9,10 +9,37 @@
 
 ## Testing Gate
 
-- **Commit gate (로컬)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook이 이미 이 수준을 강제함.
-- **Push gate (로컬 strict)**: `git push` 전에 `.husky/pre-push`가 `pnpm build` 후 `BASE_URL=http://127.0.0.1:3100 E2E_SERVER_MODE=start pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. E2E 통과 못 하면 push 차단. `--no-verify`로 hook 우회 금지.
-- **Frontend runtime gate (필수)**: frontend route, `src/components/**/*.tsx` client component, 브라우저 인터랙션 코드를 수정했으면 `pnpm dev` 기준으로 실제 대상 route를 열어 browser console error / `pageerror` / redbox 0개를 직접 확인해야 함. build 통과만으로 런타임 검증을 대체하지 말 것.
-- **E2E runtime assertions**: 새 E2E나 기존 E2E를 수정할 때는 가능하면 browser console error 와 `pageerror`를 수집해 assertion에 포함. 단순 visibility check만으로 "all tests good" 판단 금지.
+### Tooling 명령
+
+| 도구                     | 용도                      | 명령                                      |
+| ------------------------ | ------------------------- | ----------------------------------------- |
+| Vitest + Testing Library | 단위 + integration 테스트 | `pnpm test` (또는 `pnpm exec vitest run`) |
+| Playwright               | E2E 전체                  | `pnpm test:e2e`                           |
+| Playwright (chromium만)  | 빠른 확인                 | `pnpm test:e2e:chromium`                  |
+| Playwright UI 모드       | 디버깅                    | `pnpm test:e2e:ui`                        |
+| Husky pre-push           | 로컬 strict E2E gate      | `.husky/pre-push` (자동)                  |
+
+### Gate 정책
+
+- **Commit gate**: `git commit` 전에는 `pnpm exec vitest run` 통과만 필요. pre-commit hook 이 이 수준 강제.
+- **Push gate (로컬 strict)**: `git push` 전 `.husky/pre-push` 가 `pnpm build` 후 `BASE_URL=http://127.0.0.1:3100 E2E_SERVER_MODE=start pnpm exec playwright test --project=chromium --project=authenticated-chromium` 자동 실행. 실패 시 push 차단. `--no-verify` 우회 금지 — 유일한 E2E 통과 검증 수단.
+- **Frontend runtime gate (필수)**: frontend route, `src/components/**/*.tsx` client component, 브라우저 인터랙션 코드를 수정했으면 `pnpm dev` 기준으로 실제 route 를 열어 browser console error / `pageerror` / redbox 0개를 직접 확인. build 통과만으로 런타임 검증 대체 금지.
+- **E2E runtime assertions**: E2E 신규/수정 시 browser console error 와 `pageerror` 수집해 assertion 포함. 단순 visibility check 만으로 "all tests good" 판단 금지.
+
+### Playwright 프로젝트 + 인증
+
+- 공개 페이지 프로젝트: `chromium`, `firefox`, `webkit`, `mobile-chrome`, `mobile-safari`
+- 인증 필요 프로젝트: `authenticated-chromium`, `authenticated-firefox`, `authenticated-webkit`
+- `e2e/auth.setup.ts` 가 NextAuth credentials 로그인 후 `.auth/user.json` 에 `storageState` 저장. `authenticated-*` 프로젝트가 이 파일 로드해 로그인 상태로 실행.
+- 필요 env: `E2E_EMAIL`, `E2E_PASSWORD` (`AUTH_ADMIN_EMAIL` 와 일치하는 이메일 + 평문 비밀번호).
+
+### 신규 E2E 추가 시
+
+1. 공개 페이지: `e2e/*.spec.ts`
+2. 인증 필요: `e2e/authenticated/*.spec.ts` — `storageState` 자동 적용
+3. 데이터 비의존 테스트 우선 (DB 상태와 무관하게 통과)
+4. 셀렉터: `id`, `role`, `getByText({ exact: true })` 우선. `text=` 셀렉터는 strict mode 위반 주의
+5. `test.skip()` 누적 금지 — skip 시 사유 코멘트 + DB 시드 부재 등 원인 명시
 
 ## Commit Conventions
 

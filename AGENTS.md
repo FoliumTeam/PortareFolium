@@ -12,6 +12,7 @@ Direct edits go here.
 - [.agents/directives/03-design.md](.agents/directives/03-design.md) — Design system, Tailwind usage, UI implementation details.
 - [.agents/directives/04-workflow.md](.agents/directives/04-workflow.md) — Branch strategy, commit/PR conventions, testing gates, documentation.
 - [.agents/directives/05-architecture.md](.agents/directives/05-architecture.md) — Project structure, directory layout, PDF export, pitfalls, MCP guide.
+- [.agents/directives/06-security.md](.agents/directives/06-security.md) — Trust boundaries, MDX trust model, R2/route guard-rails, lessons from past security fixes.
 
 ## OMC directives (auto-synced from `.claude/rules/`)
 

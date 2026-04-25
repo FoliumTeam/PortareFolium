@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.97 (2026-04-26)
+
+### chore: docs root 정리 — security/test 직책 directive 흡수, 잉여 가이드 삭제
+
+- `.agents/directives/06-security.md` 신규: trust 경계, MDX trust 모델, R2/route guard-rails, 본 branch 보안 수정에서 도출된 24개 lesson learned 정리. 신규 인증/저장 코드 작성 시 강제 follow.
+- `.agents/directives/04-workflow.md`: Testing Gate 섹션에 도구 명령 표 + Playwright 프로젝트/인증 흐름 + 신규 E2E 추가 가이드 흡수.
+- `AGENTS.md`: manifest 에 `06-security.md` ref 추가.
+- 삭제: `docs/IMAGE_ORPHAN_CLEANUP.md` (코드 + 테스트가 source of truth), `docs/MCP_GUIDE.md` (외부 caller 가이드, 핵심 정보는 `05-architecture.md` 에 condensed), `docs/SECURITY.md` (06-security.md 로 이전), `docs/SEO.md` (일회성 setup tutorial), `docs/TEST.md` (04-workflow.md 로 흡수).
+- `package.json`: patch version `0.12.97`로 증가
+
 ## v0.12.96 (2026-04-26)
 
 ### chore: root cleanup — vendor 분리 + plans/pr/TODO 위치 정리
