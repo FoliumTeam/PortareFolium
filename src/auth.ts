@@ -8,6 +8,7 @@ import {
     getAdminLoginRateLimitState,
     recordAdminLoginFailure,
 } from "@/lib/admin-login-rate-limit";
+import { isAdminEmail } from "@/lib/admin-auth";
 import {
     isAdminCredentialSetupComplete,
     verifyAdminCredentials,
@@ -85,8 +86,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     providers,
     callbacks: {
-        async signIn({ account }) {
-            return account?.provider === "admin-credentials";
+        async signIn({ account, user }) {
+            if (account?.provider !== "admin-credentials") return false;
+            if (!isAdminEmail(user?.email)) return false;
+            return true;
         },
         async jwt({ token, user, account }) {
             const authVersion = getAdminAuthVersion();

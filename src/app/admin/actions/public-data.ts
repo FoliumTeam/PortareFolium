@@ -3,6 +3,11 @@
 import { serverClient } from "@/lib/supabase";
 import { sanitizePublicJobField } from "@/lib/public-job-field";
 
+// PostgREST ilike pattern wildcard escape
+function escapeLikePattern(value: string): string {
+    return value.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
+
 // 공개 태그 목록 조회
 export async function listPublicTags(): Promise<
     { slug: string; name: string; color: string | null }[]
@@ -28,7 +33,7 @@ export async function searchPublicContent(
 ): Promise<{ slug: string; title: string; type: "post" | "portfolio" }[]> {
     if (!serverClient || !query.trim()) return [];
 
-    const q = query.trim().toLowerCase();
+    const q = escapeLikePattern(query.trim().toLowerCase());
     const safeJobField = sanitizePublicJobField(jobField);
     if (safeJobField === null) return [];
 

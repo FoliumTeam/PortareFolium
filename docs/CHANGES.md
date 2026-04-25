@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.90 (2026-04-26)
+
+### fix: nextauth signIn 검증 강화 + LIKE escape + agent token 필터
+
+- `src/auth.ts`: `signIn` callback에서 provider 외에 `isAdminEmail(user?.email)`까지 검증해 다른 경로로 user 객체가 만들어지더라도 admin 권한 부여 차단
+- `src/app/admin/actions/public-data.ts`: 공개 검색 query에 `escapeLikePattern`을 적용해 사용자가 `%`/`_`/`\\`로 ilike wildcard 매칭을 우회하지 못하도록 차단
+- `src/app/admin/login/page.tsx`: site_name 값이 broken JSON일 때 `JSON.parse` 예외로 로그인 페이지가 500이 되지 않도록 try/catch 처리
+- `src/lib/agent-token.ts`: SQL 단계에서 `revoked = false` + `expires_at > now()` 필터 적용 + `last_used_at` 60초 throttle로 invalid/유효 토큰 모두에 대한 DB write 증폭 차단
+- `package.json`: patch version `0.12.90`로 증가
+
 ## v0.12.89 (2026-04-26)
 
 ### fix: admin 로그인 rate limit DB 부재 시 fail-closed

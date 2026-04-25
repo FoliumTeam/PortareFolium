@@ -35,7 +35,13 @@ export default async function AdminLoginPage({
             .single();
         if (data?.value) {
             let v = data.value;
-            if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
+            if (typeof v === "string" && v.startsWith('"')) {
+                try {
+                    v = JSON.parse(v);
+                } catch {
+                    v = "";
+                }
+            }
             if (typeof v === "string") siteName = v;
         }
     }
