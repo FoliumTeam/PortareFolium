@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.12.94 (2026-04-26)
+
+### docs: SECURITY 가이드 추가
+
+- `docs/SECURITY.md` 신규: trust 경계 (admin/MCP/public), MDX content trust 모델, R2 path policy, route middleware gate, deployment 가정, secret/token rotation 절차 정리
+- `package.json`: patch version `0.12.94`로 증가
+
 ## v0.12.93 (2026-04-26)
 
 ### feat: admin route middleware gate
