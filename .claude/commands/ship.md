@@ -12,6 +12,25 @@ Commit the current unstaged changes following these rules strictly:
 
     The `(v<version>)` suffix is **mandatory** for PortareFolium and must match the bumped `package.json` version (see rule 3).
 
+    **Commit body format (mandatory for any non-trivial commit):** Match the concise Korean file-scoped bullet style of the canonical example commit `02e080e539a608a24e134aa29ff8ccf44b557e42`.
+
+    ```text
+    <type>: <Korean description> (v<version>)
+
+    - path/to/file.ts:
+      변경 요약 추가
+    - path/to/other-file.ts, path/to/test.ts:
+      관련 테스트와 호출 경계 보강
+    ```
+
+    Body rules:
+    - Use file/path-scoped bullets. Group related files in one bullet when they belong to the same concern.
+    - Use concise Korean statement-like noun/verb-noun endings such as `추가`, `정리`, `보강`, `반영`, `제거`, `갱신`, `적용`.
+    - Do **not** write prose sentences like `~한다.`, `~했다.`, `~합니다.`, or long rationale paragraphs.
+    - Do **not** include Lore trailers (`Constraint:`, `Rejected:`, `Tested:`, etc.) in normal PortareFolium commits unless the user explicitly asks for them for that commit.
+    - For a tiny single-file/docs-only change, a subject-only commit is allowed only when the last two human commits also use subject-only style.
+    - Before committing, run `git log -2 --format=full` and compare the drafted message against this body style. If it does not look like `02e080e...`, rewrite it before `git commit`.
+
     **Commit type table** (Conventional Commits spec — pick the most accurate type; if multiple apply, pick the dominant one based on the _intent_ of the change, not the file count):
 
     | 타입       | 설명                                           | 사용 예                                                       |
@@ -37,6 +56,8 @@ Commit the current unstaged changes following these rules strictly:
     - 첫 글자 소문자 (`feat:` 뒤 첫 단어).
     - 끝에 마침표/느낌표 등 punctuation 없음.
     - 한글로 작성. 단, 파일명·고유명사·기술 용어는 영어 원문 유지 (예: `feat: ContentWrapper에 max-w-7xl variant 추가 (v0.11.40)`).
+
+    **Amend/rewrite safety:** If the task is only to amend existing commit messages, preserve each commit's exact changelist/tree and original author + committer datetime. Recreate commits with the same tree and dates, then verify old/new pairs with `git show -s --format='%aI|%cI|%T'`. Push rewritten history only when explicitly requested, and use `--force-with-lease`, never plain `--force`.
 
 2a. **Commit grouping**: 여러 무관한 변경을 하나의 commit에 묶지 말 것. 기능별·관심사별로 분리해 commit. 한 번에 4개 이상의 무관한 파일이 staged 상태면, 분리 가능 여부를 검토하고 필요하면 user에게 확인.
 

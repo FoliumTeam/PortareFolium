@@ -46,9 +46,25 @@
 - **형식**: `<type>: <Korean description> (v<version>)` — version suffix는 `package.json`의 bump된 patch 버전과 일치해야 함.
 - **제목 규칙**: 명령형 현재 시제, 첫 글자 소문자, 끝 punctuation 없음, 한글 (파일명·고유명사·기술 용어는 영어 원문 유지).
 - **타입**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `revert`.
+- **본문 스타일**: non-trivial commit은 `02e080e539a608a24e134aa29ff8ccf44b557e42`처럼 파일/경로 단위 bullet body를 사용한다.
+    - 형식:
+
+        ```text
+        - path/to/file.ts:
+          변경 요약 추가
+        - path/to/other-file.ts, path/to/test.ts:
+          관련 테스트와 호출 경계 보강
+        ```
+
+    - 문장은 길게 쓰지 말고 `추가`, `정리`, `보강`, `반영`, `제거`, `갱신`, `적용` 같은 간결한 한국어 statement-like 어미를 사용.
+    - `~한다.`, `~했다.`, `~합니다.` 같은 산문형 문장과 긴 rationale paragraph 금지.
+    - 일반 PortareFolium commit에는 `Constraint:`, `Rejected:`, `Tested:` 같은 Lore trailer를 넣지 않는다. 사용자가 특정 commit에 명시적으로 요구한 경우만 예외.
+    - tiny single-file/docs-only 변경은 최근 human commit 스타일이 subject-only일 때만 subject-only 허용.
+
 - **Commit grouping**: 무관한 변경을 한 commit에 묶지 않는다.
 - **Path quoting**: route group `(...)` / dynamic segment `[...]` 포함 경로는 `git add` 시 반드시 `""` 인용.
 - **Co-Authored-By 등 Claude 협력 문구 절대 포함 금지**.
+- **Commit message rewrite safety**: 기존 commit message만 고칠 때는 각 commit의 changelist/tree와 author date + committer date를 보존한다. old/new pair를 `git show -s --format='%aI|%cI|%T'`로 검증한다. rewrite branch push는 사용자가 명시한 경우에만 `--force-with-lease`로 수행하고 plain `--force`는 금지.
 
 ## PR Conventions
 
