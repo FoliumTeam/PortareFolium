@@ -531,4 +531,20 @@ INSERT INTO site_config (key, value)
 VALUES ('db_schema_version', '"0.12.85"')
 ON CONFLICT (key) DO UPDATE SET value = '"0.12.85"';`,
     },
+    {
+        version: "0.12.114",
+        title: "영문 resume row 제거",
+        feature: "resume_data를 ko 단일 source of truth로 정리",
+        sql: `
+DELETE FROM resume_data
+WHERE lang = 'en';
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.12.114"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.12.114"';`,
+        sqliteSql: `
+DELETE FROM refuge_rows
+WHERE table_name = 'resume_data'
+  AND identity = 'en';`,
+    },
 ];

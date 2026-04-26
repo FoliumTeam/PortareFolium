@@ -250,4 +250,34 @@ describe("sqlite refuge server client", () => {
                 .get("refuge_migration_probe")
         ).toBeTruthy();
     });
+
+    it("applies the resume en-row removal migration locally", async () => {
+        await seedRefuge([]);
+        const store = await import("@/lib/refuge/store");
+        const migrations = await import("@/lib/refuge/sqlite-migrations");
+        const database = store.getRefugeDatabase();
+        store.replaceRefugeTableRows(database, "site_config", [
+            { key: "db_schema_version", value: "0.12.113" },
+        ]);
+        store.replaceRefugeTableRows(database, "resume_data", [
+            { id: "ko-id", lang: "ko", data: {} },
+            { id: "en-id", lang: "en", data: {} },
+        ]);
+
+        migrations.applySqliteRefugeMigration({
+            version: "0.12.114",
+            title: "drop en resume",
+            feature: "resume cleanup",
+            sql: "DELETE FROM resume_data WHERE lang = 'en';",
+            sqliteSql: `
+DELETE FROM refuge_rows
+WHERE table_name = 'resume_data'
+  AND identity = 'en';`,
+        });
+
+        expect(store.listRefugeRows("resume_data")).toEqual([
+            { id: "ko-id", lang: "ko", data: {} },
+        ]);
+        expect(migrations.getSqliteRefugeSchemaVersion()).toBe("0.12.114");
+    });
 });

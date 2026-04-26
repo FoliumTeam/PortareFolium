@@ -7,6 +7,11 @@ import {
 } from "@/app/admin/actions/revalidate";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
+import { normalizeJobFieldValue } from "@/lib/job-field";
+import {
+    inheritResumeJobField,
+    removeResumeJobField,
+} from "@/lib/resume-job-field";
 
 type JobFieldItem = {
     id: string;
@@ -56,10 +61,18 @@ type ResumeEntry = {
 };
 
 type ResumeData = {
-    work?: ResumeEntry[];
-    projects?: ResumeEntry[];
     [key: string]: unknown;
 };
+
+// site_config.value가 JSON 문자열 또는 원시 값으로 섞여 저장된 경우를 정규화한다.
+function parseSiteConfigValue(value: unknown): unknown {
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value) as unknown;
+    } catch {
+        return value;
+    }
+}
 
 function toStringArray(value: JobFieldValue): string[] {
     if (Array.isArray(value)) {
@@ -125,11 +138,16 @@ async function getJobFieldConfig() {
                 .single(),
         ]);
 
+    const parsedJobFields = parseSiteConfigValue(jobFieldsRow?.value);
+    const parsedActiveJobField = parseSiteConfigValue(activeJobFieldRow?.value);
+
     return {
-        jobFields: (jobFieldsRow?.value as JobFieldItem[] | null) ?? [],
+        jobFields: Array.isArray(parsedJobFields)
+            ? (parsedJobFields as JobFieldItem[])
+            : [],
         activeJobField:
-            typeof activeJobFieldRow?.value === "string"
-                ? activeJobFieldRow.value
+            typeof parsedActiveJobField === "string"
+                ? normalizeJobFieldValue(parsedActiveJobField)
                 : "",
     };
 }
@@ -245,23 +263,10 @@ async function applyJobFieldInheritance(parentId: string, newId: string) {
 
     if (resumeRow?.data) {
         const resumeData = resumeRow.data as ResumeData;
-        const updatedWork = (resumeData.work ?? []).map((item) => ({
-            ...item,
-            jobField: addInheritedField(item.jobField, parentId, newId),
-        }));
-        const updatedProjects = (resumeData.projects ?? []).map((item) => ({
-            ...item,
-            jobField: addInheritedField(item.jobField, parentId, newId),
-        }));
-
         const { error } = await serverClient
             .from("resume_data")
             .update({
-                data: {
-                    ...resumeData,
-                    work: updatedWork,
-                    projects: updatedProjects,
-                },
+                data: inheritResumeJobField(resumeData, parentId, newId),
             })
             .eq("id", resumeRow.id);
 
@@ -345,23 +350,10 @@ async function deleteJobFieldCascade(targetId: string) {
 
     if (resumeRow?.data) {
         const resumeData = resumeRow.data as ResumeData;
-        const updatedWork = (resumeData.work ?? []).map((item) => ({
-            ...item,
-            jobField: removeFlexibleField(item.jobField, targetId),
-        }));
-        const updatedProjects = (resumeData.projects ?? []).map((item) => ({
-            ...item,
-            jobField: removeFlexibleField(item.jobField, targetId),
-        }));
-
         const { error } = await serverClient
             .from("resume_data")
             .update({
-                data: {
-                    ...resumeData,
-                    work: updatedWork,
-                    projects: updatedProjects,
-                },
+                data: removeResumeJobField(resumeData, targetId),
             })
             .eq("id", resumeRow.id);
 

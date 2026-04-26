@@ -41,8 +41,8 @@ export async function handleGetSchema(): Promise<unknown> {
             "get_portfolio_item({ slug: string })",
             "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx?, published? })",
             "update_portfolio_item({ slug*, ...partial_fields })",
-            "get_resume({ lang?: 'ko' | 'en' })",
-            "update_resume({ lang?: 'ko' | 'en', data: Partial<Resume> })",
+            "get_resume({ lang?: 'ko' })",
+            "update_resume({ lang?: 'ko', data: Partial<Resume> })",
         ],
         posts: {
             slug: "unique, required",
@@ -85,7 +85,7 @@ export async function handleGetSchema(): Promise<unknown> {
             },
         },
         resume_data: {
-            _note: "One row per lang ('ko' | 'en'). data column is a Resume object.",
+            _note: "Single Korean resume row only ('ko'). data column is a Resume object.",
             basics: {
                 name: "string",
                 label: "string",
@@ -409,12 +409,15 @@ export async function handleUpdatePortfolioItem(args: {
 
 // 이력서 조회
 export async function handleGetResume(args: {
-    lang?: "ko" | "en";
+    lang?: string;
 }): Promise<unknown> {
     if (!serverClient)
         throw new Error("[mcp-tools::handleGetResume] serverClient 없음");
 
     const lang = args.lang ?? "ko";
+    if (lang !== "ko") {
+        throw new Error("[mcp-tools::handleGetResume] ko resume만 지원");
+    }
 
     const { data, error } = await serverClient
         .from("resume_data")
@@ -428,13 +431,16 @@ export async function handleGetResume(args: {
 
 // 이력서 수정
 export async function handleUpdateResume(args: {
-    lang?: "ko" | "en";
+    lang?: string;
     data: Partial<Resume>;
 }): Promise<unknown> {
     if (!serverClient)
         throw new Error("[mcp-tools::handleUpdateResume] serverClient 없음");
 
     const lang = args.lang ?? "ko";
+    if (lang !== "ko") {
+        throw new Error("[mcp-tools::handleUpdateResume] ko resume만 지원");
+    }
 
     const { data: current } = await serverClient
         .from("resume_data")
@@ -606,7 +612,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko", "en"] },
+                lang: { type: "string", enum: ["ko"] },
             },
         },
     },
@@ -616,7 +622,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko", "en"] },
+                lang: { type: "string", enum: ["ko"] },
                 data: {
                     type: "object",
                     description: "Resume 객체 (부분 업데이트 가능)",
@@ -654,10 +660,10 @@ export async function dispatchTool(
         case "update_portfolio_item":
             return handleUpdatePortfolioItem(args as { slug: string });
         case "get_resume":
-            return handleGetResume(args as { lang?: "ko" | "en" });
+            return handleGetResume(args as { lang?: string });
         case "update_resume":
             return handleUpdateResume(
-                args as { lang?: "ko" | "en"; data: Partial<Resume> }
+                args as { lang?: string; data: Partial<Resume> }
             );
         default:
             throw new Error(`[mcp-tools::dispatchTool] 알 수 없는 툴: ${name}`);
