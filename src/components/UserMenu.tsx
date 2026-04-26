@@ -1,86 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { getAdminProfileImage } from "@/app/admin/actions/public-data";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 // 프로필 이미지 placeholder
 const PLACEHOLDER_IMG = "/avatar-placeholder.svg";
 
 export default function UserMenu() {
-    const [user, setUser] = useState<{ id: string } | null>(null);
     const [profileImg, setProfileImg] = useState<string>(PLACEHOLDER_IMG);
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    const pathname = usePathname();
+    const { data: session, status } = useSession();
+    const isAuthed = status === "authenticated" && session?.user?.isAdmin;
 
     // 인증 상태 + 프로필 이미지 로드
     useEffect(() => {
         setMounted(true);
-        if (!browserClient) return;
-
-        // getSession은 network 호출 없이 local session 확인
-        // refresh token이 stale/invalid인 경우 local 세션 clear
-        browserClient.auth
-            .getSession()
-            .then(({ data: { session }, error }) => {
-                if (error) {
-                    console.warn(
-                        "[UserMenu::getSession] stale session cleared:",
-                        error.message
-                    );
-                    browserClient?.auth.signOut({ scope: "local" });
-                    return;
-                }
-                if (session?.user) {
-                    setUser({ id: session.user.id });
-                    loadProfileImage();
-                }
-            })
-            .catch((error: unknown) => {
-                console.warn(
-                    "[UserMenu::getSession] refresh failed, clearing:",
-                    error
-                );
-                browserClient?.auth.signOut({ scope: "local" });
-            });
-
-        const { data: listener } = browserClient.auth.onAuthStateChange(
-            (_event, session) => {
-                if (session?.user) {
-                    setUser({ id: session.user.id });
-                    loadProfileImage();
-                } else {
-                    setUser(null);
-                }
-            }
-        );
-
-        return () => listener.subscription.unsubscribe();
-    }, []);
+        if (!isAuthed) return;
+        void loadProfileImage();
+    }, [isAuthed]);
 
     // resume_data에서 프로필 이미지 fetch (sessionStorage cache)
     const loadProfileImage = async () => {
-        if (!browserClient) return;
         const cached = sessionStorage.getItem("profile_image_url");
         if (cached) {
             setProfileImg(cached);
             return;
         }
-        const { data } = await browserClient
-            .from("resume_data")
-            .select("data")
-            .eq("lang", "ko")
-            .single();
-        const img = (data?.data as Record<string, unknown>)?.basics as
-            | { image?: string }
-            | undefined;
-        if (img?.image) {
-            setProfileImg(img.image);
-            sessionStorage.setItem("profile_image_url", img.image);
+        const image = await getAdminProfileImage();
+        if (image) {
+            setProfileImg(image);
+            sessionStorage.setItem("profile_image_url", image);
         }
     };
 
@@ -101,16 +55,9 @@ export default function UserMenu() {
         );
     }
 
-    // 미인증: 로그인 버튼
-    if (!user) {
-        return (
-            <Link
-                href={`/admin/login?returnUrl=${encodeURIComponent(pathname)}`}
-                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
-            >
-                로그인
-            </Link>
-        );
+    // 미인증: 버튼 숨김
+    if (!isAuthed) {
+        return null;
     }
 
     // 인증됨: 프로필 이미지 + 드롭다운
@@ -147,8 +94,7 @@ export default function UserMenu() {
                             type="button"
                             onClick={async () => {
                                 setOpen(false);
-                                await browserClient?.auth.signOut();
-                                setUser(null);
+                                await signOut({ callbackUrl: "/" });
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-(--color-surface-subtle)"
                         >

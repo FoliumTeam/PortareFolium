@@ -14,6 +14,9 @@ test.describe("SEO 메타데이터", () => {
     for (const { path, title } of pages) {
         test(`${path} — title 존재`, async ({ page }) => {
             await page.goto(path);
+            await expect
+                .poll(async () => page.title(), { timeout: 10_000 })
+                .not.toBe("");
             const pageTitle = await page.title();
             expect(pageTitle.length).toBeGreaterThan(0);
         });

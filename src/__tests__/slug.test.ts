@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { toSlug, uniqueSlug } from "@/lib/slug";
+import { toSlug } from "@/lib/slug";
+import { uniqueSlug } from "@/lib/slug-server";
 
 // Supabase mock
 vi.mock("@/lib/supabase", () => ({
-    browserClient: {
+    serverClient: {
         from: vi.fn(),
     },
 }));
@@ -51,21 +52,21 @@ describe("uniqueSlug", () => {
     });
 
     it("중복 없으면 원래 slug 반환", async () => {
-        const { browserClient } = await import("@/lib/supabase");
+        const { serverClient } = await import("@/lib/supabase");
         const mockQuery = {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             neq: vi.fn().mockReturnThis(),
             limit: vi.fn().mockResolvedValue({ data: [] }),
         };
-        vi.mocked(browserClient!.from).mockReturnValue(mockQuery as never);
+        vi.mocked(serverClient!.from).mockReturnValue(mockQuery as never);
 
         const result = await uniqueSlug("my-post", "posts");
         expect(result).toBe("my-post");
     });
 
     it("중복 시 suffix 추가", async () => {
-        const { browserClient } = await import("@/lib/supabase");
+        const { serverClient } = await import("@/lib/supabase");
         let callCount = 0;
         const mockQuery = {
             select: vi.fn().mockReturnThis(),
@@ -79,7 +80,7 @@ describe("uniqueSlug", () => {
                 });
             }),
         };
-        vi.mocked(browserClient!.from).mockReturnValue(mockQuery as never);
+        vi.mocked(serverClient!.from).mockReturnValue(mockQuery as never);
 
         const result = await uniqueSlug("my-post", "posts");
         expect(result).toBe("my-post-2");

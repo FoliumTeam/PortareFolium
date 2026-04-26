@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import {
     moveStorageFolder,
     deleteStorageFolder,
@@ -12,12 +11,18 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
+import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
+import { toSlug } from "@/lib/slug";
+import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
-    rewriteSnapshotUrls,
-    maybeCleanupOnOpen,
-} from "@/lib/snapshot-cleanup";
-import { toSlug, uniqueSlug } from "@/lib/slug";
-import { revalidatePost } from "@/app/admin/actions/revalidate";
+    batchSetPostJobField,
+    batchSetPostPublished,
+    deletePostById,
+    getPostsPanelBootstrap,
+    savePost,
+    savePostTocStyle,
+    setPostPublished,
+} from "@/app/admin/actions/posts";
 import {
     Eye,
     EyeOff,
@@ -106,10 +111,6 @@ const EMPTY_FORM: PostForm = {
     og_image: "",
 };
 
-// POST_SELECT_FIELDS: loadPosts 및 insert select에서 공통으로 사용할 필드
-const POST_SELECT_FIELDS =
-    "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
-
 interface PostsPanelProps {
     editPath?: string;
     onEditPathChange?: (path: string) => void;
@@ -184,67 +185,18 @@ export default function PostsPanel({
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
     const loadPosts = async () => {
-        if (!browserClient) return;
         setLoading(true);
-        const { data, error: err } = await browserClient
-            .from("posts")
-            .select(POST_SELECT_FIELDS)
-            .order("pub_date", { ascending: false });
-        if (err) setError(err.message);
-        else setPosts(data ?? []);
+        const result = await getPostsPanelBootstrap();
+        setPosts(result.posts);
+        setStateCounts(result.stateCounts);
+        setJobFields(result.jobFields);
+        setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+        setPostTocStyles(result.postTocStyles);
         setLoading(false);
     };
 
-    // editor_states count 로드 (목록 로드 후 호출)
-    const loadStateCounts = async () => {
-        if (!browserClient) return;
-        try {
-            const { data } = await browserClient
-                .from("editor_states")
-                .select("entity_slug")
-                .eq("entity_type", "post")
-                .neq("label", "Initial");
-            if (!data) return;
-            const counts: Record<string, number> = {};
-            for (const row of data) {
-                counts[row.entity_slug] = (counts[row.entity_slug] ?? 0) + 1;
-            }
-            setStateCounts(counts);
-        } catch {
-            // best-effort
-        }
-    };
-
     useEffect(() => {
-        loadPosts().then(() => loadStateCounts());
-        if (browserClient) {
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_fields")
-                .single()
-                .then(({ data }) => {
-                    if (data?.value) setJobFields(data.value as JobFieldItem[]);
-                });
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single()
-                .then(({ data }) => {
-                    if (data?.value && typeof data.value === "string")
-                        setActiveJobField(normalizeJobFieldValue(data.value));
-                });
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "post_toc_styles")
-                .single()
-                .then(({ data }) => {
-                    if (data?.value && typeof data.value === "object")
-                        setPostTocStyles(data.value as Record<string, string>);
-                });
-        }
+        void loadPosts();
     }, []);
 
     // editPath로 편집 상태 복원 (새로고침 시)
@@ -271,15 +223,9 @@ export default function PostsPanel({
 
     // 포스트 목차 스타일 저장 (site_config upsert)
     const saveTocStyle = async (slug: string, style: string) => {
-        if (!browserClient) return;
         const next = { ...postTocStyles, [slug]: style };
         setPostTocStyles(next);
-        await browserClient
-            .from("site_config")
-            .upsert(
-                { key: "post_toc_styles", value: next },
-                { onConflict: "key" }
-            );
+        await savePostTocStyle(slug, style);
     };
 
     // form → DB payload 변환
@@ -367,7 +313,7 @@ export default function PostsPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(`blog/${oldSlug}`, `blog/${newSlug}`);
-            await rewriteSnapshotUrls(
+            await rewriteEditorSnapshotUrls(
                 "post",
                 oldSlug,
                 `blog/${oldSlug}`,
@@ -388,31 +334,17 @@ export default function PostsPanel({
 
     // 자동 저장 (DB에 직접 저장)
     const autoSave = async () => {
-        if (!browserClient || !form.title || !form.slug) return;
+        if (!form.title || !form.slug) return;
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        if (editTarget === "new") {
-            // 신규: insert 후 editTarget을 실제 post로 전환
-            const { data: newPost, error: err } = await browserClient
-                .from("posts")
-                .insert(payload)
-                .select(POST_SELECT_FIELDS)
-                .single();
-            if (!err && newPost) {
-                initialFormRef.current = form;
-                savedSlugRef.current = newPost.slug;
-                setEditTarget(newPost);
-                await revalidatePost(newPost.slug);
-            }
-        } else if (editTarget !== null) {
-            const { error: err } = await browserClient
-                .from("posts")
-                .update(payload)
-                .eq("id", editTarget.id);
-            if (!err) {
-                initialFormRef.current = form;
-                await revalidatePost(editTarget.slug);
-            }
+        const result = await savePost(
+            payload,
+            editTarget === "new" ? null : editTarget?.id
+        );
+        if (result.success) {
+            initialFormRef.current = form;
+            savedSlugRef.current = result.post.slug;
+            setEditTarget(result.post);
         }
     };
 
@@ -424,7 +356,7 @@ export default function PostsPanel({
 
     // 수동 저장 (신규 insert / 수정 update)
     const handleSave = useCallback(async () => {
-        if (!browserClient || !form.title || !form.slug) {
+        if (!form.title || !form.slug) {
             setError("제목과 slug는 필수입니다.");
             return;
         }
@@ -433,28 +365,20 @@ export default function PostsPanel({
 
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        let err;
-        if (editTarget === "new") {
-            ({ error: err } = await browserClient
-                .from("posts")
-                .insert(payload));
-        } else {
-            ({ error: err } = await browserClient
-                .from("posts")
-                .update(payload)
-                .eq("id", (editTarget as Post).id));
-        }
+        const result = await savePost(
+            payload,
+            editTarget === "new" ? null : (editTarget as Post).id
+        );
 
         setSaving(false);
-        if (err) {
-            setError(err.message);
+        if (!result.success) {
+            setError(result.error);
         } else {
             initialFormRef.current = form;
-            savedSlugRef.current = form.slug;
+            savedSlugRef.current = result.post.slug;
             setSuccess("저장 완료");
-            loadPosts();
+            void loadPosts();
             if (editTarget === "new") setEditTarget(null);
-            await revalidatePost(form.slug);
         }
     }, [form, editTarget]);
 
@@ -466,12 +390,11 @@ export default function PostsPanel({
         setEditTarget(null);
         onEditPathChange?.("");
         setMetadataOpen(false);
-        loadStateCounts();
+        void loadPosts();
     };
 
     // 삭제 (스토리지 cleanup 포함)
     const handleDelete = async (id: string) => {
-        if (!browserClient) return;
         const ok = await confirm({
             title: "포스트 삭제",
             description: "정말 삭제하시겠습니까?",
@@ -482,11 +405,8 @@ export default function PostsPanel({
         if (!ok) return;
         // slug 확인 (스토리지 폴더 삭제용)
         const target = posts.find((p) => p.id === id);
-        const { error: err } = await browserClient
-            .from("posts")
-            .delete()
-            .eq("id", id);
-        if (err) setError(err.message);
+        const result = await deletePostById(id);
+        if (!result.success) setError(result.error ?? "삭제 실패");
         else {
             if (target?.slug) deleteStorageFolder(`blog/${target.slug}`);
             if (
@@ -497,19 +417,14 @@ export default function PostsPanel({
                 setEditTarget(null);
                 onEditPathChange?.("");
             }
-            loadPosts();
+            void loadPosts();
         }
     };
 
     // 발행/초안 토글
     const togglePublish = async (post: Post) => {
-        if (!browserClient) return;
-        await browserClient
-            .from("posts")
-            .update({ published: !post.published })
-            .eq("id", post.id);
-        loadPosts();
-        await revalidatePost(post.slug);
+        await setPostPublished(post.id, post.slug, !post.published);
+        void loadPosts();
     };
 
     // MetadataSheet onChange 핸들러
@@ -519,16 +434,11 @@ export default function PostsPanel({
 
     // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
     const handlePublishToggle = async (published: boolean) => {
-        if (!browserClient || editTarget === null || editTarget === "new")
-            return;
-        await browserClient
-            .from("posts")
-            .update({ published })
-            .eq("id", editTarget.id);
+        if (editTarget === null || editTarget === "new") return;
+        await setPostPublished(editTarget.id, editTarget.slug, published);
         setPosts((prev) =>
             prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
         );
-        await revalidatePost(editTarget.slug);
     };
 
     // editPath 복원 대기 중 (list 깜빡임 방지)
@@ -824,31 +734,25 @@ export default function PostsPanel({
     };
 
     const batchPublish = async (publish: boolean) => {
-        if (!browserClient || selected.size === 0) return;
+        if (selected.size === 0) return;
         setBatchSaving(true);
-        await browserClient
-            .from("posts")
-            .update({ published: publish })
-            .in("id", [...selected]);
+        await batchSetPostPublished([...selected], publish);
         setBatchSaving(false);
         setSelected(new Set());
-        loadPosts();
+        void loadPosts();
         showToast(
             `${selected.size}개 포스트를 ${publish ? "Published" : "Draft"}로 변경했습니다.`
         );
     };
 
     const batchSetJobField = async () => {
-        if (!browserClient || selected.size === 0 || !batchJobField) return;
+        if (selected.size === 0 || !batchJobField) return;
         setBatchSaving(true);
-        await browserClient
-            .from("posts")
-            .update({ job_field: [batchJobField] })
-            .in("id", [...selected]);
+        await batchSetPostJobField([...selected], batchJobField);
         setBatchSaving(false);
         setSelected(new Set());
         setBatchJobField("");
-        loadPosts();
+        void loadPosts();
         showToast(`${selected.size}개 포스트의 직무 분야를 변경했습니다.`);
     };
 

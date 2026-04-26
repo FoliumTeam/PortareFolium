@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import { toSlug } from "@/lib/slug";
 import {
     Eye,
@@ -35,7 +34,13 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
-import { revalidateBook } from "@/app/admin/actions/revalidate";
+import {
+    deleteBookById,
+    getBooksPanelBootstrap,
+    saveBook,
+    setBookFeatured,
+    setBookPublished,
+} from "@/app/admin/actions/books";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface BookItem {
@@ -166,39 +171,15 @@ export default function BooksSubPanel({
     const { confirm } = useConfirmDialog();
 
     const loadBooks = async () => {
-        if (!browserClient) return;
         setLoading(true);
-        const { data, error: err } = await browserClient
-            .from("books")
-            .select("*")
-            .order("order_idx");
-        if (err) setError(err.message);
-        else setBooks(data ?? []);
+        const result = await getBooksPanelBootstrap();
+        setBooks(result.books);
+        setStateCounts(result.stateCounts);
         setLoading(false);
     };
 
-    // editor_states count 로드 (목록 로드 후 호출)
-    const loadStateCounts = async () => {
-        if (!browserClient) return;
-        try {
-            const { data } = await browserClient
-                .from("editor_states")
-                .select("entity_slug")
-                .eq("entity_type", "book")
-                .neq("label", "Initial");
-            if (!data) return;
-            const counts: Record<string, number> = {};
-            for (const row of data) {
-                counts[row.entity_slug] = (counts[row.entity_slug] ?? 0) + 1;
-            }
-            setStateCounts(counts);
-        } catch {
-            // best-effort
-        }
-    };
-
     useEffect(() => {
-        loadBooks().then(() => loadStateCounts());
+        void loadBooks();
     }, []);
 
     const buildPayload = () => ({
@@ -245,34 +226,23 @@ export default function BooksSubPanel({
     };
 
     const autoSave = async () => {
-        if (!browserClient || !form.title || !form.slug) return;
+        if (!form.title || !form.slug) return;
         const payload = buildPayload();
-        if (editTarget === "new") {
-            const { data: newBook, error: err } = await browserClient
-                .from("books")
-                .insert(payload)
-                .select("*")
-                .single();
-            if (!err && newBook) {
-                setBooks((prev) => [...prev, newBook]);
-                setEditTarget(newBook);
-                initialFormRef.current = form;
-                await revalidateBook(newBook.slug);
-            }
-        } else if (editTarget) {
-            const { error: err } = await browserClient
-                .from("books")
-                .update(payload)
-                .eq("id", editTarget.id);
-            if (!err) {
-                setBooks((prev) =>
-                    prev.map((b) =>
-                        b.id === editTarget.id ? { ...b, ...payload } : b
-                    )
-                );
-                initialFormRef.current = form;
-                await revalidateBook(editTarget.slug);
-            }
+        const result = await saveBook(
+            payload,
+            editTarget === "new" ? null : editTarget?.id
+        );
+        if (result.success) {
+            setBooks((prev) => {
+                const exists = prev.some((b) => b.id === result.book.id);
+                return exists
+                    ? prev.map((b) =>
+                          b.id === result.book.id ? result.book : b
+                      )
+                    : [...prev, result.book];
+            });
+            setEditTarget(result.book);
+            initialFormRef.current = form;
         }
     };
 
@@ -283,46 +253,33 @@ export default function BooksSubPanel({
     );
 
     const handleSave = useCallback(async () => {
-        if (!browserClient || !form.title || !form.slug) return;
+        if (!form.title || !form.slug) return;
         setSaving(true);
         setError(null);
         const payload = buildPayload();
-        if (editTarget === "new") {
-            const { data: newBook, error: err } = await browserClient
-                .from("books")
-                .insert(payload)
-                .select("*")
-                .single();
-            if (err) setError(err.message);
-            else if (newBook) {
-                setBooks((prev) => [...prev, newBook]);
-                setEditTarget(newBook);
-                initialFormRef.current = form;
-                setSuccess("저장 완료");
-                await revalidateBook(newBook.slug);
-            }
-        } else if (editTarget) {
-            const { error: err } = await browserClient
-                .from("books")
-                .update(payload)
-                .eq("id", editTarget.id);
-            if (err) setError(err.message);
-            else {
-                setBooks((prev) =>
-                    prev.map((b) =>
-                        b.id === editTarget.id ? { ...b, ...payload } : b
-                    )
-                );
-                initialFormRef.current = form;
-                setSuccess("저장 완료");
-                await revalidateBook(editTarget.slug);
-            }
+        const result = await saveBook(
+            payload,
+            editTarget === "new" ? null : editTarget?.id
+        );
+        if (!result.success) {
+            setError(result.error);
+        } else {
+            setBooks((prev) => {
+                const exists = prev.some((b) => b.id === result.book.id);
+                return exists
+                    ? prev.map((b) =>
+                          b.id === result.book.id ? result.book : b
+                      )
+                    : [...prev, result.book];
+            });
+            setEditTarget(result.book);
+            initialFormRef.current = form;
+            setSuccess("저장 완료");
         }
         setSaving(false);
     }, [form, editTarget]);
 
     const handleDelete = async (id: string) => {
-        if (!browserClient) return;
         const ok = await confirm({
             title: "도서 삭제",
             description: "도서를 삭제하시겠습니까?",
@@ -331,12 +288,9 @@ export default function BooksSubPanel({
             variant: "destructive",
         });
         if (!ok) return;
-        const { error: err } = await browserClient
-            .from("books")
-            .delete()
-            .eq("id", id);
-        if (err) {
-            showToast("삭제 실패: " + err.message);
+        const result = await deleteBookById(id);
+        if (!result.success) {
+            showToast("삭제 실패: " + (result.error ?? "unknown"));
         } else {
             setBooks((prev) => prev.filter((b) => b.id !== id));
             if (
@@ -350,34 +304,25 @@ export default function BooksSubPanel({
     };
 
     const togglePublish = async (book: BookItem) => {
-        if (!browserClient) return;
         const next = !book.published;
-        const { error: err } = await browserClient
-            .from("books")
-            .update({ published: next })
-            .eq("id", book.id);
-        if (!err) {
+        const result = await setBookPublished(book.id, book.slug, next);
+        if (result.success) {
             setBooks((prev) =>
                 prev.map((b) =>
                     b.id === book.id ? { ...b, published: next } : b
                 )
             );
-            await revalidateBook(book.slug);
         }
     };
 
     const toggleFeatured = async (book: BookItem) => {
-        if (!browserClient) return;
         const next = !book.featured;
         if (next && books.filter((b) => b.featured).length >= 5) {
             showToast("Featured는 최대 5개까지 설정할 수 있습니다.");
             return;
         }
-        const { error: err } = await browserClient
-            .from("books")
-            .update({ featured: next })
-            .eq("id", book.id);
-        if (!err) {
+        const result = await setBookFeatured(book.id, next);
+        if (result.success) {
             setBooks((prev) =>
                 prev.map((b) =>
                     b.id === book.id ? { ...b, featured: next } : b
@@ -395,16 +340,11 @@ export default function BooksSubPanel({
 
     // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
     const handlePublishToggle = async (published: boolean) => {
-        if (!browserClient || editTarget === null || editTarget === "new")
-            return;
-        await browserClient
-            .from("books")
-            .update({ published })
-            .eq("id", editTarget.id);
+        if (editTarget === null || editTarget === "new") return;
+        await setBookPublished(editTarget.id, editTarget.slug, published);
         setBooks((prev) =>
             prev.map((b) => (b.id === editTarget.id ? { ...b, published } : b))
         );
-        await revalidateBook(editTarget.slug);
     };
 
     const handleBack = async () => {
@@ -413,7 +353,7 @@ export default function BooksSubPanel({
         setMetadataOpen(false);
         setError(null);
         setSuccess(null);
-        loadStateCounts();
+        void loadBooks();
     };
 
     const displayedBooks = books

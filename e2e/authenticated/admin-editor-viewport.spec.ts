@@ -5,17 +5,14 @@ test.describe("Admin editor viewport fit", () => {
         page,
     }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await page.goto("/admin#posts");
+        await page.goto("/admin#posts", { waitUntil: "domcontentloaded" });
 
         // posts list 안정화 대기
-        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(1000);
 
         // 편집 버튼 텍스트 기반 탐색 (PostsPanel 목록 행의 편집 버튼)
         const editBtn = page.locator("button:has-text('편집')").first();
-        const hasEditBtn = await editBtn.isVisible().catch(() => false);
-
-        // 빈 DB CI 환경에서는 editor viewport 검증 대상 없음 skip
-        test.skip(!hasEditBtn, "No posts available in admin list");
+        await expect(editBtn).toBeVisible({ timeout: 15_000 });
 
         await editBtn.click();
 
@@ -36,14 +33,12 @@ test.describe("Admin editor viewport fit", () => {
         page,
     }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
-        await page.goto("/admin#portfolio");
+        await page.goto("/admin#portfolio", { waitUntil: "domcontentloaded" });
 
-        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(1000);
 
         const editBtn = page.locator("button:has-text('편집')").first();
-        const hasEditBtn = await editBtn.isVisible().catch(() => false);
-
-        test.skip(!hasEditBtn, "No portfolio items available in admin list");
+        await expect(editBtn).toBeVisible({ timeout: 15_000 });
 
         await editBtn.click();
 

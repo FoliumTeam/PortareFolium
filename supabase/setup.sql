@@ -118,6 +118,14 @@ CREATE TABLE IF NOT EXISTS ai_agent_tokens (
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 관리자 로그인 rate limit
+CREATE TABLE IF NOT EXISTS admin_login_attempts (
+    key_hash         TEXT        PRIMARY KEY,
+    count            INTEGER     NOT NULL DEFAULT 0,
+    first_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    blocked_until    TIMESTAMPTZ
+);
+
 -- DB Snapshot
 CREATE TABLE IF NOT EXISTS database_snapshots (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -162,6 +170,7 @@ CREATE INDEX IF NOT EXISTS idx_books_published   ON books(published, order_idx);
 CREATE INDEX IF NOT EXISTS idx_database_snapshots_created_at ON database_snapshots(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_editor_states_entity ON editor_states(entity_type, entity_slug, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_gantt_chart_archives_created_at ON gantt_chart_archives(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_first_attempt_at ON admin_login_attempts(first_attempt_at);
 
 -- ── updated_at 자동 갱신 트리거 ─────────────────────────────
 
@@ -277,6 +286,9 @@ CREATE POLICY "books_auth_all"
 
 -- ai_agent_tokens: 인증된 사용자만 접근
 ALTER TABLE ai_agent_tokens ENABLE ROW LEVEL SECURITY;
+
+-- admin_login_attempts: service_role 전용 접근
+ALTER TABLE admin_login_attempts ENABLE ROW LEVEL SECURITY;
 
 -- database_snapshots: 인증된 사용자만 접근
 ALTER TABLE database_snapshots ENABLE ROW LEVEL SECURITY;

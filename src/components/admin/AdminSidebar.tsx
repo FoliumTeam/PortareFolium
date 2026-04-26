@@ -18,6 +18,20 @@ import {
 import type { ComponentType } from "react";
 
 // 탭 정의
+export const REFUGE_ADMIN_TABS = [
+    "posts",
+    "portfolio",
+    "tags",
+    "gantt-chart",
+    "about",
+    "resume",
+    "migrations",
+    "snapshots",
+    "prompts",
+    "debug",
+    "config",
+] as const;
+
 const SECTIONS = [
     {
         label: "Content",
@@ -72,6 +86,7 @@ interface AdminSidebarProps {
     open: boolean;
     onClose: () => void;
     visible?: boolean;
+    refugeMode?: boolean;
 }
 
 // 어드민 사이드바 네비게이션
@@ -81,6 +96,7 @@ export default function AdminSidebar({
     open,
     onClose,
     visible = true,
+    refugeMode = false,
 }: AdminSidebarProps) {
     return (
         <>
@@ -103,45 +119,58 @@ export default function AdminSidebar({
                         : "tablet:translate-x-0 -translate-x-full",
                 ].join(" ")}
             >
-                {SECTIONS.map((section, sectionIdx) => (
-                    <div key={section.label}>
-                        {sectionIdx > 0 && (
-                            // 섹션 구분선
-                            <div className="mx-3 my-2.5 h-px bg-(--color-border) opacity-70" />
-                        )}
-                        <p className="mb-1 px-4 text-[10px] font-black tracking-[0.2em] text-(--color-muted) uppercase">
-                            {section.label}
-                        </p>
-                        {section.items.map((item) => {
-                            const Icon: ComponentType<{ className?: string }> =
-                                item.icon;
-                            const isActive = activeTab === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => onTabClick(item.id as TabId)}
-                                    className={[
-                                        // 사이드바 아이템 기본 스타일
-                                        "admin-sidebar-item flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm font-medium transition-colors",
-                                        isActive
-                                            ? "border-l-2 border-(--color-accent) bg-(--color-accent)/8 text-(--color-foreground)"
-                                            : "border-l-2 border-transparent text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)",
-                                    ].join(" ")}
-                                >
-                                    <Icon
+                {SECTIONS.map((section, sectionIdx) => {
+                    const items = refugeMode
+                        ? section.items.filter((item) =>
+                              REFUGE_ADMIN_TABS.includes(
+                                  item.id as (typeof REFUGE_ADMIN_TABS)[number]
+                              )
+                          )
+                        : section.items;
+                    if (items.length === 0) return null;
+                    return (
+                        <div key={section.label}>
+                            {sectionIdx > 0 && (
+                                // 섹션 구분선
+                                <div className="mx-3 my-2.5 h-px bg-(--color-border) opacity-70" />
+                            )}
+                            <p className="mb-1 px-4 text-[10px] font-black tracking-[0.2em] text-(--color-muted) uppercase">
+                                {section.label}
+                            </p>
+                            {items.map((item) => {
+                                const Icon: ComponentType<{
+                                    className?: string;
+                                }> = item.icon;
+                                const isActive = activeTab === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() =>
+                                            onTabClick(item.id as TabId)
+                                        }
                                         className={[
-                                            "h-3.5 w-3.5 shrink-0",
+                                            // 사이드바 아이템 기본 스타일
+                                            "admin-sidebar-item flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm font-medium transition-colors",
                                             isActive
-                                                ? "text-(--color-accent)"
-                                                : "",
+                                                ? "border-l-2 border-(--color-accent) bg-(--color-accent)/8 text-(--color-foreground)"
+                                                : "border-l-2 border-transparent text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)",
                                         ].join(" ")}
-                                    />
-                                    <span>{item.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                ))}
+                                    >
+                                        <Icon
+                                            className={[
+                                                "h-3.5 w-3.5 shrink-0",
+                                                isActive
+                                                    ? "text-(--color-accent)"
+                                                    : "",
+                                            ].join(" ")}
+                                        />
+                                        <span>{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
                 {/* 사이트 링크 */}
                 <div className="mt-auto border-t border-(--color-border) px-4 pt-3 pb-2">
                     <a

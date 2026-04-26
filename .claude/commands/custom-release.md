@@ -30,13 +30,13 @@ Run the steps **in order**, skipping any that have nothing to do.
     git checkout -b release/v<target>
     ```
 2. Update `package.json` `version` to the target version.
-3. Add a release marker entry to the **top** of `docs/CHANGES.md`:
-    - Format: `## v<target> (<YYYY-MM-DD>)`
+3. Add a release marker entry to the **top** of `docs/changelogs/<YYYY-MM-DD>.md` (today's date). Create the file if it doesn't exist, and add a row to the `docs/CHANGES.md` index if today isn't listed:
+    - Format: `## v<target>`
     - Subheading: `### release: minor 버전 release` (or summarize highlights from the patches since the last release if obvious)
-    - Keep it to 1–3 bullet points referencing the major changes; do **not** duplicate every patch entry — the patch entries below remain as the detailed log.
+    - Keep it to 1–3 bullet points referencing the major changes; do **not** duplicate every patch entry — the patch entries in each date file remain as the detailed log.
 4. Stage and commit:
     ```bash
-    git add package.json docs/CHANGES.md
+    git add package.json docs/CHANGES.md docs/changelogs/<YYYY-MM-DD>.md
     git commit -m "release: v<target>"
     ```
 5. Push the branch with upstream tracking:
@@ -53,14 +53,14 @@ Before calling `gh pr create`, build the PR body from the actual changes in this
 Use this exact section layout (in order):
 
 1. **`## Release v<target>`** — one-line intro: `이 PR은 \`main\`에 머지되면 v<target> 태그가 붙고 GitHub Release 워크플로우가 트리거됩니다.`
-2. **`## Highlights`** — 3~6개 bullet. 직전 minor 이후(`docs/CHANGES.md`의 `v<prev-minor>.*` 전체 엔트리)를 훑어 **주제별로 그룹핑해 추상화**. 작성 규칙:
+2. **`## Highlights`** — 3~6개 bullet. 직전 minor 이후(`docs/changelogs/` 아래 관련 날짜 파일들의 `v<prev-minor>.*` 전체 엔트리)를 훑어 **주제별로 그룹핑해 추상화**. 작성 규칙:
     - **개별 버전/커밋 번호 인용 금지** (예: `(v0.11.82, 89–90)` 같은 레퍼런스 금지) — 상세 내역은 `docs/CHANGES.md`에 있으므로 PR 본문은 독자가 한눈에 "이 minor에서 뭐가 바뀌었나"를 이해하는 요약이어야 함.
     - 한 bullet = **하나의 major 테마**, 한 문장 또는 짧은 두 문장 이내. 내부 nitpick/patch-level 수정(예: 단일 CSS 값 보정, revert)은 별도 bullet로 띄우지 말고 상위 테마에 녹이거나 생략.
     - 작은 인프라/문서/내부 리팩터링은 하나의 "내부 개선" bullet으로 통합.
     - 각 bullet은 **"무엇이 달라졌는지"** + **"사용자/개발자 관점에서의 효과"**를 드러낼 것. 파일 경로/함수명 나열 금지.
 3. **`## Changelog`** — 아래 두 줄만 넣는다:
     - `- Version: \`<prev>\` → \`<target>\``
-    - `- 세부 내역: [\`docs/CHANGES.md\`](./docs/CHANGES.md)의 \`v<target>\` 블록 및 그 아래의 패치 로그 참고`
+    - `- 세부 내역: [\`docs/CHANGES.md\`](./docs/CHANGES.md) 인덱스 및 \`docs/changelogs/\` 아래 날짜별 파일의 패치 로그 참고`
 4. **`## Test plan`** — checkbox 리스트. 이번 릴리스에 포함된 기능/수정 영역을 실제로 확인하는 수동 체크 항목 (예: Gantt Chart 변경이 있었다면 `- [ ] GanttChartPanel에서 새 모달로 차트 생성/편집 동작`). 변경이 순수 인프라/문서면 `- [ ] CI 전부 green` 한 줄로 충분.
 5. **`## Release checklist`** — 고정된 절차 확인:
     - `- [ ] CI green`

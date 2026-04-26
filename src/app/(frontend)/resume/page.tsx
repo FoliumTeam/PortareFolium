@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isAdminSession } from "@/lib/admin-auth";
+import { getEffectiveAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
@@ -12,6 +14,7 @@ import {
 } from "@/lib/resume-layout";
 
 export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     title: "Resume",
@@ -31,6 +34,8 @@ function coerceTheme(raw: unknown): "classic" | "modern" {
 }
 
 export default async function ResumePage() {
+    const session = await getEffectiveAdminSession();
+    const initialAuthed = isAdminSession(session);
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     let resumeLayout: "classic" | "modern" = "modern";
     let resumeDataRaw: Resume = {} as Resume;
@@ -116,7 +121,7 @@ export default async function ResumePage() {
     };
 
     return (
-        <PdfExportButton fileName="resume">
+        <PdfExportButton fileName="resume" initialAuthed={initialAuthed}>
             {resumeLayout === "classic" && (
                 <ResumeClassic
                     resume={resumeData}

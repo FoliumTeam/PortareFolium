@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAgentToken } from "@/lib/agent-token";
+import {
+    getMcpRateLimitState,
+    recordMcpInvalidAttempt,
+} from "@/lib/mcp-rate-limit";
 import { MCP_TOOLS, dispatchTool } from "@/lib/mcp-tools";
+import { getRequestIpFromHeaders } from "@/lib/request-ip";
 
 // Bearer 토큰 추출
 function extractBearer(req: NextRequest): string | null {
@@ -9,11 +14,70 @@ function extractBearer(req: NextRequest): string | null {
     return auth.slice(7).trim() || null;
 }
 
-// 인증 미들웨어
-async function authenticate(req: NextRequest) {
+// 인증 + invalid 시도 throttle
+async function authenticate(
+    req: NextRequest
+): Promise<
+    | { ok: true; agent: { id: string; label: string } }
+    | { ok: false; throttled: boolean; retryAfterSec: number }
+> {
+    const ip = getRequestIpFromHeaders(req.headers);
+    const state = getMcpRateLimitState(ip);
+    if (state.blocked) {
+        return {
+            ok: false,
+            throttled: true,
+            retryAfterSec: Math.ceil(state.retryAfterMs / 1000),
+        };
+    }
+
     const raw = extractBearer(req);
-    if (!raw) return null;
-    return validateAgentToken(raw);
+    if (!raw) {
+        recordMcpInvalidAttempt(ip);
+        return { ok: false, throttled: false, retryAfterSec: 0 };
+    }
+    const agent = await validateAgentToken(raw);
+    if (!agent) {
+        recordMcpInvalidAttempt(ip);
+        console.warn(`[mcp::authenticate] invalid token from ${ip}`);
+        return { ok: false, throttled: false, retryAfterSec: 0 };
+    }
+    return { ok: true, agent };
+}
+
+// 401/429 응답
+function unauthorizedResponse(
+    auth: { ok: false; throttled: boolean; retryAfterSec: number },
+    id: unknown = null
+) {
+    if (auth.throttled) {
+        return NextResponse.json(
+            {
+                jsonrpc: "2.0",
+                id,
+                error: {
+                    code: -32002,
+                    message: "Too many invalid attempts — try again later",
+                },
+            },
+            {
+                status: 429,
+                headers: { "Retry-After": String(auth.retryAfterSec) },
+            }
+        );
+    }
+    return NextResponse.json(
+        {
+            jsonrpc: "2.0",
+            id,
+            error: {
+                code: -32001,
+                message:
+                    "Unauthorized: Authorization 헤더에 'Bearer <token>' 형식 필요",
+            },
+        },
+        { status: 401 }
+    );
 }
 
 // MCP tools/list 응답
@@ -57,20 +121,9 @@ async function toolsCallResponse(
 
 // POST /api/mcp — JSON-RPC 2.0 over HTTP (MCP Streamable HTTP Transport)
 export async function POST(req: NextRequest) {
-    const agent = await authenticate(req);
-    if (!agent) {
-        return NextResponse.json(
-            {
-                jsonrpc: "2.0",
-                id: null,
-                error: {
-                    code: -32001,
-                    message:
-                        "Unauthorized: Authorization 헤더에 'Bearer <token>' 형식 필요",
-                },
-            },
-            { status: 401 }
-        );
+    const auth = await authenticate(req);
+    if (!auth.ok) {
+        return unauthorizedResponse(auth);
     }
 
     let body: {
@@ -145,8 +198,12 @@ export async function POST(req: NextRequest) {
     );
 }
 
-// GET /api/mcp — 서버 정보 (선택적)
-export async function GET() {
+// GET /api/mcp — 서버 정보 (Bearer 인증 필수)
+export async function GET(req: NextRequest) {
+    const auth = await authenticate(req);
+    if (!auth.ok) {
+        return unauthorizedResponse(auth);
+    }
     return NextResponse.json({
         name: "portare-folium-mcp",
         version: "1.0.0",

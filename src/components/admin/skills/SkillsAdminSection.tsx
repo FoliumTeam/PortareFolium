@@ -40,7 +40,7 @@ function SectionEmojiSelector({
                     <div className="absolute top-10 left-0 z-50 shadow-xl">
                         <Picker
                             data={data}
-                            onEmojiSelect={(e: any) => {
+                            onEmojiSelect={(e: { native: string }) => {
                                 onChange(e.native);
                                 setShowPicker(false);
                             }}

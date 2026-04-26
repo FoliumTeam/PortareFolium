@@ -5,7 +5,7 @@
     "r2_buckets": [
         {
             "binding": "IMAGES",
-            "bucket_name": "gvm1229-portfolio-images"
-        }
-    ]
+            "bucket_name": "gvm1229-portfolio-images",
+        },
+    ],
 }

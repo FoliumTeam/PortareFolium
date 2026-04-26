@@ -6,21 +6,6 @@ import {
     getSidecarPath,
 } from "@/lib/image-upload";
 
-// Mock Supabase Client (getAccessToken에서 세션 토큰 조회용)
-vi.mock("@/lib/supabase", () => {
-    return {
-        browserClient: {
-            auth: {
-                getSession: vi.fn(() =>
-                    Promise.resolve({
-                        data: { session: { access_token: "mock-token" } },
-                    })
-                ),
-            },
-        },
-    };
-});
-
 // Mock fetch (API route 호출)
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -148,7 +133,6 @@ describe("이미지 업로드 및 변환 (Image Upload & Conversion)", () => {
                 "/api/upload-image",
                 expect.objectContaining({
                     method: "POST",
-                    headers: { Authorization: "Bearer mock-token" },
                 })
             );
             const secondBody = mockFetch.mock.calls[1]?.[1]?.body as FormData;

@@ -5,13 +5,29 @@
 /*.md
 !AGENTS.md
 !CLAUDE.md
+!GEMINI.md
 !README.md
-PROMPT_*.md
-prompt/
-KEDITOR-0.7.21/
+backup/
+
+# Working docs / drafts (모든 plan/PR/operations 노트는 docs/ 밑에)
+docs/plans/**/*.md
+!docs/plans/README.md
+docs/pr/**/*.md
+!docs/pr/README.md
+docs/TODO.md
+docs/USER_TASKS.md
+
+# Vendored 3rd-party source (KEDITOR 등)
+vendor/
+
+# Prompt 작업용 reference 자산 (이미지 등)
+.agents/prompt-assets/
 
 # Dependencies
 node_modules/
+
+# Local refuge artifacts
+.local/
 
 # Build output
 dist/
@@ -55,3 +71,6 @@ test-results/
 # OMC
 .omc
 .omx
+
+# OMC plugin이 관리하는 rule 디렉토리. .agents/directives/omc/ 가 snapshot으로 추적.
+.claude/rules/

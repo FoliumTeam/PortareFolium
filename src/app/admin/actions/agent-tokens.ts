@@ -5,6 +5,8 @@ import {
     revokeToken as _revokeToken,
     listTokens as _listTokens,
 } from "@/lib/agent-token";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { requireAdminSession } from "@/lib/server-admin";
 
 // 유효 duration 목록 (분)
 const VALID_DURATIONS = [15, 30, 60, 180, 360, 720, 1440] as const;
@@ -15,6 +17,9 @@ export async function issueToken(
     label: string,
     durationMin: ValidDuration
 ): Promise<{ token: string } | { error: string }> {
+    await requireAdminSession();
+    if (isSqliteRefugeMode())
+        return { error: "Agent token issuance is disabled in refuge mode" };
     if (!label.trim()) return { error: "label 필수" };
     if (!VALID_DURATIONS.includes(durationMin))
         return { error: "유효하지 않은 duration" };
@@ -28,7 +33,10 @@ export async function issueToken(
 export async function revokeToken(
     id: string
 ): Promise<{ success: boolean } | { error: string }> {
+    await requireAdminSession();
     if (!id) return { error: "id 필수" };
+    if (isSqliteRefugeMode())
+        return { error: "Agent token revocation is disabled in refuge mode" };
     const ok = await _revokeToken(id);
     if (!ok) return { error: "폐기 실패" };
     return { success: true };
@@ -36,5 +44,7 @@ export async function revokeToken(
 
 // 토큰 목록 조회 서버 액션
 export async function listTokens() {
+    await requireAdminSession();
+    if (isSqliteRefugeMode()) return [];
     return _listTokens();
 }

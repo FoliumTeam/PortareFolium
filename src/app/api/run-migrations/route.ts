@@ -1,8 +1,63 @@
 import { NextResponse } from "next/server";
+import { assertSafeAdminMutationRequest } from "@/lib/admin-mutation-origin";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import {
+    applySqliteRefugeMigration,
+    getSqliteRefugeSchemaVersion,
+} from "@/lib/refuge/sqlite-migrations";
+import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import { getPendingMigrations } from "@/lib/migrations";
+import type { NextRequest } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+    try {
+        assertSafeAdminMutationRequest(req);
+        await requireAdminSession();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message.includes("mutation")) {
+            return NextResponse.json({ error: message }, { status: 403 });
+        }
+        return NextResponse.json({ error: "인증 필요" }, { status: 401 });
+    }
+
+    if (isSqliteRefugeMode()) {
+        const dbVersion = getSqliteRefugeSchemaVersion();
+        if (!dbVersion) {
+            return NextResponse.json(
+                { error: "sqlite refuge db_schema_version 없음" },
+                { status: 400 }
+            );
+        }
+        const pending = getPendingMigrations(dbVersion);
+        const applied: string[] = [];
+        for (const migration of pending) {
+            try {
+                applySqliteRefugeMigration(migration);
+                applied.push(migration.version);
+            } catch (error) {
+                return NextResponse.json(
+                    {
+                        error: `SQLite refuge 마이그레이션 v${migration.version} 실패: ${
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        }`,
+                        applied,
+                    },
+                    { status: 500 }
+                );
+            }
+        }
+        return NextResponse.json({
+            success: true,
+            mode: "sqlite-refuge",
+            applied: applied.length,
+            versions: applied,
+        });
+    }
+
     if (!serverClient) {
         return NextResponse.json(
             { error: "서버 클라이언트가 설정되지 않았습니다" },

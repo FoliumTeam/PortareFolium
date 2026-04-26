@@ -12,6 +12,25 @@ Commit the current unstaged changes following these rules strictly:
 
     The `(v<version>)` suffix is **mandatory** for PortareFolium and must match the bumped `package.json` version (see rule 3).
 
+    **Commit body format (mandatory for any non-trivial commit):** Match the concise Korean file-scoped bullet style of the canonical example commit `02e080e539a608a24e134aa29ff8ccf44b557e42`.
+
+    ```text
+    <type>: <Korean description> (v<version>)
+
+    - path/to/file.ts:
+      변경 요약 추가
+    - path/to/other-file.ts, path/to/test.ts:
+      관련 테스트와 호출 경계 보강
+    ```
+
+    Body rules:
+    - Use file/path-scoped bullets. Group related files in one bullet when they belong to the same concern.
+    - Use concise Korean statement-like noun/verb-noun endings such as `추가`, `정리`, `보강`, `반영`, `제거`, `갱신`, `적용`.
+    - Do **not** write prose sentences like `~한다.`, `~했다.`, `~합니다.`, or long rationale paragraphs.
+    - Do **not** include Lore trailers (`Constraint:`, `Rejected:`, `Tested:`, etc.) in normal PortareFolium commits unless the user explicitly asks for them for that commit.
+    - For a tiny single-file/docs-only change, a subject-only commit is allowed only when the last two human commits also use subject-only style.
+    - Before committing, run `git log -2 --format=full` and compare the drafted message against this body style. If it does not look like `02e080e...`, rewrite it before `git commit`.
+
     **Commit type table** (Conventional Commits spec — pick the most accurate type; if multiple apply, pick the dominant one based on the _intent_ of the change, not the file count):
 
     | 타입       | 설명                                           | 사용 예                                                       |
@@ -38,12 +57,14 @@ Commit the current unstaged changes following these rules strictly:
     - 끝에 마침표/느낌표 등 punctuation 없음.
     - 한글로 작성. 단, 파일명·고유명사·기술 용어는 영어 원문 유지 (예: `feat: ContentWrapper에 max-w-7xl variant 추가 (v0.11.40)`).
 
+    **Amend/rewrite safety:** If the task is only to amend existing commit messages, preserve each commit's exact changelist/tree and original author + committer datetime. Recreate commits with the same tree and dates, then verify old/new pairs with `git show -s --format='%aI|%cI|%T'`. Push rewritten history only when explicitly requested, and use `--force-with-lease`, never plain `--force`.
+
 2a. **Commit grouping**: 여러 무관한 변경을 하나의 commit에 묶지 말 것. 기능별·관심사별로 분리해 commit. 한 번에 4개 이상의 무관한 파일이 staged 상태면, 분리 가능 여부를 검토하고 필요하면 user에게 확인.
 
     **여러 독립 변경이 동시에 있을 때**:
     - 각 변경을 별도 commit으로 순차 처리
     - commit마다 해당 변경에 필요한 파일만 stage
-    - `package.json` version, `docs/CHANGES.md`, `PR_<branch-name>.md`는 **각 commit 범위에 맞게 따로** 반영
+    - `package.json` version, `docs/changelogs/<today>.md`, `PR_<branch-name>.md`는 **각 commit 범위에 맞게 따로** 반영
     - 첫 번째 commit을 만든 뒤 남은 변경이 있으면, 같은 절차를 반복해 다음 commit 생성
     - 서로 다른 변경을 하나의 version bump나 하나의 CHANGES 항목으로 합치지 말 것
 
@@ -60,7 +81,7 @@ Commit the current unstaged changes following these rules strictly:
 
 4. **Update branch-specific PR file**: If the current branch is anything other than the `main` branch, update `PR_<branch-name>.md` in the project root (replace `/` with `-`) with a concise entry describing what changed. Never create or update plain `PR.md`. If a legacy `PR.md` exists, migrate any needed content into the branch-specific file and delete `PR.md`.
 
-5. **Update CHANGES.md**: Add a concise entry to `CHANGES.md` describing what changed. Match the existing section style.
+5. **Update today's changelog**: Add a concise entry to `docs/changelogs/<YYYY-MM-DD>.md` (today's date) describing what changed. Use `## v<version>` header (no date — filename encodes it). Create the file with `# Changelog: YYYY-MM-DD` header if it doesn't exist yet, and add a row to the `docs/CHANGES.md` index if today's date isn't listed.
 
 6. **Commit only, do NOT push**: Stage relevant files, commit, and stop. Do not run `git push` unless explicitly prompted by the user.
 

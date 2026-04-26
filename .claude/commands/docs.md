@@ -2,17 +2,18 @@
 
 Update project documentation to reflect recent code changes. Run the following steps **in order**, skipping any step that has nothing to do.
 
-## Step 1: Update CHANGES.md
+## Step 1: Update today's changelog
 
 1. Run `git log --oneline -20` and `git diff HEAD~5 --stat` to identify recent changes not yet documented.
-2. Read the top of `docs/CHANGES.md` to find the latest documented version.
-3. If there are undocumented commits since that version, add a new version entry following the existing style:
-    - Increment the patch version from the latest entry (e.g., `v0.11.7` -> `v0.11.8`)
-    - Use the format: `## v<version> (<date>)` with `### <Type>: <Korean summary>`
+2. Determine today's date (YYYY-MM-DD). Check `docs/changelogs/<today>.md` for the latest documented version. If the file doesn't exist yet, create it with the header `# Changelog: YYYY-MM-DD`.
+3. If there are undocumented commits, prepend a new version entry to `docs/changelogs/<today>.md` following the existing style:
+    - Increment the patch version from the latest entry across all changelogs (e.g., `v0.11.7` -> `v0.11.8`)
+    - Use the format: `## v<version>` with `### <Type>: <Korean summary>` (no date in header — filename encodes the date)
     - List changed files with brief descriptions
-4. If CHANGES.md is already up to date, say so and move on.
+4. If today's date is not yet in the `docs/CHANGES.md` index, add a row for it (newest-first order).
+5. If the changelog is already up to date, say so and move on.
 
-**Single source of truth**: `docs/CHANGES.md` is the **only** project-level changelog. Do **not** create daily log files (e.g., `docs/logs/YYYYMMDD-*.md`) or alternative changelogs — version-grouped CHANGES.md is the canonical history. The release workflow (`.github/workflows/release.yml`) extracts release notes directly from this file via `awk` matching `## v<version>`, so format consistency is critical.
+**Structure**: Changelogs are split by date under `docs/changelogs/YYYY-MM-DD.md`. `docs/CHANGES.md` is the index only — never write version entries directly into it.
 
 ## Step 2: Write PR\_<branch>.md (non-main branches only)
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { browserClient } from "@/lib/supabase";
+import { searchPublicContent } from "@/app/admin/actions/public-data";
 
 interface SearchResult {
     slug: string;
@@ -45,63 +45,15 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
     // debounce 검색
     useEffect(() => {
         const q = query.trim().toLowerCase();
-        if (!q || !browserClient) {
+        if (!q) {
             setResults([]);
             return;
         }
 
         setLoading(true);
-        const client = browserClient;
         const timer = setTimeout(async () => {
-            if (!client) return;
-            const postQuery = client
-                .from("posts")
-                .select("slug, title")
-                .eq("published", true)
-                .ilike("title", `%${q}%`)
-                .order("pub_date", { ascending: false })
-                .limit(5);
-
-            // job_field 필터: TEXT 컬럼, null이면 전체 포함
-            if (jobField) {
-                postQuery.or(`job_field.eq.${jobField},job_field.is.null`);
-            }
-
-            const portfolioQuery = client
-                .from("portfolio_items")
-                .select("slug, title")
-                .eq("published", true)
-                .ilike("title", `%${q}%`)
-                .order("sort_order", { ascending: true })
-                .limit(5);
-
-            if (jobField) {
-                portfolioQuery.or(`job_field.eq.${jobField},job_field.is.null`);
-            }
-
-            const [postsRes, portfolioRes] = await Promise.all([
-                postQuery,
-                portfolioQuery,
-            ]);
-
-            const items: SearchResult[] = [];
-            if (postsRes.data) {
-                items.push(
-                    ...postsRes.data.map((p) => ({
-                        ...p,
-                        type: "post" as const,
-                    }))
-                );
-            }
-            if (portfolioRes.data) {
-                items.push(
-                    ...portfolioRes.data.map((p) => ({
-                        ...p,
-                        type: "portfolio" as const,
-                    }))
-                );
-            }
-            setResults(items);
+            const items = await searchPublicContent(q, jobField);
+            setResults(items as SearchResult[]);
             setLoading(false);
         }, 200);
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import {
     ArrowUpAZ,
     ArrowDownAZ,
@@ -21,6 +20,13 @@ import {
     CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+    deletePostCategory,
+    deleteTagItem,
+    getTagsPanelBootstrap,
+    renamePostCategory,
+    saveTagItem,
+} from "@/app/admin/actions/tags";
 
 interface TagItem {
     slug: string;
@@ -76,38 +82,17 @@ export default function TagsPanel() {
     );
 
     const loadTags = async () => {
-        if (!browserClient) return;
         setLoading(true);
-        const { data, error } = await browserClient
-            .from("tags")
-            .select("slug, name, color")
-            .order("name");
-        if (error) setError(error.message);
-        else setTags(data ?? []);
+        const result = await getTagsPanelBootstrap();
+        setTags(result.tags);
+        setCategories(result.categories);
         setLoading(false);
     };
 
     const loadCategories = async () => {
-        if (!browserClient) return;
         setCatLoading(true);
-        const { data, error } = await browserClient
-            .from("posts")
-            .select("category")
-            .not("category", "is", null);
-        if (!error && data) {
-            const counts = new Map<string, number>();
-            for (const row of data) {
-                if (row.category?.trim()) {
-                    counts.set(
-                        row.category.trim(),
-                        (counts.get(row.category.trim()) ?? 0) + 1
-                    );
-                }
-            }
-            setCategories(
-                [...counts.entries()].map(([name, count]) => ({ name, count }))
-            );
-        }
+        const result = await getTagsPanelBootstrap();
+        setCategories(result.categories);
         setCatLoading(false);
     };
 
@@ -193,7 +178,7 @@ export default function TagsPanel() {
     };
 
     const handleSave = async () => {
-        if (!browserClient || !form.name.trim()) {
+        if (!form.name.trim()) {
             setError("태그 이름은 필수입니다.");
             return;
         }
@@ -209,26 +194,17 @@ export default function TagsPanel() {
             name: form.name.trim(),
             color: form.color.trim() || null,
         };
-        let err;
-        if (editSlug === "new") {
-            ({ error: err } = await browserClient.from("tags").insert(payload));
-        } else {
-            ({ error: err } = await browserClient
-                .from("tags")
-                .update(payload)
-                .eq("slug", editSlug));
-        }
+        const result = await saveTagItem(payload, editSlug);
         setSaving(false);
-        if (err) setError(err.message);
+        if (!result.success) setError(result.error ?? "저장 실패");
         else {
             setSuccess("저장되었습니다.");
             setEditSlug(null);
-            loadTags();
+            void loadTags();
         }
     };
 
     const handleDelete = async (slug: string) => {
-        if (!browserClient) return;
         const ok = await confirm({
             title: "태그 삭제",
             description: `태그 "${slug}"를 삭제할까요?`,
@@ -238,40 +214,32 @@ export default function TagsPanel() {
         });
         if (!ok) return;
         setSaving(true);
-        const { error: err } = await browserClient
-            .from("tags")
-            .delete()
-            .eq("slug", slug);
+        const result = await deleteTagItem(slug);
         setSaving(false);
-        if (err) setError(err.message);
+        if (!result.success) setError(result.error ?? "삭제 실패");
         else {
             setSuccess("삭제되었습니다.");
             setEditSlug(null);
-            loadTags();
+            void loadTags();
         }
     };
 
     // 카테고리 이름 변경 (모든 posts의 category 업데이트)
     const renameCategory = async (oldName: string, newName: string) => {
-        if (!browserClient || !newName.trim() || newName.trim() === oldName)
-            return;
+        if (!newName.trim() || newName.trim() === oldName) return;
         setSaving(true);
-        const { error: err } = await browserClient
-            .from("posts")
-            .update({ category: newName.trim() })
-            .eq("category", oldName);
+        const result = await renamePostCategory(oldName, newName);
         setSaving(false);
-        if (err) setError(err.message);
+        if (!result.success) setError(result.error ?? "카테고리 변경 실패");
         else {
             setSuccess("카테고리 이름이 변경되었습니다.");
             setEditCat(null);
-            loadCategories();
+            void loadCategories();
         }
     };
 
     // 카테고리 삭제 (모든 posts의 category를 null로)
     const deleteCategory = async (name: string) => {
-        if (!browserClient) return;
         const ok = await confirm({
             title: "카테고리 삭제",
             description: `카테고리 "${name}"를 삭제할까요? 해당 카테고리를 사용하는 포스트의 카테고리가 초기화됩니다.`,
@@ -281,15 +249,12 @@ export default function TagsPanel() {
         });
         if (!ok) return;
         setSaving(true);
-        const { error: err } = await browserClient
-            .from("posts")
-            .update({ category: null })
-            .eq("category", name);
+        const result = await deletePostCategory(name);
         setSaving(false);
-        if (err) setError(err.message);
+        if (!result.success) setError(result.error ?? "카테고리 삭제 실패");
         else {
             setSuccess("카테고리가 삭제되었습니다.");
-            loadCategories();
+            void loadCategories();
         }
     };
 
@@ -299,14 +264,6 @@ export default function TagsPanel() {
         setError(null);
         setSuccess(null);
     };
-
-    if (!browserClient) {
-        return (
-            <p className="text-(--color-muted)">
-                Supabase가 설정되지 않았습니다.
-            </p>
-        );
-    }
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden">

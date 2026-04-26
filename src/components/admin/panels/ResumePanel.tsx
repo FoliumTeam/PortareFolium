@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
-    revalidateHome,
-    revalidateResume,
-} from "@/app/admin/actions/revalidate";
+    getResumeBootstrap,
+    saveResumePanel,
+    saveResumeTheme,
+} from "@/app/admin/actions/resume";
 import { uploadImage } from "@/lib/image-upload";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField } from "@/lib/job-field";
@@ -66,7 +66,11 @@ function normalizeSkills(resume: Resume): Resume {
                     jobField: kw.jobField ?? catJobField,
                     level: (kw as { level?: string }).level ?? catLevel,
                 }));
-                const { jobField: _jf, level: _lv, ...rest } = legacy as any;
+                const {
+                    jobField: _jf,
+                    level: _lv,
+                    ...rest
+                } = legacy as Record<string, unknown>;
                 return { ...rest, keywords: migrated };
             }),
         },
@@ -181,7 +185,7 @@ function SectionEmojiSelector({
                     <div className="absolute top-10 left-0 z-50 shadow-xl">
                         <Picker
                             data={data}
-                            onEmojiSelect={(e: any) => {
+                            onEmojiSelect={(e: { native: string }) => {
                                 onChange(e.native);
                                 setShowPicker(false);
                             }}
@@ -240,106 +244,51 @@ export default function ResumePanel() {
     );
     const [editingCareerPhaseKeywords, setEditingCareerPhaseKeywords] =
         useState<string>("");
-    const [backupData, setBackupData] = useState<any>(null);
+    const [backupData, setBackupData] = useState<Resume | null>(null);
     // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
     useEffect(() => {
-        if (!browserClient) return;
-        Promise.all([
-            browserClient
-                .from("resume_data")
-                .select("id, data")
-                .eq("lang", "ko")
-                .limit(1)
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "resume_layout")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "resume_section_layout")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_fields")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single(),
-        ]).then(
-            ([
-                { data: row, error },
-                { data: layoutRow },
-                { data: sectionLayoutRow },
-                { data: jfRow },
-                { data: activeJfRow },
-            ]) => {
-                const defaultResume: Resume = {
-                    basics: {
-                        name: "",
-                        label: "",
-                        image: "",
-                        summary: "",
-                        email: "",
-                        phone: "",
-                        url: "",
-                    },
+        getResumeBootstrap().then((result) => {
+            const defaultResume: Resume = {
+                basics: {
+                    name: "",
+                    label: "",
+                    image: "",
+                    summary: "",
+                    email: "",
+                    phone: "",
+                    url: "",
+                },
+            };
+            if (result.resumeData) {
+                setRowId(result.rowId);
+                const raw = {
+                    ...defaultResume,
+                    ...(result.resumeData as Resume),
                 };
-                if (!error && row) {
-                    setRowId(row.id);
-                    const raw = {
-                        ...defaultResume,
-                        ...(row.data as Resume),
+                if (Array.isArray(raw.coreCompetencies)) {
+                    raw.coreCompetencies = {
+                        entries: raw.coreCompetencies as unknown as {
+                            title: string;
+                            description: string;
+                        }[],
                     };
-                    // 하위 호환: 기존 배열 → 객체 wrapper
-                    if (Array.isArray(raw.coreCompetencies)) {
-                        raw.coreCompetencies = {
-                            entries: raw.coreCompetencies as unknown as {
-                                title: string;
-                                description: string;
-                            }[],
-                        };
-                    }
-                    const loaded = normalizeSkills(raw);
-                    savedDataRef.current = JSON.stringify(loaded);
-                    setResumeData(loaded);
-                } else {
-                    setResumeData(defaultResume);
                 }
-                if (layoutRow?.value) {
-                    const rawTheme = layoutRow.value as string;
-                    const coerced: ResumeLayout =
-                        rawTheme === "classic" ? "classic" : "modern";
-                    setResumeLayout(coerced);
-                }
-                if (sectionLayoutRow?.value) {
-                    const normalized = normalizeLayout(
-                        sectionLayoutRow.value as ResumeSectionLayout
-                    );
-                    setResumeSectionLayout(normalized);
-                    setInitialSectionLayout(normalized);
-                    initialSectionLayoutRef.current = normalized;
-                }
-                if (Array.isArray(jfRow?.value)) {
-                    setJobFields(jfRow.value as JobFieldItem[]);
-                }
-                if (
-                    activeJfRow?.value &&
-                    typeof activeJfRow.value === "string"
-                ) {
-                    setActiveJobField(
-                        normalizeJobFieldValue(activeJfRow.value)
-                    );
-                }
+                const loaded = normalizeSkills(raw);
+                savedDataRef.current = JSON.stringify(loaded);
+                setResumeData(loaded);
+            } else {
+                setResumeData(defaultResume);
             }
-        );
+
+            setResumeLayout(result.resumeLayout as ResumeLayout);
+            setResumeSectionLayout(result.resumeSectionLayout);
+            setInitialSectionLayout(result.resumeSectionLayout);
+            initialSectionLayoutRef.current = result.resumeSectionLayout;
+            setJobFields(result.jobFields);
+            setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+        });
     }, []);
 
     // dirty 상태 감지
@@ -369,95 +318,71 @@ export default function ResumePanel() {
 
     // 자동 저장 (기존 row가 있을 때만)
     const autoSave = async () => {
-        if (!browserClient || !resumeData || !rowId) return;
+        if (!resumeData || !rowId) return;
         try {
-            const { error } = await browserClient
-                .from("resume_data")
-                .update({ data: resumeData as any })
-                .eq("id", rowId);
-            if (!error) {
+            const result = await saveResumePanel({
+                resumeData,
+                rowId,
+                resumeLayout,
+                resumeSectionLayout,
+            });
+            if (result.success) {
                 savedDataRef.current = JSON.stringify(resumeData);
                 setIsDirty(false);
                 setSavedAt(new Date());
-                await revalidateResume();
-                await revalidateHome();
             }
-        } catch {}
+        } catch (e) {
+            console.error(
+                `[ResumePanel::autoSave] ${e instanceof Error ? e.message : String(e)}`
+            );
+        }
     };
 
     useAutoSave(isDirty, rowId !== null, autoSave);
 
     const handleSave = async () => {
-        if (!browserClient || !resumeData) return;
+        if (!resumeData) return;
         setSaving(true);
         setStatus(null);
 
         try {
-            let err;
-            if (rowId) {
-                const res = await browserClient
-                    .from("resume_data")
-                    .update({ data: resumeData as any })
-                    .eq("id", rowId);
-                err = res.error;
-            } else {
-                const res = await browserClient
-                    .from("resume_data")
-                    .insert({ lang: "ko", data: resumeData as any })
-                    .select("id")
-                    .single();
-                err = res.error;
-                if (res.data) setRowId(res.data.id);
-            }
-
-            if (err) throw err;
-
-            // resume_layout site_config 저장
-            const { error: layoutErr } = await browserClient
-                .from("site_config")
-                .upsert({ key: "resume_layout", value: resumeLayout });
-            if (layoutErr) throw layoutErr;
-
-            // resume_section_layout site_config 저장
-            const { error: sectionLayoutErr } = await browserClient
-                .from("site_config")
-                .upsert({
-                    key: "resume_section_layout",
-                    value: resumeSectionLayout as unknown as object,
-                });
-            if (sectionLayoutErr) throw sectionLayoutErr;
+            const result = await saveResumePanel({
+                resumeData,
+                rowId,
+                resumeLayout,
+                resumeSectionLayout,
+            });
+            if (!result.success) throw new Error(result.error);
+            if (result.rowId) setRowId(result.rowId);
 
             savedDataRef.current = JSON.stringify(resumeData);
             setIsDirty(false);
             setSavedAt(new Date());
             setInitialSectionLayout(resumeSectionLayout);
             initialSectionLayoutRef.current = resumeSectionLayout;
-            await revalidateResume();
-            await revalidateHome();
             setStatus({
                 type: "success",
                 msg: "저장됐습니다. 이력서 페이지에 즉시 반영됩니다.",
             });
-        } catch (e: any) {
-            setStatus({ type: "error", msg: `저장 실패: ${e.message}` });
+        } catch (e) {
+            setStatus({
+                type: "error",
+                msg: `저장 실패: ${e instanceof Error ? e.message : String(e)}`,
+            });
         } finally {
             setSaving(false);
         }
     };
 
     const saveLayout = async (layout: ResumeLayout) => {
-        if (!browserClient) return;
-        const { error } = await browserClient
-            .from("site_config")
-            .upsert({ key: "resume_layout", value: layout });
-        if (error) {
+        const result = await saveResumeTheme(layout);
+        if (!result.success) {
             setStatus({
                 type: "error",
-                msg: `레이아웃 저장 실패: ${error.message}`,
+                msg: `레이아웃 저장 실패: ${result.error}`,
             });
         } else {
             setSavedAt(new Date());
-            await revalidateResume();
         }
     };
 
@@ -483,10 +408,10 @@ export default function ResumePanel() {
                 basics: { ...resumeData.basics, image: url },
             });
             setStatus({ type: "success", msg: "이미지가 업로드되었습니다." });
-        } catch (err: any) {
+        } catch (err) {
             setStatus({
                 type: "error",
-                msg: `이미지 업로드 실패: ${err.message}`,
+                msg: `이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`,
             });
         } finally {
             setUploadingImage(false);

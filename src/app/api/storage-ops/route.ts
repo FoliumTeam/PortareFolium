@@ -2,22 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     ListObjectsV2Command,
     CopyObjectCommand,
-    DeleteObjectCommand,
     DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
-import { createClient } from "@supabase/supabase-js";
+import { assertSafeAdminMutationRequest } from "@/lib/admin-mutation-origin";
+import { requireAdminSession } from "@/lib/server-admin";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
+import {
+    R2PathPolicyError,
+    assertSafeR2Key,
+    assertSafeR2Prefix,
+} from "@/lib/r2-path-policy";
 
-// Supabase 세션으로 admin 인증
-async function getAuthUser(req: NextRequest) {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !anon) return null;
-    const client = createClient(url, anon);
-    const { data } = await client.auth.getUser(token);
-    return data?.user ?? null;
+// policy 위반 시 400 응답 헬퍼
+function policyErrorResponse(err: unknown) {
+    const message =
+        err instanceof R2PathPolicyError ? err.message : "잘못된 경로";
+    return NextResponse.json({ error: message }, { status: 400 });
 }
 
 // R2 prefix 하위 파일 목록
@@ -76,8 +76,14 @@ async function deleteFolder(prefix: string) {
 }
 
 export async function POST(req: NextRequest) {
-    const user = await getAuthUser(req);
-    if (!user) {
+    try {
+        assertSafeAdminMutationRequest(req);
+        await requireAdminSession();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message.includes("mutation")) {
+            return NextResponse.json({ error: message }, { status: 403 });
+        }
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 
@@ -85,16 +91,32 @@ export async function POST(req: NextRequest) {
     const { action } = body as { action: string };
 
     if (action === "list") {
+        try {
+            assertSafeR2Prefix(body.prefix, "prefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         const files = await listFiles(body.prefix);
         return NextResponse.json({ files });
     }
 
     if (action === "move") {
+        try {
+            assertSafeR2Prefix(body.oldPrefix, "oldPrefix");
+            assertSafeR2Prefix(body.newPrefix, "newPrefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         await moveFolder(body.oldPrefix, body.newPrefix);
         return NextResponse.json({ ok: true });
     }
 
     if (action === "delete") {
+        try {
+            assertSafeR2Prefix(body.prefix, "prefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         await deleteFolder(body.prefix);
         return NextResponse.json({ ok: true });
     }
@@ -107,6 +129,11 @@ export async function POST(req: NextRequest) {
             : [];
         if (keys.length === 0) {
             return NextResponse.json({ ok: true, deleted: 0 });
+        }
+        try {
+            for (const k of keys) assertSafeR2Key(k, "key");
+        } catch (err) {
+            return policyErrorResponse(err);
         }
         // S3 DeleteObjects 배치 한도 1000
         let deleted = 0;

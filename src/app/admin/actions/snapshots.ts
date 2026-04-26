@@ -1,5 +1,10 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { REFUGE_SUPPORTED_TABLES } from "@/lib/refuge/schema";
+import { listRefugeRows } from "@/lib/refuge/store";
+import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
 export type DatabaseSnapshot = {
@@ -20,6 +25,7 @@ export type SnapshotDownload = {
 
 // Snapshot 목록 조회
 export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
+    await requireAdminSession();
     if (!serverClient) return [];
 
     const { data, error } = await serverClient
@@ -38,9 +44,38 @@ export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
 
 // Snapshot 생성
 export async function createSnapshot(): Promise<
-    DatabaseSnapshot | { error: string }
+    DatabaseSnapshot | { success: false; error: string }
 > {
-    if (!serverClient) return { error: "serverClient 없음" };
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    if (isSqliteRefugeMode()) {
+        const createdAt = new Date().toISOString();
+        const tableNames = REFUGE_SUPPORTED_TABLES.filter(
+            (table) => table !== "database_snapshots"
+        );
+        const data = Object.fromEntries(
+            tableNames.map((table) => [table, listRefugeRows(table)])
+        );
+        const filename = `sqlite-refuge-snapshot-${createdAt.replace(
+            /[:.]/g,
+            "-"
+        )}.json`;
+        const snapshot = {
+            id: randomUUID(),
+            filename,
+            data,
+            table_names: tableNames,
+            created_at: createdAt,
+        };
+        const { data: inserted, error } = await serverClient
+            .from("database_snapshots")
+            .insert(snapshot)
+            .select("id, filename, table_names, created_at")
+            .single();
+        if (error) return { success: false, error: error.message };
+        return inserted as DatabaseSnapshot;
+    }
 
     const { data, error } = await serverClient
         .rpc("create_database_snapshot")
@@ -48,7 +83,7 @@ export async function createSnapshot(): Promise<
 
     if (error) {
         console.error(`[snapshots.ts::createSnapshot] ${error.message}`);
-        return { error: error.message };
+        return { success: false, error: error.message };
     }
 
     return data as DatabaseSnapshot;
@@ -58,6 +93,7 @@ export async function createSnapshot(): Promise<
 export async function getSnapshotDownload(
     id: string
 ): Promise<SnapshotDownload | { error: string }> {
+    await requireAdminSession();
     if (!serverClient) return { error: "serverClient 없음" };
 
     const { data, error } = await serverClient
@@ -87,6 +123,7 @@ export async function getSnapshotDownload(
 export async function deleteSnapshot(
     id: string
 ): Promise<{ success: boolean } | { error: string }> {
+    await requireAdminSession();
     if (!serverClient) return { error: "serverClient 없음" };
 
     const { error } = await serverClient

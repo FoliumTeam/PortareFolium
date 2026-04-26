@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Plus, Trash2, Upload } from "lucide-react";
-import { browserClient } from "@/lib/supabase";
+import {
+    createGanttChartArchive,
+    updateGanttChartArchive,
+} from "@/app/admin/actions/gantt-chart";
 import {
     parseGanttCsv,
     type GanttChartArchive,
@@ -27,9 +30,6 @@ type Props = {
     onSaved: () => void;
 };
 
-const ARCHIVE_SELECT_FIELDS =
-    "id, title, source_filename, csv_content, tasks, category_colors, bar_style, created_at, updated_at";
-
 let _counter = 0;
 const newId = () => `row-${(_counter += 1)}`;
 
@@ -52,6 +52,8 @@ const makeEmptyRow = (): RowDraft => ({
 });
 
 const defaultRows = (): RowDraft[] => Array.from({ length: 5 }, makeEmptyRow);
+const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
 export default function GanttChartCreateModal({
     mode,
@@ -133,7 +135,6 @@ export default function GanttChartCreateModal({
     };
 
     const handleSave = async () => {
-        if (!browserClient) return;
         const title = titleDraft.trim();
         if (!title) {
             setError("차트 제목을 입력하세요");
@@ -157,29 +158,30 @@ export default function GanttChartCreateModal({
         setError(null);
         try {
             if (mode === "create") {
-                const { error: dbError } = await browserClient
-                    .from("gantt_chart_archives")
-                    .insert({
-                        title,
-                        source_filename: "",
-                        csv_content: "",
-                        tasks,
-                        category_colors: {},
-                        bar_style: "rounded",
-                    })
-                    .select(ARCHIVE_SELECT_FIELDS)
-                    .single();
-                if (dbError) throw new Error(dbError.message);
+                const result = await createGanttChartArchive({ title, tasks });
+                if (!result.success) {
+                    setError(result.error);
+                    return;
+                }
             } else {
-                const { error: dbError } = await browserClient
-                    .from("gantt_chart_archives")
-                    .update({ title, tasks })
-                    .eq("id", archive!.id);
-                if (dbError) throw new Error(dbError.message);
+                if (!archive) {
+                    setError("편집 대상 Gantt Chart가 없습니다");
+                    return;
+                }
+                const result = await updateGanttChartArchive({
+                    id: archive.id,
+                    title,
+                    tasks,
+                });
+                if (!result.success) {
+                    setError(result.error);
+                    return;
+                }
             }
+            setIsDirty(false);
             onSaved();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "저장 오류");
+            setError(getErrorMessage(err, "저장 오류"));
         } finally {
             setSaving(false);
         }

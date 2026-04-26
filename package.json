@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.52",
+    "version": "0.12.112",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -18,9 +18,14 @@
         "purge": "rm -rf .next",
         "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
         "prepare": "husky || true",
+        "postinstall": "node scripts/sync-omc-directives.mjs",
+        "sync-omc": "node scripts/sync-omc-directives.mjs",
         "backfill:lightbox-sidecars": "tsx scripts/backfill-lightbox-sidecars.ts",
         "r2:list": "wrangler r2 object list gvm1229-portfolio-images",
-        "r2:put": "wrangler r2 object put gvm1229-portfolio-images"
+        "r2:put": "wrangler r2 object put gvm1229-portfolio-images",
+        "refuge:pull": "tsx scripts/refuge-pull.ts",
+        "refuge:deactivate": "tsx scripts/refuge-deactivate.ts",
+        "refuge:push": "tsx scripts/refuge-push.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1030.0",
@@ -77,6 +82,7 @@
         "lucide-react": "^0.577.0",
         "mermaid": "^11.13.0",
         "next": "^16.2.0",
+        "next-auth": "5.0.0-beta.31",
         "radix-ui": "^1.4.3",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
@@ -126,5 +132,14 @@
     "lint-staged": {
         "*.{js,mjs,cjs,ts,tsx,jsx,json,md,css,scss,yaml,yml}": "prettier --write"
     },
-    "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264"
+    "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
+    "pnpm": {
+        "overrides": {
+            "dompurify@<3.4.0": ">=3.4.0",
+            "hono@<4.12.14": ">=4.12.14",
+            "fast-xml-parser@<5.7.0": ">=5.7.0",
+            "uuid@<14.0.0": ">=14.0.0",
+            "postcss@<8.5.10": ">=8.5.10"
+        }
+    }
 }

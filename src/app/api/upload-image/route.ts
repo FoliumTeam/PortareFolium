@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { createClient } from "@supabase/supabase-js";
+import { assertSafeAdminMutationRequest } from "@/lib/admin-mutation-origin";
+import { requireAdminSession } from "@/lib/server-admin";
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
-
-// Supabase 세션으로 admin 인증
-async function getAuthUser(req: NextRequest) {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !anon) return null;
-    const client = createClient(url, anon);
-    const { data } = await client.auth.getUser(token);
-    return data?.user ?? null;
-}
+import {
+    MAX_UPLOAD_BYTES,
+    R2PathPolicyError,
+    assertSafeR2Key,
+    resolveImageContentType,
+} from "@/lib/r2-path-policy";
 
 export async function POST(req: NextRequest) {
-    const user = await getAuthUser(req);
-    if (!user) {
+    try {
+        assertSafeAdminMutationRequest(req);
+        await requireAdminSession();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message.includes("mutation")) {
+            return NextResponse.json({ error: message }, { status: 403 });
+        }
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 
@@ -29,6 +30,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "file, path 필수" }, { status: 400 });
     }
 
+    try {
+        assertSafeR2Key(path, "path");
+    } catch (err) {
+        const message =
+            err instanceof R2PathPolicyError ? err.message : "잘못된 경로";
+        return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json(
+            { error: `파일 크기 한도 초과 (${MAX_UPLOAD_BYTES} bytes)` },
+            { status: 413 }
+        );
+    }
+
+    const contentType = resolveImageContentType(path);
+    if (!contentType) {
+        return NextResponse.json(
+            { error: "허용되지 않은 파일 확장자" },
+            { status: 400 }
+        );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // UUID 파일명 = immutable asset으로 1년 cache + immutable directive
@@ -38,7 +62,7 @@ export async function POST(req: NextRequest) {
             Bucket: R2_BUCKET,
             Key: path,
             Body: buffer,
-            ContentType: file.type || "application/octet-stream",
+            ContentType: contentType,
             CacheControl: "public, max-age=31536000, immutable",
         })
     );

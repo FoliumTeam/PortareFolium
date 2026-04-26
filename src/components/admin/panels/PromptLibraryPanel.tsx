@@ -121,7 +121,7 @@ export default function PromptLibraryPanel() {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-            console.error("Failed to copy:", err);
+            console.error("[PromptLibraryPanel::handleCopy]", err);
         }
     };
 
@@ -135,7 +135,7 @@ export default function PromptLibraryPanel() {
             setPortfolioCopied(true);
             setTimeout(() => setPortfolioCopied(false), 2000);
         } catch (err) {
-            console.error("Failed to copy:", err);
+            console.error("[PromptLibraryPanel::handlePortfolioCopy]", err);
         }
     };
 

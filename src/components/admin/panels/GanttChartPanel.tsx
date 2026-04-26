@@ -18,7 +18,12 @@ import {
     ZoomIn,
     ZoomOut,
 } from "lucide-react";
-import { browserClient } from "@/lib/supabase";
+import {
+    deleteGanttChartArchives,
+    listGanttChartArchives,
+    saveGanttChartArchiveSettings,
+    type GanttChartArchiveRow,
+} from "@/app/admin/actions/gantt-chart";
 import {
     buildGanttTimeline,
     countTaskDays,
@@ -32,18 +37,6 @@ import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import GanttChartCreateModal from "./GanttChartCreateModal";
 import GanttChartCategoryColorModal from "./GanttChartCategoryColorModal";
 
-type GanttChartArchiveRow = {
-    id: string;
-    title: string;
-    source_filename: string;
-    csv_content: string;
-    tasks: unknown;
-    category_colors: unknown;
-    bar_style: string | null;
-    created_at: string;
-    updated_at: string;
-};
-
 type StatusMessage = {
     ok: boolean;
     text: string;
@@ -54,8 +47,6 @@ type GanttChartArchiveDraft = {
     barStyle: GanttChartBarStyle;
 };
 
-const ARCHIVE_SELECT_FIELDS =
-    "id, title, source_filename, csv_content, tasks, category_colors, bar_style, created_at, updated_at";
 const DAY_WIDTH = 44;
 const BAR_TEXT_MIN_WIDTH = 96;
 const BAR_DAY_COUNT_MIN_WIDTH = 152;
@@ -99,6 +90,9 @@ const toArchiveDraft = (
     title: archive.title,
     barStyle: archive.barStyle,
 });
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
 const GanttChartPreview = ({
     archive,
@@ -392,39 +386,24 @@ const GanttChartPanel = () => {
     };
 
     const loadArchives = async () => {
-        if (!browserClient) {
-            setStatus({
-                ok: false,
-                text: "Supabase browserClient가 설정되지 않았습니다",
-            });
-            setLoading(false);
-            return;
-        }
         setLoading(true);
         setStatus(null);
-        const { data, error } = await browserClient
-            .from("gantt_chart_archives")
-            .select(ARCHIVE_SELECT_FIELDS)
-            .order("created_at", { ascending: false });
-        if (error) {
-            setStatus({ ok: false, text: error.message });
-            setLoading(false);
-            return;
-        }
         try {
-            syncArchiveList(
-                ((data ?? []) as GanttChartArchiveRow[]).map(mapArchiveRow)
-            );
+            const result = await listGanttChartArchives();
+            if (!result.success) {
+                setStatus({ ok: false, text: result.error });
+                return;
+            }
+
+            syncArchiveList(result.archives.map(mapArchiveRow));
         } catch (error) {
             setStatus({
                 ok: false,
-                text:
-                    error instanceof Error
-                        ? error.message
-                        : "Gantt Chart archive 파싱 오류",
+                text: getErrorMessage(error, "Gantt Chart archive 로드 오류"),
             });
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -609,7 +588,7 @@ const GanttChartPanel = () => {
     };
 
     const handleSaveSettings = async () => {
-        if (!selectedArchive || !selectedDraft || !browserClient) return;
+        if (!selectedArchive || !selectedDraft) return;
         const nextTitle = selectedDraft.title.trim();
         if (!nextTitle) {
             setStatus({ ok: false, text: "차트 제목은 비워둘 수 없습니다" });
@@ -617,32 +596,37 @@ const GanttChartPanel = () => {
         }
         setSavingSettings(true);
         setStatus(null);
-        const { data, error } = await browserClient
-            .from("gantt_chart_archives")
-            .update({
-                title: nextTitle,
-                bar_style: selectedDraft.barStyle,
-            })
-            .eq("id", selectedArchive.id)
-            .select(ARCHIVE_SELECT_FIELDS)
-            .single();
-        setSavingSettings(false);
-        if (error) {
-            setStatus({ ok: false, text: error.message });
-            return;
+        try {
+            const result = await saveGanttChartArchiveSettings(
+                selectedArchive.id,
+                nextTitle,
+                selectedDraft.barStyle
+            );
+            if (!result.success) {
+                setStatus({ ok: false, text: result.error });
+                return;
+            }
+
+            const nextArchive = mapArchiveRow(result.archive);
+            syncArchiveList(
+                archives.map((archive) =>
+                    archive.id === nextArchive.id ? nextArchive : archive
+                ),
+                nextArchive.id
+            );
+            setStatus({ ok: true, text: "차트 설정 저장 완료" });
+        } catch (error) {
+            setStatus({
+                ok: false,
+                text: getErrorMessage(error, "차트 설정 저장 오류"),
+            });
+        } finally {
+            setSavingSettings(false);
         }
-        const nextArchive = mapArchiveRow(data as GanttChartArchiveRow);
-        syncArchiveList(
-            archives.map((archive) =>
-                archive.id === nextArchive.id ? nextArchive : archive
-            ),
-            nextArchive.id
-        );
-        setStatus({ ok: true, text: "차트 설정 저장 완료" });
     };
 
     const handleDeleteArchives = async (ids: string[]) => {
-        if (!browserClient || ids.length === 0) return;
+        if (ids.length === 0) return;
         const targets = archives.filter((archive) => ids.includes(archive.id));
         const ok = await confirm({
             title:
@@ -660,25 +644,34 @@ const GanttChartPanel = () => {
         if (!ok) return;
         setDeletingIds(new Set(ids));
         setStatus(null);
-        const { error } = await browserClient
-            .from("gantt_chart_archives")
-            .delete()
-            .in("id", ids);
-        setDeletingIds(new Set());
-        if (error) {
-            setStatus({ ok: false, text: error.message });
-            return;
+        try {
+            const result = await deleteGanttChartArchives(ids);
+            if (!result.success) {
+                setStatus({
+                    ok: false,
+                    text: result.error ?? "Gantt Chart 삭제 오류",
+                });
+                return;
+            }
+
+            syncArchiveList(
+                archives.filter((archive) => !ids.includes(archive.id))
+            );
+            setStatus({
+                ok: true,
+                text:
+                    ids.length === 1
+                        ? "Gantt Chart 삭제 완료"
+                        : `${ids.length}개 Gantt Chart 삭제 완료`,
+            });
+        } catch (error) {
+            setStatus({
+                ok: false,
+                text: getErrorMessage(error, "Gantt Chart 삭제 오류"),
+            });
+        } finally {
+            setDeletingIds(new Set());
         }
-        syncArchiveList(
-            archives.filter((archive) => !ids.includes(archive.id))
-        );
-        setStatus({
-            ok: true,
-            text:
-                ids.length === 1
-                    ? "Gantt Chart 삭제 완료"
-                    : `${ids.length}개 Gantt Chart 삭제 완료`,
-        });
     };
 
     const toggleSelect = (id: string) =>

@@ -7,7 +7,7 @@
  * 클릭으로 선택/해제하는 멀티 선택 UI.
  */
 import { useEffect, useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { listPublicTags } from "@/app/admin/actions/public-data";
 
 interface Tag {
     slug: string;
@@ -34,18 +34,10 @@ export default function TagSelector({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!browserClient) {
+        listPublicTags().then((data) => {
+            setTags(data);
             setLoading(false);
-            return;
-        }
-        browserClient
-            .from("tags")
-            .select("slug, name, color")
-            .order("slug")
-            .then(({ data, error }) => {
-                if (!error) setTags(data ?? []);
-                setLoading(false);
-            });
+        });
     }, []);
 
     const selected = new Set(

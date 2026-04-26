@@ -17,6 +17,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { isGifUrl } from "@/lib/image-url";
 
 export const revalidate = false;
 export const dynamicParams = true;
@@ -105,6 +106,7 @@ export default async function BlogPostPage({
                             width={768}
                             height={432}
                             priority
+                            unoptimized={isGifUrl(post.thumbnail)}
                             className="h-full w-full object-cover"
                         />
                     </div>

@@ -2,11 +2,7 @@
 
 // about_data 테이블 편집 + 프로필 이미지 업로드 + Job Field별 소개 관리
 import { useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
-import {
-    revalidateHome,
-    revalidateResume,
-} from "@/app/admin/actions/revalidate";
+import { getAboutBootstrap, saveAboutPanel } from "@/app/admin/actions/about";
 import { uploadImage } from "@/lib/image-upload";
 import type {
     AboutData,
@@ -42,8 +38,10 @@ export default function AboutPanel() {
     const [imageUploading, setImageUploading] = useState(false);
     // resume_data 행 참조 (basics.image 단일 출처)
     const [resumeRowId, setResumeRowId] = useState<string | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [resumeFullData, setResumeFullData] = useState<any>(null);
+    const [resumeFullData, setResumeFullData] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [github, setGithub] = useState("");
@@ -76,82 +74,43 @@ export default function AboutPanel() {
         Partial<Record<CompetencySectionKey, HTMLTextAreaElement | null>>
     >({});
 
-    // about_data + resume_data(basics.image) + site_config(job_fields) 동시 로드
+    // About bootstrap 로드
     useEffect(() => {
-        if (!browserClient) return;
-        Promise.all([
-            browserClient
-                .from("about_data")
-                .select("id, data")
-                .limit(1)
-                .single(),
-            browserClient
-                .from("resume_data")
-                .select("id, data")
-                .eq("lang", "ko")
-                .single(),
-            browserClient
-                .from("site_config")
-                .select("key, value")
-                .in("key", ["job_fields", "github_url"]),
-        ]).then(
-            ([
-                { data: row, error },
-                { data: resumeRow },
-                { data: configs },
-            ]) => {
-                if (!error && row) {
-                    const d = row.data as AboutData;
-                    setRowId(row.id);
-                    setName(d.name ?? "");
-                    setEmail(d.contacts?.email ?? "");
-                    setGithub(d.contacts?.github ?? "");
-                    setLinkedin(d.contacts?.linkedin ?? "");
-                    if (descriptionRef.current)
-                        descriptionRef.current.value = d.description ?? "";
-                    if (descriptionSubRef.current)
-                        descriptionSubRef.current.value =
-                            d.descriptionSub ?? "";
-                    ABOUT_SECTION_KEYS.forEach((k) => {
-                        const el = sectionRefs.current[k];
-                        if (el) el.value = (d.sections?.[k] ?? []).join("\n");
-                    });
-                    COMPETENCY_SECTION_KEYS.forEach((k) => {
-                        const el = competencyRefs.current[k];
-                        if (el)
-                            el.value = (d.competencySections?.[k] ?? []).join(
-                                "\n"
-                            );
-                    });
-                    setIntroductions(d.introductions ?? {});
-                    setValuePillars(d.valuePillars ?? []);
-                }
-                // resume_data.basics.image를 프로필 이미지 단일 출처로 사용
-                if (resumeRow) {
-                    setResumeRowId(resumeRow.id);
-                    setResumeFullData(resumeRow.data);
-                    const img = resumeRow.data?.basics?.image?.trim();
-                    if (img) setProfileImage(img);
-                }
-                if (configs) {
-                    for (const cfg of configs) {
-                        if (cfg.key === "job_fields")
-                            setJobFields((cfg.value as JobFieldItem[]) ?? []);
-                        if (cfg.key === "github_url") {
-                            let v = cfg.value;
-                            if (typeof v === "string" && v.startsWith('"')) {
-                                try {
-                                    v = JSON.parse(v as string);
-                                } catch {
-                                    // invalid JSON
-                                }
-                            }
-                            if (typeof v === "string") setGithub(v);
-                        }
-                    }
-                }
+        getAboutBootstrap().then((result) => {
+            if (result.aboutData) {
+                const d = result.aboutData as AboutData;
+                setRowId(result.aboutRowId);
+                setName(d.name ?? "");
+                setEmail(d.contacts?.email ?? "");
+                setGithub(d.contacts?.github ?? "");
+                setLinkedin(d.contacts?.linkedin ?? "");
+                if (descriptionRef.current)
+                    descriptionRef.current.value = d.description ?? "";
+                if (descriptionSubRef.current)
+                    descriptionSubRef.current.value = d.descriptionSub ?? "";
+                ABOUT_SECTION_KEYS.forEach((k) => {
+                    const el = sectionRefs.current[k];
+                    if (el) el.value = (d.sections?.[k] ?? []).join("\n");
+                });
+                COMPETENCY_SECTION_KEYS.forEach((k) => {
+                    const el = competencyRefs.current[k];
+                    if (el)
+                        el.value = (d.competencySections?.[k] ?? []).join("\n");
+                });
+                setIntroductions(d.introductions ?? {});
+                setValuePillars(d.valuePillars ?? []);
             }
-        );
+            if (result.resumeData) {
+                setResumeRowId(result.resumeRowId);
+                setResumeFullData(result.resumeData);
+                const img = (
+                    result.resumeData.basics as { image?: string } | undefined
+                )?.image?.trim();
+                if (img) setProfileImage(img);
+            }
+            setJobFields(result.jobFields);
+            setGithub((prev) => result.githubUrl || prev);
+        });
     }, []);
 
     // 프로필 이미지 파일 업로드
@@ -216,7 +175,6 @@ export default function AboutPanel() {
     };
 
     const handleSave = async () => {
-        if (!browserClient) return;
         setSaving(true);
         setStatus(null);
 
@@ -249,53 +207,22 @@ export default function AboutPanel() {
             ) as AboutData["competencySections"],
         };
 
-        // resume_data.basics.image 업데이트 (단일 출처)
-        if (resumeRowId && resumeFullData) {
-            const mergedResume = {
-                ...resumeFullData,
-                basics: {
-                    ...resumeFullData.basics,
-                    image: profileImage.trim() || undefined,
-                },
-            };
-            await browserClient
-                .from("resume_data")
-                .update({ data: mergedResume })
-                .eq("id", resumeRowId);
-        }
+        const result = await saveAboutPanel({
+            aboutData: data,
+            aboutRowId: rowId,
+            profileImage,
+            resumeRowId,
+            resumeFullData,
+            githubUrl: github,
+        });
 
-        let err;
-        if (rowId) {
-            ({ error: err } = await browserClient
-                .from("about_data")
-                .update({ data })
-                .eq("id", rowId));
-        } else {
-            const res = await browserClient
-                .from("about_data")
-                .insert({ data })
-                .select("id")
-                .single();
-            err = res.error;
-            if (res.data) setRowId(res.data.id);
-        }
-
-        // github_url site_config 동기화
-        await browserClient
-            .from("site_config")
-            .upsert(
-                [{ key: "github_url", value: JSON.stringify(github.trim()) }],
-                { onConflict: "key" }
-            );
-
-        if (!err) {
-            await revalidateHome();
-            await revalidateResume();
+        if (result.success) {
+            if (result.aboutRowId) setRowId(result.aboutRowId);
         }
         setSaving(false);
         setStatus(
-            err
-                ? { type: "error", msg: err.message }
+            !result.success
+                ? { type: "error", msg: result.error }
                 : {
                       type: "success",
                       msg: "저장됐습니다. About 페이지에 즉시 반영됩니다.",

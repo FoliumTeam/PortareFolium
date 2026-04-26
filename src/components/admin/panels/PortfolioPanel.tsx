@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { browserClient } from "@/lib/supabase";
 import {
     moveStorageFolder,
     deleteStorageFolder,
@@ -12,12 +11,19 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
-import {
-    rewriteSnapshotUrls,
-    maybeCleanupOnOpen,
-} from "@/lib/snapshot-cleanup";
+import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
-import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
+import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
+import {
+    batchSetPortfolioJobField,
+    batchSetPortfolioPublished,
+    deletePortfolioItemById,
+    getPortfolioPanelBootstrap,
+    reorderFeaturedPortfolioItems,
+    savePortfolioItem,
+    setPortfolioFeatured,
+    setPortfolioPublished,
+} from "@/app/admin/actions/portfolio";
 import {
     Eye,
     EyeOff,
@@ -224,58 +230,17 @@ export default function PortfolioPanel({
     const { confirm } = useConfirmDialog();
 
     const loadItems = async () => {
-        if (!browserClient) return;
         setLoading(true);
-        const { data, error: err } = await browserClient
-            .from("portfolio_items")
-            .select("*")
-            .order("order_idx");
-        if (err) setError(err.message);
-        else setItems(data ?? []);
+        const result = await getPortfolioPanelBootstrap();
+        setItems(result.items);
+        setStateCounts(result.stateCounts);
+        setJobFields(result.jobFields);
+        setActiveJobField(normalizeJobFieldValue(result.activeJobField));
         setLoading(false);
     };
 
-    // editor_states count 로드 (목록 로드 후 호출)
-    const loadStateCounts = async () => {
-        if (!browserClient) return;
-        try {
-            const { data } = await browserClient
-                .from("editor_states")
-                .select("entity_slug")
-                .eq("entity_type", "portfolio")
-                .neq("label", "Initial");
-            if (!data) return;
-            const counts: Record<string, number> = {};
-            for (const row of data) {
-                counts[row.entity_slug] = (counts[row.entity_slug] ?? 0) + 1;
-            }
-            setStateCounts(counts);
-        } catch {
-            // best-effort
-        }
-    };
-
     useEffect(() => {
-        loadItems().then(() => loadStateCounts());
-        if (browserClient) {
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_fields")
-                .single()
-                .then(({ data }) => {
-                    if (data?.value) setJobFields(data.value as JobFieldItem[]);
-                });
-            browserClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single()
-                .then(({ data }) => {
-                    if (data?.value && typeof data.value === "string")
-                        setActiveJobField(normalizeJobFieldValue(data.value));
-                });
-        }
+        void loadItems();
     }, []);
 
     // editPath로 편집 상태 복원 (새로고침 시)
@@ -386,7 +351,7 @@ export default function PortfolioPanel({
                 `portfolio/${oldSlug}`,
                 `portfolio/${newSlug}`
             );
-            await rewriteSnapshotUrls(
+            await rewriteEditorSnapshotUrls(
                 "portfolio",
                 oldSlug,
                 `portfolio/${oldSlug}`,
@@ -407,32 +372,19 @@ export default function PortfolioPanel({
 
     // 자동 저장 (DB에 직접 저장)
     const autoSave = async () => {
-        if (!browserClient || !form.title || !form.slug) return;
+        if (!form.title || !form.slug) return;
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        if (editTarget === "new") {
-            const { data: newItem, error: err } = await browserClient
-                .from("portfolio_items")
-                .insert(payload)
-                .select("*")
-                .single();
-            if (!err && newItem) {
-                initialFormRef.current = form;
-                savedSlugRef.current = newItem.slug;
-                setEditTarget(newItem);
-                await revalidatePortfolioItem(newItem.slug);
-            }
-        } else if (editTarget !== null) {
-            const { error: err } = await browserClient
-                .from("portfolio_items")
-                .update(payload)
-                .eq("id", (editTarget as PortfolioItem).id);
-            if (!err) {
-                initialFormRef.current = form;
-                await revalidatePortfolioItem(
-                    (editTarget as PortfolioItem).slug
-                );
-            }
+        const result = await savePortfolioItem(
+            payload,
+            editTarget === "new"
+                ? null
+                : (editTarget as PortfolioItem | null)?.id
+        );
+        if (result.success) {
+            initialFormRef.current = form;
+            savedSlugRef.current = result.item.slug;
+            setEditTarget(result.item);
         }
     };
 
@@ -444,7 +396,7 @@ export default function PortfolioPanel({
 
     // 수동 저장 (신규 insert / 수정 update)
     const handleSave = useCallback(async () => {
-        if (!browserClient || !form.title || !form.slug) {
+        if (!form.title || !form.slug) {
             setError("제목과 slug는 필수입니다.");
             return;
         }
@@ -453,28 +405,20 @@ export default function PortfolioPanel({
 
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        let err;
-        if (editTarget === "new") {
-            ({ error: err } = await browserClient
-                .from("portfolio_items")
-                .insert(payload));
-        } else {
-            ({ error: err } = await browserClient
-                .from("portfolio_items")
-                .update(payload)
-                .eq("id", (editTarget as PortfolioItem).id));
-        }
+        const result = await savePortfolioItem(
+            payload,
+            editTarget === "new" ? null : (editTarget as PortfolioItem).id
+        );
 
         setSaving(false);
-        if (err) {
-            setError(err.message);
+        if (!result.success) {
+            setError(result.error);
         } else {
             initialFormRef.current = form;
-            savedSlugRef.current = form.slug;
+            savedSlugRef.current = result.item.slug;
             setSuccess("저장 완료");
-            loadItems();
+            void loadItems();
             if (editTarget === "new") setEditTarget(null);
-            await revalidatePortfolioItem(form.slug);
         }
     }, [form, editTarget]);
 
@@ -486,11 +430,10 @@ export default function PortfolioPanel({
         setEditTarget(null);
         onEditPathChange?.("");
         setMetadataOpen(false);
-        loadStateCounts();
+        void loadItems();
     };
 
     const handleDelete = async (id: string) => {
-        if (!browserClient) return;
         const ok = await confirm({
             title: "프로젝트 삭제",
             description: "정말 삭제하시겠습니까?",
@@ -500,7 +443,7 @@ export default function PortfolioPanel({
         });
         if (!ok) return;
         const target = items.find((i) => i.id === id);
-        await browserClient.from("portfolio_items").delete().eq("id", id);
+        await deletePortfolioItemById(id);
         if (target?.slug) deleteStorageFolder(`portfolio/${target.slug}`);
         if (
             editTarget !== null &&
@@ -510,21 +453,15 @@ export default function PortfolioPanel({
             setEditTarget(null);
             onEditPathChange?.("");
         }
-        loadItems();
+        void loadItems();
     };
 
     const togglePublish = async (item: PortfolioItem) => {
-        if (!browserClient) return;
-        await browserClient
-            .from("portfolio_items")
-            .update({ published: !item.published })
-            .eq("id", item.id);
-        loadItems();
-        await revalidatePortfolioItem(item.slug);
+        await setPortfolioPublished(item.id, item.slug, !item.published);
+        void loadItems();
     };
 
     const toggleFeatured = async (item: PortfolioItem) => {
-        if (!browserClient) return;
         if (!item.featured) {
             const featuredCount = items.filter((i) => i.featured).length;
             if (featuredCount >= 5) {
@@ -532,11 +469,8 @@ export default function PortfolioPanel({
                 return;
             }
         }
-        await browserClient
-            .from("portfolio_items")
-            .update({ featured: !item.featured })
-            .eq("id", item.id);
-        loadItems();
+        await setPortfolioFeatured(item.id, item.slug, !item.featured);
+        void loadItems();
     };
 
     // Featured 순서 드래그 앤 드롭
@@ -545,7 +479,6 @@ export default function PortfolioPanel({
 
     const handleFeaturedReorder = async () => {
         if (
-            !browserClient ||
             dragItemRef.current === null ||
             dragOverItemRef.current === null ||
             dragItemRef.current === dragOverItemRef.current
@@ -566,16 +499,11 @@ export default function PortfolioPanel({
             order_idx: idx,
         }));
 
-        for (const u of updates) {
-            await browserClient
-                .from("portfolio_items")
-                .update({ order_idx: u.order_idx })
-                .eq("id", u.id);
-        }
+        await reorderFeaturedPortfolioItems(updates);
 
         dragItemRef.current = null;
         dragOverItemRef.current = null;
-        loadItems();
+        void loadItems();
     };
 
     // MetadataSheet onChange 핸들러
@@ -585,16 +513,15 @@ export default function PortfolioPanel({
 
     // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
     const handlePublishToggle = async (published: boolean) => {
-        if (!browserClient || editTarget === null || editTarget === "new")
-            return;
-        await browserClient
-            .from("portfolio_items")
-            .update({ published })
-            .eq("id", editTarget.id);
+        if (editTarget === null || editTarget === "new") return;
+        await setPortfolioPublished(
+            editTarget.id,
+            (editTarget as PortfolioItem).slug,
+            published
+        );
         setItems((prev) =>
             prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
         );
-        await revalidatePortfolioItem((editTarget as PortfolioItem).slug);
     };
 
     // editPath 복원 대기 중 (list 깜빡임 방지)
@@ -874,38 +801,31 @@ export default function PortfolioPanel({
     };
 
     const batchPublish = async (publish: boolean) => {
-        if (!browserClient || selected.size === 0) return;
+        if (selected.size === 0) return;
         setBatchSaving(true);
-        await browserClient
-            .from("portfolio_items")
-            .update({ published: publish })
-            .in("id", [...selected]);
+        await batchSetPortfolioPublished([...selected], publish);
         setBatchSaving(false);
         setSelected(new Set());
-        loadItems();
+        void loadItems();
         showToast(
             `${selected.size}개 항목을 ${publish ? "Published" : "Draft"}로 변경했습니다.`
         );
     };
 
     const batchSetJobField = async () => {
-        if (!browserClient || selected.size === 0 || !batchJobField) return;
+        if (selected.size === 0 || !batchJobField) return;
         setBatchSaving(true);
         const selectedItems = items.filter((i) => selected.has(i.id));
-        await Promise.all(
-            selectedItems.map((item) =>
-                browserClient!
-                    .from("portfolio_items")
-                    .update({
-                        data: { ...item.data, jobField: [batchJobField] },
-                    })
-                    .eq("id", item.id)
-            )
+        await batchSetPortfolioJobField(
+            selectedItems.map((item) => ({
+                id: item.id,
+                data: { ...item.data, jobField: [batchJobField] },
+            }))
         );
         setBatchSaving(false);
         setSelected(new Set());
         setBatchJobField("");
-        loadItems();
+        void loadItems();
         showToast(`${selected.size}개 항목의 직무 분야를 변경했습니다.`);
     };
 

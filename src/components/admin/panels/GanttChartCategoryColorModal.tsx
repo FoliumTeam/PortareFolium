@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { browserClient } from "@/lib/supabase";
+import { saveGanttChartArchiveCategories } from "@/app/admin/actions/gantt-chart";
 import { Button } from "@/components/ui/button";
 import type { GanttChartArchive } from "@/lib/gantt-chart";
 
@@ -24,6 +24,9 @@ const getAccentColor = (): string => {
         .trim();
     return value || "#059669";
 };
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
 export default function GanttChartCategoryColorModal({
     archive,
@@ -54,7 +57,6 @@ export default function GanttChartCategoryColorModal({
         );
 
     const handleSave = async () => {
-        if (!browserClient) return;
         setSaving(true);
         setError(null);
 
@@ -76,17 +78,18 @@ export default function GanttChartCategoryColorModal({
         }));
 
         try {
-            const { error: dbError } = await browserClient
-                .from("gantt_chart_archives")
-                .update({
-                    category_colors: categoryColors,
-                    tasks: updatedTasks,
-                })
-                .eq("id", archive.id);
-            if (dbError) throw new Error(dbError.message);
+            const result = await saveGanttChartArchiveCategories({
+                id: archive.id,
+                categoryColors,
+                tasks: updatedTasks,
+            });
+            if (!result.success) {
+                setError(result.error);
+                return;
+            }
             onSaved();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "저장 오류");
+            setError(getErrorMessage(err, "저장 오류"));
         } finally {
             setSaving(false);
         }
