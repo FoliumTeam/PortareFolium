@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import CommandPalette from "@/components/admin/CommandPalette";
+import MainPanel from "@/components/admin/panels/MainPanel";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
 import PortfolioPanel from "@/components/admin/panels/PortfolioPanel";
 import TagsPanel from "@/components/admin/panels/TagsPanel";
@@ -41,9 +42,11 @@ const PANELS_OWN_HEIGHT = new Set<TabId>([
 
 // 활동 감지 이벤트 목록
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
+const DEFAULT_TAB: TabId = "main";
 
 // 유효한 탭 ID 목록
 const VALID_TABS: TabId[] = [
+    "main",
     "posts",
     "portfolio",
     "tags",
@@ -69,7 +72,7 @@ function parseHash(
     const editPath = slashIdx === -1 ? "" : hash.slice(slashIdx + 1);
     const tab = allowedTabs.includes(tabPart as TabId)
         ? (tabPart as TabId)
-        : "posts";
+        : DEFAULT_TAB;
     return { tab, editPath };
 }
 
@@ -83,22 +86,13 @@ export default function AdminDashboard({
     const allowedTabs: readonly TabId[] = refugeMode
         ? REFUGE_ADMIN_TABS
         : VALID_TABS;
-    const [activeTab, setActiveTab] = useState<TabId>(() => {
-        if (typeof window !== "undefined") {
-            return parseHash(window.location.hash, allowedTabs).tab;
-        }
-        return "posts";
-    });
+    const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
 
     // 초기 editPath (새로고침 시 편집 상태 복원용)
-    const [editPath, setEditPath] = useState(() => {
-        if (typeof window !== "undefined") {
-            return parseHash(window.location.hash, allowedTabs).editPath;
-        }
-        return "";
-    });
+    const [editPath, setEditPath] = useState("");
 
     const [tabKey, setTabKey] = useState(0);
+    const [hashReady, setHashReady] = useState(false);
     const [commandOpen, setCommandOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -108,17 +102,23 @@ export default function AdminDashboard({
     const panelOwnsHeight = PANELS_OWN_HEIGHT.has(activeTab);
 
     useEffect(() => {
-        const suffix = editPath ? `/${editPath}` : "";
-        window.history.replaceState(null, "", `#${activeTab}${suffix}`);
-
         const handleHashChange = () => {
             const parsed = parseHash(window.location.hash, allowedTabs);
             setActiveTab(parsed.tab);
             setEditPath(parsed.editPath);
         };
+
+        handleHashChange();
+        setHashReady(true);
         window.addEventListener("hashchange", handleHashChange);
         return () => window.removeEventListener("hashchange", handleHashChange);
-    }, [activeTab, allowedTabs, editPath]);
+    }, [allowedTabs]);
+
+    useEffect(() => {
+        if (!hashReady) return;
+        const suffix = editPath ? `/${editPath}` : "";
+        window.history.replaceState(null, "", `#${activeTab}${suffix}`);
+    }, [activeTab, editPath, hashReady]);
 
     // 비활동 타이머: 1초마다 남은 시간 갱신, 만료 시 자동 로그아웃
     useEffect(() => {
@@ -239,6 +239,13 @@ export default function AdminDashboard({
                                     : ""
                             }`}
                         >
+                            {activeTab === "main" && (
+                                <MainPanel
+                                    key={`main-${tabKey}`}
+                                    refugeMode={refugeMode}
+                                    onNavigate={handleTabClick}
+                                />
+                            )}
                             {activeTab === "posts" && (
                                 <PostsPanel
                                     key={`posts-${tabKey}`}

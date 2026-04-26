@@ -1,6 +1,7 @@
 "use client";
 
 import {
+    LayoutDashboard,
     FileText,
     Briefcase,
     Tag,
@@ -19,6 +20,7 @@ import type { ComponentType } from "react";
 
 // 탭 정의
 export const REFUGE_ADMIN_TABS = [
+    "main",
     "posts",
     "portfolio",
     "tags",
@@ -33,6 +35,10 @@ export const REFUGE_ADMIN_TABS = [
 ] as const;
 
 const SECTIONS = [
+    {
+        label: "Overview",
+        items: [{ id: "main", label: "메인", icon: LayoutDashboard }],
+    },
     {
         label: "Content",
         items: [
@@ -67,6 +73,7 @@ const SECTIONS = [
 ] as const;
 
 export type TabId =
+    | "main"
     | "posts"
     | "portfolio"
     | "gantt-chart"

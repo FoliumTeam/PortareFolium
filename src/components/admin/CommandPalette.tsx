@@ -3,6 +3,7 @@
 
 import { useEffect } from "react";
 import {
+    LayoutDashboard,
     FileText,
     Briefcase,
     Tag,
@@ -33,6 +34,7 @@ type CommandPaletteProps = {
 
 // 패널 탐색 명령 목록
 const NAV_COMMANDS = [
+    { tab: "main", label: "Main으로 이동", icon: LayoutDashboard },
     { tab: "posts", label: "Posts로 이동", icon: FileText },
     { tab: "portfolio", label: "Portfolio로 이동", icon: Briefcase },
     { tab: "tags", label: "Tags로 이동", icon: Tag },

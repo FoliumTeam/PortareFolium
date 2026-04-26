@@ -62,6 +62,23 @@ describe("sqlite refuge server client", () => {
         expect(data).toEqual({ slug: "live", title: "Live" });
     });
 
+    it("returns exact head counts for dashboard summaries", async () => {
+        await seedRefuge([
+            { id: "1", slug: "draft", title: "Draft", published: false },
+            { id: "2", slug: "live", title: "Live", published: true },
+        ]);
+
+        const { serverClient } = await import("@/lib/supabase");
+        const { count, data, error } = await serverClient!
+            .from("posts")
+            .select("id", { count: "exact", head: true })
+            .eq("published", false);
+
+        expect(error).toBeNull();
+        expect(data).toBeNull();
+        expect(count).toBe(1);
+    });
+
     it("allows release-1 site_config keys", async () => {
         await seedRefuge([]);
 
