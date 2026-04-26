@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw } from "lucide-react";
 
-export default function MigrationsPanel() {
+type MigrationsPanelProps = {
+    refugeMode?: boolean;
+};
+
+export default function MigrationsPanel({
+    refugeMode = false,
+}: MigrationsPanelProps) {
     const [dbVersion, setDbVersion] = useState<string | null | undefined>(
         undefined
     ); // undefined = 로딩 중, null = 없음
@@ -180,15 +186,20 @@ export default function MigrationsPanel() {
                         </h3>
                         <div className="mb-4 flex items-center gap-3 pr-4">
                             <p className="flex-1 text-sm text-(--color-muted)">
-                                아래 SQL을 Supabase SQL Editor에서 순서대로
-                                실행하거나, 자동 적용 버튼을 누르세요.
+                                {refugeMode
+                                    ? "SQLite refuge에는 자동 적용하고, Supabase 복귀 후에는 아래 SQL을 Supabase SQL Editor에서 순서대로 실행하세요."
+                                    : "아래 SQL을 Supabase SQL Editor에서 순서대로 실행하거나, 자동 적용 버튼을 누르세요."}
                             </p>
                             <Button
                                 onClick={applyMigrations}
                                 disabled={applying}
                                 className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
-                                {applying ? "적용 중..." : "자동 적용"}
+                                {applying
+                                    ? "적용 중..."
+                                    : refugeMode
+                                      ? "SQLite 적용"
+                                      : "자동 적용"}
                             </Button>
                         </div>
                         {applyError && (

@@ -6,7 +6,6 @@ import {
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
-import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import type { AboutData } from "@/types/about";
 
 type SaveAboutInput = {
@@ -117,8 +116,7 @@ export async function saveAboutPanel(
     } = input;
 
     try {
-        const refugeMode = isSqliteRefugeMode();
-        if (!refugeMode && resumeRowId && resumeFullData) {
+        if (resumeRowId && resumeFullData) {
             const basics =
                 resumeFullData.basics &&
                 typeof resumeFullData.basics === "object" &&
@@ -158,21 +156,19 @@ export async function saveAboutPanel(
             nextAboutRowId = data?.id ?? null;
         }
 
-        if (!refugeMode) {
-            const { error: githubError } = await serverClient
-                .from("site_config")
-                .upsert(
-                    [
-                        {
-                            key: "github_url",
-                            value: JSON.stringify(githubUrl.trim()),
-                        },
-                    ],
-                    { onConflict: "key" }
-                );
-            if (githubError) {
-                return { success: false, error: githubError.message };
-            }
+        const { error: githubError } = await serverClient
+            .from("site_config")
+            .upsert(
+                [
+                    {
+                        key: "github_url",
+                        value: JSON.stringify(githubUrl.trim()),
+                    },
+                ],
+                { onConflict: "key" }
+            );
+        if (githubError) {
+            return { success: false, error: githubError.message };
         }
 
         await revalidateHome();

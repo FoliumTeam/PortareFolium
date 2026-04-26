@@ -82,7 +82,7 @@ describe("sqlite refuge server client", () => {
         expect(configResult.data).toHaveLength(3);
     });
 
-    it("rejects excluded tables and forbidden site_config keys", async () => {
+    it("rejects auth tables but allows site_config keys", async () => {
         await seedRefuge([]);
 
         const { serverClient } = await import("@/lib/supabase");
@@ -98,10 +98,10 @@ describe("sqlite refuge server client", () => {
             ],
             { onConflict: "key" }
         );
-        expect(configResult.error?.message).toContain("plain_mode");
+        expect(configResult.error).toBeNull();
     });
 
-    it("rejects tag mutations and post category mass updates in refuge mode", async () => {
+    it("allows tag mutations and post category mass updates in refuge mode", async () => {
         await seedRefuge([
             { id: "1", slug: "one", title: "One", category: "Old" },
             { id: "2", slug: "two", title: "Two", category: "Old" },
@@ -111,16 +111,17 @@ describe("sqlite refuge server client", () => {
         const tagResult = await serverClient!
             .from("tags")
             .insert({ slug: "new", name: "New" });
-        expect(tagResult.error?.message).toContain("tags changes");
+        expect(tagResult.error).toBeNull();
 
         const categoryResult = await serverClient!
             .from("posts")
             .update({ category: "New" })
             .eq("category", "Old");
-        expect(categoryResult.error?.message).toContain("mass updates");
+        expect(categoryResult.error).toBeNull();
+        expect(categoryResult.data).toHaveLength(2);
     });
 
-    it("rejects unsupported content deletes in refuge mode", async () => {
+    it("allows content deletes in refuge mode", async () => {
         await seedRefuge([
             { id: "1", slug: "live", title: "Live", published: true },
         ]);
@@ -131,7 +132,8 @@ describe("sqlite refuge server client", () => {
             .delete()
             .eq("slug", "live");
 
-        expect(result.error?.message).toContain("delete");
+        expect(result.error).toBeNull();
+        expect(result.data).toHaveLength(1);
     });
 
     it("writes local projection updates and records the journal", async () => {
@@ -162,5 +164,35 @@ describe("sqlite refuge server client", () => {
         expect(journal).toMatchObject([
             { operation: "update", table: "posts" },
         ]);
+    });
+
+    it("applies SQLite-only migrations by updating local schema version without journal replay", async () => {
+        await seedRefuge([]);
+        const store = await import("@/lib/refuge/store");
+        const paths = await import("@/lib/refuge/paths");
+        const migrations = await import("@/lib/refuge/sqlite-migrations");
+        const database = store.getRefugeDatabase();
+        store.replaceRefugeTableRows(database, "site_config", [
+            { key: "db_schema_version", value: "0.12.0" },
+        ]);
+
+        migrations.applySqliteRefugeMigration({
+            version: "0.12.106",
+            title: "local sqlite metadata",
+            feature: "sqlite refuge migration",
+            sql: "SELECT 1;",
+            sqliteSql:
+                "CREATE TABLE IF NOT EXISTS refuge_migration_probe (id TEXT PRIMARY KEY);",
+        });
+
+        expect(migrations.getSqliteRefugeSchemaVersion()).toBe("0.12.106");
+        expect(fs.readFileSync(paths.REFUGE_JOURNAL_PATH, "utf8")).toBe("");
+        expect(
+            database
+                .prepare(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
+                )
+                .get("refuge_migration_probe")
+        ).toBeTruthy();
     });
 });

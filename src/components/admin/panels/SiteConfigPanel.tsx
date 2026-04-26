@@ -27,13 +27,7 @@ type JobFieldItem = {
     emoji: string;
 };
 
-type SiteConfigPanelProps = {
-    refugeMode?: boolean;
-};
-
-export default function SiteConfigPanel({
-    refugeMode = false,
-}: SiteConfigPanelProps) {
+export default function SiteConfigPanel() {
     const { confirm } = useConfirmDialog();
     const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
         if (typeof document !== "undefined") {
@@ -178,7 +172,7 @@ export default function SiteConfigPanel({
         const result = await addSiteJobField({
             name: trimmed,
             emoji: newEmoji,
-            inheritFrom: refugeMode ? "" : inheritFrom,
+            inheritFrom,
         });
 
         setSaving(false);
@@ -252,14 +246,10 @@ export default function SiteConfigPanel({
             return;
         }
 
-        if (!refugeMode) {
-            localStorage.setItem("folium_plain_mode", String(plainMode));
-        }
+        localStorage.setItem("folium_plain_mode", String(plainMode));
         setStatus({
             type: "success",
-            msg: refugeMode
-                ? "refuge mode allowed settings saved. Plain and GitHub URL were not changed."
-                : "설정이 저장됐습니다. 변경 사항이 사이트에 반영됐습니다.",
+            msg: "설정이 저장됐습니다. 변경 사항이 사이트에 반영됐습니다.",
         });
     };
 
@@ -359,7 +349,6 @@ export default function SiteConfigPanel({
                                 <Switch
                                     id="plain-toggle"
                                     checked={plainMode}
-                                    disabled={refugeMode}
                                     onCheckedChange={(checked) => {
                                         setPlainMode(checked);
                                         if (checked) {
@@ -376,11 +365,6 @@ export default function SiteConfigPanel({
                                 />
                             </div>
                         </div>
-                        {refugeMode && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400">
-                                Plain mode is disabled in refuge mode.
-                            </p>
-                        )}
                     </section>
 
                     <Separator />
@@ -613,7 +597,6 @@ export default function SiteConfigPanel({
                                                         e.target.value
                                                     )
                                                 }
-                                                disabled={refugeMode}
                                                 className="h-11 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                                             >
                                                 <option
@@ -632,12 +615,6 @@ export default function SiteConfigPanel({
                                                     </option>
                                                 ))}
                                             </select>
-                                            {refugeMode && (
-                                                <p className="text-xs text-amber-600 dark:text-amber-400">
-                                                    Cascade inheritance is
-                                                    disabled in refuge mode.
-                                                </p>
-                                            )}
                                         </div>
                                     )}
 
@@ -723,14 +700,8 @@ export default function SiteConfigPanel({
                                         setGithubUrl(e.target.value)
                                     }
                                     placeholder="https://github.com/username"
-                                    disabled={refugeMode}
                                     className="border-(--color-border)"
                                 />
-                                {refugeMode && (
-                                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                                        GitHub URL is disabled in refuge mode.
-                                    </p>
-                                )}
                             </div>
                         </div>
                     </section>

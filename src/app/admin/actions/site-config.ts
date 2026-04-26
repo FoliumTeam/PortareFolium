@@ -6,7 +6,6 @@ import {
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 import { requireAdminSession } from "@/lib/server-admin";
-import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { serverClient } from "@/lib/supabase";
 
 type JobFieldItem = {
@@ -394,15 +393,13 @@ export async function saveSiteConfig(
             },
         ];
 
-        if (!isSqliteRefugeMode()) {
-            rows.push(
-                { key: "plain_mode", value: input.plainMode },
-                {
-                    key: "github_url",
-                    value: JSON.stringify(input.githubUrl.trim()),
-                }
-            );
-        }
+        rows.push(
+            { key: "plain_mode", value: input.plainMode },
+            {
+                key: "github_url",
+                value: JSON.stringify(input.githubUrl.trim()),
+            }
+        );
 
         const { error } = await serverClient
             .from("site_config")
@@ -499,7 +496,7 @@ export async function addSiteJobField(input: {
             return { success: false, error: saveResult.error };
         }
 
-        if (!isSqliteRefugeMode() && input.inheritFrom) {
+        if (input.inheritFrom) {
             const inheritResult = await applyJobFieldInheritance(
                 input.inheritFrom,
                 newId
@@ -541,11 +538,9 @@ export async function deleteSiteJobField(
             };
         }
 
-        if (!isSqliteRefugeMode()) {
-            const cascadeResult = await deleteJobFieldCascade(targetId);
-            if (cascadeResult.error) {
-                return { success: false, error: cascadeResult.error };
-            }
+        const cascadeResult = await deleteJobFieldCascade(targetId);
+        if (cascadeResult.error) {
+            return { success: false, error: cascadeResult.error };
         }
 
         const nextJobFields = jobFields.filter(

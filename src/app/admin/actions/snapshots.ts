@@ -1,5 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { REFUGE_SUPPORTED_TABLES } from "@/lib/refuge/schema";
+import { listRefugeRows } from "@/lib/refuge/store";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
@@ -44,6 +48,34 @@ export async function createSnapshot(): Promise<
 > {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    if (isSqliteRefugeMode()) {
+        const createdAt = new Date().toISOString();
+        const tableNames = REFUGE_SUPPORTED_TABLES.filter(
+            (table) => table !== "database_snapshots"
+        );
+        const data = Object.fromEntries(
+            tableNames.map((table) => [table, listRefugeRows(table)])
+        );
+        const filename = `sqlite-refuge-snapshot-${createdAt.replace(
+            /[:.]/g,
+            "-"
+        )}.json`;
+        const snapshot = {
+            id: randomUUID(),
+            filename,
+            data,
+            table_names: tableNames,
+            created_at: createdAt,
+        };
+        const { data: inserted, error } = await serverClient
+            .from("database_snapshots")
+            .insert(snapshot)
+            .select("id, filename, table_names, created_at")
+            .single();
+        if (error) return { success: false, error: error.message };
+        return inserted as DatabaseSnapshot;
+    }
 
     const { data, error } = await serverClient
         .rpc("create_database_snapshot")

@@ -21,9 +21,14 @@ import type { ComponentType } from "react";
 export const REFUGE_ADMIN_TABS = [
     "posts",
     "portfolio",
+    "tags",
     "gantt-chart",
     "about",
     "resume",
+    "migrations",
+    "snapshots",
+    "prompts",
+    "debug",
     "config",
 ] as const;
 

@@ -26,7 +26,8 @@ type FilterOperator =
     | "in"
     | "contains"
     | "ilike"
-    | "is";
+    | "is"
+    | "not";
 type Filter = { column: string; operator: FilterOperator; value: unknown };
 type OrFilter = { column: string; operator: "eq" | "is"; value: unknown };
 type OrderRule = { column: string; ascending: boolean };
@@ -36,67 +37,6 @@ type RealServerClient = SupabaseClient | null;
 
 type QueryMode = "select" | "insert" | "update" | "upsert" | "delete";
 
-const REFUGE_MUTABLE_SITE_CONFIG_KEYS = new Set([
-    "color_scheme",
-    "site_name",
-    "job_field",
-    "job_fields",
-    "seo_config",
-    "resume_layout",
-    "resume_section_layout",
-]);
-
-function getMutationPolicyError(
-    table: string,
-    operation: "insert" | "update" | "upsert" | "delete",
-    payloadRows: RefugeRow[],
-    matchedRows: RefugeRow[]
-): string | null {
-    if (["posts", "portfolio_items", "books"].includes(table)) {
-        if (operation === "delete")
-            return `${table} delete is disabled in refuge mode`;
-        if (operation === "update") {
-            for (const row of matchedRows) {
-                const nextSlug = payloadRows[0]?.slug;
-                if (typeof nextSlug === "string" && row.slug !== nextSlug) {
-                    return `${table} slug changes are disabled in refuge mode`;
-                }
-            }
-        }
-    }
-    if (table === "tags") {
-        return "tags changes are disabled in refuge mode";
-    }
-    if (table === "posts" && operation === "update") {
-        const payload = payloadRows[0] ?? {};
-        if (
-            matchedRows.length > 1 &&
-            ("category" in payload || "tags" in payload)
-        ) {
-            return "posts category/tag mass updates are disabled in refuge mode";
-        }
-    }
-    if (table === "portfolio_items" && operation === "update") {
-        if ("order_idx" in (payloadRows[0] ?? {})) {
-            return "portfolio_items order_idx changes are disabled in refuge mode";
-        }
-    }
-    if (table === "site_config") {
-        const rows = payloadRows.some((row) => typeof row.key === "string")
-            ? payloadRows
-            : matchedRows;
-        for (const row of rows) {
-            const key = row.key;
-            if (
-                typeof key === "string" &&
-                !REFUGE_MUTABLE_SITE_CONFIG_KEYS.has(key)
-            ) {
-                return `${key} site_config changes are disabled in refuge mode`;
-            }
-        }
-    }
-    return null;
-}
 function getValue(row: RefugeRow, column: string): unknown {
     return row[column];
 }
@@ -141,6 +81,15 @@ function matchesFilter(row: RefugeRow, filter: Filter): boolean {
             return filter.value === null
                 ? actual == null
                 : actual === filter.value;
+        case "not": {
+            const value = filter.value as { operator: string; value: unknown };
+            if (value.operator === "is") {
+                return value.value === null
+                    ? actual != null
+                    : actual !== value.value;
+            }
+            return !valuesEqual(actual, value.value);
+        }
     }
 }
 
@@ -294,6 +243,15 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
         return this;
     }
 
+    not(column: string, operator: string, value: unknown): this {
+        this.filters.push({
+            column,
+            operator: "not",
+            value: { operator, value },
+        });
+        return this;
+    }
+
     or(raw: string): this {
         this.orFilters.push(parseOrFilter(raw));
         return this;
@@ -394,14 +352,6 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             : this.payload
               ? [this.payload]
               : [];
-        const policyError = getMutationPolicyError(
-            this.table,
-            this.mode === "insert" ? "insert" : "upsert",
-            payloadRows,
-            []
-        );
-        if (policyError)
-            return { data: null, error: { message: policyError }, count: null };
         const now = new Date().toISOString();
         const rows = [...existingRows];
         const changedRows: RefugeRow[] = [];
@@ -435,14 +385,6 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
         matchedRows: RefugeRow[]
     ): QueryResponse<unknown> {
         const payload = (this.payload ?? {}) as RefugeRow;
-        const policyError = getMutationPolicyError(
-            this.table,
-            "update",
-            [payload],
-            matchedRows
-        );
-        if (policyError)
-            return { data: null, error: { message: policyError }, count: null };
         const now = new Date().toISOString();
         const matchedIdentities = new Set(
             matchedRows.map((row) => this.resolveIdentity(row))
@@ -465,14 +407,6 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
         existingRows: RefugeRow[],
         matchedRows: RefugeRow[]
     ): QueryResponse<unknown> {
-        const policyError = getMutationPolicyError(
-            this.table,
-            "delete",
-            [],
-            matchedRows
-        );
-        if (policyError)
-            return { data: null, error: { message: policyError }, count: null };
         const matchedIdentities = new Set(
             matchedRows.map((row) => this.resolveIdentity(row))
         );

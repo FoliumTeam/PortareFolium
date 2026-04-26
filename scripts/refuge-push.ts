@@ -16,7 +16,7 @@ import {
     type RefugeRow,
 } from "../src/lib/refuge/schema";
 
-const DELETE_REPLAY_TABLES = new Set(["editor_states", "gantt_chart_archives"]);
+const DELETE_REPLAY_TABLES = new Set<string>(REFUGE_SUPPORTED_TABLES);
 
 function hasArg(name: string): boolean {
     return process.argv.includes(name);
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
                 ? "snapshot -> conflict-detect -> apply"
                 : "dry-run replay-plan only",
             defaultConflict: "reject",
-            deletes: "journal-only for editor_states and gantt_chart_archives",
+            deletes: "journal-only for refuge supported tables",
             storage: "excluded",
         },
     };

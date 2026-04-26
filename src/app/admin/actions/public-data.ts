@@ -1,5 +1,7 @@
 "use server";
 
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { getSqliteRefugeSchemaVersion } from "@/lib/refuge/sqlite-migrations";
 import { serverClient } from "@/lib/supabase";
 import { sanitizePublicJobField } from "@/lib/public-job-field";
 
@@ -110,6 +112,7 @@ export async function getAdminProfileImage(): Promise<string> {
 
 // 공개 패널용 migrations db version 조회
 export async function getPublicDbSchemaVersion(): Promise<string | null> {
+    if (isSqliteRefugeMode()) return getSqliteRefugeSchemaVersion();
     if (!serverClient) return null;
 
     const { data } = await serverClient
@@ -118,5 +121,7 @@ export async function getPublicDbSchemaVersion(): Promise<string | null> {
         .eq("key", "db_schema_version")
         .single();
 
-    return (data?.value as string | null | undefined) ?? null;
+    const raw = (data?.value as string | null | undefined) ?? null;
+    if (raw?.startsWith('"')) return JSON.parse(raw) as string;
+    return raw;
 }

@@ -268,7 +268,10 @@ export default function AdminDashboard({
                                 <ResumePanel key={`resume-${tabKey}`} />
                             )}
                             {activeTab === "migrations" && (
-                                <MigrationsPanel key={`migrations-${tabKey}`} />
+                                <MigrationsPanel
+                                    key={`migrations-${tabKey}`}
+                                    refugeMode={refugeMode}
+                                />
                             )}
                             {activeTab === "snapshots" && (
                                 <SnapshotsPanel key={`snapshots-${tabKey}`} />
@@ -285,10 +288,7 @@ export default function AdminDashboard({
                                 <DebugPanel key={`debug-${tabKey}`} />
                             )}
                             {activeTab === "config" && (
-                                <SiteConfigPanel
-                                    key={`config-${tabKey}`}
-                                    refugeMode={refugeMode}
-                                />
+                                <SiteConfigPanel key={`config-${tabKey}`} />
                             )}
                         </div>
                     </main>

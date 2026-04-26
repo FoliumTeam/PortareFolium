@@ -1,18 +1,10 @@
 "use server";
 
-import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
 type TagItem = { slug: string; name: string; color: string | null };
 type Category = { name: string; count: number };
-
-function refugeTagsDisabled() {
-    return {
-        success: false,
-        error: "TagsPanel is disabled in refuge mode",
-    };
-}
 
 // tags / categories 초기 데이터 조회
 export async function getTagsPanelBootstrap(): Promise<{
@@ -20,8 +12,7 @@ export async function getTagsPanelBootstrap(): Promise<{
     categories: Category[];
 }> {
     await requireAdminSession();
-    if (!serverClient || isSqliteRefugeMode())
-        return { tags: [], categories: [] };
+    if (!serverClient) return { tags: [], categories: [] };
 
     const [{ data: tagsData }, { data: categoriesData }] = await Promise.all([
         serverClient.from("tags").select("slug, name, color").order("name"),
@@ -58,8 +49,6 @@ export async function saveTagItem(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    if (isSqliteRefugeMode()) return refugeTagsDisabled();
-
     if (editSlug === "new") {
         const { error } = await serverClient.from("tags").insert(payload);
         if (error) return { success: false, error: error.message };
@@ -80,8 +69,6 @@ export async function deleteTagItem(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    if (isSqliteRefugeMode()) return refugeTagsDisabled();
-
     const { error } = await serverClient.from("tags").delete().eq("slug", slug);
     if (error) return { success: false, error: error.message };
     return { success: true };
@@ -94,8 +81,6 @@ export async function renamePostCategory(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
-
-    if (isSqliteRefugeMode()) return refugeTagsDisabled();
 
     const { error } = await serverClient
         .from("posts")
@@ -111,8 +96,6 @@ export async function deletePostCategory(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
-
-    if (isSqliteRefugeMode()) return refugeTagsDisabled();
 
     const { error } = await serverClient
         .from("posts")

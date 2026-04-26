@@ -1,8 +1,26 @@
 // 서버 시작 시 pending 마이그레이션 자동 실행
 import { serverClient } from "./supabase";
 import { getPendingMigrations } from "./migrations";
+import { isSqliteRefugeMode } from "./refuge/mode";
+import {
+    applySqliteRefugeMigration,
+    getSqliteRefugeSchemaVersion,
+} from "./refuge/sqlite-migrations";
 
 export async function autoMigrate(): Promise<void> {
+    if (isSqliteRefugeMode()) {
+        const dbVersion = getSqliteRefugeSchemaVersion();
+        if (!dbVersion) return;
+        const pending = getPendingMigrations(dbVersion);
+        for (const migration of pending) {
+            applySqliteRefugeMigration(migration);
+            console.log(
+                `[auto-migrate:sqlite-refuge] v${migration.version} 적용 완료`
+            );
+        }
+        return;
+    }
+
     if (!serverClient) return;
 
     try {

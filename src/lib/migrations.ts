@@ -12,6 +12,7 @@ export interface Migration {
     title: string;
     feature: string;
     sql: string;
+    sqliteSql?: string;
     manual?: string;
 }
 
