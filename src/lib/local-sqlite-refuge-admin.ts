@@ -1,9 +1,11 @@
 import type { Session } from "next-auth";
-import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import {
+    ensureRefugeModeLocalSecret,
+    isSqliteRefugeMode,
+    isSqliteRefugeRuntimeAllowed,
+} from "@/lib/refuge/mode";
 
 const LOCAL_REFUGE_ADMIN_BYPASS_VALUE = "local-dev-only";
-const LOCAL_REFUGE_AUTH_SECRET =
-    "portare-folium-sqlite-refuge-local-dev-secret";
 
 type EnvLike = Partial<Record<string, string | undefined>>;
 
@@ -19,9 +21,7 @@ export function isLocalSqliteRefugeRuntimeAllowed(
 ): boolean {
     return (
         env.SQLITE_REFUGE_ADMIN_BYPASS === LOCAL_REFUGE_ADMIN_BYPASS_VALUE &&
-        env.NODE_ENV !== "production" &&
-        env.VERCEL !== "1" &&
-        env.VERCEL_ENV !== "production"
+        isSqliteRefugeRuntimeAllowed(env)
     );
 }
 
@@ -62,7 +62,7 @@ export function getLocalSqliteRefugeAuthSecret(
 ): string {
     if (!isLocalSqliteRefugeRuntimeAllowed(env)) return "";
     if (!isSqliteRefugeMode()) return "";
-    return LOCAL_REFUGE_AUTH_SECRET;
+    return ensureRefugeModeLocalSecret();
 }
 
 export function createLocalSqliteRefugeAdminSession(): Session {

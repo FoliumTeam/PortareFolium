@@ -32,7 +32,7 @@ vi.mock("@/lib/refuge/mode", () => ({
 
 async function postStorageOps(body: Record<string, unknown>) {
     const { POST } = await import("@/app/api/storage-ops/route");
-    return POST({ json: async () => body } as never);
+    return POST({ headers: new Headers(), json: async () => body } as never);
 }
 
 describe("/api/storage-ops", () => {

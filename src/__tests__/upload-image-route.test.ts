@@ -40,6 +40,7 @@ describe("/api/upload-image", () => {
         formData.append("path", "blog/post/image.webp");
 
         const response = await POST({
+            headers: new Headers(),
             formData: async () => formData,
         } as never);
 

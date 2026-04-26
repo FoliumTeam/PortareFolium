@@ -10,11 +10,12 @@ export const REFUGE_SUPPORTED_TABLES = [
     "books",
     "editor_states",
     "gantt_chart_archives",
+    "database_snapshots",
 ] as const;
 
 export const REFUGE_EXCLUDED_TABLES = [
     "ai_agent_tokens",
-    "database_snapshots",
+    "admin_login_attempts",
 ] as const;
 
 export type RefugeSupportedTable = (typeof REFUGE_SUPPORTED_TABLES)[number];
@@ -28,6 +29,7 @@ export type RefugeModeState = {
     dbPath: string;
     manifestPath: string;
     journalPath: string;
+    localAuthSecret?: string;
 };
 
 export type RefugeManifest = {
@@ -62,6 +64,7 @@ const TABLE_IDENTITY_KEYS: Record<string, string[]> = {
     books: ["slug"],
     editor_states: ["id"],
     gantt_chart_archives: ["id"],
+    database_snapshots: ["id"],
     admin_login_attempts: ["key_hash"],
 };
 
@@ -81,5 +84,5 @@ export function isRefugeSupportedTable(table: string): boolean {
 }
 
 export function isRefugeQueryableTable(table: string): boolean {
-    return isRefugeSupportedTable(table) || table === "admin_login_attempts";
+    return isRefugeSupportedTable(table);
 }

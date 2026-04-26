@@ -36,6 +36,12 @@ describe("local sqlite refuge admin bypass gate", () => {
                 VERCEL_ENV: "production",
             })
         ).toBe(false);
+        expect(
+            isLocalSqliteRefugeRuntimeAllowed({
+                ...localEnv,
+                VERCEL_ENV: "preview",
+            })
+        ).toBe(false);
     });
 
     it("allows only localhost request hosts", () => {

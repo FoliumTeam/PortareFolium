@@ -4,6 +4,7 @@ import {
     CopyObjectCommand,
     DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
+import { assertSafeAdminMutationRequest } from "@/lib/admin-mutation-origin";
 import { requireAdminSession } from "@/lib/server-admin";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
 import {
@@ -76,8 +77,13 @@ async function deleteFolder(prefix: string) {
 
 export async function POST(req: NextRequest) {
     try {
+        assertSafeAdminMutationRequest(req);
         await requireAdminSession();
-    } catch {
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message.includes("mutation")) {
+            return NextResponse.json({ error: message }, { status: 403 });
+        }
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 

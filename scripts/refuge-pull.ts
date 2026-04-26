@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import {
     DEFAULT_REFUGE_BACKUP_PATH,
@@ -127,16 +128,11 @@ async function main(): Promise<void> {
                 createdAt: manifest.createdAt,
                 excludedTables: manifest.excludedTables,
                 unsupportedActions: [
-                    "content table delete",
-                    "slug rename",
-                    "image upload",
-                    "storage move/delete",
-                    "database snapshot mutation",
                     "agent token mutation",
-                    "tags management",
+                    "MCP token authentication",
                 ],
                 degradedSurfaces: [
-                    "R2-backed image/storage mutation controls return explicit refuge-mode errors",
+                    "Auth.js credentials login is bypassed only for explicit localhost refuge admin",
                     "refuge:push defaults to replay-plan dry-run unless --apply is supplied",
                 ],
             },
@@ -153,6 +149,7 @@ async function main(): Promise<void> {
             dbPath: REFUGE_DB_PATH,
             manifestPath: REFUGE_MANIFEST_PATH,
             journalPath: REFUGE_JOURNAL_PATH,
+            localAuthSecret: randomBytes(32).toString("hex"),
         };
         fs.writeFileSync(
             REFUGE_MODE_PATH,
