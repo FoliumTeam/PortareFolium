@@ -14,6 +14,14 @@ setup("Admin 로그인 + storageState 저장", async ({ page }) => {
 
     await page.goto("/admin/login");
 
+    if (page.url().match(/\/admin(?:#.*)?$/)) {
+        await expect(page.getByText(/admin 대시보드/i)).toBeVisible({
+            timeout: 15_000,
+        });
+        await page.context().storageState({ path: authFile });
+        return;
+    }
+
     // 관리자 credentials 입력
     await page.getByPlaceholder("admin@example.com").fill(email);
     await page.getByPlaceholder("••••••••").fill(password);
