@@ -4,11 +4,11 @@ const authFile = ".auth/user.json";
 
 setup("Admin 로그인 + storageState 저장", async ({ page }) => {
     const email = process.env.AUTH_ADMIN_EMAIL || process.env.E2E_EMAIL;
-    const password = process.env.E2E_PASSWORD;
+    const password = process.env.E2E_RUNTIME_PASSWORD;
 
     if (!email || !password) {
         throw new Error(
-            "AUTH_ADMIN_EMAIL 또는 E2E_EMAIL, 그리고 E2E_PASSWORD 환경 변수가 필요"
+            "Playwright config에서 AUTH_ADMIN_EMAIL과 E2E_RUNTIME_PASSWORD를 준비해야 함"
         );
     }
 
@@ -24,10 +24,12 @@ setup("Admin 로그인 + storageState 저장", async ({ page }) => {
 
     // 관리자 credentials 입력
     await page.getByPlaceholder("admin@example.com").fill(email);
-    await page.getByPlaceholder("••••••••").fill(password);
+    await page.getByLabel("비밀번호").fill(password);
 
     // 로그인 버튼 클릭
-    await page.getByRole("button", { name: /^로그인$/i }).click();
+    const loginButton = page.getByRole("button", { name: /^로그인$/i });
+    await expect(loginButton).toBeEnabled();
+    await loginButton.click();
 
     // /admin 대시보드 진입 대기
     await expect(page).toHaveURL(/\/admin(?:#.*)?$/, { timeout: 15_000 });

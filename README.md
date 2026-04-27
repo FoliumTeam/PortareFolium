@@ -213,10 +213,14 @@ GitHub Actions CI E2E workflow는 v0.12.50에서 제거됐음. Cloudflare R2 `pu
 
 ### 필요 로컬 env (`.env.local`)
 
-| 변수                            | 용도                         |
-| ------------------------------- | ---------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase 프로젝트 URL        |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public 키      |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase service_role secret |
-| `R2_PUBLIC_URL`                 | Cloudflare R2 public URL     |
-| `E2E_EMAIL`, `E2E_PASSWORD`     | 인증 E2E 로그인 자격         |
+| 변수                            | 용도                           |
+| ------------------------------- | ------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase 프로젝트 URL          |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public 키        |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase service_role secret   |
+| `R2_PUBLIC_URL`                 | Cloudflare R2 public URL       |
+| `E2E_EMAIL`                     | 인증 E2E 관리자 email override |
+
+인증 E2E 비밀번호는 `playwright.config.ts`가 실행 시 랜덤으로 생성하고, 같은 값으로
+`AUTH_ADMIN_PASSWORD_HASH`를 메모리에서 덮어씁니다. `.env.local`에 평문 E2E 비밀번호를
+저장하지 않습니다.

@@ -60,6 +60,12 @@ Credentials admin auth와 관리자 보안 hardening
   auth setup, rate limit, route gate, returnUrl, storage policy, job field, first-run password guide 회귀 테스트 추가/보강
 - `e2e/*`:
   credentials login 기반 authenticated Playwright setup 정렬
+- `playwright.config.ts`, `.env.example`, `README.md`:
+  E2E plaintext password env 제거와 runtime password/hash 생성 흐름 추가
+- `scripts/run-e2e-gate.mjs`, `scripts/start-next-e2e.mjs`, `.husky/pre-push`:
+  build와 Next start가 같은 runtime auth env를 쓰는 push gate 추가
+- `src/lib/runtime-env.ts`, `src/lib/admin-credentials.ts`, `src/lib/admin-auth-version.ts`:
+  build-time env 박제를 피하는 runtime auth env 조회 경계 추가
 
 ## Test Plan
 

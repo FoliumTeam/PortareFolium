@@ -1,7 +1,8 @@
 import type { Session } from "next-auth";
+import { readRuntimeEnv } from "@/lib/runtime-env";
 
 const getAdminEmail = () =>
-    (process.env.AUTH_ADMIN_EMAIL ?? "").trim().toLowerCase();
+    readRuntimeEnv("AUTH_ADMIN_EMAIL").trim().toLowerCase();
 
 // 관리자 이메일 허용 여부 확인
 export function isAdminEmail(email?: string | null): boolean {

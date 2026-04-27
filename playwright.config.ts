@@ -1,27 +1,97 @@
 import { defineConfig, devices } from "@playwright/test";
 import { randomBytes, scryptSync } from "node:crypto";
+import { mkdirSync, writeFileSync } from "node:fs";
 import dotenv from "dotenv";
 import path from "path";
 
-// .env.local에서 E2E_EMAIL, E2E_PASSWORD 등 로드
+// .env.local에서 E2E_EMAIL 등 로드
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 const authFile = ".auth/user.json";
 const e2eServerMode =
     process.env.E2E_SERVER_MODE ?? (process.env.CI ? "start" : "dev");
 
-if (e2eServerMode === "start" && !process.env.AUTH_SECRET) {
+const PLACEHOLDER_VALUES = new Set([
+    "admin@example.com",
+    "your-auth-secret",
+    "your_admin@example.com",
+    "change-me",
+    "changeme",
+    "secret",
+    "local-dev",
+]);
+
+function isPlaceholder(value: string | undefined): boolean {
+    if (!value) return true;
+    const normalized = value.trim().toLowerCase();
+    return (
+        PLACEHOLDER_VALUES.has(normalized) ||
+        normalized.includes("your_") ||
+        normalized.includes("your-")
+    );
+}
+
+function isValidEmail(value: string | undefined): boolean {
+    if (!value || isPlaceholder(value)) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidAuthSecret(value: string | undefined): boolean {
+    if (!value || isPlaceholder(value)) return false;
+    return !/\s/.test(value) && value.length >= 32;
+}
+
+function createPasswordHash(password: string): string {
+    const salt = randomBytes(16).toString("hex");
+    const hash = scryptSync(password, salt, 64).toString("hex");
+    return `scrypt$${salt}$${hash}`;
+}
+
+function createE2ePassword(): string {
+    return `E2e-${randomBytes(18).toString("base64url")}!Aa1`;
+}
+
+function getE2eAdminEmail(): string {
+    if (isValidEmail(process.env.E2E_EMAIL)) return process.env.E2E_EMAIL!;
+    if (isValidEmail(process.env.AUTH_ADMIN_EMAIL)) {
+        return process.env.AUTH_ADMIN_EMAIL!;
+    }
+    return "e2e-admin@example.test";
+}
+
+function getDefinedProcessEnv(): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(process.env).filter(
+            (entry): entry is [string, string] => entry[1] !== undefined
+        )
+    );
+}
+
+if (!isValidAuthSecret(process.env.AUTH_SECRET)) {
     process.env.AUTH_SECRET = randomBytes(32).toString("hex");
 }
 
-if (!process.env.AUTH_ADMIN_EMAIL && process.env.E2E_EMAIL) {
-    process.env.AUTH_ADMIN_EMAIL = process.env.E2E_EMAIL;
-}
+process.env.AUTH_ADMIN_EMAIL = getE2eAdminEmail();
+process.env.E2E_RUNTIME_PASSWORD =
+    process.env.E2E_RUNTIME_PASSWORD || createE2ePassword();
+process.env.AUTH_ADMIN_PASSWORD_HASH = createPasswordHash(
+    process.env.E2E_RUNTIME_PASSWORD
+);
 
-if (!process.env.AUTH_ADMIN_PASSWORD_HASH && process.env.E2E_PASSWORD) {
-    const salt = randomBytes(16).toString("hex");
-    const hash = scryptSync(process.env.E2E_PASSWORD, salt, 64).toString("hex");
-    process.env.AUTH_ADMIN_PASSWORD_HASH = `scrypt$${salt}$${hash}`;
+if (e2eServerMode === "start") {
+    mkdirSync(".auth", { recursive: true });
+    writeFileSync(
+        ".auth/e2e-env.json",
+        JSON.stringify(
+            {
+                AUTH_ADMIN_EMAIL: process.env.AUTH_ADMIN_EMAIL,
+                AUTH_ADMIN_PASSWORD_HASH: process.env.AUTH_ADMIN_PASSWORD_HASH,
+                AUTH_SECRET: process.env.AUTH_SECRET,
+            },
+            null,
+            2
+        )
+    );
 }
 
 const baseURL =
@@ -30,9 +100,7 @@ const baseURL =
         ? "http://127.0.0.1:3100"
         : "http://localhost:3000");
 const webServerCommand =
-    e2eServerMode === "start"
-        ? "pnpm exec next start -H 127.0.0.1 -p 3100"
-        : "pnpm dev";
+    e2eServerMode === "start" ? "node scripts/start-next-e2e.mjs" : "pnpm dev";
 
 export default defineConfig({
     testDir: "./e2e",
@@ -113,6 +181,7 @@ export default defineConfig({
     webServer: {
         // push gate: build + start, 수동 로컬 실행: dev
         command: webServerCommand,
+        env: getDefinedProcessEnv(),
         url: baseURL,
         reuseExistingServer: e2eServerMode !== "start",
         timeout: 120_000,

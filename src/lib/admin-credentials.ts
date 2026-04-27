@@ -1,4 +1,5 @@
 import { scryptSync, timingSafeEqual } from "node:crypto";
+import { readRuntimeEnv, readRuntimePasswordHashEnv } from "@/lib/runtime-env";
 
 const PASSWORD_HASH_PREFIX = "scrypt";
 
@@ -32,12 +33,12 @@ const PLACEHOLDER_VALUES = new Set([
 
 // Auth.js session secret은 AUTH_SECRET만 사용한다.
 export function getAuthSecret(): string {
-    return (process.env.AUTH_SECRET ?? "").trim();
+    return readRuntimeEnv("AUTH_SECRET").trim();
 }
 
 function getAdminCredentialEnv() {
-    const adminEmail = (process.env.AUTH_ADMIN_EMAIL ?? "").trim();
-    const passwordHash = (process.env.AUTH_ADMIN_PASSWORD_HASH ?? "").trim();
+    const adminEmail = readRuntimeEnv("AUTH_ADMIN_EMAIL").trim();
+    const passwordHash = readRuntimePasswordHashEnv().trim();
     const authSecret = getAuthSecret();
 
     return { adminEmail, passwordHash, authSecret };

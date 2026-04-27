@@ -6,9 +6,8 @@
   - `AUTH_SECRET` (Auth.js v5 표준 — 신규 배포 권장 키 이름)
   - `AUTH_ADMIN_EMAIL`
   - `AUTH_ADMIN_PASSWORD_HASH`
-- 기존에 `AUTH_SECRET`만 설정된 환경은 그대로 동작 — backward-compatible fallback. 차후 `AUTH_SECRET`으로 rename 권장
-- 로컬 E2E 또는 push 전 검증용으로 아래 값 추가
-  - `E2E_PASSWORD`
+- 로컬 E2E 또는 push 전 검증은 실행 시 랜덤 비밀번호와 hash를 메모리에서 생성
+- 필요하면 `E2E_EMAIL`만 설정해 테스트용 관리자 email override 가능
 - `AUTH_ADMIN_PASSWORD_HASH` 생성 예시
 
 ```bash
@@ -16,7 +15,7 @@ node -e "const { randomBytes, scryptSync } = require('crypto'); const salt = ran
 ```
 
 - `AUTH_ADMIN_EMAIL`에는 실제 관리자 이메일 1개만 입력
-- `E2E_PASSWORD`는 E2E가 관리자 로그인 폼에 입력할 평문 비밀번호
+- E2E 평문 비밀번호는 `.env.local`에 저장하지 않음
 - Google OAuth, legacy Supabase auth 관련 env는 제거 가능
 
 ## Credentials 보안 hardening 후 운영 점검
