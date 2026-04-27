@@ -55,11 +55,11 @@
 
 ### Authentication
 
-1. **Hardcoded fallback secret 금지** — `process.env.NEXTAUTH_SECRET || "local-dev"` 패턴 금지. NODE_ENV 오설정 시 prod 까지 노출 가능. env 부재면 boot fail.
+1. **Hardcoded fallback secret 금지** — `process.env.AUTH_SECRET || "local-dev"` 패턴 금지. NODE_ENV 오설정 시 prod 까지 노출 가능. env 부재면 boot fail.
 2. **Setup gate 가 rate limit counter 를 소모하지 않게** — env 미완료 / DB 미설정 같은 환경 문제는 counter 증가 없이 즉시 reject. 정상 admin 의 lockout 회피.
 3. **JWT invalidation fingerprint** — admin email + password hash 기반 fingerprint 를 token claim 에 포함, 매 검증 시 비교. env rotation 즉시 모든 세션 무효화.
 4. **Provider + email 이중 검증** — `signIn` callback 에서 provider 매칭 외에 `isAdminEmail(user?.email)` 추가 검증. 다른 경로의 user 객체 생성에도 admin 권한 부여 차단.
-5. **AUTH_SECRET 우선** — Auth.js v5 표준 (`getAuthSecret()` helper). `NEXTAUTH_SECRET` 은 backward-compatible fallback 으로만 유지.
+5. **AUTH_SECRET 단일 사용** — Auth.js v5 표준 (`getAuthSecret()` helper). legacy secret alias 나 hardcoded secret fallback 을 추가하지 않는다.
 6. **scrypt salt + length 검증** — password hash 파싱 시 prefix / hex 패턴 검사 후 `timingSafeEqual` 비교. 길이 불일치 시 즉시 false.
 
 ### Rate limiting

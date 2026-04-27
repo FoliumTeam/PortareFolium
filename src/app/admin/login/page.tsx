@@ -20,13 +20,19 @@ export default async function AdminLoginPage({
 }) {
     const { returnUrl } = await searchParams;
     const safeReturnUrl = getSafeAdminReturnUrl(returnUrl);
-    const session = await getEffectiveAdminSession();
-    if (isAdminSession(session)) {
-        redirect(safeReturnUrl);
+    const setupState = getAdminCredentialSetup();
+    const setupReady =
+        setupState.missingEnvKeys.length === 0 &&
+        setupState.invalidEnvKeys.length === 0;
+
+    if (setupReady) {
+        const session = await getEffectiveAdminSession();
+        if (isAdminSession(session)) {
+            redirect(safeReturnUrl);
+        }
     }
 
     let siteName = "";
-    const setupState = getAdminCredentialSetup();
     if (serverClient) {
         const { data } = await serverClient
             .from("site_config")
@@ -50,7 +56,7 @@ export default async function AdminLoginPage({
             siteName={siteName}
             returnUrl={safeReturnUrl}
             setupState={setupState}
-            showDetailedSetupGuide={process.env.NODE_ENV !== "production"}
+            showDetailedSetupGuide
         />
     );
 }

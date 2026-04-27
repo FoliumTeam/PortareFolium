@@ -2,17 +2,37 @@ import { scryptSync, timingSafeEqual } from "node:crypto";
 
 const PASSWORD_HASH_PREFIX = "scrypt";
 
-type AdminCredentialSetup = {
-    missingEnvKeys: string[];
+type AdminCredentialEnvKey =
+    | "AUTH_ADMIN_EMAIL"
+    | "AUTH_ADMIN_PASSWORD_HASH"
+    | "AUTH_SECRET";
+
+type AdminCredentialIssue = {
+    key: AdminCredentialEnvKey;
+    reason: string;
 };
 
-// AUTH_SECRET 우선, NEXTAUTH_SECRET fallback
+type AdminCredentialSetup = {
+    missingEnvKeys: AdminCredentialEnvKey[];
+    invalidEnvKeys: AdminCredentialIssue[];
+};
+
+const MIN_AUTH_SECRET_LENGTH = 32;
+const MIN_SCRYPT_SALT_HEX_LENGTH = 32;
+const MIN_SCRYPT_HASH_HEX_LENGTH = 128;
+const PLACEHOLDER_VALUES = new Set([
+    "your-auth-secret",
+    "your_salt_hex",
+    "your_hash_hex",
+    "change-me",
+    "changeme",
+    "secret",
+    "local-dev",
+]);
+
+// Auth.js session secret은 AUTH_SECRET만 사용한다.
 export function getAuthSecret(): string {
-    return (
-        process.env.AUTH_SECRET ??
-        process.env.NEXTAUTH_SECRET ??
-        ""
-    ).trim();
+    return (process.env.AUTH_SECRET ?? "").trim();
 }
 
 function getAdminCredentialEnv() {
@@ -23,6 +43,55 @@ function getAdminCredentialEnv() {
     return { adminEmail, passwordHash, authSecret };
 }
 
+function isPlaceholder(value: string): boolean {
+    const normalized = value.trim().toLowerCase();
+    return (
+        PLACEHOLDER_VALUES.has(normalized) ||
+        normalized.includes("your_") ||
+        normalized.includes("your-")
+    );
+}
+
+function validateAdminEmail(value: string): string | null {
+    if (isPlaceholder(value) || value.toLowerCase() === "admin@example.com") {
+        return "예시 email 값입니다. 실제 관리자 email로 바꾸세요.";
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return "email 형식이 아닙니다.";
+    }
+    return null;
+}
+
+function validateAuthSecret(value: string): string | null {
+    if (isPlaceholder(value)) {
+        return "예시 secret 값입니다. 랜덤 secret으로 바꾸세요.";
+    }
+    if (/\s/.test(value)) {
+        return "공백 없는 랜덤 문자열이어야 합니다.";
+    }
+    if (value.length < MIN_AUTH_SECRET_LENGTH) {
+        return `최소 ${MIN_AUTH_SECRET_LENGTH}자 이상의 랜덤 문자열이어야 합니다.`;
+    }
+    return null;
+}
+
+function validatePasswordHash(value: string): string | null {
+    if (isPlaceholder(value)) {
+        return "예시 password hash 값입니다. 실제 비밀번호로 scrypt hash를 생성하세요.";
+    }
+    const parsed = parseScryptHash(value);
+    if (!parsed) {
+        return "scrypt$<saltHex>$<hashHex> 형식이 아닙니다.";
+    }
+    if (parsed.saltHex.length < MIN_SCRYPT_SALT_HEX_LENGTH) {
+        return `salt는 최소 ${MIN_SCRYPT_SALT_HEX_LENGTH}자 hex여야 합니다.`;
+    }
+    if (parsed.hash.length * 2 < MIN_SCRYPT_HASH_HEX_LENGTH) {
+        return `hash는 최소 ${MIN_SCRYPT_HASH_HEX_LENGTH}자 hex여야 합니다.`;
+    }
+    return null;
+}
+
 // admin auth env 상태 수집
 export function getAdminCredentialSetup(): AdminCredentialSetup {
     const { adminEmail, passwordHash, authSecret } = getAdminCredentialEnv();
@@ -30,14 +99,38 @@ export function getAdminCredentialSetup(): AdminCredentialSetup {
         !adminEmail ? "AUTH_ADMIN_EMAIL" : null,
         !passwordHash ? "AUTH_ADMIN_PASSWORD_HASH" : null,
         !authSecret ? "AUTH_SECRET" : null,
-    ].filter((value): value is string => value !== null);
+    ].filter((value): value is AdminCredentialEnvKey => value !== null);
 
-    return { missingEnvKeys };
+    const invalidEnvKeys: AdminCredentialIssue[] = [
+        adminEmail
+            ? {
+                  key: "AUTH_ADMIN_EMAIL",
+                  reason: validateAdminEmail(adminEmail),
+              }
+            : null,
+        passwordHash
+            ? {
+                  key: "AUTH_ADMIN_PASSWORD_HASH",
+                  reason: validatePasswordHash(passwordHash),
+              }
+            : null,
+        authSecret
+            ? { key: "AUTH_SECRET", reason: validateAuthSecret(authSecret) }
+            : null,
+    ].filter(
+        (value): value is AdminCredentialIssue =>
+            value !== null && value.reason !== null
+    );
+
+    return { missingEnvKeys, invalidEnvKeys };
 }
 
 // admin auth env 준비 여부 판별
 export function isAdminCredentialSetupComplete(): boolean {
-    return getAdminCredentialSetup().missingEnvKeys.length === 0;
+    const setup = getAdminCredentialSetup();
+    return (
+        setup.missingEnvKeys.length === 0 && setup.invalidEnvKeys.length === 0
+    );
 }
 
 function parseScryptHash(

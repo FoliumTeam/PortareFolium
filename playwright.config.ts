@@ -10,8 +10,8 @@ const authFile = ".auth/user.json";
 const e2eServerMode =
     process.env.E2E_SERVER_MODE ?? (process.env.CI ? "start" : "dev");
 
-if (e2eServerMode === "start" && !process.env.NEXTAUTH_SECRET) {
-    process.env.NEXTAUTH_SECRET = "e2e-nextauth-secret";
+if (e2eServerMode === "start" && !process.env.AUTH_SECRET) {
+    process.env.AUTH_SECRET = randomBytes(32).toString("hex");
 }
 
 if (!process.env.AUTH_ADMIN_EMAIL && process.env.E2E_EMAIL) {

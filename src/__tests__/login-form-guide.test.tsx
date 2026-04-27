@@ -29,6 +29,7 @@ describe("login form env guide", () => {
                         "AUTH_ADMIN_PASSWORD_HASH",
                         "AUTH_SECRET",
                     ],
+                    invalidEnvKeys: [],
                 }}
             />
         );
@@ -36,6 +37,7 @@ describe("login form env guide", () => {
         expect(
             screen.getByText(/관리자 로그인 설정 필요/i)
         ).toBeInTheDocument();
+        expect(screen.getAllByText("누락")).toHaveLength(3);
         expect(
             screen.getByText(/용도:\s*관리자 로그인에 사용할 이메일/i)
         ).toBeInTheDocument();
@@ -70,27 +72,33 @@ describe("login form env guide", () => {
         });
     });
 
-    it("production 안내에서는 생성 명령을 숨김", () => {
+    it("invalid env 안내와 생성 명령을 표시", () => {
         render(
             <LoginForm
                 siteName="PortareFolium"
-                showDetailedSetupGuide={false}
                 setupState={{
-                    missingEnvKeys: [
-                        "AUTH_ADMIN_EMAIL",
-                        "AUTH_ADMIN_PASSWORD_HASH",
-                        "AUTH_SECRET",
+                    missingEnvKeys: [],
+                    invalidEnvKeys: [
+                        {
+                            key: "AUTH_SECRET",
+                            reason: "최소 32자 이상의 랜덤 문자열이어야 합니다.",
+                        },
                     ],
                 }}
             />
         );
 
+        expect(screen.getByText("수정 필요")).toBeInTheDocument();
         expect(
-            screen.queryByText(/`AUTH_ADMIN_PASSWORD_HASH` 생성 명령/i)
-        ).not.toBeInTheDocument();
+            screen.getByText(
+                /문제:\s*최소 32자 이상의 랜덤 문자열이어야 합니다./i
+            )
+        ).toBeInTheDocument();
         expect(
-            screen.queryByText(/`AUTH_SECRET` 생성 명령/i)
-        ).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "복사" })).toBeNull();
+            screen.getByText(/`AUTH_ADMIN_PASSWORD_HASH` 생성 명령/i)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/`AUTH_SECRET` 생성 명령/i)
+        ).toBeInTheDocument();
     });
 });

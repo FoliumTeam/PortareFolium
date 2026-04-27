@@ -44,8 +44,22 @@ export default function LoginForm({
     const [loading, setLoading] = useState(false);
     const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
     const { data: session, status } = useSession();
-    const setupReady = setupState.missingEnvKeys.length === 0;
+    const invalidEnvKeys = setupState.invalidEnvKeys ?? [];
+    const setupReady =
+        setupState.missingEnvKeys.length === 0 && invalidEnvKeys.length === 0;
     const safeReturnUrl = getSafeAdminReturnUrl(returnUrl);
+    const setupIssues = [
+        ...setupState.missingEnvKeys.map((key) => ({
+            key,
+            status: "누락",
+            reason: "값이 설정되지 않았습니다.",
+        })),
+        ...invalidEnvKeys.map((issue) => ({
+            key: issue.key,
+            status: "수정 필요",
+            reason: issue.reason,
+        })),
+    ];
 
     // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
     useEffect(() => {
@@ -138,24 +152,33 @@ export default function LoginForm({
                                     로그인을 사용할 수 있습니다.
                                 </p>
                                 <ul className="space-y-2 text-xs">
-                                    {setupState.missingEnvKeys.map((key) => (
+                                    {setupIssues.map((issue) => (
                                         <li
-                                            key={key}
+                                            key={`${issue.key}-${issue.status}`}
                                             className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 dark:border-amber-800 dark:bg-black/10"
                                         >
-                                            <p className="font-mono font-semibold">
-                                                {key}
-                                            </p>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="font-mono font-semibold">
+                                                    {issue.key}
+                                                </p>
+                                                <span className="rounded-full border border-amber-300 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:border-amber-700 dark:text-amber-200">
+                                                    {issue.status}
+                                                </span>
+                                            </div>
                                             <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
                                                 용도:{" "}
-                                                {ENV_DESCRIPTIONS[key]
+                                                {ENV_DESCRIPTIONS[issue.key]
                                                     ?.purpose ??
                                                     "관리자 로그인에 필요한 환경변수"}
                                             </p>
                                             <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
                                                 설정:{" "}
-                                                {ENV_DESCRIPTIONS[key]?.setup ??
+                                                {ENV_DESCRIPTIONS[issue.key]
+                                                    ?.setup ??
                                                     "환경변수에 값을 추가"}
+                                            </p>
+                                            <p className="mt-1 text-[11px] font-medium text-amber-900 dark:text-amber-100">
+                                                문제: {issue.reason}
                                             </p>
                                         </li>
                                     ))}

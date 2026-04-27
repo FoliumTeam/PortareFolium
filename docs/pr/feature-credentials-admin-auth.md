@@ -24,9 +24,9 @@ feature/credentials-admin-auth → main: credentials admin auth + 보안 hardeni
 - Public search jobField PostgREST raw filter 검증 (v0.12.83)
 - `pnpm overrides` production dependency 취약점 해소 (v0.12.84)
 - R2 path policy — `src/lib/r2-path-policy.ts` allowlist (`portfolio/`, `blog/`, `books/`, `about/`, `resume/`, `misc/`) + segment regex + traversal reject + 확장자 기반 ContentType + 15MB size cap (v0.12.87)
-- `NEXTAUTH_SECRET` dev fallback 제거 + setup gate (v0.12.88)
+- `AUTH_SECRET` dev fallback 제거 + setup gate (v0.12.88)
 - LIKE wildcard escape + agent-token SQL filter + JSON.parse guard (v0.12.90)
-- `AUTH_SECRET` 컨벤션 정렬 (Auth.js v5 표준, NEXTAUTH_SECRET fallback 유지) (v0.12.91)
+- `AUTH_SECRET` 컨벤션 정렬 (Auth.js v5 표준, AUTH_SECRET 유지) (v0.12.91)
 - MCP GET endpoint Bearer 인증 + invalid token IP throttle — `src/lib/mcp-rate-limit.ts` (v0.12.92)
 - Admin route gate — `src/proxy.ts` (v0.12.93, v0.12.101 에서 middleware → proxy 마이그레이션)
 - `docs/SECURITY.md` 추가 후 `.agents/directives/06-security.md` 로 흡수 (24개 lessons learned 정리)
@@ -93,6 +93,15 @@ feature/credentials-admin-auth → main: credentials admin auth + 보안 hardeni
 - `/admin/login` credentials 로그인만 허용하고, proxy/API/server action은 기존 session cookie + `requireAdminSession()` 경계를 유지
 - `admin_login_attempts`를 SQLite refuge local-only table로 지원해 rate limit fail-closed 정책을 유지하되 Supabase replay에서는 제외
 - refuge 운영 가이드와 security/architecture directive를 credentials-only 원칙으로 갱신
+
+### 12. Auth.js secret env 단일화 (v0.12.117)
+
+- Auth.js secret env를 `AUTH_SECRET` 하나로 단일화
+- legacy secret alias와 관련 문서 안내 제거
+- Playwright start-mode 기본 secret 주입도 `AUTH_SECRET`로 정렬
+- `/admin/login` first-run setup guide가 production에서도 missing/invalid auth env와 생성 명령을 안내하도록 보강
+- README에 Vercel fork 직행 사용자를 위한 admin credentials 생성 절차 추가
+
 ## Test Plan
 
 - [x] `pnpm exec tsc --noEmit`
@@ -104,7 +113,7 @@ feature/credentials-admin-auth → main: credentials admin auth + 보안 hardeni
 
 ## Manual deploy checklist
 
-- [ ] Vercel env: `AUTH_SECRET` 또는 `NEXTAUTH_SECRET` 설정
+- [ ] Vercel env: `AUTH_SECRET` 설정
 - [ ] Vercel env: `AUTH_ADMIN_EMAIL` + `AUTH_ADMIN_PASSWORD_HASH` 설정 (`scrypt$<salt>$<hash>` 형식)
 - [ ] Supabase 운영 DB 에 `admin_login_attempts` migration 적용 확인
 - [ ] 배포 후 `/admin/login` 외부 returnUrl 차단 + proxy redirect 동작 smoke check
@@ -134,7 +143,7 @@ d2bb7a6 feat: admin route middleware gate (v0.12.93)
 2e41af0 chore: AUTH_SECRET 컨벤션 정렬 (v0.12.91)
 21d0a1b fix: nextauth signIn 검증 강화 + LIKE escape + agent token 필터 (v0.12.90)
 d4b2ebc fix: admin 로그인 rate limit DB 부재 시 fail-closed (v0.12.89)
-6afd1ce fix: NEXTAUTH_SECRET fallback 제거 + admin 로그인 setup gate (v0.12.88)
+6afd1ce fix: AUTH_SECRET 제거 + admin 로그인 setup gate (v0.12.88)
 4334759 fix: R2 storage 경로 검증 강화 (v0.12.87)
 22b6870 fix: admin rate limit 정책 조정 (v0.12.86)
 20fa961 fix: admin rate limit 공유 저장소 추가 (v0.12.85)
