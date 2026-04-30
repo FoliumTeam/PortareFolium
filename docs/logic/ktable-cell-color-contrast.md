@@ -21,7 +21,7 @@ KTable 셀 색상은 inline style로 저장하지 않고 `data-tw-color` attribu
 하지만 실제 렌더링 색상은 모드에 따라 CSS에서 다르게 매핑한다.
 
 - 라이트 모드: `blue-200` → 밝은 pastel blue (`#bfdbfe`)
-- 다크 모드: `blue-200` → 더 어두운 blue (`#1d4ed8`)
+- 다크 모드: `blue-200` → 어둡지만 저채도인 muted blue (`oklch(0.36 0.055 255)`)
 
 즉, 같은 `data-tw-color="blue-200"`라도 `html.dark` 아래에서는 다크 모드용 색으로 바뀐다. 이 덕분에 저장 포맷과 툴바 옵션은 늘리지 않으면서 다크 모드에서 너무 밝은 셀 배경을 피할 수 있다.
 
@@ -43,7 +43,7 @@ html.dark
     .post-content.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="blue-200"] {
-    --ktable-cell-bg: #1d4ed8;
+    --ktable-cell-bg: oklch(0.36 0.055 255);
     --ktable-cell-fg: #f8fafc;
 }
 ```
@@ -85,6 +85,6 @@ table[data-ktable="true"] :is(th, td)[data-tw-color] :where(*) {
 
 - 색상 선택 목록과 저장값은 라이트/다크 모드에서 동일하다.
 - 라이트 모드에서는 기존 밝은 custom cell 색상을 유지한다.
-- 다크 모드에서는 같은 custom cell 선택값이 더 어두운 색으로 렌더링된다.
+- 다크 모드에서는 같은 custom cell 선택값이 더 어둡고 채도가 낮은 muted 색으로 렌더링된다.
 - 텍스트 색은 실제 모드별 배경색에 맞춰 CSS 변수로 같이 바뀐다.
 - inline style 없이 `data-tw-color`와 CSS만으로 editor/frontend 렌더링을 동일하게 유지한다.

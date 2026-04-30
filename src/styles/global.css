@@ -840,7 +840,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="slate-200"] {
-    --ktable-cell-bg: #334155;
+    --ktable-cell-bg: oklch(0.34 0.03 260);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="red-200"],
@@ -852,7 +852,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="red-200"] {
-    --ktable-cell-bg: #b91c1c;
+    --ktable-cell-bg: oklch(0.34 0.055 25);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="orange-200"],
@@ -864,7 +864,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="orange-200"] {
-    --ktable-cell-bg: #c2410c;
+    --ktable-cell-bg: oklch(0.36 0.055 55);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="yellow-200"],
@@ -876,7 +876,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="yellow-200"] {
-    --ktable-cell-bg: #a16207;
+    --ktable-cell-bg: oklch(0.38 0.05 90);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="green-200"],
@@ -888,7 +888,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="green-200"] {
-    --ktable-cell-bg: #15803d;
+    --ktable-cell-bg: oklch(0.36 0.05 145);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="blue-200"],
@@ -900,7 +900,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="blue-200"] {
-    --ktable-cell-bg: #1d4ed8;
+    --ktable-cell-bg: oklch(0.36 0.055 255);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="purple-200"],
@@ -912,7 +912,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="purple-200"] {
-    --ktable-cell-bg: #7e22ce;
+    --ktable-cell-bg: oklch(0.36 0.055 300);
     --ktable-cell-fg: #f8fafc;
 }
 html.dark .ProseMirror :is(th, td)[data-tw-color="pink-200"],
@@ -924,7 +924,7 @@ html.dark
     .portfolio-markdoc-body.prose
     table[data-ktable="true"]
     :is(th, td)[data-tw-color="pink-200"] {
-    --ktable-cell-bg: #be185d;
+    --ktable-cell-bg: oklch(0.36 0.055 345);
     --ktable-cell-fg: #f8fafc;
 }
 

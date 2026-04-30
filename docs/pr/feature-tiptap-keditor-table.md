@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.122 - KTable dark mode 색상 채도 완화
+
+- dark mode custom cell 색상을 고채도 Tailwind 계열 hex에서 저채도 `oklch()` muted palette로 조정.
+- light mode 색상 선택 목록과 저장값은 그대로 유지.
+- `data-tw-color` 대비 로직 문서를 muted dark palette 기준으로 갱신.
+
 ## v0.12.121 - RichMarkdownEditor KTable 편집 추가
 
 - original Tiptap `RichMarkdownEditor`에 KTable 삽입/편집 toolbar 통합.
