@@ -8,12 +8,15 @@ config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const SUPABASE_KEY =
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "";
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? "";
 
 if (!SUPABASE_URL || !SUPABASE_KEY || !R2_PUBLIC_URL) {
     console.error(
-        "환경변수 누락: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_PUBLIC_URL"
+        "환경변수 누락: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, R2_PUBLIC_URL"
     );
     process.exit(1);
 }

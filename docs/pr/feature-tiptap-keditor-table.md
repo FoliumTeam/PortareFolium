@@ -1,5 +1,12 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.123 - Supabase modern key 전환 지원
+
+- Supabase client와 maintenance script가 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` 를 우선 사용하도록 변경.
+- 기존 `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 는 전환용 fallback 으로 유지.
+- README, `.env.example`, SQLite refuge 문서에 Vercel env 교체와 legacy cleanup 안내 반영.
+- modern key 우선순위와 legacy fallback 회귀 테스트 추가.
+
 ## v0.12.122 - KTable dark mode 색상 채도 완화
 
 - dark mode custom cell 색상을 고채도 Tailwind 계열 hex에서 저채도 `oklch()` muted palette로 조정.

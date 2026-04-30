@@ -8,7 +8,10 @@ import { createClient } from "@supabase/supabase-js";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const SUPABASE_KEY =
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "";
 const BUCKET = "images";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID ?? "";
@@ -17,7 +20,7 @@ const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "";
 const R2_BUCKET = process.env.R2_BUCKET ?? "gvm1229-portfolio-images";
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("Supabase 환경변수 누락");
+    console.error("Supabase URL 또는 secret key 환경변수 누락");
     process.exit(1);
 }
 if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {

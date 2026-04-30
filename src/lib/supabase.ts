@@ -3,11 +3,17 @@ import { createRoutingServerClient } from "@/lib/refuge/server-client";
 import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const publishable =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    "";
+const secret =
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "";
 
 const realServerClient: SupabaseClient | null =
-    url && service ? createClient(url, service) : null;
+    url && secret ? createClient(url, secret) : null;
 
 export const serverClient: SupabaseClient | null =
     realServerClient || isSqliteRefugeMode()
@@ -15,6 +21,6 @@ export const serverClient: SupabaseClient | null =
         : null;
 
 export const browserClient: SupabaseClient | null =
-    url && anon ? createClient(url, anon) : null;
+    url && publishable ? createClient(url, publishable) : null;
 
 export const supabase = browserClient;
