@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.127 - Remove legacy ColoredTable
+
+- Remove `ColoredTable` / `FoliumTable` frontend component mapping, editor node, table extension, and color sync client component.
+- Remove `::colored-table` / `::folium-table` directive conversion and rendered colored-table cleanse paths.
+- Remove colored-table-only CSS, MCP schema guidance, prompt template usage, and related unit tests.
+
 ## v0.12.126 - Rendered table MDX cleanse
 
 - Automatically restores saved `colored-table-wrapper` HTML back to canonical `<ColoredTable ... />` JSX.

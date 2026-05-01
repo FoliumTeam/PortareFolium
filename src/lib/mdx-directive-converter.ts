@@ -2,8 +2,8 @@
  * JSX ↔ MDX directive 양방향 변환
  *
  * Supabase에는 표준 MDX(JSX) 형식 저장, MDXEditor에는 remark-directive 형식 사용.
- * - JSX: <YouTube id="x" />, <ColoredTable columns="..." rows="..." />, <ImageGroup layout="stack" images='["..."]' />
- * - MDX(Editor): ::youtube[]{id="x"}, ::colored-table[]{columns="..." rows="..."}, ::image-group[]{layout="stack" images='["..."]'}
+ * - JSX: <YouTube id="x" />, <ImageGroup layout="stack" images='["..."]' />
+ * - MDX(Editor): ::youtube[]{id="x"}, ::image-group[]{layout="stack" images='["..."]'}
  */
 
 /** JSX → MDX Directives (에디터 로드 시) */
@@ -31,29 +31,6 @@ export function jsxToDirective(content: string): string {
     out = out.replace(
         /<YouTube\s+id\s*=\s*"([^"]*)"\s*\/>/g,
         (_, id) => `::youtube[]{id="${id}"}`
-    );
-
-    // <ColoredTable ... /> 또는 <FoliumTable ... /> → ::colored-table[]{columns="..." rows="..."}
-    out = out.replace(
-        /<(?:ColoredTable|FoliumTable)\s+([\s\S]*?)\s*\/>/g,
-        (_, attrs) => {
-            // key={'val'}, key='val', key="val" 세 형식 모두 지원
-            const regex =
-                /(\w+)\s*=\s*(?:\{'((?:[^'\\]|\\.)*)'\}|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
-            const parts: string[] = [];
-            let m: RegExpExecArray | null;
-            while ((m = regex.exec(attrs)) !== null) {
-                let val = m[2] ?? m[3] ?? m[4];
-                // unescape \' to '
-                val = val.replace(/\\'/g, "'");
-                // tiptap-markdown이 JSX 속성값 [, ]에 link 문법 충돌 방지 backslash 주입하는 것 복원
-                val = val.replace(/\\([\[\]])/g, "$1");
-                // escape " to \"
-                val = val.replace(/"/g, '\\"');
-                parts.push(`${m[1]}="${val}"`);
-            }
-            return `::colored-table[]{${parts.join(" ")}}`;
-        }
     );
 
     // <ImageGroup ... /> → ::image-group[]{layout="..." images='[...]'}
@@ -141,28 +118,6 @@ export function directiveToJsx(content: string): string {
     out = out.replace(
         /::youtube\{#([^\s}]+)\}/g,
         (_, id) => `<YouTube id="${id}" />`
-    );
-
-    // ::colored-table 또는 ::folium-table directive → <ColoredTable attr={'val'} ... />
-    out = out.replace(
-        /::(?:colored-table|folium-table)(?:\[\])?\{([^}]*)\}/g,
-        (_, attrs) => {
-            const parts: string[] = [];
-            // lookahead로 attribute 경계 탐색 (bare quote가 값 안에 있어도 안전)
-            // MDXEditor 가 double quote를 포함한 값을 작은따옴표(')로 감쌀 수 있으므로 둘 다 지원
-            const regex = /(\w+)=(['"])([\s\S]*?)\2(?=\s+\w+=|$)/g;
-            let m: RegExpExecArray | null;
-            while ((m = regex.exec(attrs)) !== null) {
-                let cleanVal = m[3]
-                    .replace(/\\"/g, '"')
-                    .replace(/&#x22;/g, '"'); // MDXEditor HTML-encoded double quotes
-                // backslash-escaped brackets 복원 (tiptap-markdown 잔재 방어)
-                cleanVal = cleanVal.replace(/\\([\[\]])/g, "$1");
-                cleanVal = cleanVal.replace(/'/g, "\\'");
-                parts.push(`${m[1]}={'${cleanVal}'}`);
-            }
-            return `<ColoredTable ${parts.join(" ")} />`;
-        }
     );
 
     // ::image-group[]{layout="..." images='[...]'} → <ImageGroup ... />
