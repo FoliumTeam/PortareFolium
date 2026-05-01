@@ -1,5 +1,12 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.126 - Rendered table MDX cleanse
+
+- Automatically restores saved `colored-table-wrapper` HTML back to canonical `<ColoredTable ... />` JSX.
+- Normalizes raw `class` / `colspan` / `rowspan` HTML attributes before MDX render and editor saves.
+- Prevents `$0` and `$0.01` inside HTML table cells from being interpreted by remark-math/KaTeX.
+- Applies one shared cleanse path to frontend rendering and `RichMarkdownEditor` initial load/source/update flows, with regression tests.
+
 ## v0.12.124 - RichMarkdownEditor setContent flushSync 경고 제거
 
 - source mode 종료 후 Tiptap `setContent`를 React effect 본문에서 직접 실행하지 않도록 timer task로 지연.

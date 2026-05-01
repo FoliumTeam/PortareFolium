@@ -38,6 +38,7 @@ import {
     imageGroupDirectiveToHtml,
 } from "@/extensions/ImageGroupNode";
 import { jsxToDirective, directiveToJsx } from "@/lib/mdx-directive-converter";
+import { cleanseMarkdownContent } from "@/lib/markdown-cleanse";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import {
     ImageDropPaste,
@@ -148,7 +149,7 @@ export default function RichMarkdownEditor({
         if (!editor) return;
         saveScrollRatio();
         const md = getCleanMarkdown(editor);
-        setSourceText(directiveToJsx(md));
+        setSourceText(cleanseMarkdownContent(directiveToJsx(md)));
         setSourceMode(true);
     };
 
@@ -157,8 +158,10 @@ export default function RichMarkdownEditor({
         if (!editor) return;
         saveScrollRatio();
         // bare image URL → ![](url) markdown 변환 (paste된 URL이 image로 렌더링되도록)
-        const normalized = bareImageUrlsToMarkdown(sourceText);
-        const jsxContent = directiveToJsx(normalized);
+        const normalized = bareImageUrlsToMarkdown(
+            cleanseMarkdownContent(sourceText)
+        );
+        const jsxContent = cleanseMarkdownContent(directiveToJsx(normalized));
         const directives = jsxToDirective(jsxContent);
         const preprocessed = preprocessDirectiveContent(directives);
         onChange(jsxContent);
@@ -170,7 +173,7 @@ export default function RichMarkdownEditor({
     // source 모드에서 textarea 변경 (directive → JSX 변환 후 저장)
     const handleSourceChange = (val: string) => {
         setSourceText(val);
-        onChange(directiveToJsx(val));
+        onChange(cleanseMarkdownContent(directiveToJsx(val)));
     };
 
     // onSetThumbnail 최신 콜백 유지 (extension 재생성 없이 ref로 접근)
@@ -313,18 +316,25 @@ export default function RichMarkdownEditor({
         []
     );
 
-    const initialContent = useMemo(() => {
+    const initialValue = useMemo(() => {
         if (!value) return "";
+        if (value.trimStart().startsWith("{")) return value;
+        return cleanseMarkdownContent(value);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const initialContent = useMemo(() => {
+        if (!initialValue) return "";
         // Tiptap JSON 형식
-        if (value.trimStart().startsWith("{")) {
+        if (initialValue.trimStart().startsWith("{")) {
             try {
-                return JSON.parse(value);
+                return JSON.parse(initialValue);
             } catch {
                 // JSON 파싱 실패 시 마크다운으로 처리
             }
         }
         // JSX → directive 변환 후 Tiptap에 로드 (JSX를 그대로 넘기면 FoliumTable 등이 소실됨)
-        const directives = jsxToDirective(value);
+        const directives = jsxToDirective(initialValue);
         return preprocessDirectiveContent(directives);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -366,7 +376,7 @@ export default function RichMarkdownEditor({
         onUpdate({ editor: e }) {
             const md = getCleanMarkdown(e);
             // directive → JSX 변환 후 저장 (DB에는 항상 JSX 형식 유지)
-            onChange(directiveToJsx(md));
+            onChange(cleanseMarkdownContent(directiveToJsx(md)));
 
             // Trigger 1 — image 노드 제거 감지, debounce 후 onImagesRemoved 호출
             const after = collectImageSrcs(e);
@@ -437,6 +447,13 @@ export default function RichMarkdownEditor({
     useEffect(() => {
         if (editor) imagesBeforeRef.current = collectImageSrcs(editor);
     }, [editor, collectImageSrcs]);
+
+    // 기존 렌더링 HTML이 DB에 저장된 경우 최초 로드 때 표준 MDX/JSX 저장 형식으로 정리
+    useEffect(() => {
+        if (initialValue && initialValue !== value) onChange(initialValue);
+        // 최초 로드 보정만 수행
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // unmount 시 debounce timer 정리
     useEffect(() => {

@@ -13,6 +13,7 @@ import {
     directiveToJsx,
     transformOutsideCodeBlocks,
 } from "@/lib/mdx-directive-converter";
+import { cleanseMarkdownContent } from "@/lib/markdown-cleanse";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import MarkdownImage from "@/components/MarkdownImage";
 import ImageGroup from "@/components/ImageGroup";
@@ -237,8 +238,9 @@ export function getCachedMarkdown(
 
 export async function renderMarkdown(content: string): Promise<string> {
     // JSX 태그 내부 \[ \] escape 복원 (예외 경로로 DB에 오염된 content 방어)
-    let mdx = unescapeJsxBrackets(content);
+    let mdx = cleanseMarkdownContent(unescapeJsxBrackets(content));
     mdx = directiveToJsx(mdx);
+    mdx = cleanseMarkdownContent(mdx);
     mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
     try {
         // 콘텐츠 내 next/image import 제거 — renderToString 서버 컨텍스트 호환
