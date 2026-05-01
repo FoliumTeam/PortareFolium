@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.124 - RichMarkdownEditor setContent flushSync 경고 제거
+
+- source mode 종료 후 Tiptap `setContent`를 React effect 본문에서 직접 실행하지 않도록 timer task로 지연.
+- 빠른 mode 재전환과 unmount 시 예약 작업을 정리해 stale editor update 방지.
+- `flushSync was called from inside a lifecycle method` browser 경고 원인 제거.
+
 ## v0.12.123 - Supabase modern key 전환 지원
 
 - Supabase client와 maintenance script가 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` 를 우선 사용하도록 변경.
