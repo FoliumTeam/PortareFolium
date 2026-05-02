@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.129 - DB migration panel 제거
+
+- Admin sidebar, command palette, dashboard에서 migration tab과 panel render path 제거.
+- `/api/run-migrations` 수동 적용 route와 proxy matcher 제거.
+- Admin main DB 상태 카드는 유지하고 README에 자동 migration 동작 안내 반영.
+
 ## v0.12.128 - SQL 기반 migration catalog 생성
 
 - `supabase/migrations/001_*.sql` 파일들을 migration SQL의 단일 source of truth로 정리.

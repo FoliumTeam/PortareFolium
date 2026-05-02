@@ -8,7 +8,6 @@ import {
     ChartNoAxesGantt,
     User,
     ScrollText,
-    Database,
     Settings,
     KeyRound,
     Archive,
@@ -27,7 +26,6 @@ export const REFUGE_ADMIN_TABS = [
     "gantt-chart",
     "about",
     "resume",
-    "migrations",
     "snapshots",
     "prompts",
     "debug",
@@ -58,7 +56,6 @@ const SECTIONS = [
     {
         label: "System",
         items: [
-            { id: "migrations", label: "DB 마이그레이션", icon: Database },
             { id: "snapshots", label: "DB 스냅샷", icon: Archive },
             { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
             {
@@ -80,7 +77,6 @@ export type TabId =
     | "tags"
     | "about"
     | "resume"
-    | "migrations"
     | "snapshots"
     | "agent-tokens"
     | "prompts"

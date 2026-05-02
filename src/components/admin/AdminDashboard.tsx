@@ -13,7 +13,6 @@ import GanttChartPanel from "@/components/admin/panels/GanttChartPanel";
 import AboutPanel from "@/components/admin/panels/AboutPanel";
 import SiteConfigPanel from "@/components/admin/panels/SiteConfigPanel";
 import ResumePanel from "@/components/admin/panels/ResumePanel";
-import MigrationsPanel from "@/components/admin/panels/MigrationsPanel";
 import AgentTokensPanel from "@/components/admin/panels/AgentTokensPanel";
 import SnapshotsPanel from "@/components/admin/panels/SnapshotsPanel";
 import PromptLibraryPanel from "@/components/admin/panels/PromptLibraryPanel";
@@ -32,7 +31,6 @@ const PANELS_OWN_HEIGHT = new Set<TabId>([
     "portfolio",
     "gantt-chart",
     "resume",
-    "migrations",
     "snapshots",
     "agent-tokens",
     "prompts",
@@ -53,7 +51,6 @@ const VALID_TABS: TabId[] = [
     "gantt-chart",
     "about",
     "resume",
-    "migrations",
     "snapshots",
     "agent-tokens",
     "prompts",
@@ -273,12 +270,6 @@ export default function AdminDashboard({
                             )}
                             {activeTab === "resume" && (
                                 <ResumePanel key={`resume-${tabKey}`} />
-                            )}
-                            {activeTab === "migrations" && (
-                                <MigrationsPanel
-                                    key={`migrations-${tabKey}`}
-                                    refugeMode={refugeMode}
-                                />
                             )}
                             {activeTab === "snapshots" && (
                                 <SnapshotsPanel key={`snapshots-${tabKey}`} />

@@ -110,7 +110,7 @@ export async function getAdminProfileImage(): Promise<string> {
     return basics?.image ?? "";
 }
 
-// 공개 패널용 migrations db version 조회
+// Admin overview용 DB schema version 조회
 export async function getPublicDbSchemaVersion(): Promise<string | null> {
     if (isSqliteRefugeMode()) return getSqliteRefugeSchemaVersion();
     if (!serverClient) return null;
