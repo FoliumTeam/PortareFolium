@@ -417,10 +417,14 @@ html.dark .prose :where(td) {
     border-collapse: collapse;
     table-layout: fixed;
     overflow: hidden;
+    --editor-table-border: #94a3b8;
+}
+html.dark .ProseMirror table {
+    --editor-table-border: oklch(0.64 0.012 265);
 }
 .ProseMirror th,
 .ProseMirror td {
-    border: 1px solid var(--color-border, #d4d4d8);
+    border: 1px solid var(--editor-table-border, var(--color-border, #d4d4d8));
     padding: 0.5rem 0.75rem;
     vertical-align: top;
     position: relative;
@@ -467,7 +471,7 @@ html.dark .prose :where(td) {
 .post-content.prose :where(table[data-ktable="true"] td),
 .portfolio-markdoc-body.prose :where(table[data-ktable="true"] th),
 .portfolio-markdoc-body.prose :where(table[data-ktable="true"] td) {
-    border: 1px solid #94a3b8;
+    border: 1px solid #475569;
     background-color: color-mix(
         in oklch,
         var(--color-accent) 3%,
@@ -506,6 +510,14 @@ html.dark .portfolio-markdoc-body.prose :where(table[data-ktable="true"] th) {
         var(--color-accent) 12%,
         var(--color-surface-subtle, oklch(0.22 0.01 265))
     );
+}
+html.dark .ProseMirror table[data-ktable="true"] th,
+html.dark .ProseMirror table[data-ktable="true"] td {
+    border-color: oklch(0.64 0.012 265);
+}
+html.dark .ProseMirror th,
+html.dark .ProseMirror td {
+    border-color: oklch(0.64 0.012 265);
 }
 .ProseMirror table[data-table-bordered="false"] th,
 .ProseMirror table[data-table-bordered="false"] td,
@@ -1075,8 +1087,7 @@ html.dark
 
 /* General table overflow guard (KTable manages its own layout) */
 .post-content.prose :where(table:not([data-ktable="true"])),
-.portfolio-markdoc-body.prose
-    :where(table:not([data-ktable="true"])) {
+.portfolio-markdoc-body.prose :where(table:not([data-ktable="true"])) {
     display: block;
     overflow-x: auto;
 }

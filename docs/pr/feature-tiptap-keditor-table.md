@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.131 - Editor table border contrast 조정
+
+- ProseMirror table border를 editor 전용 token으로 분리해 light mode grid를 더 진하게 조정.
+- dark mode에서 `--color-border`가 이기지 않도록 explicit `border-color` override 추가.
+- KTable border tone과 borderless table cascade 기준 문서화.
+
 ## v0.12.130 - Debug DB migration failsafe 추가
 
 - Admin Debug panel에 pending DB migration을 수동 적용하는 failsafe 버튼 추가.
