@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.128 - SQL 기반 migration catalog 생성
+
+- `supabase/migrations/001_*.sql` 파일들을 migration SQL의 단일 source of truth로 정리.
+- `scripts/generate-migrations.ts`가 SQL 파일을 검증해 `src/lib/migrations.ts`를 build/dev 전에 생성하도록 추가.
+- Vercel runtime은 파일 시스템 SQL 읽기 없이 생성된 TS catalog로 autonomous migration을 실행.
+
 ## v0.12.127 - Remove legacy ColoredTable
 
 - Remove `ColoredTable` / `FoliumTable` frontend component mapping, editor node, table extension, and color sync client component.
