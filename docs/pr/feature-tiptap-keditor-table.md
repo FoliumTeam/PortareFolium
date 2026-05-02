@@ -31,11 +31,17 @@
 - Prevents `$0` and `$0.01` inside HTML table cells from being interpreted by remark-math/KaTeX.
 - Applies one shared cleanse path to frontend rendering and `RichMarkdownEditor` initial load/source/update flows, with regression tests.
 
-## v0.12.124 - RichMarkdownEditor setContent flushSync 경고 제거
+## v0.12.125 - RichMarkdownEditor setContent flushSync 경고 제거
 
 - source mode 종료 후 Tiptap `setContent`를 React effect 본문에서 직접 실행하지 않도록 timer task로 지연.
 - 빠른 mode 재전환과 unmount 시 예약 작업을 정리해 stale editor update 방지.
 - `flushSync was called from inside a lifecycle method` browser 경고 원인 제거.
+
+## v0.12.124 - v0.12 이후 Supabase 단일 migration script 추가
+
+- `src/lib/migrations.ts` / MigrationsPanel 기준으로 v0.12.0 이후 DB migration SQL을 단일 파일로 정리.
+- `admin_login_attempts` 테이블 생성과 `resume_data` 영문 row 제거 migration을 순서대로 포함.
+- v0.12.0 이전 DB에는 `migration-whole.sql`을 사용하도록 guard와 주석 추가.
 
 ## v0.12.123 - Supabase modern key 전환 지원
 
