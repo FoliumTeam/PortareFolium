@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { Wrench, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { executeLightboxSidecarBackfill } from "@/app/admin/actions/lightbox-sidecars";
+import {
+    applyPendingDbMigrations,
+    type DbMigrationApplyResult,
+} from "@/app/admin/actions/migrations";
 import type { LightboxSidecarBackfillSummary } from "@/lib/lightbox-sidecars";
 import {
     Dialog,
@@ -16,6 +20,11 @@ import {
 type RunState =
     | { type: "error"; message: string }
     | { type: "success"; summary: LightboxSidecarBackfillSummary }
+    | null;
+
+type MigrationRunState =
+    | { type: "error"; message: string }
+    | { type: "success"; summary: DbMigrationApplyResult }
     | null;
 
 type DebugEntryDetail = {
@@ -35,6 +44,13 @@ const BACKFILL_INDICATORS: RiskIndicator[] = [
     { label: "Cloudflare R2 사용량", value: "높음", tone: "danger" },
     { label: "Supabase 영향", value: "없음", tone: "safe" },
     { label: "권장 실행 횟수", value: "최초 1회", tone: "neutral" },
+];
+
+const DB_MIGRATION_INDICATORS: RiskIndicator[] = [
+    { label: "중복 실행", value: "idempotent", tone: "safe" },
+    { label: "Vercel 함수 실행", value: "중간", tone: "warn" },
+    { label: "Supabase 영향", value: "높음", tone: "danger" },
+    { label: "권장 실행 횟수", value: "필요 시", tone: "neutral" },
 ];
 
 const LIGHTBOX_BACKFILL_DETAIL: DebugEntryDetail = {
@@ -69,6 +85,22 @@ const LIGHTBOX_BACKFILL_DETAIL: DebugEntryDetail = {
 - 대량 자산이 있으면 사용량이 적은 시간대에 실행`,
 };
 
+const DB_MIGRATION_DETAIL: DebugEntryDetail = {
+    title: "DB migration failsafe",
+    description: `서버 시작 시 자동 마이그레이션이 정상 동작하지 않았을 때 사용하는 수동 failsafe입니다.
+
+- 현재 DB schema version을 확인
+- 누락된 migration을 순서대로 적용
+- Supabase mode에서는 service-role 전용 exec_sql() RPC 사용
+- SQLite refuge mode에서는 local refuge DB migration 적용
+
+권장:
+
+- 일반 운영에서는 자동 마이그레이션에 맡김
+- Admin 메인 DB 상태 카드에서 pending migration이 계속 보일 때만 실행
+- db_schema_version이 없으면 초기 setup.sql이 먼저 필요함`,
+};
+
 function indicatorClassName(tone: RiskIndicator["tone"]): string {
     if (tone === "safe") {
         return "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300";
@@ -90,6 +122,9 @@ export default function DebugPanel() {
     const [progressLabel, setProgressLabel] = useState("준비 중...");
     const [running, setRunning] = useState(false);
     const [result, setResult] = useState<RunState>(null);
+    const [migrationRunning, setMigrationRunning] = useState(false);
+    const [migrationResult, setMigrationResult] =
+        useState<MigrationRunState>(null);
 
     useEffect(() => {
         if (!running) return;
@@ -140,6 +175,26 @@ export default function DebugPanel() {
                 setProgressLabel("준비 중...");
             }, 500);
             setRunning(false);
+        }
+    };
+
+    const handleRunDbMigrations = async () => {
+        setMigrationRunning(true);
+        setMigrationResult(null);
+
+        try {
+            const summary = await applyPendingDbMigrations();
+            setMigrationResult({ type: "success", summary });
+        } catch (error) {
+            setMigrationResult({
+                type: "error",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "DB migration 실패",
+            });
+        } finally {
+            setMigrationRunning(false);
         }
     };
 
@@ -223,6 +278,61 @@ export default function DebugPanel() {
                     </div>
                 </div>
 
+                <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
+                    <div className="flex items-start gap-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-accent)/10 text-(--color-accent)">
+                            <Wrench className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-base font-semibold text-(--color-foreground)">
+                                DB migration failsafe
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-(--color-muted)">
+                                자동 마이그레이션이 적용되지 않았을 때 기존 DB
+                                마이그레이션 패널의 <strong>자동 적용</strong>{" "}
+                                버튼처럼 pending migration을 수동 실행합니다.
+                                일반 운영에서는 Admin 메인 DB 상태 카드가 계속
+                                pending을 표시할 때만 사용하세요.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {DB_MIGRATION_INDICATORS.map((indicator) => (
+                                    <span
+                                        key={indicator.label}
+                                        className={`rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${indicatorClassName(indicator.tone)}`}
+                                    >
+                                        {indicator.label}: {indicator.value}
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="mt-4">
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        onClick={() =>
+                                            void handleRunDbMigrations()
+                                        }
+                                        disabled={migrationRunning}
+                                        className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                    >
+                                        {migrationRunning
+                                            ? "적용 중..."
+                                            : "DB migration 적용"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setDetail(DB_MIGRATION_DETAIL)
+                                        }
+                                        className="border-(--color-border) bg-(--color-surface) text-(--color-muted) hover:text-(--color-foreground)"
+                                    >
+                                        Learn more
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {result?.type === "success" && (
                     <div className="rounded-2xl border border-green-500/30 bg-green-500/8 p-4">
                         <div className="flex items-start gap-3">
@@ -271,6 +381,37 @@ export default function DebugPanel() {
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                             <p className="text-sm text-red-600 dark:text-red-300">
                                 {result.message}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {migrationResult?.type === "success" && (
+                    <div className="rounded-2xl border border-green-500/30 bg-green-500/8 p-4">
+                        <div className="flex items-start gap-3">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                            <div className="space-y-1 text-sm text-green-700 dark:text-green-300">
+                                <p>mode={migrationResult.summary.mode}</p>
+                                <p>applied={migrationResult.summary.applied}</p>
+                                <p>
+                                    versions=
+                                    {migrationResult.summary.versions.length > 0
+                                        ? migrationResult.summary.versions.join(
+                                              ", "
+                                          )
+                                        : "none"}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {migrationResult?.type === "error" && (
+                    <div className="rounded-2xl border border-red-500/30 bg-red-500/8 p-4">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                            <p className="text-sm text-red-600 dark:text-red-300">
+                                {migrationResult.message}
                             </p>
                         </div>
                     </div>

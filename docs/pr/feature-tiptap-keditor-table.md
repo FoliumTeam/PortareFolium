@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.130 - Debug DB migration failsafe 추가
+
+- Admin Debug panel에 pending DB migration을 수동 적용하는 failsafe 버튼 추가.
+- 관리자 세션 기반 server action으로 Supabase/SQLite refuge migration 실행 경로 제공.
+- generated migration catalog가 repo Prettier 설정을 따르도록 generator 보강.
+
 ## v0.12.129 - DB migration panel 제거
 
 - Admin sidebar, command palette, dashboard에서 migration tab과 panel render path 제거.
