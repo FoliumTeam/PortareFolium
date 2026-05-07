@@ -1,5 +1,10 @@
-# PR: feature/tiptap-keditor-table
+﻿# PR: feature/tiptap-keditor-table
 
+## v0.12.132 - Gantt Chart export 설정 추가
+
+- Gantt Chart preview에 column span, aspect ratio, export resolution control 추가.
+- category 내부 duplicate task name 저장을 warning dialog와 server action validation으로 차단.
+- task title/category duplicate render key 충돌과 timeline label formatting 보강.
 ## v0.12.131 - Editor table border contrast 조정
 
 - ProseMirror table border를 editor 전용 token으로 분리해 light mode grid를 더 진하게 조정.
@@ -70,3 +75,4 @@
 - markdown HTML에 `data-ktable`, `data-tw-color`, `data-text-align` attribute 보존.
 - editor와 frontend 양쪽에서 KTable border, 배경, light/dark 대비 CSS 공유.
 - unit/E2E 회귀 테스트와 `data-tw-color` 대비 로직 문서 추가.
+

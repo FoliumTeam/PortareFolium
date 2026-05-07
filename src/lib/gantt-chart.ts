@@ -8,6 +8,10 @@ export type GanttChartTask = {
 
 export type GanttChartBarStyle = "rounded" | "square";
 
+export const GANTT_CHART_COLUMN_SPANS = [1, 2, 3, 5, 7] as const;
+
+export type GanttChartColumnSpan = (typeof GANTT_CHART_COLUMN_SPANS)[number];
+
 export type GanttChartArchive = {
     id: string;
     title: string;
@@ -30,6 +34,21 @@ export type GanttChartMonthGroup = {
     key: string;
     label: string;
     span: number;
+};
+
+export type GanttChartDuplicateTaskTitle = {
+    taskName: string;
+    category: string;
+};
+
+export type GanttChartTimelineColumn = {
+    key: string;
+    startKey: string;
+    endKey: string;
+    startIndex: number;
+    span: number;
+    label: string;
+    weekdayLabel: string;
 };
 
 const REQUIRED_HEADERS = [
@@ -101,6 +120,18 @@ function parseDateString(value: string): Date | null {
 
 function dateToKey(date: Date): string {
     return date.toISOString().slice(0, 10);
+}
+
+function formatTimelineColumnLabel(
+    start: GanttChartDay,
+    end: GanttChartDay
+): string {
+    const startMonth = Number(start.monthKey.slice(5));
+    const endMonth = Number(end.monthKey.slice(5));
+
+    if (start.key === end.key) return `${startMonth}.${start.dayNumber}`;
+
+    return `${startMonth}.${start.dayNumber}-${endMonth}.${end.dayNumber}`;
 }
 
 export function getGanttArchiveTitle(fileName: string): string {
@@ -232,6 +263,26 @@ export function normalizeStoredGanttTasks(value: unknown): GanttChartTask[] {
     });
 }
 
+export function findDuplicateGanttTaskTitleInCategory(
+    tasks: GanttChartTask[]
+): GanttChartDuplicateTaskTitle | null {
+    const seen = new Set<string>();
+
+    for (const task of tasks) {
+        const taskName = task.taskName.trim();
+        const category = task.category.trim();
+        const key = `${category}\u0000${taskName}`;
+
+        if (seen.has(key)) {
+            return { taskName, category };
+        }
+
+        seen.add(key);
+    }
+
+    return null;
+}
+
 export function buildGanttTimeline(tasks: GanttChartTask[]): {
     days: GanttChartDay[];
     months: GanttChartMonthGroup[];
@@ -286,6 +337,36 @@ export function buildGanttTimeline(tasks: GanttChartTask[]): {
     }
 
     return { days, months };
+}
+
+export function buildGanttTimelineColumns(
+    days: GanttChartDay[],
+    columnSpan: GanttChartColumnSpan
+): GanttChartTimelineColumn[] {
+    const columns: GanttChartTimelineColumn[] = [];
+
+    for (let index = 0; index < days.length; index += columnSpan) {
+        const columnDays = days.slice(index, index + columnSpan);
+        const start = columnDays[0];
+        const end = columnDays[columnDays.length - 1];
+
+        if (!start || !end) continue;
+
+        columns.push({
+            key: `${start.key}:${end.key}`,
+            startKey: start.key,
+            endKey: end.key,
+            startIndex: index,
+            span: columnDays.length,
+            label: formatTimelineColumnLabel(start, end),
+            weekdayLabel:
+                start.key === end.key
+                    ? start.weekdayLabel
+                    : `${start.weekdayLabel}-${end.weekdayLabel}`,
+        });
+    }
+
+    return columns;
 }
 
 export function countTaskDays(task: GanttChartTask): number {

@@ -25,11 +25,14 @@ import {
     type GanttChartArchiveRow,
 } from "@/app/admin/actions/gantt-chart";
 import {
+    GANTT_CHART_COLUMN_SPANS,
     buildGanttTimeline,
+    buildGanttTimelineColumns,
     countTaskDays,
     normalizeStoredGanttTasks,
     type GanttChartArchive,
     type GanttChartBarStyle,
+    type GanttChartColumnSpan,
     type GanttChartTask,
 } from "@/lib/gantt-chart";
 import { Button } from "@/components/ui/button";
@@ -47,12 +50,34 @@ type GanttChartArchiveDraft = {
     barStyle: GanttChartBarStyle;
 };
 
-const DAY_WIDTH = 44;
+const GANTT_CHART_ASPECT_RATIOS = [
+    { label: "1:1", width: 1, height: 1 },
+    { label: "4:3", width: 4, height: 3 },
+    { label: "3:2", width: 3, height: 2 },
+    { label: "16:9", width: 16, height: 9 },
+    { label: "21:9", width: 21, height: 9 },
+] as const;
+const GANTT_CHART_EXPORT_RESOLUTIONS = [
+    { label: "720p", height: 720 },
+    { label: "1080p", height: 1080 },
+    { label: "4K", height: 2160 },
+] as const;
+
+type GanttChartAspectRatio = (typeof GANTT_CHART_ASPECT_RATIOS)[number];
+type GanttChartAspectRatioLabel = GanttChartAspectRatio["label"];
+type GanttChartExportResolution =
+    (typeof GANTT_CHART_EXPORT_RESOLUTIONS)[number];
+type GanttChartExportResolutionLabel = GanttChartExportResolution["label"];
+
 const BAR_TEXT_MIN_WIDTH = 96;
 const BAR_DAY_COUNT_MIN_WIDTH = 152;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.5;
 const DEFAULT_BAR_STYLE: GanttChartBarStyle = "rounded";
+const DEFAULT_CHART_ASPECT_RATIO: GanttChartAspectRatioLabel = "16:9";
+const DEFAULT_EXPORT_RESOLUTION: GanttChartExportResolutionLabel = "1080p";
+const TASK_COLUMN_WIDTH = 448;
+const CHART_FIXED_HORIZONTAL_SPACE = TASK_COLUMN_WIDTH + 88;
 
 const formatDateTime = (value: string) =>
     new Date(value).toLocaleString("ko-KR");
@@ -69,6 +94,27 @@ const normalizeBarStyle = (value: string | null): GanttChartBarStyle =>
     value === "square" ? "square" : DEFAULT_BAR_STYLE;
 const clampZoom = (value: number) =>
     Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+const isGanttChartColumnSpan = (value: number): value is GanttChartColumnSpan =>
+    GANTT_CHART_COLUMN_SPANS.some((span) => span === value);
+const isGanttChartAspectRatioLabel = (
+    value: string
+): value is GanttChartAspectRatioLabel =>
+    GANTT_CHART_ASPECT_RATIOS.some((ratio) => ratio.label === value);
+const isGanttChartExportResolutionLabel = (
+    value: string
+): value is GanttChartExportResolutionLabel =>
+    GANTT_CHART_EXPORT_RESOLUTIONS.some(
+        (resolution) => resolution.label === value
+    );
+const getGanttChartAspectRatio = (label: GanttChartAspectRatioLabel) =>
+    GANTT_CHART_ASPECT_RATIOS.find((ratio) => ratio.label === label) ??
+    GANTT_CHART_ASPECT_RATIOS[3];
+const getGanttChartExportResolution = (
+    label: GanttChartExportResolutionLabel
+) =>
+    GANTT_CHART_EXPORT_RESOLUTIONS.find(
+        (resolution) => resolution.label === label
+    ) ?? GANTT_CHART_EXPORT_RESOLUTIONS[1];
 const mapArchiveRow = (row: GanttChartArchiveRow): GanttChartArchive => ({
     id: row.id,
     title: row.title,
@@ -96,23 +142,69 @@ const getErrorMessage = (error: unknown, fallback: string) =>
 
 const GanttChartPreview = ({
     archive,
+    aspectRatio,
+    columnSpan,
     showComments,
 }: {
     archive: GanttChartArchive;
+    aspectRatio: GanttChartAspectRatio;
+    columnSpan: GanttChartColumnSpan;
     showComments: boolean;
 }) => {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const [measuredHeight, setMeasuredHeight] = useState(0);
     const { days, months } = buildGanttTimeline(archive.tasks);
+    const columns = buildGanttTimelineColumns(days, columnSpan);
     const dayIndexMap = new Map(days.map((day, index) => [day.key, index]));
-    const timelineWidth = days.length * DAY_WIDTH;
+    const taskRowMinHeight = showComments ? 60 : 44;
+    const fallbackHeight =
+        64 +
+        96 +
+        56 +
+        archive.tasks.length * taskRowMinHeight +
+        Math.max(0, archive.tasks.length) * 16;
+    const chartHeight = Math.max(fallbackHeight, measuredHeight);
+    const chartWidth = Math.round(
+        (chartHeight * aspectRatio.width) / aspectRatio.height
+    );
+    const timelineWidth = Math.max(
+        320,
+        chartWidth - CHART_FIXED_HORIZONTAL_SPACE
+    );
+    const dayWidth = days.length > 0 ? timelineWidth / days.length : 0;
     const AXIS_COLOR = "#64748b";
     const GRID_COLOR = "#e2e8f0";
     const TRACK_COLOR = "#f8fafc";
     const WEEKEND_COLOR = "#f1f5f9";
     const DEFAULT_BAR_COLOR = "var(--color-accent)";
 
+    useEffect(() => {
+        const root = rootRef.current;
+        if (!root) return;
+
+        const updateMeasuredHeight = () => {
+            const nextHeight = Math.ceil(root.scrollHeight);
+            setMeasuredHeight((currentHeight) =>
+                Math.abs(currentHeight - nextHeight) > 1
+                    ? nextHeight
+                    : currentHeight
+            );
+        };
+
+        const resizeObserver = new ResizeObserver(updateMeasuredHeight);
+        resizeObserver.observe(root);
+        updateMeasuredHeight();
+
+        return () => resizeObserver.disconnect();
+    }, [archive.tasks.length, aspectRatio.label, columnSpan, showComments]);
+
     return (
-        <div className="min-w-max rounded-[2rem] bg-white p-8 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-            <div className="mb-8 space-y-2">
+        <div
+            ref={rootRef}
+            className="flex min-w-max flex-col rounded-[2rem] bg-white p-8 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+            style={{ width: chartWidth }}
+        >
+            <div className="mb-8 shrink-0 space-y-2">
                 <h3 className="text-3xl font-bold tracking-tight">
                     {archive.title}
                 </h3>
@@ -122,7 +214,13 @@ const GanttChartPreview = ({
                     {formatDateLabel(days[days.length - 1]?.key ?? "")}
                 </p>
             </div>
-            <div className="grid grid-cols-[18rem_minmax(0,1fr)] items-start gap-x-6 gap-y-4">
+            <div
+                className="grid flex-1 items-stretch gap-x-6 gap-y-4"
+                style={{
+                    gridTemplateColumns: `${TASK_COLUMN_WIDTH}px minmax(0, 1fr)`,
+                    gridTemplateRows: `auto repeat(${archive.tasks.length}, minmax(${taskRowMinHeight}px, auto))`,
+                }}
+            >
                 <div className="space-y-1 pt-2">
                     <p
                         className="text-xs font-semibold tracking-[0.24em] uppercase"
@@ -141,7 +239,7 @@ const GanttChartPreview = ({
                                 key={month.key}
                                 className="text-sm font-semibold"
                                 style={{
-                                    width: month.span * DAY_WIDTH,
+                                    width: month.span * dayWidth,
                                     color: AXIS_COLOR,
                                 }}
                             >
@@ -151,20 +249,20 @@ const GanttChartPreview = ({
                     </div>
                     <div className="relative" style={{ width: timelineWidth }}>
                         <div className="flex">
-                            {days.map((day) => (
+                            {columns.map((column) => (
                                 <div
-                                    key={day.key}
-                                    className="text-center"
-                                    style={{ width: DAY_WIDTH }}
+                                    key={column.key}
+                                    className="overflow-hidden px-0.5 text-center"
+                                    style={{ width: column.span * dayWidth }}
                                 >
-                                    <p className="text-xs font-semibold text-slate-700">
-                                        {day.dayNumber}
+                                    <p className="truncate text-xs font-semibold text-slate-700">
+                                        {column.label}
                                     </p>
                                     <p
-                                        className="text-[10px]"
+                                        className="truncate text-[10px]"
                                         style={{ color: AXIS_COLOR }}
                                     >
-                                        {day.weekdayLabel}
+                                        {column.weekdayLabel}
                                     </p>
                                 </div>
                             ))}
@@ -175,11 +273,12 @@ const GanttChartPreview = ({
                         />
                     </div>
                 </div>
-                {archive.tasks.map((task) => {
+                {archive.tasks.map((task, taskIndex) => {
                     const startIndex = dayIndexMap.get(task.startDate) ?? 0;
                     const endIndex =
                         dayIndexMap.get(task.endDate) ?? startIndex;
-                    const barWidth = (endIndex - startIndex + 1) * DAY_WIDTH;
+                    const barWidth = (endIndex - startIndex + 1) * dayWidth;
+                    const barInset = Math.min(2, dayWidth / 4);
                     const showBarText = barWidth >= BAR_TEXT_MIN_WIDTH;
                     const showDayCount = barWidth >= BAR_DAY_COUNT_MIN_WIDTH;
                     const taskDays = countTaskDays(task);
@@ -189,11 +288,11 @@ const GanttChartPreview = ({
 
                     return (
                         <Fragment
-                            key={`${archive.id}-${task.taskName}-${task.startDate}`}
+                            key={`${archive.id}-${task.category}-${task.taskName}-${task.startDate}-${taskIndex}`}
                         >
                             <div className="flex min-w-0 flex-col justify-center gap-1 py-2">
-                                <div className="flex min-w-0 items-center gap-2">
-                                    <p className="truncate text-sm font-semibold text-slate-900">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <p className="max-w-full min-w-0 text-sm font-semibold break-words text-slate-900">
                                         {task.taskName}
                                     </p>
                                     {task.category && (
@@ -229,21 +328,35 @@ const GanttChartPreview = ({
                                 }`}
                                 style={{
                                     width: timelineWidth,
-                                    height: showComments ? 60 : 44,
+                                    height: "100%",
                                     backgroundColor: TRACK_COLOR,
                                 }}
                             >
                                 {days.map((day, index) => (
                                     <div
-                                        key={`${task.taskName}-${day.key}`}
+                                        key={`${taskIndex}-${task.category}-${task.taskName}-${day.key}`}
                                         className="absolute inset-y-0"
                                         style={{
-                                            left: index * DAY_WIDTH,
-                                            width: DAY_WIDTH,
-                                            borderRight: `1px solid ${GRID_COLOR}`,
+                                            left: index * dayWidth,
+                                            width: dayWidth,
                                             backgroundColor: day.isWeekend
                                                 ? WEEKEND_COLOR
                                                 : "transparent",
+                                        }}
+                                    />
+                                ))}
+                                {columns.map((column) => (
+                                    <div
+                                        key={`${taskIndex}-${task.category}-${task.taskName}-${column.key}`}
+                                        className="pointer-events-none absolute inset-y-0"
+                                        style={{
+                                            left:
+                                                (column.startIndex +
+                                                    column.span) *
+                                                    dayWidth -
+                                                1,
+                                            width: 1,
+                                            backgroundColor: GRID_COLOR,
                                         }}
                                     />
                                 ))}
@@ -254,10 +367,10 @@ const GanttChartPreview = ({
                                             : "rounded-full"
                                     }`}
                                     style={{
-                                        left: startIndex * DAY_WIDTH + 2,
+                                        left: startIndex * dayWidth + barInset,
                                         width: Math.max(
-                                            barWidth - 4,
-                                            DAY_WIDTH - 4
+                                            barWidth - barInset * 2,
+                                            Math.max(4, dayWidth - barInset * 2)
                                         ),
                                         backgroundColor: barColor,
                                         color: "#ffffff",
@@ -323,8 +436,17 @@ const GanttChartPanel = () => {
     const [editModalArchive, setEditModalArchive] =
         useState<GanttChartArchive | null>(null);
     const [categoryColorModalOpen, setCategoryColorModalOpen] = useState(false);
+    const [aspectRatioLabel, setAspectRatioLabel] =
+        useState<GanttChartAspectRatioLabel>(DEFAULT_CHART_ASPECT_RATIO);
+    const [exportResolutionLabel, setExportResolutionLabel] =
+        useState<GanttChartExportResolutionLabel>(DEFAULT_EXPORT_RESOLUTION);
+    const [columnSpan, setColumnSpan] = useState<GanttChartColumnSpan>(1);
     const [showComments, setShowComments] = useState(false);
 
+    const aspectRatio = getGanttChartAspectRatio(aspectRatioLabel);
+    const exportResolution = getGanttChartExportResolution(
+        exportResolutionLabel
+    );
     const selectedArchive =
         archives.find((archive) => archive.id === selectedArchiveId) ?? null;
     const selectedDraft =
@@ -413,7 +535,7 @@ const GanttChartPanel = () => {
         if (!selectedArchive) return;
         shouldFitRef.current = true;
         userZoomedRef.current = false;
-    }, [selectedArchive]);
+    }, [selectedArchive, aspectRatioLabel, columnSpan]);
 
     useEffect(() => {
         const viewport = viewportRef.current;
@@ -442,7 +564,7 @@ const GanttChartPanel = () => {
         resizeObserver.observe(chart);
         updateSize();
         return () => resizeObserver.disconnect();
-    }, [selectedArchive]);
+    }, [selectedArchive, aspectRatioLabel, columnSpan]);
 
     const applyZoom = (nextZoom: number, markManual: boolean) => {
         const viewport = viewportRef.current;
@@ -547,9 +669,11 @@ const GanttChartPanel = () => {
             target.style.transformOrigin = "top left";
             const width = Math.ceil(target.scrollWidth);
             const height = Math.ceil(target.scrollHeight);
+            const exportScale =
+                height > 0 ? exportResolution.height / height : 1;
             const canvas = await html2canvas(target, {
                 backgroundColor: "#ffffff",
-                scale: 2,
+                scale: exportScale,
                 useCORS: true,
                 width,
                 height,
@@ -565,14 +689,14 @@ const GanttChartPanel = () => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `${buildDownloadName(selectedArchive.title)}.jpg`;
+            link.download = `${buildDownloadName(selectedArchive.title)}-${exportResolution.label}.jpg`;
             document.body.appendChild(link);
             link.click();
             link.remove();
             URL.revokeObjectURL(url);
             setStatus({
                 ok: true,
-                text: `${selectedArchive.title}.jpg 다운로드 시작`,
+                text: `${selectedArchive.title}-${exportResolution.label}.jpg 다운로드 시작`,
             });
         } catch (error) {
             setStatus({
@@ -913,126 +1037,261 @@ const GanttChartPanel = () => {
                         ) : (
                             <>
                                 <div className="border-b border-(--color-border) px-4 py-3">
-                                    <div className="flex flex-wrap items-end gap-3">
-                                        <div className="min-w-0 flex-1 space-y-2">
-                                            <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                Chart Title
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={
-                                                    selectedDraft?.title ?? ""
-                                                }
-                                                onChange={(event) =>
-                                                    updateSelectedDraft({
-                                                        title: event.target
-                                                            .value,
-                                                    })
-                                                }
-                                                className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                Bar Shape
-                                            </label>
-                                            <select
-                                                value={
-                                                    selectedDraft?.barStyle ??
-                                                    DEFAULT_BAR_STYLE
-                                                }
-                                                onChange={(event) =>
-                                                    updateSelectedDraft({
-                                                        barStyle: event.target
-                                                            .value as GanttChartBarStyle,
-                                                    })
-                                                }
-                                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
-                                            >
-                                                <option value="rounded">
-                                                    Rounded
-                                                </option>
-                                                <option value="square">
-                                                    Square
-                                                </option>
-                                            </select>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                setCategoryColorModalOpen(true)
-                                            }
-                                            className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                                        >
-                                            <Palette className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                                            <span className="whitespace-nowrap">
-                                                Category Colors
-                                            </span>
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                setShowComments((v) => !v)
-                                            }
-                                            className={
-                                                showComments
-                                                    ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                                                    : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
-                                            }
-                                        >
-                                            <span className="whitespace-nowrap">
-                                                Comments{" "}
-                                                {showComments ? "ON" : "OFF"}
-                                            </span>
-                                        </Button>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                size="sm"
-                                                onClick={handleFitZoom}
-                                                className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                                            >
-                                                Fit
-                                            </Button>
+                                    <div className="overflow-x-auto pb-2">
+                                        <div className="flex min-w-max items-end gap-3">
+                                            <div className="w-40 shrink-0 space-y-2">
+                                                <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
+                                                    Chart Title
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={
+                                                        selectedDraft?.title ??
+                                                        ""
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedDraft({
+                                                            title: event.target
+                                                                .value,
+                                                        })
+                                                    }
+                                                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                                                />
+                                            </div>
+                                            <div className="shrink-0 space-y-2">
+                                                <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
+                                                    Bar Shape
+                                                </label>
+                                                <select
+                                                    value={
+                                                        selectedDraft?.barStyle ??
+                                                        DEFAULT_BAR_STYLE
+                                                    }
+                                                    onChange={(event) =>
+                                                        updateSelectedDraft({
+                                                            barStyle: event
+                                                                .target
+                                                                .value as GanttChartBarStyle,
+                                                        })
+                                                    }
+                                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
+                                                >
+                                                    <option value="rounded">
+                                                        Rounded
+                                                    </option>
+                                                    <option value="square">
+                                                        Square
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div className="shrink-0 space-y-2">
+                                                <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
+                                                    Column Width
+                                                </label>
+                                                <select
+                                                    value={columnSpan}
+                                                    onChange={(event) => {
+                                                        const nextColumnSpan =
+                                                            Number(
+                                                                event.target
+                                                                    .value
+                                                            );
+                                                        if (
+                                                            isGanttChartColumnSpan(
+                                                                nextColumnSpan
+                                                            )
+                                                        ) {
+                                                            setColumnSpan(
+                                                                nextColumnSpan
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
+                                                >
+                                                    {GANTT_CHART_COLUMN_SPANS.map(
+                                                        (span) => (
+                                                            <option
+                                                                key={span}
+                                                                value={span}
+                                                            >
+                                                                {span}{" "}
+                                                                {span === 1
+                                                                    ? "day"
+                                                                    : "days"}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                            </div>
+                                            <div className="shrink-0 space-y-2">
+                                                <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
+                                                    Export Resolution
+                                                </label>
+                                                <select
+                                                    value={
+                                                        exportResolutionLabel
+                                                    }
+                                                    onChange={(event) => {
+                                                        const nextResolution =
+                                                            event.target.value;
+                                                        if (
+                                                            isGanttChartExportResolutionLabel(
+                                                                nextResolution
+                                                            )
+                                                        ) {
+                                                            setExportResolutionLabel(
+                                                                nextResolution
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
+                                                >
+                                                    {GANTT_CHART_EXPORT_RESOLUTIONS.map(
+                                                        (resolution) => (
+                                                            <option
+                                                                key={
+                                                                    resolution.label
+                                                                }
+                                                                value={
+                                                                    resolution.label
+                                                                }
+                                                            >
+                                                                {
+                                                                    resolution.label
+                                                                }
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                            </div>
+                                            <div className="shrink-0 space-y-2">
+                                                <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
+                                                    Aspect Ratio
+                                                </label>
+                                                <select
+                                                    value={aspectRatioLabel}
+                                                    onChange={(event) => {
+                                                        const nextAspectRatio =
+                                                            event.target.value;
+                                                        if (
+                                                            isGanttChartAspectRatioLabel(
+                                                                nextAspectRatio
+                                                            )
+                                                        ) {
+                                                            setAspectRatioLabel(
+                                                                nextAspectRatio
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
+                                                >
+                                                    {GANTT_CHART_ASPECT_RATIOS.map(
+                                                        (ratio) => (
+                                                            <option
+                                                                key={
+                                                                    ratio.label
+                                                                }
+                                                                value={
+                                                                    ratio.label
+                                                                }
+                                                            >
+                                                                {ratio.label}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                            </div>
                                             <Button
                                                 size="sm"
                                                 onClick={() =>
-                                                    applyZoom(zoom / 1.15, true)
+                                                    setCategoryColorModalOpen(
+                                                        true
+                                                    )
                                                 }
                                                 className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                                             >
-                                                <ZoomOut className="h-3.5 w-3.5 shrink-0" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    applyZoom(zoom * 1.15, true)
-                                                }
-                                                className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                                            >
-                                                <ZoomIn className="h-3.5 w-3.5 shrink-0" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    void handleSaveSettings()
-                                                }
-                                                disabled={
-                                                    !isSettingsDirty ||
-                                                    savingSettings
-                                                }
-                                                className="bg-green-600 text-white hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
-                                            >
+                                                <Palette className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                                 <span className="whitespace-nowrap">
-                                                    {savingSettings
-                                                        ? "저장 중..."
-                                                        : "설정 저장"}
+                                                    Category Colors
                                                 </span>
                                             </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                    setShowComments((v) => !v)
+                                                }
+                                                className={
+                                                    showComments
+                                                        ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                                        : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
+                                                }
+                                            >
+                                                <span className="whitespace-nowrap">
+                                                    Comments{" "}
+                                                    {showComments
+                                                        ? "ON"
+                                                        : "OFF"}
+                                                </span>
+                                            </Button>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={handleFitZoom}
+                                                    className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                                >
+                                                    Fit
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        applyZoom(
+                                                            zoom / 1.15,
+                                                            true
+                                                        )
+                                                    }
+                                                    className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                                >
+                                                    <ZoomOut className="h-3.5 w-3.5 shrink-0" />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        applyZoom(
+                                                            zoom * 1.15,
+                                                            true
+                                                        )
+                                                    }
+                                                    className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                                >
+                                                    <ZoomIn className="h-3.5 w-3.5 shrink-0" />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        void handleSaveSettings()
+                                                    }
+                                                    disabled={
+                                                        !isSettingsDirty ||
+                                                        savingSettings
+                                                    }
+                                                    className="bg-green-600 text-white hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                                                >
+                                                    <span className="whitespace-nowrap">
+                                                        {savingSettings
+                                                            ? "저장 중..."
+                                                            : "설정 저장"}
+                                                    </span>
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                     <p className="mt-2 text-xs text-(--color-muted)">
                                         zoom {(zoom * 100).toFixed(0)}% · drag로
-                                        이동 · wheel로 확대/축소
+                                        이동 · wheel로 확대/축소 · column{" "}
+                                        {columnSpan}{" "}
+                                        {columnSpan === 1 ? "day" : "days"} ·
+                                        aspect ratio {aspectRatioLabel} · export{" "}
+                                        {exportResolutionLabel}
                                     </p>
                                 </div>
                                 <div
@@ -1073,6 +1332,8 @@ const GanttChartPanel = () => {
                                                         selectedDraft?.barStyle ??
                                                         selectedArchive.barStyle,
                                                 }}
+                                                aspectRatio={aspectRatio}
+                                                columnSpan={columnSpan}
                                                 showComments={showComments}
                                             />
                                         </div>
