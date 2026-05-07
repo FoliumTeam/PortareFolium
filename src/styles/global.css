@@ -407,191 +407,6 @@ html.dark .prose :where(td) {
     margin-bottom: 0;
 }
 
-/* ── ColoredTable ─────────────────────────────────────────────────── */
-/* renderMarkdown()이 생성한 HTML에 적용 (ColoredTable 컴포넌트 스타일) */
-.colored-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    background: var(--color-surface);
-    margin: 0;
-    padding: 0;
-    border-radius: 0;
-}
-.colored-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 1.125rem;
-    margin: 0 !important;
-}
-.colored-table th,
-.colored-table td {
-    padding: 0.875rem 1.25rem;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-}
-.colored-table .ft-nowrap {
-    white-space: nowrap;
-}
-.colored-table thead tr th {
-    background: var(--color-surface-subtle);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    font-size: 1.25rem;
-}
-/* 헤더 색상 — 라이트 모드 (shade 300) */
-.colored-table th[data-ct-color="slate"] {
-    background: #cbd5e1;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="red"] {
-    background: #fca5a5;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="orange"] {
-    background: #fdba74;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="yellow"] {
-    background: #fde047;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="green"] {
-    background: #86efac;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="blue"] {
-    background: #93c5fd;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="purple"] {
-    background: #d8b4fe;
-    color: oklch(0.1 0 0);
-}
-.colored-table th[data-ct-color="pink"] {
-    background: #f9a8d4;
-    color: oklch(0.1 0 0);
-}
-/* 헤더 색상 — 다크 모드 (shade 700) */
-html.dark .colored-table th[data-ct-color="slate"] {
-    background: #334155;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="red"] {
-    background: #b91c1c;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="orange"] {
-    background: #c2410c;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="yellow"] {
-    background: #a16207;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="green"] {
-    background: #15803d;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="blue"] {
-    background: #1d4ed8;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="purple"] {
-    background: #7e22ce;
-    color: oklch(0.95 0 0);
-}
-html.dark .colored-table th[data-ct-color="pink"] {
-    background: #be185d;
-    color: oklch(0.95 0 0);
-}
-/* 바디 색상 — 라이트 모드 (shade 100) */
-.colored-table td[data-ct-color="slate"] {
-    background: #f1f5f9;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="red"] {
-    background: #fee2e2;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="orange"] {
-    background: #ffedd5;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="yellow"] {
-    background: #fef9c3;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="green"] {
-    background: #dcfce7;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="blue"] {
-    background: #dbeafe;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="purple"] {
-    background: #f3e8ff;
-    color: oklch(0.15 0 0);
-}
-.colored-table td[data-ct-color="pink"] {
-    background: #fce7f3;
-    color: oklch(0.15 0 0);
-}
-/* 바디 색상 — 다크 모드 (shade 800) */
-html.dark .colored-table td[data-ct-color="slate"] {
-    background: #1e293b;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="red"] {
-    background: #991b1b;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="orange"] {
-    background: #9a3412;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="yellow"] {
-    background: #854d0e;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="green"] {
-    background: #166534;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="blue"] {
-    background: #1e40af;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="purple"] {
-    background: #6b21a8;
-    color: oklch(0.88 0 0);
-}
-html.dark .colored-table td[data-ct-color="pink"] {
-    background: #9d174d;
-    color: oklch(0.88 0 0);
-}
-/* 기본 색상 (미지정) — 헤더: 테마 상대, 진한 표면 */
-.colored-table th:not([data-ct-color]) {
-    background: var(--color-surface-subtle);
-    color: var(--color-foreground);
-}
-/* 기본 색상 (미지정) — 바디: 테마 상대, 연한 표면 */
-.colored-table td:not([data-ct-color]) {
-    background: color-mix(
-        in srgb,
-        var(--color-surface-subtle) 40%,
-        var(--color-surface)
-    );
-    color: var(--color-foreground);
-}
-.colored-table tbody tr:last-child td {
-    border-bottom: 1px solid var(--color-border);
-}
-.colored-table.has-col-colors tbody tr:hover td {
-    filter: brightness(0.97);
-}
-
 /* ── ProseMirror Table (에디터 내 테이블) ────────────────────────── */
 .ProseMirror .tableWrapper {
     overflow-x: auto;
@@ -602,10 +417,14 @@ html.dark .colored-table td[data-ct-color="pink"] {
     border-collapse: collapse;
     table-layout: fixed;
     overflow: hidden;
+    --editor-table-border: #94a3b8;
+}
+html.dark .ProseMirror table {
+    --editor-table-border: oklch(0.64 0.012 265);
 }
 .ProseMirror th,
 .ProseMirror td {
-    border: 1px solid var(--color-border, #d4d4d8);
+    border: 1px solid var(--editor-table-border, var(--color-border, #d4d4d8));
     padding: 0.5rem 0.75rem;
     vertical-align: top;
     position: relative;
@@ -652,7 +471,7 @@ html.dark .colored-table td[data-ct-color="pink"] {
 .post-content.prose :where(table[data-ktable="true"] td),
 .portfolio-markdoc-body.prose :where(table[data-ktable="true"] th),
 .portfolio-markdoc-body.prose :where(table[data-ktable="true"] td) {
-    border: 1px solid #94a3b8;
+    border: 1px solid #475569;
     background-color: color-mix(
         in oklch,
         var(--color-accent) 3%,
@@ -691,6 +510,14 @@ html.dark .portfolio-markdoc-body.prose :where(table[data-ktable="true"] th) {
         var(--color-accent) 12%,
         var(--color-surface-subtle, oklch(0.22 0.01 265))
     );
+}
+html.dark .ProseMirror table[data-ktable="true"] th,
+html.dark .ProseMirror table[data-ktable="true"] td {
+    border-color: oklch(0.64 0.012 265);
+}
+html.dark .ProseMirror th,
+html.dark .ProseMirror td {
+    border-color: oklch(0.64 0.012 265);
 }
 .ProseMirror table[data-table-bordered="false"] th,
 .ProseMirror table[data-table-bordered="false"] td,
@@ -1258,10 +1085,9 @@ html.dark
     margin-bottom: 0;
 }
 
-/* 일반 table overflow 방지 (ColoredTable/KTable은 자체 레이아웃을 사용하므로 제외) */
-.post-content.prose :where(table:not(.colored-table):not([data-ktable="true"])),
-.portfolio-markdoc-body.prose
-    :where(table:not(.colored-table):not([data-ktable="true"])) {
+/* General table overflow guard (KTable manages its own layout) */
+.post-content.prose :where(table:not([data-ktable="true"])),
+.portfolio-markdoc-body.prose :where(table:not([data-ktable="true"])) {
     display: block;
     overflow-x: auto;
 }
@@ -1275,9 +1101,6 @@ html.dark
     color: var(--color-muted);
     font-size: 1rem;
     margin: 0.5rem 0;
-}
-.admin-preview-body .preview-colored-table {
-    font-weight: 500;
 }
 .admin-preview-body .preview-youtube {
     font-weight: 500;

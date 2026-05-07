@@ -31,6 +31,5 @@ export const config = {
         "/admin/((?!login).*)",
         "/api/upload-image/:path*",
         "/api/storage-ops/:path*",
-        "/api/run-migrations/:path*",
     ],
 };

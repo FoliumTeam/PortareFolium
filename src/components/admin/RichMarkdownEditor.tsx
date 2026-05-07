@@ -24,10 +24,6 @@ import {
     YoutubeEmbed,
     youtubeDirectiveToHtml,
 } from "@/extensions/YoutubeEmbed";
-import {
-    ColoredTableNode,
-    coloredTableDirectiveToHtml,
-} from "@/extensions/ColoredTableNode";
 import { LatexNode, latexDirectiveToHtml } from "@/extensions/LatexNode";
 import {
     AccordionNode,
@@ -74,9 +70,7 @@ type PendingMultiImageInsert = {
 function preprocessDirectiveContent(content: string): string {
     return accordionDirectiveToHtml(
         latexDirectiveToHtml(
-            imageGroupDirectiveToHtml(
-                coloredTableDirectiveToHtml(youtubeDirectiveToHtml(content))
-            )
+            imageGroupDirectiveToHtml(youtubeDirectiveToHtml(content))
         )
     );
 }
@@ -106,6 +100,9 @@ export default function RichMarkdownEditor({
 
     // source → WYSIWYG 전환 시 setContent 예약 (flushSync 충돌 방지)
     const pendingContent = useRef<string | null>(null);
+    const pendingContentTimer = useRef<ReturnType<typeof setTimeout> | null>(
+        null
+    );
 
     // 모드 전환 시 스크롤 비율 보존
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -320,7 +317,7 @@ export default function RichMarkdownEditor({
                 // JSON 파싱 실패 시 마크다운으로 처리
             }
         }
-        // JSX → directive 변환 후 Tiptap에 로드 (JSX를 그대로 넘기면 FoliumTable 등이 소실됨)
+        // Load JSX content through directive preprocessing before Tiptap parses it.
         const directives = jsxToDirective(value);
         return preprocessDirectiveContent(directives);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,7 +336,6 @@ export default function RichMarkdownEditor({
             Color,
             Highlight.configure({ multicolor: true }),
             YoutubeEmbed,
-            ColoredTableNode,
             LatexNode,
             AccordionNode,
             ImageGroupNode.configure({
@@ -439,6 +435,10 @@ export default function RichMarkdownEditor({
     useEffect(() => {
         return () => {
             if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+            if (pendingContentTimer.current) {
+                clearTimeout(pendingContentTimer.current);
+                pendingContentTimer.current = null;
+            }
         };
     }, []);
 
@@ -449,9 +449,20 @@ export default function RichMarkdownEditor({
 
     // source → WYSIWYG 전환 후 setContent 실행 (React 렌더 완료 이후 보장)
     useEffect(() => {
+        if (sourceMode && pendingContentTimer.current) {
+            clearTimeout(pendingContentTimer.current);
+            pendingContentTimer.current = null;
+        }
         if (!sourceMode && pendingContent.current && editor) {
-            editor.commands.setContent(pendingContent.current);
-            pendingContent.current = null;
+            if (pendingContentTimer.current) {
+                clearTimeout(pendingContentTimer.current);
+            }
+            pendingContentTimer.current = setTimeout(() => {
+                if (!pendingContent.current) return;
+                editor.commands.setContent(pendingContent.current);
+                pendingContent.current = null;
+                pendingContentTimer.current = null;
+            }, 0);
         }
     }, [sourceMode, editor]);
 

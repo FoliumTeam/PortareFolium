@@ -5,7 +5,6 @@ import {
     AlertTriangle,
     Briefcase,
     CheckCircle2,
-    Database,
     FileText,
     RefreshCw,
 } from "lucide-react";
@@ -29,8 +28,6 @@ export default function MainPanel({
     const [data, setData] = useState<MainPanelBootstrap | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [applying, setApplying] = useState(false);
-    const [applyError, setApplyError] = useState<string | null>(null);
 
     const load = async () => {
         setRefreshing(true);
@@ -45,23 +42,6 @@ export default function MainPanel({
     useEffect(() => {
         load();
     }, []);
-
-    const applyMigrations = async () => {
-        setApplying(true);
-        setApplyError(null);
-        try {
-            const res = await fetch("/api/run-migrations", { method: "POST" });
-            const json = await res.json();
-            if (!res.ok) {
-                setApplyError(json.error ?? "알 수 없는 오류");
-            }
-        } catch (err) {
-            setApplyError(err instanceof Error ? err.message : "네트워크 오류");
-        } finally {
-            setApplying(false);
-            await load();
-        }
-    };
 
     if (loading || !data) {
         return (
@@ -197,7 +177,7 @@ export default function MainPanel({
                             </div>
                             {data.db.nextMigration && (
                                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
-                                    다음 마이그레이션: v
+                                    자동 마이그레이션 대기: v
                                     {data.db.nextMigration.version} ·{" "}
                                     {data.db.nextMigration.title}
                                 </p>
@@ -205,41 +185,21 @@ export default function MainPanel({
                             {data.db.currentVersion === null && (
                                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
                                     DB 스키마 버전 정보가 없습니다. 신규 설정
-                                    SQL 또는 전체 마이그레이션을 먼저 확인해야
-                                    합니다.
+                                    SQL을 먼저 실행해야 합니다.
                                 </p>
                             )}
-                            {applyError && (
-                                <p className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/30 dark:text-red-400">
-                                    {applyError}
-                                </p>
-                            )}
+                            {data.db.currentVersion !== null &&
+                                migrationNeeded && (
+                                    <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+                                        서버가 시작되거나 다음 요청이 처리될 때
+                                        자동 적용됩니다. 수동 SQL은{" "}
+                                        <code className="font-mono">
+                                            supabase/migrations
+                                        </code>
+                                        에서 확인할 수 있습니다.
+                                    </p>
+                                )}
                         </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => onNavigate?.("migrations")}
-                        >
-                            <Database className="h-4 w-4" />
-                            자세히 보기
-                        </Button>
-                        {migrationNeeded && (
-                            <Button
-                                onClick={applyMigrations}
-                                disabled={
-                                    applying || data.db.currentVersion === null
-                                }
-                                className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
-                                title={
-                                    data.db.currentVersion === null
-                                        ? "db_schema_version이 없어 자동 적용할 수 없습니다"
-                                        : undefined
-                                }
-                            >
-                                {applying ? "적용 중..." : "자동 적용"}
-                            </Button>
-                        )}
                     </div>
                 </div>
             </section>

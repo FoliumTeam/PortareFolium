@@ -1,12 +1,13 @@
 {
     "name": "portare-folium",
-    "version": "0.12.123",
+    "version": "0.12.131",
     "engines": {
         "node": ">=24.13.0"
     },
     "scripts": {
-        "dev": "next dev",
-        "build": "next build",
+        "generate:migrations": "tsx scripts/generate-migrations.ts",
+        "dev": "pnpm generate:migrations && next dev",
+        "build": "pnpm generate:migrations && next build",
         "start": "next start",
         "test": "vitest",
         "test:ui": "vitest --ui",

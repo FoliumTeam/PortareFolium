@@ -22,22 +22,6 @@ describe("jsxToDirective", () => {
         });
     });
 
-    describe("ColoredTable 변환", () => {
-        it('<ColoredTable columns="A" rows="B" /> → ::colored-table[]{...}', () => {
-            const input = '<ColoredTable columns="A" rows="B" />';
-            const result = jsxToDirective(input);
-            expect(result).toContain("::colored-table[]");
-            expect(result).toContain('columns="A"');
-            expect(result).toContain('rows="B"');
-        });
-
-        it("<FoliumTable /> 도 colored-table로 변환", () => {
-            const input = '<FoliumTable columns="X" rows="Y" />';
-            const result = jsxToDirective(input);
-            expect(result).toContain("::colored-table[]");
-        });
-    });
-
     describe("LaTeX 변환", () => {
         it("$$수식$$ → ::latex{src=...}", () => {
             const input = "$$E = mc^2$$";
@@ -107,16 +91,6 @@ describe("directiveToJsx", () => {
         it("quoted 없는 id 처리: ::youtube[]{id=abc}", () => {
             const input = "::youtube[]{id=abc}";
             expect(directiveToJsx(input)).toContain('<YouTube id="abc" />');
-        });
-    });
-
-    describe("colored-table 변환", () => {
-        it('::colored-table[]{columns="A" rows="B"} → <ColoredTable .../>', () => {
-            const input = '::colored-table[]{columns="A" rows="B"}';
-            const result = directiveToJsx(input);
-            expect(result).toContain("<ColoredTable");
-            expect(result).toContain("columns=");
-            expect(result).toContain("rows=");
         });
     });
 
@@ -212,29 +186,8 @@ describe("transformOutsideCodeBlocks", () => {
 });
 
 // ─────────────────────────────────────────────────────────
-// ColoredTable attribute 값 내부 backslash-escaped brackets 복원
 // tiptap-markdown이 [, ]를 link 문법 충돌 회피로 \[, \] escape하는 잔재 방어
 // ─────────────────────────────────────────────────────────
-
-describe("ColoredTable backslash bracket unescape", () => {
-    it("jsxToDirective: rows 값 내부 \\[ \\] 복원", () => {
-        const input = `<ColoredTable rows={'[["a","b"\\],\\["c","d"\\]\\]'} />`;
-        const result = jsxToDirective(input);
-        expect(result).toContain(
-            `rows="[[\\"a\\",\\"b\\"],[\\"c\\",\\"d\\"]]"`
-        );
-        expect(result).not.toContain("\\[");
-        expect(result).not.toContain("\\]");
-    });
-
-    it("directiveToJsx: directive 값 내부 \\[ \\] 복원", () => {
-        const input = `::colored-table[]{rows="[[\\"a\\",\\"b\\"\\],\\[\\"c\\",\\"d\\"\\]\\]"}`;
-        const result = directiveToJsx(input);
-        expect(result).toContain("<ColoredTable");
-        expect(result).not.toContain("\\[");
-        expect(result).not.toContain("\\]");
-    });
-});
 
 // ─────────────────────────────────────────────────────────
 // transformOutsideCodeBlocks: self-closing JSX 태그 보호
@@ -243,7 +196,7 @@ describe("ColoredTable backslash bracket unescape", () => {
 
 describe("transformOutsideCodeBlocks JSX 태그 보호", () => {
     it("self-closing JSX 태그 안의 $ 가 math 로 split되지 않음", () => {
-        const input = `<ColoredTable rows={'[["a","$0.01/GB"],["b","$100"]]'} />`;
+        const input = `<ImageGroup images='["$0.01/GB","$100"]' />`;
         // transform은 upperCase로 — JSX 내부는 건드리지 않아야 함
         const result = transformOutsideCodeBlocks(input, (t) =>
             t.toUpperCase()
@@ -259,12 +212,12 @@ describe("transformOutsideCodeBlocks JSX 태그 보호", () => {
         expect(result).toBe("텍스트 $x+y$ 더보기");
     });
 
-    it("JSX 태그 뒤의 prose 는 transform 적용", () => {
-        const input = `<ColoredTable rows={'["a"]'} />\n뒤 텍스트`;
+    it("JSX tag ?? prose ? transform ??", () => {
+        const input = `<ImageGroup images='["a"]' />\nafter text`;
         const result = transformOutsideCodeBlocks(input, (t) =>
             t.toUpperCase()
         );
-        expect(result).toContain(`<ColoredTable rows={'["a"]'} />`);
-        expect(result).toContain("뒤 텍스트".toUpperCase());
+        expect(result).toContain(`<ImageGroup images='["a"]' />`);
+        expect(result).toContain("AFTER TEXT");
     });
 });

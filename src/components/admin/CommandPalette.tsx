@@ -41,7 +41,6 @@ const NAV_COMMANDS = [
     { tab: "gantt-chart", label: "Gantt Chart로 이동", icon: ChartNoAxesGantt },
     { tab: "about", label: "About으로 이동", icon: User },
     { tab: "resume", label: "Resume으로 이동", icon: ScrollText },
-    { tab: "migrations", label: "Migrations으로 이동", icon: Database },
     { tab: "snapshots", label: "Snapshots으로 이동", icon: Database },
     { tab: "prompts", label: "Prompt Library로 이동", icon: MessageSquare },
     { tab: "config", label: "Site Config으로 이동", icon: Settings },

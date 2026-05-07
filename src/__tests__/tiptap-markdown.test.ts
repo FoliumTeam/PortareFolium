@@ -6,18 +6,18 @@ import {
 
 describe("unescapeJsxBrackets", () => {
     it("JSX 속성값 내부 \\[ \\] 복원", () => {
-        const input = `<ColoredTable rows={'[[\\"a\\",\\"b\\"\\],\\[\\"c\\",\\"d\\"\\]\\]'} />`;
+        const input = `<ImageGroup rows={'[[\\"a\\",\\"b\\"\\],\\[\\"c\\",\\"d\\"\\]\\]'} />`;
         const result = unescapeJsxBrackets(input);
         expect(result).not.toContain("\\[");
         expect(result).not.toContain("\\]");
     });
 
     it("JSX tag 바깥의 markdown link escape는 건드리지 않음", () => {
-        const input = `일반 단락의 \\[링크\\]는 유지\n<ColoredTable rows={'\\[\\]'} />`;
+        const input = `일반 단락의 \\[링크\\]는 유지\n<ImageGroup rows={'\\[\\]'} />`;
         const result = unescapeJsxBrackets(input);
         expect(result).toContain("\\[링크\\]");
-        expect(result).toContain("<ColoredTable");
-        expect(result.match(/<ColoredTable[\s\S]*?\/>/)?.[0]).not.toContain(
+        expect(result).toContain("<ImageGroup");
+        expect(result.match(/<ImageGroup[\s\S]*?\/>/)?.[0]).not.toContain(
             "\\["
         );
     });

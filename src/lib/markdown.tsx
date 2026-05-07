@@ -41,90 +41,6 @@ function YouTube({ id }: { id?: string }) {
     );
 }
 
-function ColoredTable({
-    columns,
-    rows,
-    columnHeadColors,
-}: Record<string, any>) {
-    function parseArr<T>(v: unknown): T[] {
-        if (!v) return [];
-        try {
-            return typeof v === "string" ? JSON.parse(v) : (v as T[]);
-        } catch {
-            return [];
-        }
-    }
-
-    const headers = parseArr<string>(columns);
-    const dataRows = parseArr<string[]>(rows);
-    const headColors = columnHeadColors
-        ? parseArr<string>(columnHeadColors)
-        : undefined;
-
-    const NOWRAP = 15;
-    // 색상 미지정 컬럼은 null — shade 접미사 제거 (e.g. "green-400" → "green")
-    const resolvedColors = headers.map((_, i) => {
-        const raw = headColors?.[i];
-        return raw ? raw.replace(/-\d+$/, "") : null;
-    });
-
-    return (
-        <div className="colored-table-wrapper">
-            <table className="colored-table has-col-colors">
-                <thead>
-                    <tr>
-                        {headers.map((h, i) => {
-                            const colorName = resolvedColors[i];
-                            const cls = [
-                                "pt-head-col",
-                                h.length <= NOWRAP ? "ft-nowrap" : "",
-                            ]
-                                .filter(Boolean)
-                                .join(" ");
-
-                            return (
-                                <th
-                                    key={i}
-                                    className={cls || undefined}
-                                    data-ct-color={colorName || undefined}
-                                >
-                                    {h}
-                                </th>
-                            );
-                        })}
-                    </tr>
-                </thead>
-                <tbody>
-                    {dataRows.map((row, rIdx) => (
-                        <tr key={rIdx}>
-                            {row.map((cell, i) => {
-                                const colorName = resolvedColors[i];
-                                const text = cell || "—";
-                                const cls = [
-                                    "pt-body-col",
-                                    text.length <= NOWRAP ? "ft-nowrap" : "",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" ");
-
-                                return (
-                                    <td
-                                        key={i}
-                                        className={cls || undefined}
-                                        data-ct-color={colorName || undefined}
-                                    >
-                                        {text}
-                                    </td>
-                                );
-                            })}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
 function Accordion({
     title,
     children,
@@ -194,9 +110,6 @@ function remarkMermaid() {
 
 const components = {
     YouTube,
-    ColoredTable,
-    // 기존 콘텐츠 하위 호환용 별칭
-    FoliumTable: ColoredTable,
     Accordion,
     Mermaid,
     img: MarkdownImage,

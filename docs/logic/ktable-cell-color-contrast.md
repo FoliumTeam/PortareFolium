@@ -88,3 +88,12 @@ table[data-ktable="true"] :is(th, td)[data-tw-color] :where(*) {
 - 다크 모드에서는 같은 custom cell 선택값이 더 어둡고 채도가 낮은 muted 색으로 렌더링된다.
 - 텍스트 색은 실제 모드별 배경색에 맞춰 CSS 변수로 같이 바뀐다.
 - inline style 없이 `data-tw-color`와 CSS만으로 editor/frontend 렌더링을 동일하게 유지한다.
+
+## Border tone
+
+Editor table borders are intentionally mode-specific:
+
+- Generic ProseMirror table cells use `#94a3b8` in light mode, darker than the global `--color-border` fallback.
+- Dark-mode editor table cells use explicit `oklch(0.64 0.012 265)` `border-color` overrides so `--color-border` cannot win in the inspector.
+- KTable-rendered cells keep the stronger light-mode `#475569` grid, while the editor-only dark override uses the same `oklch(0.64 0.012 265)` tone.
+- `data-table-bordered="false"` remains later in the cascade so intentionally borderless tables still hide borders.

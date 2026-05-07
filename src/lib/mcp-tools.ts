@@ -25,8 +25,6 @@ export async function handleGetSchema(): Promise<unknown> {
         ],
         content_components: {
             YouTube: '<YouTube id="VIDEO_ID" /> — YouTube embed',
-            ColoredTable:
-                '<ColoredTable columns={\'["Col1","Col2"]\'} rows={\'[["a","b"]]\'} /> — custom table with optional columnHeadColors',
             LaTeX: "$$E = mc^2$$ — KaTeX math block (double dollar signs)",
             Mermaid:
                 "```mermaid\\ngraph LR; A-->B\\n``` — Mermaid diagram (fenced code block with lang=mermaid)",
