@@ -28,6 +28,7 @@ type ReplayPlan = {
     touchedTables: string[];
     operationCount: number;
     conflicts: { table: string; identity: string; reason: string }[];
+    overrides?: { table: string; identity: string; reason: string }[];
     skippedLocalOnly: unknown[];
 };
 
@@ -243,17 +244,52 @@ function parseJsonOutput<T>(stdout: string): T {
 }
 
 function runRemoteCheck(): ReplayPlan {
-    const stdout = runTsx("scripts/refuge-push.ts", ["--check-remote"]);
+    const stdout = runTsx("scripts/refuge-push.ts", [
+        "--check-remote",
+        "--local-wins",
+    ]);
     return parseJsonOutput<ReplayPlan>(stdout);
 }
 
 function runApply(): ReplayPlan {
-    const stdout = runTsx("scripts/refuge-push.ts", ["--apply"]);
+    const stdout = runTsx("scripts/refuge-push.ts", [
+        "--apply",
+        "--local-wins",
+    ]);
     return parseJsonOutput<ReplayPlan>(stdout);
 }
 
 function runDeactivate(): void {
     runTsx("scripts/refuge-deactivate.ts", []);
+}
+
+function runCleanseKeditorResidue(backupDir: string): void {
+    const stdout = runTsx("scripts/cleanse-keditor-residue.ts", [
+        "--apply",
+        "--backup-dir",
+        backupDir,
+    ]);
+    const result = parseJsonOutput<{
+        ok: boolean;
+        journalContentModeFieldsRemoved: number;
+        journalNoopEntriesDropped: number;
+        dbRowsCleaned: number;
+    }>(stdout);
+    if (!result.ok) fail("KEditor residue cleanse failed");
+    const changed =
+        result.journalContentModeFieldsRemoved +
+        result.journalNoopEntriesDropped +
+        result.dbRowsCleaned;
+    if (changed > 0) {
+        console.log(
+            [
+                "Abandoned KEditor residue cleansed before replay.",
+                `content_mode fields removed: ${result.journalContentModeFieldsRemoved}`,
+                `journal no-op entries dropped: ${result.journalNoopEntriesDropped}`,
+                `refuge rows cleaned: ${result.dbRowsCleaned}`,
+            ].join("\n")
+        );
+    }
 }
 
 function assertPlanSafe(plan: ReplayPlan): void {
@@ -284,6 +320,7 @@ function printPlanSummary(plan: ReplayPlan, backupDir: string): void {
     console.log(`Journal entries: ${plan.journalEntries}`);
     console.log(`Replay operations: ${plan.operationCount}`);
     console.log(`Touched tables: ${plan.touchedTables.join(", ") || "(none)"}`);
+    console.log(`Local-wins overrides: ${plan.overrides?.length ?? 0}`);
     console.log(`Skipped local-only entries: ${plan.skippedLocalOnly.length}`);
     console.log(`Replay plan: ${plan.planPath ?? REPLAY_PLAN_PATH}`);
 }
@@ -329,6 +366,7 @@ async function main(): Promise<void> {
     assertRefugeReady();
     loadEnv();
     const backupDir = createBackup();
+    runCleanseKeditorResidue(backupDir);
     const checkedPlan = runRemoteCheck();
     assertPlanSafe(checkedPlan);
     printPlanSummary(checkedPlan, backupDir);

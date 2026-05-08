@@ -81,8 +81,10 @@ pnpm db:restore-supabase
 
 4. 명령은 confirmation 전에 다음을 자동 수행한다.
     - `.local/refuge-backups/<timestamp>/`에 local DB, journal, manifest, mode, env backup 생성
+    - 실패한 KEditor migration이 남긴 `content_mode` residue를 local DB/journal/manifest에서 제거
     - Supabase current rows와 journal `before` 값을 비교하는 remote-checked replay plan 생성
-    - conflict가 있으면 Supabase write 없이 중단
+    - posts/portfolio/books 등 replay 대상 table conflict는 local SQLite row 우선 override로 표시
+    - unsupported table conflict가 있으면 Supabase write 없이 중단
 
 5. conflict가 없으면 한 번만 confirmation을 묻는다.
 
@@ -92,7 +94,7 @@ pnpm db:restore-supabase
 
 6. `y`를 입력하면 다음을 자동 수행한다.
     - Supabase pre-push snapshot 생성
-    - journal apply 직전 drift 재검사
+    - journal apply 직전 local-wins replay plan 재검사
     - SQLite refuge journal을 Supabase로 replay
     - `.local/refuge/mode.json`을 `supabase-primary`로 전환
     - `.env.local`의 `SQLITE_REFUGE_ALLOW_LOCAL_START` 제거
@@ -114,14 +116,26 @@ pnpm db:restore-supabase
 - [ ] dev server 종료
 - [ ] Supabase env 확인
 - [ ] `pnpm db:restore-supabase`
-- [ ] conflict 없음 확인
+- [ ] unsupported conflict 없음 및 local-wins override 수 확인
 - [ ] confirmation에서 `y` 입력
 - [ ] Supabase-primary smoke check
 
 ## 하지 말 것
 
 - dev server가 켜진 상태에서 Supabase 복귀를 진행하지 않는다.
-- conflict가 있는 replay plan을 강제로 반영하지 않는다.
+- unsupported conflict가 있는 replay plan을 강제로 반영하지 않는다.
 - `.local/refuge/journal.ndjson`를 수동 편집하지 않는다.
 - R2 asset move/delete를 refuge라는 이유만으로 끄지 않는다.
 - `SQLITE_REFUGE_ALLOW_LOCAL_START`를 Vercel Production/Preview 환경변수에 등록하지 않는다.
+
+## 복귀 conflict 정책
+
+SQLite refuge의 목적은 Supabase quota/suspend 기간 동안 local SQLite가 임시 primary DB 역할을 하는 것이다. 따라서 `pnpm db:restore-supabase`에서 posts/portfolio/books 같은 replay 대상 table은 local SQLite row가 Supabase row보다 우선한다.
+
+- local insert인데 Supabase에 같은 slug/id row가 있으면 local row로 upsert한다.
+- local update/upsert의 `before`와 Supabase current row가 달라도 local row로 upsert한다.
+- local delete는 Supabase row를 삭제한다. 이미 없으면 no-op override로 처리한다.
+- `admin_login_attempts`는 local-only라 replay하지 않는다.
+- 지원하지 않는 table conflict는 계속 중단 조건이다.
+
+실패한 KEditor migration residue인 `content_mode`는 복귀 전에 자동 제거한다. 해당 migration은 재시도 대상이 아니며, `content_mode` column/field를 새 DB schema 또는 content row에 다시 추가하지 않는다.

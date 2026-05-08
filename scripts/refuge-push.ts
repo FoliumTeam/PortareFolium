@@ -96,9 +96,11 @@ async function fetchCurrentRow(
 
 async function buildReplayPlan(
     client: SupabaseClient | null,
-    journal: RefugeJournalEntry[]
+    journal: RefugeJournalEntry[],
+    options: { localWins?: boolean } = {}
 ) {
     const conflicts: { table: string; identity: string; reason: string }[] = [];
+    const overrides: { table: string; identity: string; reason: string }[] = [];
     const simulatedRows = new Map<string, RefugeRow | null>();
     const operations: {
         table: string;
@@ -160,6 +162,20 @@ async function buildReplayPlan(
         }
         if (entry.before === null || typeof entry.before === "undefined") {
             if (current !== null) {
+                if (options.localWins) {
+                    overrides.push({
+                        table: entry.table,
+                        identity,
+                        reason: "Supabase row exists for local insert",
+                    });
+                    simulatedRows.set(
+                        cacheKey,
+                        entry.operation === "delete"
+                            ? null
+                            : (entry.after ?? null)
+                    );
+                    continue;
+                }
                 conflicts.push({
                     table: entry.table,
                     identity,
@@ -168,6 +184,24 @@ async function buildReplayPlan(
                 continue;
             }
         } else if (!rowsMatch(current, entry.before)) {
+            if (
+                options.localWins ||
+                (entry.operation === "delete" && current === null)
+            ) {
+                overrides.push({
+                    table: entry.table,
+                    identity,
+                    reason:
+                        entry.operation === "delete" && current === null
+                            ? "Supabase row already absent for local delete"
+                            : "Supabase row drifted after refuge activation",
+                });
+                simulatedRows.set(
+                    cacheKey,
+                    entry.operation === "delete" ? null : (entry.after ?? null)
+                );
+                continue;
+            }
             conflicts.push({
                 table: entry.table,
                 identity,
@@ -187,14 +221,17 @@ async function buildReplayPlan(
         operations,
         skippedLocalOnly,
         conflicts,
+        overrides,
     };
 }
 
 async function assertNoDriftForEntry(
     client: SupabaseClient,
     entry: RefugeJournalEntry,
-    identity: string
+    identity: string,
+    options: { localWins?: boolean } = {}
 ): Promise<void> {
+    if (options.localWins) return;
     const current = await fetchCurrentRow(client, entry.table, identity);
     if (entry.before === null || typeof entry.before === "undefined") {
         if (current !== null) {
@@ -209,7 +246,8 @@ async function assertNoDriftForEntry(
 
 async function applyJournal(
     client: SupabaseClient,
-    journal: RefugeJournalEntry[]
+    journal: RefugeJournalEntry[],
+    options: { localWins?: boolean } = {}
 ): Promise<void> {
     for (const entry of journal) {
         if (!REPLAY_TABLES.has(entry.table)) continue;
@@ -217,7 +255,7 @@ async function applyJournal(
             getIdentityValue(entry.table, entry.after) ??
             getIdentityValue(entry.table, entry.before) ??
             entry.identity;
-        await assertNoDriftForEntry(client, entry, identity);
+        await assertNoDriftForEntry(client, entry, identity, options);
         if (entry.operation === "delete") {
             if (!DELETE_REPLAY_TABLES.has(entry.table)) {
                 throw new Error(
@@ -258,20 +296,23 @@ async function main(): Promise<void> {
         : [];
     const apply = hasArg("--apply");
     const checkRemote = hasArg("--check-remote");
+    const localWins = hasArg("--local-wins");
     const client = apply || checkRemote ? getClient() : null;
     const snapshotPath =
         apply && client ? await snapshotSupabase(client) : null;
-    const replay = await buildReplayPlan(client, journal);
+    const replay = await buildReplayPlan(client, journal, { localWins });
     const plan = {
         ok: replay.conflicts.length === 0,
         apply,
         checkRemote,
+        localWins,
         manifestCreatedAt: manifest.createdAt,
         journalEntries: journal.length,
         journalHeadHash: getRefugeJournalHeadHash(journal),
         touchedTables: replay.touchedTables,
         operationCount: replay.operationCount,
         conflicts: replay.conflicts,
+        overrides: replay.overrides,
         skippedLocalOnly: replay.skippedLocalOnly,
         policy: {
             order: apply
@@ -279,7 +320,9 @@ async function main(): Promise<void> {
                 : checkRemote
                   ? "remote conflict-detect replay-plan only"
                   : "local replay-plan only",
-            defaultConflict: "reject",
+            defaultConflict: localWins
+                ? "local SQLite row wins for refuge replay tables"
+                : "reject",
             deletes: "journal-only for refuge supported tables",
             localOnlyTables:
                 "admin_login_attempts stays local and is not replayed",
@@ -298,7 +341,7 @@ async function main(): Promise<void> {
     if (replay.conflicts.length > 0) {
         throw new Error(`conflict detected: ${planPath}`);
     }
-    await applyJournal(client, journal);
+    await applyJournal(client, journal, { localWins });
     console.log(
         JSON.stringify(
             { ...plan, planPath, snapshotPath, applied: true },
