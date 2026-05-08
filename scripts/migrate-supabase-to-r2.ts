@@ -8,10 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_KEY =
-    process.env.SUPABASE_SECRET_KEY ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "";
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY ?? "";
 const BUCKET = "images";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID ?? "";

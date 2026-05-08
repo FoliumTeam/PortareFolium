@@ -27,15 +27,13 @@ describe("Supabase env key resolution", () => {
         vi.unstubAllEnvs();
     });
 
-    it("prefers modern publishable and secret keys", async () => {
+    it("uses publishable and secret keys", async () => {
         vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
         vi.stubEnv(
             "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
             "sb_publishable_new"
         );
-        vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "legacy-anon");
         vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_new");
-        vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service-role");
 
         await import("@/lib/supabase");
 
@@ -49,20 +47,11 @@ describe("Supabase env key resolution", () => {
         );
     });
 
-    it("falls back to legacy anon and service_role env names", async () => {
+    it("does not create clients without the current key names", async () => {
         vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
-        vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "legacy-anon");
-        vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service-role");
 
         await import("@/lib/supabase");
 
-        expect(createClientMock).toHaveBeenCalledWith(
-            "https://project.supabase.co",
-            "legacy-service-role"
-        );
-        expect(createClientMock).toHaveBeenCalledWith(
-            "https://project.supabase.co",
-            "legacy-anon"
-        );
+        expect(createClientMock).not.toHaveBeenCalled();
     });
 });

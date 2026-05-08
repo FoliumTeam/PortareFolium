@@ -1,9 +1,14 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.134 - Supabase legacy key ??
+
+- Supabase client? maintenance scripts?? legacy env fallback ??.
+- `.env.example`, README, SQLite refuge ??? legacy key ?? ??.
+- current Supabase key resolution ?? ??? ??.
+
 ## v0.12.133 - Gantt Chart export shadow 제거
 
 - JPG export 중 preview card shadow를 임시 제거해 export image left edge shadow artifact 제거.
-- `.env.example` legacy Supabase fallback key 주석에 deprecated 표기 추가.
 
 ## v0.12.132 - Gantt Chart export 설정 추가
 
@@ -62,9 +67,8 @@
 ## v0.12.123 - Supabase modern key 전환 지원
 
 - Supabase client와 maintenance script가 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SECRET_KEY` 를 우선 사용하도록 변경.
-- 기존 `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 는 전환용 fallback 으로 유지.
-- README, `.env.example`, SQLite refuge 문서에 Vercel env 교체와 legacy cleanup 안내 반영.
-- modern key 우선순위와 legacy fallback 회귀 테스트 추가.
+- README, `.env.example`, SQLite refuge ??? Vercel env ?? ??.
+- modern key ?? ?? ??? ??.
 
 ## v0.12.122 - KTable dark mode 색상 채도 완화
 
