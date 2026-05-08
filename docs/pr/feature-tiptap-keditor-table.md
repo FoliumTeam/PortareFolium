@@ -3,6 +3,7 @@
 ## v0.12.133 - Gantt Chart export shadow 제거
 
 - JPG export 중 preview card shadow를 임시 제거해 export image left edge shadow artifact 제거.
+- `.env.example` legacy Supabase fallback key 주석에 deprecated 표기 추가.
 
 ## v0.12.132 - Gantt Chart export 설정 추가
 
