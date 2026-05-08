@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.137 - SQLite refuge replay column 정규화
+
+- table별 Supabase column metadata를 추가해 SQLite refuge가 없는 `id`/`created_at`/`updated_at` 컬럼을 자동 주입하지 않도록 수정.
+- Supabase 복귀 replay 전에 `editor_states.updated_at` 같은 schema-only residue를 local DB/journal에서 제거하고 sanitized row로 apply.
+- `editor_states`, `tags`, `site_config` refuge mutation column 회귀 테스트 추가.
+
 ## v0.12.136 - KEditor residue DB 복귀 정리
 
 - 실패한 KEditor migration의 `content_mode` residue를 Supabase 복귀 전에 local refuge DB/journal/manifest에서 자동 제거.

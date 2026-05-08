@@ -15,6 +15,7 @@ import {
 import {
     REFUGE_REPLAY_TABLES,
     REFUGE_SUPPORTED_TABLES,
+    sanitizeRefugeRowForReplay,
     type RefugeJournalEntry,
     type RefugeManifest,
     type RefugeRow,
@@ -48,6 +49,16 @@ function getIdentityValue(
 function rowsMatch(a: RefugeRow | null, b: RefugeRow | null): boolean {
     if (!a || !b) return a === b;
     return stableJson(a) === stableJson(b);
+}
+
+function normalizeEntryForReplay(
+    entry: RefugeJournalEntry
+): RefugeJournalEntry {
+    return {
+        ...entry,
+        before: sanitizeRefugeRowForReplay(entry.table, entry.before),
+        after: sanitizeRefugeRowForReplay(entry.table, entry.after),
+    };
 }
 
 function getClient(): SupabaseClient {
@@ -113,7 +124,8 @@ async function buildReplayPlan(
         operation: RefugeJournalEntry["operation"];
     }[] = [];
 
-    for (const entry of journal) {
+    for (const originalEntry of journal) {
+        const entry = normalizeEntryForReplay(originalEntry);
         if (!REFUGE_SUPPORTED_TABLES.includes(entry.table as never)) {
             conflicts.push({
                 table: entry.table,
@@ -249,7 +261,8 @@ async function applyJournal(
     journal: RefugeJournalEntry[],
     options: { localWins?: boolean } = {}
 ): Promise<void> {
-    for (const entry of journal) {
+    for (const originalEntry of journal) {
+        const entry = normalizeEntryForReplay(originalEntry);
         if (!REPLAY_TABLES.has(entry.table)) continue;
         const identity =
             getIdentityValue(entry.table, entry.after) ??

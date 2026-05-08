@@ -14,6 +14,7 @@ import type {
     RefugeJournalEntry,
     RefugeManifest,
 } from "../src/lib/refuge/schema";
+import { sanitizeRefugeRowForReplay } from "../src/lib/refuge/schema";
 
 type Row = Record<string, unknown>;
 
@@ -91,6 +92,25 @@ function removeContentMode(value: unknown): {
     return { value: changed ? next : value, changed, removed };
 }
 
+function sanitizeSchemaFields(
+    table: string,
+    row: Row | null | undefined
+): {
+    row: Row | null | undefined;
+    removed: number;
+} {
+    if (!row) return { row, removed: 0 };
+    const sanitized = sanitizeRefugeRowForReplay(table, row) as
+        | Row
+        | null
+        | undefined;
+    if (!sanitized) return { row: sanitized, removed: 0 };
+    return {
+        row: sanitized,
+        removed: Object.keys(row).length - Object.keys(sanitized).length,
+    };
+}
+
 function withoutUpdatedAt(row: Row | null | undefined): Row | null | undefined {
     if (!row) return row;
     const next = { ...row };
@@ -131,6 +151,7 @@ function rehashJournal(entries: RefugeJournalEntry[]): RefugeJournalEntry[] {
 
 function cleanseJournal(entries: RefugeJournalEntry[]) {
     let cleanedFields = 0;
+    let schemaFieldsRemoved = 0;
     let droppedNoops = 0;
     const nextEntries: RefugeJournalEntry[] = [];
 
@@ -138,9 +159,18 @@ function cleanseJournal(entries: RefugeJournalEntry[]) {
         const entry = clone(originalEntry);
         const before = removeContentMode(entry.before);
         const after = removeContentMode(entry.after);
-        entry.before = before.value as RefugeJournalEntry["before"];
-        entry.after = after.value as RefugeJournalEntry["after"];
+        const beforeSchema = sanitizeSchemaFields(
+            entry.table,
+            before.value as Row | null | undefined
+        );
+        const afterSchema = sanitizeSchemaFields(
+            entry.table,
+            after.value as Row | null | undefined
+        );
+        entry.before = beforeSchema.row as RefugeJournalEntry["before"];
+        entry.after = afterSchema.row as RefugeJournalEntry["after"];
         cleanedFields += before.removed + after.removed;
+        schemaFieldsRemoved += beforeSchema.removed + afterSchema.removed;
         if (shouldDropNoopEntry(entry)) {
             droppedNoops += 1;
             continue;
@@ -151,6 +181,7 @@ function cleanseJournal(entries: RefugeJournalEntry[]) {
     return {
         entries: rehashJournal(nextEntries),
         cleanedFields,
+        schemaFieldsRemoved,
         droppedNoops,
     };
 }
@@ -158,9 +189,14 @@ function cleanseJournal(entries: RefugeJournalEntry[]) {
 function cleanseDatabase(apply: boolean): {
     dbRowsScanned: number;
     dbRowsCleaned: number;
+    dbSchemaFieldsRemoved: number;
 } {
     if (!fs.existsSync(REFUGE_DB_PATH)) {
-        return { dbRowsScanned: 0, dbRowsCleaned: 0 };
+        return {
+            dbRowsScanned: 0,
+            dbRowsCleaned: 0,
+            dbSchemaFieldsRemoved: 0,
+        };
     }
     const db = new DatabaseSync(REFUGE_DB_PATH);
     try {
@@ -172,6 +208,7 @@ function cleanseDatabase(apply: boolean): {
             row_json: string;
         }[];
         let cleaned = 0;
+        let schemaFieldsRemoved = 0;
         if (apply) db.exec("BEGIN IMMEDIATE");
         try {
             const update = db.prepare(
@@ -179,12 +216,19 @@ function cleanseDatabase(apply: boolean): {
             );
             for (const row of rows) {
                 const parsed = JSON.parse(row.row_json) as Row;
-                const result = removeContentMode(parsed);
-                if (!result.changed) continue;
+                const contentResult = removeContentMode(parsed);
+                const schemaResult = sanitizeSchemaFields(
+                    row.table_name,
+                    contentResult.value as Row
+                );
+                const changed =
+                    contentResult.changed || schemaResult.removed > 0;
+                if (!changed) continue;
                 cleaned += 1;
+                schemaFieldsRemoved += schemaResult.removed;
                 if (apply) {
                     update.run(
-                        JSON.stringify(result.value),
+                        JSON.stringify(schemaResult.row),
                         row.table_name,
                         row.identity
                     );
@@ -195,7 +239,11 @@ function cleanseDatabase(apply: boolean): {
             if (apply) db.exec("ROLLBACK");
             throw error;
         }
-        return { dbRowsScanned: rows.length, dbRowsCleaned: cleaned };
+        return {
+            dbRowsScanned: rows.length,
+            dbRowsCleaned: cleaned,
+            dbSchemaFieldsRemoved: schemaFieldsRemoved,
+        };
     } finally {
         db.close();
     }
@@ -287,9 +335,11 @@ async function main(): Promise<void> {
                 journalEntriesBefore: journal.length,
                 journalEntriesAfter: journalResult.entries.length,
                 journalContentModeFieldsRemoved: journalResult.cleanedFields,
+                journalSchemaFieldsRemoved: journalResult.schemaFieldsRemoved,
                 journalNoopEntriesDropped: journalResult.droppedNoops,
                 dbRowsScanned: databaseResult.dbRowsScanned,
                 dbRowsCleaned: databaseResult.dbRowsCleaned,
+                dbSchemaFieldsRemoved: databaseResult.dbSchemaFieldsRemoved,
                 manifestTables,
             },
             null,

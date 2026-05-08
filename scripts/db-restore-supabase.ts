@@ -272,21 +272,27 @@ function runCleanseKeditorResidue(backupDir: string): void {
     const result = parseJsonOutput<{
         ok: boolean;
         journalContentModeFieldsRemoved: number;
+        journalSchemaFieldsRemoved: number;
         journalNoopEntriesDropped: number;
         dbRowsCleaned: number;
+        dbSchemaFieldsRemoved: number;
     }>(stdout);
-    if (!result.ok) fail("KEditor residue cleanse failed");
+    if (!result.ok) fail("Refuge residue cleanse failed");
     const changed =
         result.journalContentModeFieldsRemoved +
+        result.journalSchemaFieldsRemoved +
         result.journalNoopEntriesDropped +
-        result.dbRowsCleaned;
+        result.dbRowsCleaned +
+        result.dbSchemaFieldsRemoved;
     if (changed > 0) {
         console.log(
             [
-                "Abandoned KEditor residue cleansed before replay.",
+                "Refuge residue cleansed before replay.",
                 `content_mode fields removed: ${result.journalContentModeFieldsRemoved}`,
+                `schema-only journal fields removed: ${result.journalSchemaFieldsRemoved}`,
                 `journal no-op entries dropped: ${result.journalNoopEntriesDropped}`,
                 `refuge rows cleaned: ${result.dbRowsCleaned}`,
+                `schema-only row fields removed: ${result.dbSchemaFieldsRemoved}`,
             ].join("\n")
         );
     }
