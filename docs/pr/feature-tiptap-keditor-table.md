@@ -1,4 +1,8 @@
-﻿# PR: feature/tiptap-keditor-table
+# PR: feature/tiptap-keditor-table
+
+## v0.12.133 - Gantt Chart export shadow 제거
+
+- JPG export 중 preview card shadow를 임시 제거해 export image left edge shadow artifact 제거.
 
 ## v0.12.132 - Gantt Chart export 설정 추가
 

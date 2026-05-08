@@ -201,6 +201,7 @@ const GanttChartPreview = ({
     return (
         <div
             ref={rootRef}
+            data-gantt-preview-root
             className="flex min-w-max flex-col rounded-[2rem] bg-white p-8 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
             style={{ width: chartWidth }}
         >
@@ -662,11 +663,16 @@ const GanttChartPanel = () => {
         const target = chartRef.current;
         const prevTransform = target.style.transform;
         const prevOrigin = target.style.transformOrigin;
+        const previewRoot = target.querySelector<HTMLElement>(
+            "[data-gantt-preview-root]"
+        );
+        const prevPreviewBoxShadow = previewRoot?.style.boxShadow;
         try {
             const { default: html2canvas } = await import("html2canvas-pro");
             // 줌 transform을 임시 제거해 항상 100% 크기로 캡처
             target.style.transform = "scale(1)";
             target.style.transformOrigin = "top left";
+            if (previewRoot) previewRoot.style.boxShadow = "none";
             const width = Math.ceil(target.scrollWidth);
             const height = Math.ceil(target.scrollHeight);
             const exportScale =
@@ -707,6 +713,9 @@ const GanttChartPanel = () => {
         } finally {
             target.style.transform = prevTransform;
             target.style.transformOrigin = prevOrigin;
+            if (previewRoot) {
+                previewRoot.style.boxShadow = prevPreviewBoxShadow ?? "";
+            }
             setExporting(false);
         }
     };
