@@ -99,6 +99,7 @@ async function buildReplayPlan(
     journal: RefugeJournalEntry[]
 ) {
     const conflicts: { table: string; identity: string; reason: string }[] = [];
+    const simulatedRows = new Map<string, RefugeRow | null>();
     const operations: {
         table: string;
         identity: string;
@@ -149,7 +150,14 @@ async function buildReplayPlan(
         });
 
         if (!client) continue;
-        const current = await fetchCurrentRow(client, entry.table, identity);
+        const cacheKey = `${entry.table}:${identity}`;
+        let current: RefugeRow | null;
+        if (simulatedRows.has(cacheKey)) {
+            current = simulatedRows.get(cacheKey) ?? null;
+        } else {
+            current = await fetchCurrentRow(client, entry.table, identity);
+            simulatedRows.set(cacheKey, current);
+        }
         if (entry.before === null || typeof entry.before === "undefined") {
             if (current !== null) {
                 conflicts.push({
@@ -157,6 +165,7 @@ async function buildReplayPlan(
                     identity,
                     reason: "Supabase row exists for local insert",
                 });
+                continue;
             }
         } else if (!rowsMatch(current, entry.before)) {
             conflicts.push({
@@ -164,7 +173,12 @@ async function buildReplayPlan(
                 identity,
                 reason: "Supabase row drifted after refuge activation",
             });
+            continue;
         }
+        simulatedRows.set(
+            cacheKey,
+            entry.operation === "delete" ? null : (entry.after ?? null)
+        );
     }
 
     return {
@@ -243,12 +257,15 @@ async function main(): Promise<void> {
         ? readRefugeJournal()
         : [];
     const apply = hasArg("--apply");
-    const client = apply ? getClient() : null;
-    const snapshotPath = client ? await snapshotSupabase(client) : null;
+    const checkRemote = hasArg("--check-remote");
+    const client = apply || checkRemote ? getClient() : null;
+    const snapshotPath =
+        apply && client ? await snapshotSupabase(client) : null;
     const replay = await buildReplayPlan(client, journal);
     const plan = {
         ok: replay.conflicts.length === 0,
         apply,
+        checkRemote,
         manifestCreatedAt: manifest.createdAt,
         journalEntries: journal.length,
         journalHeadHash: getRefugeJournalHeadHash(journal),
@@ -259,7 +276,9 @@ async function main(): Promise<void> {
         policy: {
             order: apply
                 ? "snapshot -> conflict-detect -> apply"
-                : "dry-run replay-plan only",
+                : checkRemote
+                  ? "remote conflict-detect replay-plan only"
+                  : "local replay-plan only",
             defaultConflict: "reject",
             deletes: "journal-only for refuge supported tables",
             localOnlyTables:

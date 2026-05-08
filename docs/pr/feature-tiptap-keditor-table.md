@@ -1,10 +1,16 @@
 # PR: feature/tiptap-keditor-table
 
-## v0.12.134 - Supabase legacy key ??
+## v0.12.135 - DB 복귀 명령 단순화
 
-- Supabase client? maintenance scripts?? legacy env fallback ??.
-- `.env.example`, README, SQLite refuge ??? legacy key ?? ??.
-- current Supabase key resolution ?? ??? ??.
+- 사용자용 DB 전환 명령을 `db:use-local-sqlite`, `db:restore-supabase` 2개로 정리하고 각 wrapper script 추가.
+- Supabase 복귀 전에 dev server 실행 여부, local backup, remote conflict check를 자동 검증.
+- SQLite refuge 운영 문서를 two-command workflow 기준으로 갱신.
+
+## v0.12.134 - Supabase legacy key 제거
+
+- Supabase client와 maintenance scripts에서 legacy env fallback 제거.
+- `.env.example`, README, SQLite refuge 문서의 legacy key 안내 제거.
+- current Supabase key resolution 회귀 테스트 갱신.
 
 ## v0.12.133 - Gantt Chart export shadow 제거
 

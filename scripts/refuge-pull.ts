@@ -132,7 +132,7 @@ async function main(): Promise<void> {
                 ],
                 degradedSurfaces: [
                     "MCP token authentication remains unavailable in local SQLite refuge",
-                    "refuge:push defaults to replay-plan dry-run unless --apply is supplied",
+                    "db:restore-supabase performs the guarded Supabase restore flow",
                 ],
             },
             null,
