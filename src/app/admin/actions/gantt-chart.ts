@@ -3,6 +3,7 @@
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import {
+    findDuplicateGanttTaskTitleInCategory,
     normalizeStoredGanttTasks,
     type GanttChartBarStyle,
     type GanttChartTask,
@@ -60,6 +61,15 @@ const normalizeCategoryColors = (
 const normalizeTasks = (tasks: GanttChartTask[]): GanttChartTask[] =>
     normalizeStoredGanttTasks(tasks as unknown);
 
+const getDuplicateTaskTitleError = (tasks: GanttChartTask[]): string | null => {
+    const duplicate = findDuplicateGanttTaskTitleInCategory(tasks);
+    if (!duplicate) return null;
+
+    return duplicate.category
+        ? `"${duplicate.category}" category 안에 "${duplicate.taskName}" task가 이미 있습니다`
+        : `category가 없는 "${duplicate.taskName}" task가 이미 있습니다`;
+};
+
 const toArchiveRow = (value: unknown): GanttChartArchiveRow | null => {
     if (!value || typeof value !== "object") return null;
     return value as GanttChartArchiveRow;
@@ -112,6 +122,8 @@ export async function createGanttChartArchive(input: {
                 error instanceof Error ? error.message : "Gantt task 형식 오류",
         };
     }
+    const duplicateError = getDuplicateTaskTitleError(tasks);
+    if (duplicateError) return { success: false, error: duplicateError };
 
     const { data, error } = await serverClient
         .from("gantt_chart_archives")
@@ -164,6 +176,8 @@ export async function updateGanttChartArchive(input: {
                 error instanceof Error ? error.message : "Gantt task 형식 오류",
         };
     }
+    const duplicateError = getDuplicateTaskTitleError(tasks);
+    if (duplicateError) return { success: false, error: duplicateError };
 
     const { data, error } = await serverClient
         .from("gantt_chart_archives")
@@ -246,6 +260,8 @@ export async function saveGanttChartArchiveCategories(input: {
                 error instanceof Error ? error.message : "Gantt task 형식 오류",
         };
     }
+    const duplicateError = getDuplicateTaskTitleError(tasks);
+    if (duplicateError) return { success: false, error: duplicateError };
 
     const { data, error } = await serverClient
         .from("gantt_chart_archives")

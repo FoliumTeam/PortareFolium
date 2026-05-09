@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+    GANTT_CHART_COLUMN_SPANS,
     buildGanttTimeline,
+    buildGanttTimelineColumns,
     countTaskDays,
+    findDuplicateGanttTaskTitleInCategory,
     getGanttArchiveTitle,
     normalizeStoredGanttTasks,
     parseGanttCsv,
@@ -94,6 +97,41 @@ describe("buildGanttTimeline", () => {
             { key: "2026-05", label: "2026.05", span: 2 },
         ]);
     });
+
+    it("builds configurable timeline columns", () => {
+        const { days } = buildGanttTimeline([
+            {
+                taskName: "Sprint",
+                category: "Dev",
+                startDate: "2026-04-29",
+                endDate: "2026-05-02",
+                comment: "",
+            },
+        ]);
+        const columns = buildGanttTimelineColumns(days, 2);
+
+        expect(GANTT_CHART_COLUMN_SPANS).toEqual([1, 2, 3, 5, 7]);
+        expect(columns).toEqual([
+            {
+                key: "2026-04-29:2026-04-30",
+                startKey: "2026-04-29",
+                endKey: "2026-04-30",
+                startIndex: 0,
+                span: 2,
+                label: "4.29-4.30",
+                weekdayLabel: "Wed-Thu",
+            },
+            {
+                key: "2026-05-01:2026-05-02",
+                startKey: "2026-05-01",
+                endKey: "2026-05-02",
+                startIndex: 2,
+                span: 2,
+                label: "5.1-5.2",
+                weekdayLabel: "Fri-Sat",
+            },
+        ]);
+    });
 });
 
 describe("misc gantt helpers", () => {
@@ -111,5 +149,36 @@ describe("misc gantt helpers", () => {
 
     it("extracts archive title from filename", () => {
         expect(getGanttArchiveTitle("release-plan.csv")).toBe("release-plan");
+    });
+
+    it("detects duplicate task names only inside the same category", () => {
+        const duplicate = findDuplicateGanttTaskTitleInCategory([
+            {
+                taskName: "Build",
+                category: "Client",
+                startDate: "2026-04-10",
+                endDate: "2026-04-11",
+                comment: "",
+            },
+            {
+                taskName: "Build",
+                category: "Server",
+                startDate: "2026-04-12",
+                endDate: "2026-04-13",
+                comment: "",
+            },
+            {
+                taskName: "Build",
+                category: "Client",
+                startDate: "2026-04-14",
+                endDate: "2026-04-15",
+                comment: "",
+            },
+        ]);
+
+        expect(duplicate).toEqual({
+            taskName: "Build",
+            category: "Client",
+        });
     });
 });

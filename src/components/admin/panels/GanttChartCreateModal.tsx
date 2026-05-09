@@ -7,11 +7,21 @@ import {
     updateGanttChartArchive,
 } from "@/app/admin/actions/gantt-chart";
 import {
+    findDuplicateGanttTaskTitleInCategory,
     parseGanttCsv,
     type GanttChartArchive,
     type GanttChartTask,
 } from "@/lib/gantt-chart";
 import { Button } from "@/components/ui/button";
+import {
+    CustomConfirmDialog,
+    CustomConfirmDialogAction,
+    CustomConfirmDialogContent,
+    CustomConfirmDialogDescription,
+    CustomConfirmDialogFooter,
+    CustomConfirmDialogHeader,
+    CustomConfirmDialogTitle,
+} from "@/components/ui/custom-confirm-dialog";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type RowDraft = {
@@ -54,6 +64,14 @@ const makeEmptyRow = (): RowDraft => ({
 const defaultRows = (): RowDraft[] => Array.from({ length: 5 }, makeEmptyRow);
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
+const getDuplicateTaskWarning = (tasks: GanttChartTask[]): string | null => {
+    const duplicate = findDuplicateGanttTaskTitleInCategory(tasks);
+    if (!duplicate) return null;
+
+    return duplicate.category
+        ? `"${duplicate.category}" category 안에 "${duplicate.taskName}" task가 이미 있습니다.\n같은 task name은 서로 다른 category에서만 사용할 수 있습니다.`
+        : `category가 없는 "${duplicate.taskName}" task가 이미 있습니다.\n같은 task name은 서로 다른 category에서만 사용할 수 있습니다.`;
+};
 
 export default function GanttChartCreateModal({
     mode,
@@ -74,6 +92,7 @@ export default function GanttChartCreateModal({
     const [isDirty, setIsDirty] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
 
     useEffect(() => {
         const handler = (e: BeforeUnloadEvent) => {
@@ -154,6 +173,12 @@ export default function GanttChartCreateModal({
             endDate: r.endDate,
             comment: r.comment.trim(),
         }));
+        const duplicateWarning = getDuplicateTaskWarning(tasks);
+        if (duplicateWarning) {
+            setError(null);
+            setWarning(duplicateWarning);
+            return;
+        }
         setSaving(true);
         setError(null);
         try {
@@ -371,6 +396,30 @@ export default function GanttChartCreateModal({
                 className="hidden"
                 onChange={handleCsvImport}
             />
+            <CustomConfirmDialog
+                open={warning !== null}
+                onOpenChange={(open) => {
+                    if (!open) setWarning(null);
+                }}
+            >
+                <CustomConfirmDialogContent>
+                    <CustomConfirmDialogHeader>
+                        <CustomConfirmDialogTitle>
+                            중복 task name
+                        </CustomConfirmDialogTitle>
+                        <CustomConfirmDialogDescription>
+                            {warning ?? ""}
+                        </CustomConfirmDialogDescription>
+                    </CustomConfirmDialogHeader>
+                    <CustomConfirmDialogFooter>
+                        <CustomConfirmDialogAction
+                            onClick={() => setWarning(null)}
+                        >
+                            확인
+                        </CustomConfirmDialogAction>
+                    </CustomConfirmDialogFooter>
+                </CustomConfirmDialogContent>
+            </CustomConfirmDialog>
         </div>
     );
 }

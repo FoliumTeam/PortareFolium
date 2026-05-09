@@ -83,6 +83,7 @@ describe("sqlite refuge server client", () => {
         await seedRefuge([]);
 
         const { serverClient } = await import("@/lib/supabase");
+        const store = await import("@/lib/refuge/store");
         const configResult = await serverClient!
             .from("site_config")
             .upsert(
@@ -97,6 +98,45 @@ describe("sqlite refuge server client", () => {
 
         expect(configResult.error).toBeNull();
         expect(configResult.data).toHaveLength(3);
+        for (const row of store.listRefugeRows("site_config")) {
+            expect(row).not.toHaveProperty("id");
+            expect(row).not.toHaveProperty("created_at");
+        }
+    });
+
+    it("does not add unsupported timestamp columns to schema-light tables", async () => {
+        await seedRefuge([]);
+
+        const { serverClient } = await import("@/lib/supabase");
+        const store = await import("@/lib/refuge/store");
+        const editorResult = await serverClient!
+            .from("editor_states")
+            .insert({
+                id: "editor-state-1",
+                entity_type: "posts",
+                entity_slug: "hello",
+                label: "Initial",
+                content: "{}",
+            })
+            .select("*")
+            .single();
+        const tagResult = await serverClient!
+            .from("tags")
+            .insert({ slug: "new", name: "New" })
+            .select("*")
+            .single();
+
+        expect(editorResult.error).toBeNull();
+        expect(editorResult.data).not.toHaveProperty("updated_at");
+        expect(tagResult.error).toBeNull();
+        expect(tagResult.data).not.toHaveProperty("id");
+        expect(tagResult.data).not.toHaveProperty("updated_at");
+        expect(store.listRefugeRows("editor_states")[0]).not.toHaveProperty(
+            "updated_at"
+        );
+        expect(store.listRefugeRows("tags")[0]).not.toHaveProperty(
+            "updated_at"
+        );
     });
 
     it("rejects auth tables but allows site_config keys", async () => {

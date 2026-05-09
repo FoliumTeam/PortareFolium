@@ -59,9 +59,7 @@ async function loadSupabase(): Promise<{
     tables: Record<string, RefugeRow[]>;
 }> {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key =
-        process.env.SUPABASE_SECRET_KEY ??
-        process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const key = process.env.SUPABASE_SECRET_KEY;
     if (!url || !key) throw new Error("Supabase env missing");
     const client = createClient(url, key);
     const tables: Record<string, RefugeRow[]> = {};
@@ -134,7 +132,7 @@ async function main(): Promise<void> {
                 ],
                 degradedSurfaces: [
                     "MCP token authentication remains unavailable in local SQLite refuge",
-                    "refuge:push defaults to replay-plan dry-run unless --apply is supplied",
+                    "db:restore-supabase performs the guarded Supabase restore flow",
                 ],
             },
             null,

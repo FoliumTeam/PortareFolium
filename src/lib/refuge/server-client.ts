@@ -9,6 +9,7 @@ import {
 import {
     getRefugeIdentity,
     isRefugeQueryableTable,
+    refugeTableHasColumn,
     type RefugeRow,
 } from "@/lib/refuge/schema";
 
@@ -357,9 +358,15 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
         const changedRows: RefugeRow[] = [];
         for (const payload of payloadRows) {
             const nextRow = { ...payload };
-            nextRow.id ??= randomUUID();
-            nextRow.created_at ??= now;
-            nextRow.updated_at = now;
+            if (refugeTableHasColumn(this.table, "id")) {
+                nextRow.id ??= randomUUID();
+            }
+            if (refugeTableHasColumn(this.table, "created_at")) {
+                nextRow.created_at ??= now;
+            }
+            if (refugeTableHasColumn(this.table, "updated_at")) {
+                nextRow.updated_at = now;
+            }
             const identity = this.resolveIdentity(nextRow);
             const index = rows.findIndex(
                 (row) => this.resolveIdentity(row) === identity
@@ -394,7 +401,9 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             const identity = this.resolveIdentity(row);
             if (!matchedIdentities.has(identity)) return row;
             const after = { ...row, ...payload };
-            if ("updated_at" in row) after.updated_at = now;
+            if (refugeTableHasColumn(this.table, "updated_at")) {
+                after.updated_at = now;
+            }
             changedRows.push(after);
             this.journal("update", identity, row, after);
             return after;

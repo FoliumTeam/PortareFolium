@@ -1,3 +1,13 @@
+# ABANDONED — KEDITOR migration failure
+
+이 plan은 실패한 migration 기록이다. 재시도하지 않는다.
+
+- KEDITOR migration은 폐기됨.
+- `content_mode` column/field/schema를 다시 추가하지 않는다.
+- posts/portfolio/books content는 기존 Tiptap/MDX 경로를 유지한다.
+- SQLite refuge 복귀는 남은 `content_mode` residue를 자동 제거한다.
+
+---
 # PLAN — KEDITOR A1' migration + 전용 편집 페이지 (Phase 1 구현 plan)
 
 **경로**: A1' (keditor-0.3.0 **source vendored + 자체 빌드**)
