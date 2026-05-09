@@ -263,41 +263,6 @@ function runDeactivate(): void {
     runTsx("scripts/refuge-deactivate.ts", []);
 }
 
-function runCleanseKeditorResidue(backupDir: string): void {
-    const stdout = runTsx("scripts/cleanse-keditor-residue.ts", [
-        "--apply",
-        "--backup-dir",
-        backupDir,
-    ]);
-    const result = parseJsonOutput<{
-        ok: boolean;
-        journalContentModeFieldsRemoved: number;
-        journalSchemaFieldsRemoved: number;
-        journalNoopEntriesDropped: number;
-        dbRowsCleaned: number;
-        dbSchemaFieldsRemoved: number;
-    }>(stdout);
-    if (!result.ok) fail("Refuge residue cleanse failed");
-    const changed =
-        result.journalContentModeFieldsRemoved +
-        result.journalSchemaFieldsRemoved +
-        result.journalNoopEntriesDropped +
-        result.dbRowsCleaned +
-        result.dbSchemaFieldsRemoved;
-    if (changed > 0) {
-        console.log(
-            [
-                "Refuge residue cleansed before replay.",
-                `content_mode fields removed: ${result.journalContentModeFieldsRemoved}`,
-                `schema-only journal fields removed: ${result.journalSchemaFieldsRemoved}`,
-                `journal no-op entries dropped: ${result.journalNoopEntriesDropped}`,
-                `refuge rows cleaned: ${result.dbRowsCleaned}`,
-                `schema-only row fields removed: ${result.dbSchemaFieldsRemoved}`,
-            ].join("\n")
-        );
-    }
-}
-
 function assertPlanSafe(plan: ReplayPlan): void {
     if (!plan.ok || plan.conflicts.length > 0) {
         const uniqueConflicts = [
@@ -372,7 +337,6 @@ async function main(): Promise<void> {
     assertRefugeReady();
     loadEnv();
     const backupDir = createBackup();
-    runCleanseKeditorResidue(backupDir);
     const checkedPlan = runRemoteCheck();
     assertPlanSafe(checkedPlan);
     printPlanSummary(checkedPlan, backupDir);

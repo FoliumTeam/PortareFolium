@@ -1,5 +1,11 @@
 # PR: feature/tiptap-keditor-table
 
+## v0.12.138 - one-time maintenance script 제거
+
+- 완료된 Supabase→R2 migration, image URL rewrite, lightbox sidecar backfill, KEditor residue cleanse script 제거.
+- `db:restore-supabase`에서 제거된 one-time cleanse script 호출을 정리하고 replay payload 정규화 경로만 유지.
+- SQLite refuge 문서를 현재 two-command 복귀 흐름과 local-wins replay 정책 기준으로 갱신.
+
 ## v0.12.137 - SQLite refuge replay column 정규화
 
 - table별 Supabase column metadata를 추가해 SQLite refuge가 없는 `id`/`created_at`/`updated_at` 컬럼을 자동 주입하지 않도록 수정.

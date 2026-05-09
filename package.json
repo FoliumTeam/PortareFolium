@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.137",
+    "version": "0.12.138",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -21,7 +21,6 @@
         "prepare": "husky || true",
         "postinstall": "node scripts/sync-omc-directives.mjs",
         "sync-omc": "node scripts/sync-omc-directives.mjs",
-        "backfill:lightbox-sidecars": "tsx scripts/backfill-lightbox-sidecars.ts",
         "r2:list": "wrangler r2 object list gvm1229-portfolio-images",
         "r2:put": "wrangler r2 object put gvm1229-portfolio-images",
         "db:use-local-sqlite": "tsx scripts/db-use-local-sqlite.ts",

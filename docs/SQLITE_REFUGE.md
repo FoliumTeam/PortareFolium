@@ -81,7 +81,6 @@ pnpm db:restore-supabase
 
 4. 명령은 confirmation 전에 다음을 자동 수행한다.
     - `.local/refuge-backups/<timestamp>/`에 local DB, journal, manifest, mode, env backup 생성
-    - 실패한 KEditor migration이 남긴 `content_mode` residue와 Supabase schema에 없는 local-only column residue를 local DB/journal/manifest에서 제거
     - Supabase current rows와 journal `before` 값을 비교하는 remote-checked replay plan 생성
     - posts/portfolio/books 등 replay 대상 table conflict는 local SQLite row 우선 override로 표시
     - unsupported table conflict가 있으면 Supabase write 없이 중단
@@ -138,6 +137,6 @@ SQLite refuge의 목적은 Supabase quota/suspend 기간 동안 local SQLite가 
 - `admin_login_attempts`는 local-only라 replay하지 않는다.
 - 지원하지 않는 table conflict는 계속 중단 조건이다.
 
-실패한 KEditor migration residue인 `content_mode`는 복귀 전에 자동 제거한다. 해당 migration은 재시도 대상이 아니며, `content_mode` column/field를 새 DB schema 또는 content row에 다시 추가하지 않는다.
+실패한 KEditor migration residue인 `content_mode`는 재도입하지 않는다. 해당 migration은 재시도 대상이 아니며, `content_mode` column/field를 새 DB schema 또는 content row에 다시 추가하지 않는다.
 
-SQLite refuge는 Supabase table별 column metadata를 기준으로 replay payload를 정규화한다. 예를 들어 `editor_states`, `tags`, `database_snapshots`에는 `updated_at`을 추가하지 않으며, 이미 journal에 남은 schema-only field도 복귀 전에 제거한다.
+SQLite refuge는 Supabase table별 column metadata를 기준으로 replay payload를 정규화한다. 예를 들어 `editor_states`, `tags`, `database_snapshots`에는 `updated_at`을 추가하지 않으며, replay apply 직전에 schema-only field를 Supabase로 보내지 않는다.
