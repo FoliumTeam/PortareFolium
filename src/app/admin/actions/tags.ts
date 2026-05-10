@@ -5,6 +5,17 @@ import { serverClient } from "@/lib/supabase";
 
 type TagItem = { slug: string; name: string; color: string | null };
 type Category = { name: string; count: number };
+type TaxonomyPost = {
+    id: string;
+    slug: string;
+    title: string;
+    pub_date: string;
+    published: boolean;
+    updated_at: string;
+};
+
+const TAXONOMY_POST_SELECT_FIELDS =
+    "id, slug, title, pub_date, published, updated_at";
 
 // tags / categories 초기 데이터 조회
 export async function getTagsPanelBootstrap(): Promise<{
@@ -103,4 +114,38 @@ export async function deletePostCategory(
         .eq("category", name);
     if (error) return { success: false, error: error.message };
     return { success: true };
+}
+
+// 태그를 사용하는 포스트 lazy 조회
+export async function listPostsByTagSlug(
+    slug: string
+): Promise<{ success: boolean; posts?: TaxonomyPost[]; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const { data, error } = await serverClient
+        .from("posts")
+        .select(TAXONOMY_POST_SELECT_FIELDS)
+        .contains("tags", [slug])
+        .order("pub_date", { ascending: false });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };
+}
+
+// 카테고리를 사용하는 포스트 lazy 조회
+export async function listPostsByCategoryName(
+    name: string
+): Promise<{ success: boolean; posts?: TaxonomyPost[]; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const { data, error } = await serverClient
+        .from("posts")
+        .select(TAXONOMY_POST_SELECT_FIELDS)
+        .eq("category", name)
+        .order("pub_date", { ascending: false });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };
 }

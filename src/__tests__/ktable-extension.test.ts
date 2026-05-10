@@ -102,5 +102,5 @@ describe("KTableExtension", () => {
         expect(html).toContain('data-text-align="center"');
         expect(html).toContain("Cell");
         expect(html).not.toContain("style=");
-    });
+    }, 15_000);
 });

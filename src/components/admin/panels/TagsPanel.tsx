@@ -5,6 +5,8 @@ import {
     ArrowDownAZ,
     ArrowUpAZ,
     ChevronDown,
+    Eye,
+    EyeOff,
     FolderOpen,
     Pencil,
     Plus,
@@ -28,6 +30,8 @@ import {
     deletePostCategory,
     deleteTagItem,
     getTagsPanelBootstrap,
+    listPostsByCategoryName,
+    listPostsByTagSlug,
     renamePostCategory,
     saveTagItem,
 } from "@/app/admin/actions/tags";
@@ -55,6 +59,24 @@ type ColorPreset = {
     label: string;
     value: string;
 };
+
+type TaxonomyPost = {
+    id: string;
+    slug: string;
+    title: string;
+    pub_date: string;
+    published: boolean;
+    updated_at: string;
+};
+
+type PostListState = Record<
+    string,
+    {
+        loading: boolean;
+        posts: TaxonomyPost[] | null;
+        error: string | null;
+    }
+>;
 
 const SORT_KEY = "admin_tag_sort";
 const CAT_SORT_KEY = "admin_cat_sort";
@@ -105,6 +127,14 @@ function getSortLabel(order: SortOrder): string {
     return order === "az" ? "A→Z" : "Z→A";
 }
 
+function formatPostDate(value: string): string {
+    return new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(new Date(value));
+}
+
 export default function TagsPanel() {
     const { confirm } = useConfirmDialog();
     const [tab, setTab] = useState<ActiveTab>("tags");
@@ -133,6 +163,16 @@ export default function TagsPanel() {
     );
     const [tagSearch, setTagSearch] = useState("");
     const [catSearch, setCatSearch] = useState("");
+    const [revealedTags, setRevealedTags] = useState<Set<string>>(
+        () => new Set()
+    );
+    const [revealedCategories, setRevealedCategories] = useState<Set<string>>(
+        () => new Set()
+    );
+    const [tagPostLists, setTagPostLists] = useState<PostListState>({});
+    const [categoryPostLists, setCategoryPostLists] = useState<PostListState>(
+        {}
+    );
 
     const loadPanelData = async () => {
         setLoading(true);
@@ -140,6 +180,18 @@ export default function TagsPanel() {
         setTags(result.tags);
         setCategories(result.categories);
         setLoading(false);
+    };
+
+    const clearPostRevealCache = () => {
+        setRevealedTags(new Set());
+        setRevealedCategories(new Set());
+        setTagPostLists({});
+        setCategoryPostLists({});
+    };
+
+    const refreshPanelData = async () => {
+        clearPostRevealCache();
+        await loadPanelData();
     };
 
     useEffect(() => {
@@ -270,6 +322,7 @@ export default function TagsPanel() {
 
         setSuccess("태그가 저장되었습니다.");
         setEditSlug(null);
+        clearPostRevealCache();
         void loadPanelData();
     };
 
@@ -295,6 +348,7 @@ export default function TagsPanel() {
 
         setSuccess("태그가 삭제되었습니다.");
         setEditSlug(null);
+        clearPostRevealCache();
         void loadPanelData();
     };
 
@@ -314,6 +368,7 @@ export default function TagsPanel() {
 
         setSuccess("카테고리 이름이 변경되었습니다.");
         setEditCat(null);
+        clearPostRevealCache();
         void loadPanelData();
     };
 
@@ -338,6 +393,7 @@ export default function TagsPanel() {
         }
 
         setSuccess("카테고리가 삭제되었습니다.");
+        clearPostRevealCache();
         void loadPanelData();
     };
 
@@ -348,6 +404,141 @@ export default function TagsPanel() {
         setOklchL(parsed.l);
         setOklchC(parsed.c);
         setOklchH(parsed.h);
+    };
+
+    const toggleTagPosts = async (slug: string) => {
+        if (revealedTags.has(slug)) {
+            setRevealedTags((current) => {
+                const next = new Set(current);
+                next.delete(slug);
+                return next;
+            });
+            return;
+        }
+
+        setRevealedTags((current) => new Set(current).add(slug));
+        if (tagPostLists[slug]?.posts || tagPostLists[slug]?.loading) return;
+
+        setTagPostLists((current) => ({
+            ...current,
+            [slug]: { loading: true, posts: null, error: null },
+        }));
+        const result = await listPostsByTagSlug(slug);
+        setTagPostLists((current) => ({
+            ...current,
+            [slug]: {
+                loading: false,
+                posts: result.success ? (result.posts ?? []) : null,
+                error: result.success
+                    ? null
+                    : (result.error ?? "포스트 목록 조회 실패"),
+            },
+        }));
+    };
+
+    const toggleCategoryPosts = async (name: string) => {
+        if (revealedCategories.has(name)) {
+            setRevealedCategories((current) => {
+                const next = new Set(current);
+                next.delete(name);
+                return next;
+            });
+            return;
+        }
+
+        setRevealedCategories((current) => new Set(current).add(name));
+        if (
+            categoryPostLists[name]?.posts ||
+            categoryPostLists[name]?.loading
+        ) {
+            return;
+        }
+
+        setCategoryPostLists((current) => ({
+            ...current,
+            [name]: { loading: true, posts: null, error: null },
+        }));
+        const result = await listPostsByCategoryName(name);
+        setCategoryPostLists((current) => ({
+            ...current,
+            [name]: {
+                loading: false,
+                posts: result.success ? (result.posts ?? []) : null,
+                error: result.success
+                    ? null
+                    : (result.error ?? "포스트 목록 조회 실패"),
+            },
+        }));
+    };
+
+    const renderPostList = (state: PostListState[string] | undefined) => {
+        if (!state) return null;
+
+        if (state.loading) {
+            return (
+                <p className="mt-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-3 text-sm text-(--color-muted)">
+                    포스트 불러오는 중...
+                </p>
+            );
+        }
+
+        if (state.error) {
+            return (
+                <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                    {state.error}
+                </p>
+            );
+        }
+
+        if (!state.posts || state.posts.length === 0) {
+            return (
+                <p className="mt-4 rounded-xl border border-dashed border-(--color-border) bg-(--color-surface) p-3 text-sm text-(--color-muted)">
+                    이 항목을 사용하는 포스트가 없습니다.
+                </p>
+            );
+        }
+
+        return (
+            <div className="mt-4 space-y-2 rounded-xl border border-(--color-border) bg-(--color-surface) p-3">
+                <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
+                    Used posts
+                </p>
+                <ul className="space-y-2">
+                    {state.posts.map((post) => (
+                        <li
+                            key={post.id}
+                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
+                        >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <p className="font-semibold break-words text-(--color-foreground)">
+                                        {post.title}
+                                    </p>
+                                    <p className="mt-1 text-xs break-all text-(--color-muted)">
+                                        {post.slug}
+                                    </p>
+                                </div>
+                                <Badge
+                                    variant={
+                                        post.published ? "secondary" : "outline"
+                                    }
+                                >
+                                    {post.published ? "Published" : "Draft"}
+                                </Badge>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-(--color-muted)">
+                                <span>
+                                    pub_date {formatPostDate(post.pub_date)}
+                                </span>
+                                <span>
+                                    updated_at {formatPostDate(post.updated_at)}
+                                </span>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
     };
 
     const renderTagForm = () => (
@@ -609,7 +800,7 @@ export default function TagsPanel() {
                     <div className="flex flex-wrap gap-2">
                         <Button
                             type="button"
-                            onClick={loadPanelData}
+                            onClick={refreshPanelData}
                             disabled={loading}
                             className={secondaryButtonClassName}
                         >
@@ -801,6 +992,25 @@ export default function TagsPanel() {
                                         <Button
                                             type="button"
                                             size="sm"
+                                            onClick={() =>
+                                                toggleTagPosts(tag.slug)
+                                            }
+                                            className={secondaryButtonClassName}
+                                        >
+                                            {revealedTags.has(tag.slug) ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                            <span className="whitespace-nowrap">
+                                                {revealedTags.has(tag.slug)
+                                                    ? "사용 포스트 숨기기"
+                                                    : "사용 포스트 보기"}
+                                            </span>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
                                             onClick={() => openEdit(tag)}
                                             className={primaryButtonClassName}
                                         >
@@ -824,6 +1034,8 @@ export default function TagsPanel() {
                                             </span>
                                         </Button>
                                     </div>
+                                    {revealedTags.has(tag.slug) &&
+                                        renderPostList(tagPostLists[tag.slug])}
                                 </article>
                             ))}
                         </div>
@@ -949,6 +1161,33 @@ export default function TagsPanel() {
                                                     type="button"
                                                     size="sm"
                                                     onClick={() =>
+                                                        toggleCategoryPosts(
+                                                            category.name
+                                                        )
+                                                    }
+                                                    className={
+                                                        secondaryButtonClassName
+                                                    }
+                                                >
+                                                    {revealedCategories.has(
+                                                        category.name
+                                                    ) ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                    <span className="whitespace-nowrap">
+                                                        {revealedCategories.has(
+                                                            category.name
+                                                        )
+                                                            ? "사용 포스트 숨기기"
+                                                            : "사용 포스트 보기"}
+                                                    </span>
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    onClick={() =>
                                                         openCategoryEdit(
                                                             category.name
                                                         )
@@ -981,6 +1220,14 @@ export default function TagsPanel() {
                                                     </span>
                                                 </Button>
                                             </div>
+                                            {revealedCategories.has(
+                                                category.name
+                                            ) &&
+                                                renderPostList(
+                                                    categoryPostLists[
+                                                        category.name
+                                                    ]
+                                                )}
                                         </>
                                     )}
                                 </article>
