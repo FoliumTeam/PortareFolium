@@ -511,66 +511,73 @@ export default function TagsPanel() {
         }
 
         return (
-            <ScrollArea
-                className="mt-4 max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)"
-                viewportClassName="max-h-72"
-            >
-                <div className="space-y-2 p-3">
-                    <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                        Used posts
-                    </p>
-                    <ul className="space-y-2">
-                        {state.posts.map((post) => (
-                            <li
-                                key={post.id}
-                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
-                            >
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                        <p className="font-semibold break-words text-(--color-foreground)">
-                                            {post.title}
-                                        </p>
-                                        <p className="mt-1 text-xs break-all text-(--color-muted)">
-                                            {post.slug}
-                                        </p>
+            <div className="mt-4 space-y-2">
+                <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
+                    Used posts
+                </p>
+                <ScrollArea
+                    className="max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)"
+                    viewportClassName="max-h-72"
+                >
+                    <div className="p-3">
+                        <ul className="space-y-2">
+                            {state.posts.map((post) => (
+                                <li
+                                    key={post.id}
+                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
+                                >
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold break-words text-(--color-foreground)">
+                                                {post.title}
+                                            </p>
+                                            <p className="mt-1 text-xs break-all text-(--color-muted)">
+                                                {post.slug}
+                                            </p>
+                                        </div>
+                                        <Badge
+                                            className={
+                                                post.published
+                                                    ? "border-green-700 bg-green-600 text-white dark:border-green-500 dark:bg-green-600 dark:text-white"
+                                                    : "border-amber-700 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-600 dark:text-white"
+                                            }
+                                        >
+                                            {post.published
+                                                ? "Published"
+                                                : "Draft"}
+                                        </Badge>
                                     </div>
-                                    <Badge
-                                        className={
-                                            post.published
-                                                ? "border-green-700 bg-green-600 text-white dark:border-green-500 dark:bg-green-600 dark:text-white"
-                                                : "border-amber-700 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-600 dark:text-white"
-                                        }
-                                    >
-                                        {post.published ? "Published" : "Draft"}
-                                    </Badge>
-                                </div>
-                                <div className="mt-2 flex flex-wrap gap-2 text-xs text-(--color-muted)">
-                                    <span>
-                                        pub_date {formatPostDate(post.pub_date)}
-                                    </span>
-                                    <span>
-                                        updated_at{" "}
-                                        {formatPostDate(post.updated_at)}
-                                    </span>
-                                </div>
-                                <div className="mt-3 flex justify-end">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        onClick={() => confirmEditPost(post)}
-                                        className={primaryButtonClassName}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="whitespace-nowrap">
-                                            포스트 편집
+                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-(--color-muted)">
+                                        <span>
+                                            pub_date{" "}
+                                            {formatPostDate(post.pub_date)}
                                         </span>
-                                    </Button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </ScrollArea>
+                                        <span>
+                                            updated_at{" "}
+                                            {formatPostDate(post.updated_at)}
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 flex justify-end">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={() =>
+                                                confirmEditPost(post)
+                                            }
+                                            className={primaryButtonClassName}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                            <span className="whitespace-nowrap">
+                                                포스트 편집
+                                            </span>
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </ScrollArea>
+            </div>
         );
     };
 
