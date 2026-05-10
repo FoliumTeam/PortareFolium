@@ -519,8 +519,10 @@ export default function TagsPanel() {
                                     </p>
                                 </div>
                                 <Badge
-                                    variant={
-                                        post.published ? "secondary" : "outline"
+                                    className={
+                                        post.published
+                                            ? "border-green-700 bg-green-600 text-white dark:border-green-500 dark:bg-green-600 dark:text-white"
+                                            : "border-amber-700 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-600 dark:text-white"
                                     }
                                 >
                                     {post.published ? "Published" : "Draft"}
