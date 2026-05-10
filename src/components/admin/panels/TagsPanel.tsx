@@ -7,6 +7,7 @@ import {
     ChevronDown,
     Eye,
     EyeOff,
+    ExternalLink,
     FolderOpen,
     Pencil,
     Plus,
@@ -483,6 +484,10 @@ export default function TagsPanel() {
         window.location.hash = `#posts/edit/${post.slug}`;
     };
 
+    const viewPost = (post: TaxonomyPost) => {
+        window.location.href = `/blog/${post.slug}`;
+    };
+
     const renderPostList = (state: PostListState[string] | undefined) => {
         if (!state) return null;
 
@@ -557,7 +562,18 @@ export default function TagsPanel() {
                                             {formatPostDate(post.updated_at)}
                                         </span>
                                     </div>
-                                    <div className="mt-3 flex justify-end">
+                                    <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={() => viewPost(post)}
+                                            className={secondaryButtonClassName}
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                            <span className="whitespace-nowrap">
+                                                포스트 보기
+                                            </span>
+                                        </Button>
                                         <Button
                                             type="button"
                                             size="sm"
