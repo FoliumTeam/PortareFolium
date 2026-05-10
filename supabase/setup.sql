@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS gantt_chart_archives (
 CREATE INDEX IF NOT EXISTS idx_posts_slug        ON posts(slug);
 CREATE INDEX IF NOT EXISTS idx_posts_published   ON posts(published, pub_date DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_category    ON posts(category);
+CREATE INDEX IF NOT EXISTS idx_posts_tags_gin    ON posts USING GIN (tags);
 CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
 CREATE INDEX IF NOT EXISTS idx_books_slug        ON books(slug);

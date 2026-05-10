@@ -3,7 +3,8 @@
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
-type TagItem = { slug: string; name: string; color: string | null };
+type TagPayload = { slug: string; name: string; color: string | null };
+type TagItem = TagPayload & { count: number };
 type Category = { name: string; count: number };
 type TaxonomyPost = {
     id: string;
@@ -16,6 +17,7 @@ type TaxonomyPost = {
 
 const TAXONOMY_POST_SELECT_FIELDS =
     "id, slug, title, pub_date, published, updated_at";
+const TAXONOMY_POST_PREVIEW_LIMIT = 20;
 
 // tags / categories 초기 데이터 조회
 export async function getTagsPanelBootstrap(): Promise<{
@@ -25,27 +27,38 @@ export async function getTagsPanelBootstrap(): Promise<{
     await requireAdminSession();
     if (!serverClient) return { tags: [], categories: [] };
 
-    const [{ data: tagsData }, { data: categoriesData }] = await Promise.all([
+    const [{ data: tagsData }, { data: postsData }] = await Promise.all([
         serverClient.from("tags").select("slug, name, color").order("name"),
-        serverClient
-            .from("posts")
-            .select("category")
-            .not("category", "is", null),
+        serverClient.from("posts").select("category, tags"),
     ]);
 
-    const counts = new Map<string, number>();
-    for (const row of categoriesData ?? []) {
+    const categoryCounts = new Map<string, number>();
+    const tagCounts = new Map<string, number>();
+    for (const row of postsData ?? []) {
         if (row.category?.trim()) {
-            counts.set(
+            categoryCounts.set(
                 row.category.trim(),
-                (counts.get(row.category.trim()) ?? 0) + 1
+                (categoryCounts.get(row.category.trim()) ?? 0) + 1
             );
+        }
+        const uniqueTags = new Set<string>();
+        for (const tag of row.tags ?? []) {
+            if (typeof tag !== "string") continue;
+            const trimmedTag = tag.trim();
+            if (!trimmedTag) continue;
+            uniqueTags.add(trimmedTag);
+        }
+        for (const tag of uniqueTags) {
+            tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
         }
     }
 
     return {
-        tags: (tagsData as TagItem[] | null) ?? [],
-        categories: [...counts.entries()].map(([name, count]) => ({
+        tags: ((tagsData as TagPayload[] | null) ?? []).map((tag) => ({
+            ...tag,
+            count: tagCounts.get(tag.slug.trim()) ?? 0,
+        })) satisfies TagItem[],
+        categories: [...categoryCounts.entries()].map(([name, count]) => ({
             name,
             count,
         })),
@@ -54,7 +67,7 @@ export async function getTagsPanelBootstrap(): Promise<{
 
 // 태그 생성/수정
 export async function saveTagItem(
-    payload: TagItem,
+    payload: TagPayload,
     editSlug: string | "new" | null
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -127,7 +140,7 @@ export async function listPostsByTagSlug(
         .from("posts")
         .select(TAXONOMY_POST_SELECT_FIELDS)
         .contains("tags", [slug])
-        .order("pub_date", { ascending: false });
+        .limit(TAXONOMY_POST_PREVIEW_LIMIT);
 
     if (error) return { success: false, error: error.message };
     return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };
@@ -144,7 +157,7 @@ export async function listPostsByCategoryName(
         .from("posts")
         .select(TAXONOMY_POST_SELECT_FIELDS)
         .eq("category", name)
-        .order("pub_date", { ascending: false });
+        .limit(TAXONOMY_POST_PREVIEW_LIMIT);
 
     if (error) return { success: false, error: error.message };
     return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };

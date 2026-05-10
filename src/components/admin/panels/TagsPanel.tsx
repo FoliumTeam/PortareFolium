@@ -42,6 +42,7 @@ type TagItem = {
     slug: string;
     name: string;
     color: string | null;
+    count: number;
 };
 
 type Category = {
@@ -485,7 +486,7 @@ export default function TagsPanel() {
     };
 
     const viewPost = (post: TaxonomyPost) => {
-        window.location.href = `/blog/${post.slug}`;
+        window.open(`/blog/${post.slug}`, "_blank", "noopener,noreferrer");
     };
 
     const renderPostList = (state: PostListState[string] | undefined) => {
@@ -1032,6 +1033,9 @@ export default function TagsPanel() {
                                                     className="max-w-full break-all"
                                                 >
                                                     slug: {tag.slug}
+                                                </Badge>
+                                                <Badge variant="secondary">
+                                                    사용 포스트 {tag.count}개
                                                 </Badge>
                                                 {tag.color && (
                                                     <Badge
