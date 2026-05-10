@@ -511,7 +511,10 @@ export default function TagsPanel() {
         }
 
         return (
-            <ScrollArea className="mt-4 max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)">
+            <ScrollArea
+                className="mt-4 max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)"
+                viewportClassName="max-h-72"
+            >
                 <div className="space-y-2 p-3">
                     <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
                         Used posts
