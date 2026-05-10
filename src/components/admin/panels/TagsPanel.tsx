@@ -519,7 +519,7 @@ export default function TagsPanel() {
         return (
             <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    Used posts
+                    Used posts · pub_date 최신순 · 최대 20개
                 </p>
                 <ScrollArea
                     className="max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)"

@@ -6,6 +6,8 @@ import { serverClient } from "@/lib/supabase";
 type TagPayload = { slug: string; name: string; color: string | null };
 type TagItem = TagPayload & { count: number };
 type Category = { name: string; count: number };
+type TagCountRow = { tag_slug: string; count: number };
+type CategoryCountRow = { category: string; count: number };
 type TaxonomyPost = {
     id: string;
     slug: string;
@@ -13,6 +15,9 @@ type TaxonomyPost = {
     pub_date: string;
     published: boolean;
     updated_at: string;
+};
+type PostTagPreviewRow = {
+    posts: TaxonomyPost | TaxonomyPost[] | null;
 };
 
 const TAXONOMY_POST_SELECT_FIELDS =
@@ -27,34 +32,52 @@ export async function getTagsPanelBootstrap(): Promise<{
     await requireAdminSession();
     if (!serverClient) return { tags: [], categories: [] };
 
-    const [{ data: tagsData }, { data: postsData }] = await Promise.all([
+    const [tagsRes, tagCountsRes, categoryCountsRes] = await Promise.all([
         serverClient.from("tags").select("slug, name, color").order("name"),
-        serverClient.from("posts").select("category, tags"),
+        serverClient.from("post_tag_counts").select("tag_slug, count"),
+        serverClient.from("post_category_counts").select("category, count"),
     ]);
 
-    const categoryCounts = new Map<string, number>();
     const tagCounts = new Map<string, number>();
-    for (const row of postsData ?? []) {
-        if (row.category?.trim()) {
-            categoryCounts.set(
-                row.category.trim(),
-                (categoryCounts.get(row.category.trim()) ?? 0) + 1
-            );
+    const categoryCounts = new Map<string, number>();
+
+    if (tagCountsRes.error || categoryCountsRes.error) {
+        const { data: postsData } = await serverClient
+            .from("posts")
+            .select("category, tags");
+
+        for (const row of postsData ?? []) {
+            if (row.category?.trim()) {
+                categoryCounts.set(
+                    row.category.trim(),
+                    (categoryCounts.get(row.category.trim()) ?? 0) + 1
+                );
+            }
+            const uniqueTags = new Set<string>();
+            for (const tag of row.tags ?? []) {
+                if (typeof tag !== "string") continue;
+                const trimmedTag = tag.trim();
+                if (!trimmedTag) continue;
+                uniqueTags.add(trimmedTag);
+            }
+            for (const tag of uniqueTags) {
+                tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+            }
         }
-        const uniqueTags = new Set<string>();
-        for (const tag of row.tags ?? []) {
-            if (typeof tag !== "string") continue;
-            const trimmedTag = tag.trim();
-            if (!trimmedTag) continue;
-            uniqueTags.add(trimmedTag);
+    } else {
+        for (const row of (tagCountsRes.data as TagCountRow[] | null) ?? []) {
+            tagCounts.set(row.tag_slug, row.count);
         }
-        for (const tag of uniqueTags) {
-            tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+        for (const row of (categoryCountsRes.data as
+            | CategoryCountRow[]
+            | null) ?? []) {
+            if (!row.category.trim()) continue;
+            categoryCounts.set(row.category, row.count);
         }
     }
 
     return {
-        tags: ((tagsData as TagPayload[] | null) ?? []).map((tag) => ({
+        tags: ((tagsRes.data as TagPayload[] | null) ?? []).map((tag) => ({
             ...tag,
             count: tagCounts.get(tag.slug.trim()) ?? 0,
         })) satisfies TagItem[],
@@ -137,13 +160,36 @@ export async function listPostsByTagSlug(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     const { data, error } = await serverClient
-        .from("posts")
-        .select(TAXONOMY_POST_SELECT_FIELDS)
-        .contains("tags", [slug])
+        .from("post_tags")
+        .select(`posts!inner(${TAXONOMY_POST_SELECT_FIELDS})`)
+        .eq("tag_slug", slug)
+        .order("pub_date", { ascending: false })
         .limit(TAXONOMY_POST_PREVIEW_LIMIT);
 
-    if (error) return { success: false, error: error.message };
-    return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };
+    if (error) {
+        const fallback = await serverClient
+            .from("posts")
+            .select(TAXONOMY_POST_SELECT_FIELDS)
+            .contains("tags", [slug])
+            .order("pub_date", { ascending: false })
+            .limit(TAXONOMY_POST_PREVIEW_LIMIT);
+
+        if (fallback.error) {
+            return { success: false, error: fallback.error.message };
+        }
+        return {
+            success: true,
+            posts: (fallback.data as TaxonomyPost[] | null) ?? [],
+        };
+    }
+
+    const posts = ((data as PostTagPreviewRow[] | null) ?? []).flatMap(
+        (row) => {
+            if (!row.posts) return [];
+            return Array.isArray(row.posts) ? row.posts : [row.posts];
+        }
+    );
+    return { success: true, posts };
 }
 
 // 카테고리를 사용하는 포스트 lazy 조회
@@ -157,6 +203,7 @@ export async function listPostsByCategoryName(
         .from("posts")
         .select(TAXONOMY_POST_SELECT_FIELDS)
         .eq("category", name)
+        .order("pub_date", { ascending: false })
         .limit(TAXONOMY_POST_PREVIEW_LIMIT);
 
     if (error) return { success: false, error: error.message };
