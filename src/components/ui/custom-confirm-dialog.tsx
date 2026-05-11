@@ -35,7 +35,7 @@ function CustomConfirmDialogOverlay({
         <AlertDialogPrimitive.Overlay
             data-slot="custom-confirm-dialog-overlay"
             className={cn(
-                "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]",
+                "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-[140] bg-black/55 backdrop-blur-[2px]",
                 className
             )}
             {...props}
@@ -53,7 +53,7 @@ function CustomConfirmDialogContent({
             <AlertDialogPrimitive.Content
                 data-slot="custom-confirm-dialog-content"
                 className={cn(
-                    "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 tablet:w-[50vw] tablet:max-w-[50vw] fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100vh-2rem)] w-[80vw] max-w-[80vw] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 shadow-xl duration-200 outline-none",
+                    "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 tablet:w-[50vw] tablet:max-w-[50vw] fixed top-[50%] left-[50%] z-[141] grid max-h-[calc(100vh-2rem)] w-[80vw] max-w-[80vw] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 shadow-xl duration-200 outline-none",
                     className
                 )}
                 {...props}
