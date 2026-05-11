@@ -132,25 +132,35 @@ export function toggleCodeBlock(editor: Editor | null): boolean {
 
         // Handle NodeSelection
         if (selection instanceof NodeSelection) {
-            const firstChild = selection.node.firstChild?.firstChild;
-            const lastChild = selection.node.lastChild?.lastChild;
+            if (selection.node.type.name === "accordion") {
+                const firstContentPos = selection.from + 2;
+                const resolvedPos = state.doc.resolve(
+                    Math.min(firstContentPos, selection.to - 1)
+                );
+                chain = chain.setTextSelection(
+                    TextSelection.near(resolvedPos, 1)
+                );
+            } else {
+                const firstChild = selection.node.firstChild?.firstChild;
+                const lastChild = selection.node.lastChild?.lastChild;
 
-            const from = firstChild
-                ? selection.from + firstChild.nodeSize
-                : selection.from + 1;
+                const from = firstChild
+                    ? selection.from + firstChild.nodeSize
+                    : selection.from + 1;
 
-            const to = lastChild
-                ? selection.to - lastChild.nodeSize
-                : selection.to - 1;
+                const to = lastChild
+                    ? selection.to - lastChild.nodeSize
+                    : selection.to - 1;
 
-            const resolvedFrom = state.doc.resolve(from);
-            const resolvedTo = state.doc.resolve(to);
+                const resolvedFrom = state.doc.resolve(from);
+                const resolvedTo = state.doc.resolve(to);
 
-            chain = chain
-                .setTextSelection(
-                    TextSelection.between(resolvedFrom, resolvedTo)
-                )
-                .clearNodes();
+                chain = chain
+                    .setTextSelection(
+                        TextSelection.between(resolvedFrom, resolvedTo)
+                    )
+                    .clearNodes();
+            }
         }
 
         const toggle = editor.isActive("codeBlock")
