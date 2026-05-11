@@ -506,6 +506,26 @@ export default function RichMarkdownEditor({
         return () => clearInterval(id);
     }, [editor, disabled, AUTOSAVE_KEY]);
 
+    const focusEmptyEditorSurface = useCallback(
+        (event: React.MouseEvent<HTMLDivElement>) => {
+            if (!editor || disabled || sourceMode || !editor.isEmpty) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (
+                target.closest(
+                    "button, input, textarea, select, a, [contenteditable='false']"
+                )
+            ) {
+                return;
+            }
+            if (target.closest(".ProseMirror")) return;
+
+            event.preventDefault();
+            editor.chain().focus("end").run();
+        },
+        [disabled, editor, sourceMode]
+    );
+
     // --- Fullscreen ---
     const [isFullscreen, setIsFullscreen] = useState(false);
     const toggleFullscreen = () => setIsFullscreen((prev) => !prev);
@@ -654,11 +674,12 @@ export default function RichMarkdownEditor({
 
                         {/* WYSIWYG editor — single instance, always mounted, never remounted */}
                         <div
-                            className={`prose ${
+                            className={`prose cursor-text ${
                                 isFullscreen
                                     ? "prose-lg tablet:p-8 laptop:p-16 mx-auto my-8 min-h-[1100px] max-w-4xl rounded-xl bg-white p-4 shadow-2xl dark:bg-zinc-900"
                                     : "prose-base min-h-[300px] max-w-none p-6"
                             } ${sourceMode ? "hidden" : ""}`}
+                            onMouseDown={focusEmptyEditorSurface}
                         >
                             <EditorContent editor={editor} />
                         </div>
