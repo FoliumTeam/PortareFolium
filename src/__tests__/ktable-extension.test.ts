@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import { KTableExtension } from "@/extensions/KTableExtension";
 import { renderMarkdown } from "@/lib/markdown";
+import { normalizeKTableMdxHtml } from "@/lib/mdx-safe-html";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 
 function createEditor() {
@@ -102,5 +103,57 @@ describe("KTableExtension", () => {
         expect(html).toContain('data-text-align="center"');
         expect(html).toContain("Cell");
         expect(html).not.toContain("style=");
+    }, 15_000);
+
+    it("normalizes generated KTable image HTML into MDX-safe JSX", () => {
+        const markdown = normalizeKTableMdxHtml(`
+            <table data-table-width="100%" data-table-bordered="true" data-ktable="true" class="ktable">
+                <tr><th colspan="1" rowspan="1"><p style="text-align: center;"><img src="https://example.com/a.webp"></p></th></tr>
+            </table>
+        `);
+
+        expect(markdown).toContain('className="ktable"');
+        expect(markdown).toContain('colSpan="1"');
+        expect(markdown).toContain('rowSpan="1"');
+        expect(markdown).toContain('data-text-align="center"');
+        expect(markdown).toContain('<img src="https://example.com/a.webp" />');
+        expect(markdown).not.toContain("style=");
+        expect(markdown).not.toContain("colspan=");
+        expect(markdown).not.toContain("rowspan=");
+    });
+
+    it("keeps generated KTable row height as an MDX-safe style object", () => {
+        const markdown = normalizeKTableMdxHtml(`
+            <table data-ktable="true"><tbody><tr data-row-height="48px" style="height: 48px"><td>Cell</td></tr></tbody></table>
+        `);
+
+        expect(markdown).toContain('data-row-height="48px"');
+        expect(markdown).toContain('style={{ height: "48px" }}');
+        expect(markdown).not.toContain('style="height: 48px"');
+    });
+
+    it("renders generated KTable images that were saved as browser HTML", async () => {
+        const html = await renderMarkdown(`
+            <table data-table-width="100%" data-table-bordered="true" data-ktable="true" class="ktable">
+                <tr><th colspan="1" rowspan="1"><p style="text-align: center;"><img src="https://example.com/a.webp"></p></th></tr>
+            </table>
+        `);
+
+        expect(html).toContain('data-ktable="true"');
+        expect(html).toContain('src="https://example.com/a.webp"');
+        expect(html).toContain('data-text-align="center"');
+        expect(html).not.toContain("MDX 렌더링 중 오류");
+        expect(html).not.toContain("style=");
+    }, 15_000);
+
+    it("renders generated KTable row height that was saved as browser HTML", async () => {
+        const html = await renderMarkdown(`
+            <table data-ktable="true"><tbody><tr data-row-height="48px" style="height: 48px"><td>Cell</td></tr></tbody></table>
+        `);
+
+        expect(html).toContain('data-row-height="48px"');
+        expect(html).toContain('style="height:48px"');
+        expect(html).toContain("Cell");
+        expect(html).not.toContain("MDX 렌더링 중 오류");
     }, 15_000);
 });

@@ -14,6 +14,7 @@ import {
     transformOutsideCodeBlocks,
 } from "@/lib/mdx-directive-converter";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
+import { normalizeKTableMdxHtml } from "@/lib/mdx-safe-html";
 import MarkdownImage from "@/components/MarkdownImage";
 import ImageGroup from "@/components/ImageGroup";
 
@@ -152,6 +153,7 @@ export async function renderMarkdown(content: string): Promise<string> {
     // JSX 태그 내부 \[ \] escape 복원 (예외 경로로 DB에 오염된 content 방어)
     let mdx = unescapeJsxBrackets(content);
     mdx = directiveToJsx(mdx);
+    mdx = transformOutsideCodeBlocks(mdx, normalizeKTableMdxHtml);
     mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
     try {
         // 콘텐츠 내 next/image import 제거 — renderToString 서버 컨텍스트 호환

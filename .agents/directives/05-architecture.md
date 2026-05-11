@@ -52,6 +52,7 @@
 - **JSX 속성값의 `$` 가 inline math로 오인되는 문제**: split 정규식(`/(```[\s\S]*?```|<[A-Z]\w*[\s\S]*?\/>|\$\$[\s\S]*?\$\$|\$(?!\$)[^
 $]+?\$)/g`)에 self-closing JSX 태그 패턴 포함 필수.
 - **MDX 렌더 에러 진단**: `src/lib/markdown.tsx`의 catch 블록 확인.
+- **MDX raw HTML은 browser HTML이 아니라 JSX**: editor가 저장하는 HTML은 MDX evaluate 전에 JSX-safe 해야 함. 특히 KTable HTML은 `<img />` 같은 void tag self-close, `className`/`colSpan`/`rowSpan` 같은 React attribute casing, string `style="..."` 제거가 필수. KTable 관련 저장 또는 render 경로를 변경할 때는 `normalizeKTableMdxHtml` 적용 여부, `docs/logic/ktable-mdx-safe-html.md`, image-in-table/row-height regression test 확인.
 
 ## MCP Agent Guide
 

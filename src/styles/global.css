@@ -544,33 +544,65 @@ html.dark .ProseMirror td {
 .ProseMirror th[data-text-align="left"],
 .ProseMirror td[data-text-align="left"],
 .post-content.prose
-    :where(th[data-text-align="left"], td[data-text-align="left"]),
+    :where(
+        th[data-text-align="left"],
+        td[data-text-align="left"],
+        table[data-ktable="true"] p[data-text-align="left"]
+    ),
 .portfolio-markdoc-body.prose
-    :where(th[data-text-align="left"], td[data-text-align="left"]) {
+    :where(
+        th[data-text-align="left"],
+        td[data-text-align="left"],
+        table[data-ktable="true"] p[data-text-align="left"]
+    ) {
     text-align: left;
 }
 .ProseMirror th[data-text-align="center"],
 .ProseMirror td[data-text-align="center"],
 .post-content.prose
-    :where(th[data-text-align="center"], td[data-text-align="center"]),
+    :where(
+        th[data-text-align="center"],
+        td[data-text-align="center"],
+        table[data-ktable="true"] p[data-text-align="center"]
+    ),
 .portfolio-markdoc-body.prose
-    :where(th[data-text-align="center"], td[data-text-align="center"]) {
+    :where(
+        th[data-text-align="center"],
+        td[data-text-align="center"],
+        table[data-ktable="true"] p[data-text-align="center"]
+    ) {
     text-align: center;
 }
 .ProseMirror th[data-text-align="right"],
 .ProseMirror td[data-text-align="right"],
 .post-content.prose
-    :where(th[data-text-align="right"], td[data-text-align="right"]),
+    :where(
+        th[data-text-align="right"],
+        td[data-text-align="right"],
+        table[data-ktable="true"] p[data-text-align="right"]
+    ),
 .portfolio-markdoc-body.prose
-    :where(th[data-text-align="right"], td[data-text-align="right"]) {
+    :where(
+        th[data-text-align="right"],
+        td[data-text-align="right"],
+        table[data-ktable="true"] p[data-text-align="right"]
+    ) {
     text-align: right;
 }
 .ProseMirror th[data-text-align="justify"],
 .ProseMirror td[data-text-align="justify"],
 .post-content.prose
-    :where(th[data-text-align="justify"], td[data-text-align="justify"]),
+    :where(
+        th[data-text-align="justify"],
+        td[data-text-align="justify"],
+        table[data-ktable="true"] p[data-text-align="justify"]
+    ),
 .portfolio-markdoc-body.prose
-    :where(th[data-text-align="justify"], td[data-text-align="justify"]) {
+    :where(
+        th[data-text-align="justify"],
+        td[data-text-align="justify"],
+        table[data-ktable="true"] p[data-text-align="justify"]
+    ) {
     text-align: justify;
 }
 .ProseMirror :is(th, td)[data-tw-color],

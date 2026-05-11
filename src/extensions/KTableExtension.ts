@@ -7,6 +7,7 @@ import { Table } from "@tiptap/extension-table";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableRow } from "@tiptap/extension-table-row";
+import { normalizeKTableMdxHtml } from "@/lib/mdx-safe-html";
 
 const cellAttributes = {
     tailwindColor: {
@@ -389,7 +390,7 @@ export const KTableExtension = Table.extend({
                         Fragment.from(node as never),
                         this.editor.schema as never
                     );
-                    state.write(formatTableBlock(html));
+                    state.write(formatTableBlock(normalizeKTableMdxHtml(html)));
                     state.closeBlock(node);
                 },
                 parse: {},
