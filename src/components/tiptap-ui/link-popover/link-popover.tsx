@@ -88,8 +88,8 @@ export const LinkButton = forwardRef<HTMLButtonElement, ButtonProps>(
                 variant="ghost"
                 role="button"
                 tabIndex={-1}
-                aria-label="Link"
-                tooltip="Link"
+                aria-label="링크"
+                tooltip="링크"
                 ref={ref}
                 {...props}
             >
@@ -135,7 +135,7 @@ const LinkMain: React.FC<LinkMainProps> = ({
                 <CardItemGroup orientation="horizontal">
                     <Input
                         type="url"
-                        placeholder="Paste a link..."
+                        placeholder="링크 붙여넣기..."
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -150,7 +150,8 @@ const LinkMain: React.FC<LinkMainProps> = ({
                         <Button
                             type="button"
                             onClick={setLink}
-                            title="Apply link"
+                            aria-label="링크 적용"
+                            tooltip="링크 적용"
                             disabled={!url && !isActive}
                             variant="ghost"
                         >
@@ -165,7 +166,8 @@ const LinkMain: React.FC<LinkMainProps> = ({
                             <Button
                                 type="button"
                                 onClick={openLink}
-                                title="Open in new window"
+                                aria-label="새 창에서 열기"
+                                tooltip="새 창에서 열기"
                                 disabled={!url && !isActive}
                                 variant="ghost"
                             >
@@ -177,7 +179,8 @@ const LinkMain: React.FC<LinkMainProps> = ({
                             <Button
                                 type="button"
                                 onClick={removeLink}
-                                title="Remove link"
+                                aria-label="링크 제거"
+                                tooltip="링크 제거"
                                 disabled={!url && !isActive}
                                 variant="ghost"
                             >

@@ -21,61 +21,61 @@ import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon";
 export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h";
 export const HIGHLIGHT_COLORS = [
     {
-        label: "Default background",
+        label: "기본 배경",
         value: "var(--tt-bg-color)",
         colorValue: "#ffffff",
         border: "var(--tt-bg-color-contrast)",
     },
     {
-        label: "Gray background",
+        label: "회색 배경",
         value: "var(--tt-color-highlight-gray)",
         colorValue: "#f8f8f7",
         border: "var(--tt-color-highlight-gray-contrast)",
     },
     {
-        label: "Brown background",
+        label: "갈색 배경",
         value: "var(--tt-color-highlight-brown)",
         colorValue: "#f4eeee",
         border: "var(--tt-color-highlight-brown-contrast)",
     },
     {
-        label: "Orange background",
+        label: "주황 배경",
         value: "var(--tt-color-highlight-orange)",
         colorValue: "#fbecdd",
         border: "var(--tt-color-highlight-orange-contrast)",
     },
     {
-        label: "Yellow background",
+        label: "노랑 배경",
         value: "var(--tt-color-highlight-yellow)",
         colorValue: "#fef9c3",
         border: "var(--tt-color-highlight-yellow-contrast)",
     },
     {
-        label: "Green background",
+        label: "초록 배경",
         value: "var(--tt-color-highlight-green)",
         colorValue: "#dcfce7",
         border: "var(--tt-color-highlight-green-contrast)",
     },
     {
-        label: "Blue background",
+        label: "파랑 배경",
         value: "var(--tt-color-highlight-blue)",
         colorValue: "#e0f2fe",
         border: "var(--tt-color-highlight-blue-contrast)",
     },
     {
-        label: "Purple background",
+        label: "보라 배경",
         value: "var(--tt-color-highlight-purple)",
         colorValue: "#f3e8ff",
         border: "var(--tt-color-highlight-purple-contrast)",
     },
     {
-        label: "Pink background",
+        label: "분홍 배경",
         value: "var(--tt-color-highlight-pink)",
         colorValue: "#fcf1f6",
         border: "var(--tt-color-highlight-pink-contrast)",
     },
     {
-        label: "Red background",
+        label: "빨강 배경",
         value: "var(--tt-color-highlight-red)",
         colorValue: "#ffe4e6",
         border: "var(--tt-color-highlight-red-contrast)",
@@ -350,7 +350,7 @@ export function useColorHighlight(config: UseColorHighlightConfig) {
     const handleRemoveHighlight = useCallback(() => {
         const success = removeHighlight(editor, mode);
         if (success) {
-            onApplied?.({ color: "", label: "Remove highlight", mode });
+            onApplied?.({ color: "", label: "형광펜 제거", mode });
         }
         return success;
     }, [editor, onApplied, mode]);
@@ -374,7 +374,7 @@ export function useColorHighlight(config: UseColorHighlightConfig) {
         handleColorHighlight,
         handleRemoveHighlight,
         canColorHighlight: canColorHighlightState,
-        label: label || `Highlight`,
+        label: label || `형광펜`,
         shortcutKeys: COLOR_HIGHLIGHT_SHORTCUT_KEY,
         Icon: HighlighterIcon,
         mode,

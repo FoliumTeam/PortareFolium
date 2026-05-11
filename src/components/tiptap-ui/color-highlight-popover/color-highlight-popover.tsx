@@ -86,8 +86,8 @@ export const ColorHighlightPopoverButton = forwardRef<
         data-appearance="default"
         role="button"
         tabIndex={-1}
-        aria-label="Highlight text"
-        tooltip="Highlight"
+        aria-label="형광펜"
+        tooltip="형광펜"
         ref={ref}
         {...props}
     >
@@ -113,7 +113,7 @@ export function ColorHighlightPopoverContent({
     const containerRef = useRef<HTMLDivElement>(null);
 
     const menuItems = useMemo(
-        () => [...colors, { label: "Remove highlight", value: "none" }],
+        () => [...colors, { label: "형광펜 제거", value: "none" }],
         [colors]
     );
 
@@ -152,7 +152,7 @@ export function ColorHighlightPopoverContent({
                                             : color.value
                                     }
                                     tooltip={color.label}
-                                    aria-label={`${color.label} highlight color`}
+                                    aria-label={`${color.label} 형광펜 색상`}
                                     tabIndex={index === selectedIndex ? 0 : -1}
                                     data-highlighted={selectedIndex === index}
                                     useColorValue={useColorValue}
@@ -164,8 +164,8 @@ export function ColorHighlightPopoverContent({
                     <ButtonGroup>
                         <Button
                             onClick={handleRemoveHighlight}
-                            aria-label="Remove highlight"
-                            tooltip="Remove highlight"
+                            aria-label="형광펜 제거"
+                            tooltip="형광펜 제거"
                             tabIndex={selectedIndex === colors.length ? 0 : -1}
                             type="button"
                             role="menuitem"
@@ -221,7 +221,7 @@ export function ColorHighlightPopover({
                     <Icon className="tiptap-button-icon" />
                 </ColorHighlightPopoverButton>
             </PopoverTrigger>
-            <PopoverContent aria-label="Highlight colors">
+            <PopoverContent aria-label="형광펜 색상">
                 <ColorHighlightPopoverContent
                     editor={editor}
                     colors={colors}

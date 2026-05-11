@@ -2,12 +2,12 @@
 
 import { forwardRef, Fragment, useMemo } from "react";
 
-// --- Tiptap UI Primitive ---
+// --- UI Primitive ---
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/tiptap-ui-primitive/tooltip";
+} from "@/components/ui/tooltip";
 
 // --- Lib ---
 import { cn, parseShortcutKeys } from "@/lib/tiptap-utils";
@@ -78,7 +78,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         }
 
         return (
-            <Tooltip delay={200}>
+            <Tooltip delayDuration={200}>
                 <TooltipTrigger
                     data-slot="tiptap-button"
                     className={cn("tiptap-button", className)}

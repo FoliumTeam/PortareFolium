@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { ReactNode } from "react";
 import { Editor } from "@tiptap/react";
 import katex from "katex";
 import { Maximize2, Minimize2 } from "lucide-react";
@@ -24,6 +25,12 @@ import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button";
 import { ColorHighlightPopover } from "@/components/tiptap-ui/color-highlight-popover";
 import { LinkPopover } from "@/components/tiptap-ui/link-popover";
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface EditorToolbarProps {
     editor: Editor | null;
@@ -32,6 +39,21 @@ interface EditorToolbarProps {
     onImageUpload?: () => void;
     sourceMode?: boolean;
     onSourceToggle?: () => void;
+}
+
+function ToolbarTooltip({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{children}</TooltipTrigger>
+            <TooltipContent sideOffset={6}>{label}</TooltipContent>
+        </Tooltip>
+    );
 }
 
 // YouTube directive 삽입 서브 컴포넌트
@@ -76,15 +98,22 @@ function YoutubeInput({ editor }: { editor: Editor }) {
 
     return (
         <div ref={ref} className="relative">
-            <button
-                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
-                onClick={() => setOpen((v) => !v)}
-                title="YouTube 삽입"
-            >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="#FF0000">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
-            </button>
+            <ToolbarTooltip label="YouTube 삽입">
+                <button
+                    className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                    onClick={() => setOpen((v) => !v)}
+                    aria-label="YouTube 삽입"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="#FF0000"
+                    >
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                    </svg>
+                </button>
+            </ToolbarTooltip>
             {open && (
                 <div className="absolute top-full left-0 z-50 mt-1 flex gap-1 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                     <input
@@ -151,31 +180,33 @@ function LatexInput({ editor }: { editor: Editor }) {
 
     return (
         <div ref={ref} className="relative">
-            <button
-                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
-                onClick={() => setOpen((v) => !v)}
-                title="LaTeX 수식 삽입"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+            <ToolbarTooltip label="수식 삽입">
+                <button
+                    className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                    onClick={() => setOpen((v) => !v)}
+                    aria-label="수식 삽입"
                 >
-                    <text
-                        x="12"
-                        y="18"
-                        fontSize="18"
-                        fontWeight="normal"
-                        fill="currentColor"
-                        textAnchor="middle"
-                        fontFamily="serif"
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
                     >
-                        ∑
-                    </text>
-                </svg>
-            </button>
+                        <text
+                            x="12"
+                            y="18"
+                            fontSize="18"
+                            fontWeight="normal"
+                            fill="currentColor"
+                            textAnchor="middle"
+                            fontFamily="serif"
+                        >
+                            ∑
+                        </text>
+                    </svg>
+                </button>
+            </ToolbarTooltip>
             {open && (
                 <div className="absolute top-full right-0 z-50 mt-1 w-80 rounded-lg border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                     <textarea
@@ -224,11 +255,11 @@ function AccordionInsert({ editor }: { editor: Editor }) {
             .focus()
             .insertContent({
                 type: "accordion",
-                attrs: { title: "Accordion title" },
+                attrs: { title: "아코디언 제목" },
                 content: [
                     {
                         type: "paragraph",
-                        content: [{ type: "text", text: "Accordion content" }],
+                        content: [{ type: "text", text: "아코디언 내용" }],
                     },
                 ],
             })
@@ -236,28 +267,30 @@ function AccordionInsert({ editor }: { editor: Editor }) {
     };
 
     return (
-        <button
-            className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={handleInsert}
-            title="Accordion 삽입"
-        >
-            <svg
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        <ToolbarTooltip label="아코디언 삽입">
+            <button
+                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleInsert}
+                aria-label="아코디언 삽입"
             >
-                <rect x="3" y="4" width="18" height="4" rx="1" />
-                <rect x="3" y="10" width="18" height="4" rx="1" />
-                <rect x="3" y="16" width="18" height="4" rx="1" />
-                <path d="M19 12l-2-2m2 2l-2 2" />
-            </svg>
-        </button>
+                <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <rect x="3" y="4" width="18" height="4" rx="1" />
+                    <rect x="3" y="10" width="18" height="4" rx="1" />
+                    <rect x="3" y="16" width="18" height="4" rx="1" />
+                    <path d="M19 12l-2-2m2 2l-2 2" />
+                </svg>
+            </button>
+        </ToolbarTooltip>
     );
 }
 
@@ -277,149 +310,165 @@ export default function EditorToolbar({
         : undefined;
 
     return (
-        <Toolbar variant="fixed" className={toolbarClass}>
-            {/* 1. History */}
-            <ToolbarGroup>
-                <UndoRedoButton editor={editor} action="undo" />
-                <UndoRedoButton editor={editor} action="redo" />
-            </ToolbarGroup>
+        <TooltipProvider delayDuration={120}>
+            <Toolbar variant="fixed" className={toolbarClass}>
+                {/* 1. History */}
+                <ToolbarGroup>
+                    <UndoRedoButton editor={editor} action="undo" />
+                    <UndoRedoButton editor={editor} action="redo" />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 2. Headings & Lists & Blocks */}
-            <ToolbarGroup>
-                <HeadingDropdownMenu
-                    editor={editor}
-                    levels={[1, 2, 3, 4, 5, 6]}
-                />
-                <ListDropdownMenu
-                    editor={editor}
-                    types={["bulletList", "orderedList", "taskList"]}
-                />
-                <BlockquoteButton editor={editor} />
-                <CodeBlockButton editor={editor} />
-            </ToolbarGroup>
+                {/* 2. Headings & Lists & Blocks */}
+                <ToolbarGroup>
+                    <HeadingDropdownMenu
+                        editor={editor}
+                        levels={[1, 2, 3, 4, 5, 6]}
+                    />
+                    <ListDropdownMenu
+                        editor={editor}
+                        types={["bulletList", "orderedList", "taskList"]}
+                    />
+                    <BlockquoteButton editor={editor} />
+                    <CodeBlockButton editor={editor} />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 3. Inline marks */}
-            <ToolbarGroup>
-                <MarkButton editor={editor} type="bold" />
-                <MarkButton editor={editor} type="italic" />
-                <MarkButton editor={editor} type="strike" />
-                <MarkButton editor={editor} type="code" />
-                <MarkButton editor={editor} type="underline" />
-                <ColorHighlightPopover editor={editor} />
-                <LinkPopover editor={editor} />
-            </ToolbarGroup>
+                {/* 3. Inline marks */}
+                <ToolbarGroup>
+                    <MarkButton editor={editor} type="bold" />
+                    <MarkButton editor={editor} type="italic" />
+                    <MarkButton editor={editor} type="strike" />
+                    <MarkButton editor={editor} type="code" />
+                    <MarkButton editor={editor} type="underline" />
+                    <ColorHighlightPopover editor={editor} />
+                    <LinkPopover editor={editor} />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 4. Superscript / Subscript */}
-            <ToolbarGroup>
-                <MarkButton editor={editor} type="superscript" />
-                <MarkButton editor={editor} type="subscript" />
-            </ToolbarGroup>
+                {/* 4. Superscript / Subscript */}
+                <ToolbarGroup>
+                    <MarkButton editor={editor} type="superscript" />
+                    <MarkButton editor={editor} type="subscript" />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 5. Text align */}
-            <ToolbarGroup>
-                <TextAlignButton editor={editor} align="left" />
-                <TextAlignButton editor={editor} align="center" />
-                <TextAlignButton editor={editor} align="right" />
-                <TextAlignButton editor={editor} align="justify" />
-            </ToolbarGroup>
+                {/* 5. Text align */}
+                <ToolbarGroup>
+                    <TextAlignButton editor={editor} align="left" />
+                    <TextAlignButton editor={editor} align="center" />
+                    <TextAlignButton editor={editor} align="right" />
+                    <TextAlignButton editor={editor} align="justify" />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 6. Tables */}
-            <ToolbarGroup>
-                <KTableControls editor={editor} />
-            </ToolbarGroup>
+                {/* 6. Tables */}
+                <ToolbarGroup>
+                    <KTableControls editor={editor} />
+                </ToolbarGroup>
 
-            <ToolbarSeparator />
+                <ToolbarSeparator />
 
-            {/* 7. Media */}
-            <ToolbarGroup>
-                <YoutubeInput editor={editor} />
-                <LatexInput editor={editor} />
-                <AccordionInsert editor={editor} />
-            </ToolbarGroup>
+                {/* 7. Media */}
+                <ToolbarGroup>
+                    <YoutubeInput editor={editor} />
+                    <LatexInput editor={editor} />
+                    <AccordionInsert editor={editor} />
+                </ToolbarGroup>
 
-            <Spacer />
+                <Spacer />
 
-            {/* 8. Image + Source + Fullscreen */}
-            <ToolbarGroup>
-                {onImageUpload && (
-                    <button
-                        onClick={onImageUpload}
-                        disabled={sourceMode}
-                        title="이미지 삽입"
-                        className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <rect
-                                width="18"
-                                height="18"
-                                x="3"
-                                y="3"
-                                rx="2"
-                                ry="2"
-                            />
-                            <circle cx="9" cy="9" r="2" />
-                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                        </svg>
-                    </button>
-                )}
-                {onSourceToggle && (
-                    <button
-                        onClick={onSourceToggle}
-                        title={sourceMode ? "Markdown 뷰" : "Source 편집"}
-                        className={`rounded p-1.5 text-sm transition-colors ${
-                            sourceMode
-                                ? "bg-zinc-700 text-white dark:bg-zinc-300 dark:text-zinc-900"
-                                : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                        }`}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <polyline points="16 18 22 12 16 6" />
-                            <polyline points="8 6 2 12 8 18" />
-                        </svg>
-                    </button>
-                )}
-                <button
-                    onClick={onToggleFullscreen}
-                    title="전체화면 토글"
-                    className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                >
-                    {isFullscreen ? (
-                        <Minimize2 size={16} />
-                    ) : (
-                        <Maximize2 size={16} />
+                {/* 8. Image + Source + Fullscreen */}
+                <ToolbarGroup>
+                    {onImageUpload && (
+                        <ToolbarTooltip label="이미지 삽입">
+                            <button
+                                onClick={onImageUpload}
+                                disabled={sourceMode}
+                                aria-label="이미지 삽입"
+                                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <rect
+                                        width="18"
+                                        height="18"
+                                        x="3"
+                                        y="3"
+                                        rx="2"
+                                        ry="2"
+                                    />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                            </button>
+                        </ToolbarTooltip>
                     )}
-                </button>
-            </ToolbarGroup>
-        </Toolbar>
+                    {onSourceToggle && (
+                        <ToolbarTooltip
+                            label={sourceMode ? "미리보기 편집" : "소스 편집"}
+                        >
+                            <button
+                                onClick={onSourceToggle}
+                                aria-label={
+                                    sourceMode ? "미리보기 편집" : "소스 편집"
+                                }
+                                className={`rounded p-1.5 text-sm transition-colors ${
+                                    sourceMode
+                                        ? "bg-zinc-700 text-white dark:bg-zinc-300 dark:text-zinc-900"
+                                        : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                }`}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <polyline points="16 18 22 12 16 6" />
+                                    <polyline points="8 6 2 12 8 18" />
+                                </svg>
+                            </button>
+                        </ToolbarTooltip>
+                    )}
+                    <ToolbarTooltip
+                        label={isFullscreen ? "전체화면 종료" : "전체화면"}
+                    >
+                        <button
+                            onClick={onToggleFullscreen}
+                            aria-label={
+                                isFullscreen ? "전체화면 종료" : "전체화면"
+                            }
+                            className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        >
+                            {isFullscreen ? (
+                                <Minimize2 size={16} />
+                            ) : (
+                                <Maximize2 size={16} />
+                            )}
+                        </button>
+                    </ToolbarTooltip>
+                </ToolbarGroup>
+            </Toolbar>
+        </TooltipProvider>
     );
 }

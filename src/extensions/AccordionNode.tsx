@@ -47,7 +47,7 @@ function AccordionPreview({ node, updateAttributes }: ReactNodeViewProps) {
                     onChange={(e) =>
                         updateAttributes({ title: e.target.value })
                     }
-                    placeholder="Accordion title"
+                    placeholder="아코디언 제목"
                     className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 outline-none dark:text-zinc-100"
                 />
             </div>

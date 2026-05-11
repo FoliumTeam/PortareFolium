@@ -54,9 +54,9 @@ export const listIcons = {
 };
 
 export const listLabels: Record<ListType, string> = {
-    bulletList: "Bullet List",
-    orderedList: "Ordered List",
-    taskList: "Task List",
+    bulletList: "글머리 목록",
+    orderedList: "번호 목록",
+    taskList: "체크 목록",
 };
 
 export const LIST_SHORTCUT_KEYS: Record<ListType, string> = {

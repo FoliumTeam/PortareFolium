@@ -295,7 +295,7 @@ export function useLinkPopover(config?: UseLinkPopoverConfig) {
         isVisible,
         canSet,
         isActive,
-        label: "Link",
+        label: "링크",
         Icon: LinkIcon,
         ...linkHandler,
     };

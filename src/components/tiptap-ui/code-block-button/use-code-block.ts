@@ -289,7 +289,7 @@ export function useCodeBlock(config?: UseCodeBlockConfig) {
         isActive,
         handleToggle,
         canToggle: canToggleState,
-        label: "Code Block",
+        label: "코드 블록",
         shortcutKeys: CODE_BLOCK_SHORTCUT_KEY,
         Icon: CodeBlockIcon,
     };

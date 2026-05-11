@@ -95,9 +95,9 @@ export const HeadingDropdownMenu = forwardRef<
                         tabIndex={-1}
                         disabled={!canToggle}
                         data-disabled={!canToggle}
-                        aria-label="Format text as heading"
+                        aria-label="제목 스타일"
                         aria-pressed={isActive}
-                        tooltip="Heading"
+                        tooltip="제목"
                         {...buttonProps}
                         ref={ref}
                     >
@@ -119,7 +119,7 @@ export const HeadingDropdownMenu = forwardRef<
                                 <HeadingButton
                                     editor={editor}
                                     level={level}
-                                    text={`Heading ${level}`}
+                                    text={`제목 ${level}`}
                                     showTooltip={false}
                                 />
                             </DropdownMenuItem>

@@ -50,17 +50,17 @@ export interface ListOption {
 
 export const listOptions: ListOption[] = [
     {
-        label: "Bullet List",
+        label: "글머리 목록",
         type: "bulletList",
         icon: ListIcon,
     },
     {
-        label: "Ordered List",
+        label: "번호 목록",
         type: "orderedList",
         icon: ListOrderedIcon,
     },
     {
-        label: "Task List",
+        label: "체크 목록",
         type: "taskList",
         icon: ListTodoIcon,
     },
@@ -216,7 +216,7 @@ export function useListDropdownMenu(config?: UseListDropdownMenuConfig) {
         canToggle: canToggleAny,
         types,
         filteredLists,
-        label: "List",
+        label: "목록",
         Icon: activeList ? listIcons[activeList.type] : ListIcon,
     };
 }

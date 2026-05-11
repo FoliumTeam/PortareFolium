@@ -105,7 +105,7 @@ export const ColorHighlightButton = forwardRef<
             editor,
             highlightColor,
             useColorValue,
-            label: text || `Toggle highlight (${highlightColor})`,
+            label: text || `형광펜 (${highlightColor})`,
             hideWhenUnavailable,
             mode,
             onApplied,
