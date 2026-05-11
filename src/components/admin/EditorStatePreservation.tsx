@@ -3,6 +3,7 @@
 // 에디터 임시 저장 모달 (Supabase 기반 snapshot 데이터 손실 방지)
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Clock3, FileClock, History, Save } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import {
     createEditorSnapshot,
@@ -13,6 +14,7 @@ import {
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import { triggerSnapshotCleanup } from "@/lib/snapshot-cleanup";
 import StatePreviewModal from "@/components/admin/StatePreviewModal";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface EditorSnapshot {
     id: string;
@@ -74,10 +76,8 @@ export default function EditorStatePreservation({
         useState<EditorSnapshot | null>(null);
     const [confirmRevertId, setConfirmRevertId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-    const [confirmBulkDeleteAuto, setConfirmBulkDeleteAuto] = useState(false);
-    const [confirmBulkDeleteManual, setConfirmBulkDeleteManual] =
-        useState(false);
     const initialSaved = useRef(false);
+    const { confirm } = useConfirmDialog();
 
     // snapshot 변경 시 부모에 count 전달
     useEffect(() => {
@@ -174,6 +174,18 @@ export default function EditorStatePreservation({
     // 섹션 전체 삭제 (Auto-save 또는 Bookmark)
     const handleDeleteAll = useCallback(
         async (label: "Auto-save" | "Bookmark") => {
+            const isAuto = label === "Auto-save";
+            const ok = await confirm({
+                title: isAuto ? "자동 저장 모두 삭제" : "수동 저장 모두 삭제",
+                description: isAuto
+                    ? "자동 임시 저장본을 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다."
+                    : "수동 임시 저장본을 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다.",
+                confirmText: "모두 삭제",
+                cancelText: "취소",
+                variant: "destructive",
+            });
+            if (!ok) return;
+
             const loaded = await deleteEditorSnapshotsByLabel(
                 entityType,
                 entitySlug,
@@ -182,7 +194,7 @@ export default function EditorStatePreservation({
             setSnapshots(loaded);
             fireCleanup();
         },
-        [entityType, entitySlug, fireCleanup]
+        [confirm, entityType, entitySlug, fireCleanup]
     );
 
     // badge label 표시 텍스트
@@ -190,6 +202,12 @@ export default function EditorStatePreservation({
         if (label === "Initial") return "초기본";
         if (label === "Auto-save") return "자동 저장";
         return "수동 저장";
+    }
+
+    function getSnapshotIcon(label: string) {
+        if (label === "Initial") return FileClock;
+        if (label === "Auto-save") return Clock3;
+        return Save;
     }
 
     // badge color 클래스
@@ -209,18 +227,21 @@ export default function EditorStatePreservation({
 
     // snapshot 카드 렌더링
     function renderSnapshotCard(snap: EditorSnapshot) {
+        const SnapshotIcon = getSnapshotIcon(snap.label);
+
         return (
             <div
                 key={snap.id}
-                className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800"
+                className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800"
             >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between gap-3">
                     <span
-                        className={`rounded px-1.5 py-0.5 text-xs font-medium ${getBadgeClass(snap.label)}`}
+                        className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold ${getBadgeClass(snap.label)}`}
                     >
+                        <SnapshotIcon className="h-4 w-4" />
                         {getBadgeText(snap.label)}
                     </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
                         {new Date(snap.savedAt).toLocaleString()}
                     </span>
                 </div>
@@ -231,7 +252,7 @@ export default function EditorStatePreservation({
                         role="alertdialog"
                         aria-modal="true"
                         aria-describedby={`revert-desc-${snap.id}`}
-                        className="flex flex-col gap-2 text-xs"
+                        className="flex flex-col gap-2 text-sm"
                     >
                         <span
                             id={`revert-desc-${snap.id}`}
@@ -260,7 +281,7 @@ export default function EditorStatePreservation({
                         role="alertdialog"
                         aria-modal="true"
                         aria-describedby={`delete-desc-${snap.id}`}
-                        className="flex flex-col gap-2 text-xs"
+                        className="flex flex-col gap-2 text-sm"
                     >
                         <span
                             id={`delete-desc-${snap.id}`}
@@ -287,7 +308,7 @@ export default function EditorStatePreservation({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex gap-2 text-xs">
+                    <div className="flex gap-2 text-sm">
                         <button
                             onClick={() => setPreviewSnapshot(snap)}
                             className="rounded-md bg-zinc-600 px-3 py-1.5 font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
@@ -322,25 +343,26 @@ export default function EditorStatePreservation({
                 onClick={onClose}
             >
                 <div
-                    className="tablet:mx-4 tablet:max-w-md mx-2 flex max-h-[80vh] w-full flex-col rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+                    className="tablet:mx-4 tablet:max-w-4xl mx-2 flex max-h-[80vh] w-full flex-col rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* 헤더 */}
                     <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-700">
                         <div className="min-w-0">
-                            <p className="text-xs font-bold tracking-[0.16em] text-zinc-500 uppercase dark:text-zinc-400">
+                            <p className="text-sm font-bold tracking-[0.16em] text-zinc-500 uppercase dark:text-zinc-400">
                                 Draft snapshots
                             </p>
-                            <h3 className="mt-1 text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+                            <h3 className="mt-1 flex items-center gap-2 text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+                                <History className="h-5 w-5 text-indigo-500" />
                                 임시 저장
                             </h3>
-                            <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                                 자동 저장본과 직접 저장한 복구 지점을 확인하고
                                 되돌릴 수 있습니다.
                             </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
-                            <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white">
+                            <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold whitespace-nowrap text-white">
                                 {snapshots.length}개
                             </span>
                             <button
@@ -358,11 +380,11 @@ export default function EditorStatePreservation({
                         <button
                             type="button"
                             onClick={handleBookmark}
-                            className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                            className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
                             현재 내용을 수동 임시 저장
                         </button>
-                        <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
                             저장 버튼을 누르기 전에도 복구용 지점을 남길 수
                             있습니다.
                         </p>
@@ -371,7 +393,8 @@ export default function EditorStatePreservation({
                     {/* 3개 카테고리로 나눈 snapshot 목록 */}
                     <div className="flex-1 overflow-y-auto px-5 py-3">
                         {/* 초기본 섹션 */}
-                        <h4 className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                        <h4 className="mb-2 flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
+                            <FileClock className="h-4 w-4 text-blue-500" />
                             초기본
                         </h4>
                         <div className="flex flex-col gap-2">
@@ -381,132 +404,58 @@ export default function EditorStatePreservation({
                         <hr className="my-3 border-zinc-200 dark:border-zinc-700" />
 
                         {/* 자동 저장 섹션 */}
-                        <h4 className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                            자동 저장
-                        </h4>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
+                                <Clock3 className="h-4 w-4 text-zinc-500" />
+                                자동 저장
+                            </h4>
+                            {autoSnapshots.length > 0 && (
+                                <button
+                                    onClick={() =>
+                                        void handleDeleteAll("Auto-save")
+                                    }
+                                    className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                >
+                                    모두 삭제
+                                </button>
+                            )}
+                        </div>
                         {autoSnapshots.length === 0 ? (
-                            <p className="py-1 text-xs text-zinc-400 dark:text-zinc-500">
+                            <p className="py-1 text-sm text-zinc-400 dark:text-zinc-500">
                                 자동 저장 없음
                             </p>
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {autoSnapshots.map(renderSnapshotCard)}
-                                {confirmBulkDeleteAuto ? (
-                                    <div
-                                        role="alertdialog"
-                                        aria-modal="true"
-                                        aria-describedby="bulk-delete-auto-desc"
-                                        className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20"
-                                    >
-                                        <span
-                                            id="bulk-delete-auto-desc"
-                                            className="text-red-600 dark:text-red-400"
-                                        >
-                                            자동 임시 저장본을 모두
-                                            삭제하시겠습니까?
-                                        </span>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={async () => {
-                                                    await handleDeleteAll(
-                                                        "Auto-save"
-                                                    );
-                                                    setConfirmBulkDeleteAuto(
-                                                        false
-                                                    );
-                                                }}
-                                                className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
-                                            >
-                                                삭제
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    setConfirmBulkDeleteAuto(
-                                                        false
-                                                    )
-                                                }
-                                                className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
-                                            >
-                                                취소
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() =>
-                                            setConfirmBulkDeleteAuto(true)
-                                        }
-                                        className="mt-1 w-full rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                    >
-                                        모두 삭제
-                                    </button>
-                                )}
                             </div>
                         )}
 
                         <hr className="my-3 border-zinc-200 dark:border-zinc-700" />
 
                         {/* 수동 저장 섹션 */}
-                        <h4 className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                            수동 저장
-                        </h4>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
+                                <Save className="h-4 w-4 text-purple-500" />
+                                수동 저장
+                            </h4>
+                            {manualSnapshots.length > 0 && (
+                                <button
+                                    onClick={() =>
+                                        void handleDeleteAll("Bookmark")
+                                    }
+                                    className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                >
+                                    모두 삭제
+                                </button>
+                            )}
+                        </div>
                         {manualSnapshots.length === 0 ? (
-                            <p className="py-1 text-xs text-zinc-400 dark:text-zinc-500">
+                            <p className="py-1 text-sm text-zinc-400 dark:text-zinc-500">
                                 수동 저장 없음
                             </p>
                         ) : (
                             <div className="flex flex-col gap-2">
                                 {manualSnapshots.map(renderSnapshotCard)}
-                                {confirmBulkDeleteManual ? (
-                                    <div
-                                        role="alertdialog"
-                                        aria-modal="true"
-                                        aria-describedby="bulk-delete-manual-desc"
-                                        className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20"
-                                    >
-                                        <span
-                                            id="bulk-delete-manual-desc"
-                                            className="text-red-600 dark:text-red-400"
-                                        >
-                                            수동 임시 저장본을 모두
-                                            삭제하시겠습니까?
-                                        </span>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={async () => {
-                                                    await handleDeleteAll(
-                                                        "Bookmark"
-                                                    );
-                                                    setConfirmBulkDeleteManual(
-                                                        false
-                                                    );
-                                                }}
-                                                className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
-                                            >
-                                                삭제
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    setConfirmBulkDeleteManual(
-                                                        false
-                                                    )
-                                                }
-                                                className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
-                                            >
-                                                취소
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() =>
-                                            setConfirmBulkDeleteManual(true)
-                                        }
-                                        className="mt-1 w-full rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                                    >
-                                        모두 삭제
-                                    </button>
-                                )}
                             </div>
                         )}
                     </div>
