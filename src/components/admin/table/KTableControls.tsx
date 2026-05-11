@@ -1,19 +1,19 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ChainedCommands } from "@tiptap/core";
 import type { Editor } from "@tiptap/react";
 
 const CELL_COLORS = [
-    { name: "", label: "Clear", hex: "transparent" },
-    { name: "slate-200", label: "Slate", hex: "#e2e8f0" },
-    { name: "red-200", label: "Red", hex: "#fecaca" },
-    { name: "orange-200", label: "Orange", hex: "#fed7aa" },
-    { name: "yellow-200", label: "Yellow", hex: "#fef08a" },
-    { name: "green-200", label: "Green", hex: "#bbf7d0" },
-    { name: "blue-200", label: "Blue", hex: "#bfdbfe" },
-    { name: "purple-200", label: "Purple", hex: "#e9d5ff" },
-    { name: "pink-200", label: "Pink", hex: "#fbcfe8" },
+    { name: "", label: "색상 지우기", hex: "transparent" },
+    { name: "slate-200", label: "회색", hex: "#e2e8f0" },
+    { name: "red-200", label: "빨강", hex: "#fecaca" },
+    { name: "orange-200", label: "주황", hex: "#fed7aa" },
+    { name: "yellow-200", label: "노랑", hex: "#fef08a" },
+    { name: "green-200", label: "초록", hex: "#bbf7d0" },
+    { name: "blue-200", label: "파랑", hex: "#bfdbfe" },
+    { name: "purple-200", label: "보라", hex: "#e9d5ff" },
+    { name: "pink-200", label: "분홍", hex: "#fbcfe8" },
 ];
 
 function useOutsideClick<T extends HTMLElement>(
@@ -43,7 +43,7 @@ function ToolbarButton({
 }: {
     onClick: () => void;
     title: string;
-    children: React.ReactNode;
+    children: ReactNode;
     disabled?: boolean;
 }) {
     return (
@@ -53,7 +53,7 @@ function ToolbarButton({
             onClick={onClick}
             title={title}
             disabled={disabled}
-            className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+            className="rounded px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
         >
             {children}
         </button>
@@ -67,8 +67,8 @@ function PopoverShell({
     align = "left",
 }: {
     title: string;
-    button: React.ReactNode;
-    children: React.ReactNode;
+    button: ReactNode;
+    children: ReactNode;
     align?: "left" | "right";
 }) {
     const [open, setOpen] = useState(false);
@@ -81,13 +81,13 @@ function PopoverShell({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setOpen((value) => !value)}
                 title={title}
-                className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
+                className="rounded px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
             >
                 {button}
             </button>
             {open && (
                 <div
-                    className={`absolute top-full z-[100] mt-1 w-64 rounded-lg border border-zinc-200 bg-white p-3 text-sm shadow-xl dark:border-zinc-700 dark:bg-zinc-800 ${
+                    className={`absolute top-full z-[100] mt-1 w-72 rounded-lg border border-zinc-200 bg-white p-3 text-sm shadow-xl dark:border-zinc-700 dark:bg-zinc-800 ${
                         align === "right" ? "right-0" : "left-0"
                     }`}
                 >
@@ -148,17 +148,17 @@ function useSelectionInTable(editor: Editor): boolean {
 
 function KTableInsertPopover({ editor }: { editor: Editor }) {
     const presets = [
-        { label: "2 x 2", rows: 2, cols: 2, withHeaderRow: true },
-        { label: "3 x 3", rows: 3, cols: 3, withHeaderRow: true },
-        { label: "4 x 4", rows: 4, cols: 4, withHeaderRow: true },
-        { label: "Plain 3 x 3", rows: 3, cols: 3, withHeaderRow: false },
+        { label: "2×2 머리글", rows: 2, cols: 2, withHeaderRow: true },
+        { label: "3×3 머리글", rows: 3, cols: 3, withHeaderRow: true },
+        { label: "4×4 머리글", rows: 4, cols: 4, withHeaderRow: true },
+        { label: "3×3 일반", rows: 3, cols: 3, withHeaderRow: false },
     ];
 
     return (
-        <PopoverShell title="테이블 삽입 / 프리셋" button="▦">
+        <PopoverShell title="표 삽입: 행과 열 preset 선택" button="표 삽입">
             <div className="space-y-2">
                 <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                    Table presets
+                    표 크기 선택
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     {presets.map((preset) => (
@@ -175,7 +175,7 @@ function KTableInsertPopover({ editor }: { editor: Editor }) {
                                     })
                                 )
                             }
-                            className="rounded border border-zinc-200 px-2 py-1 text-left hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:hover:border-indigo-400"
+                            className="rounded border border-zinc-200 px-2 py-1 text-left whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:hover:border-indigo-400"
                         >
                             {preset.label}
                         </button>
@@ -188,10 +188,14 @@ function KTableInsertPopover({ editor }: { editor: Editor }) {
 
 function KTablePropertiesPopover({ editor }: { editor: Editor }) {
     return (
-        <PopoverShell title="테이블 속성" button="Props" align="right">
+        <PopoverShell
+            title="표 설정: 테두리와 머리글 전환"
+            button="표 설정"
+            align="right"
+        >
             <div className="space-y-3">
                 <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                    Table properties
+                    표 전체 설정
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     <button
@@ -204,9 +208,9 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                                 })
                             )
                         }
-                        className="rounded border border-zinc-200 px-2 py-1 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
+                        className="rounded border border-zinc-200 px-2 py-1 whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
                     >
-                        Border
+                        테두리 표시
                     </button>
                     <button
                         type="button"
@@ -218,9 +222,9 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                                 })
                             )
                         }
-                        className="rounded border border-zinc-200 px-2 py-1 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
+                        className="rounded border border-zinc-200 px-2 py-1 whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
                     >
-                        No border
+                        테두리 숨김
                     </button>
                     <button
                         type="button"
@@ -228,9 +232,9 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                         onClick={() =>
                             run(editor, (chain) => chain.toggleHeaderRow())
                         }
-                        className="rounded border border-zinc-200 px-2 py-1 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
+                        className="rounded border border-zinc-200 px-2 py-1 whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
                     >
-                        Header row
+                        첫 행 머리글
                     </button>
                     <button
                         type="button"
@@ -238,9 +242,9 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                         onClick={() =>
                             run(editor, (chain) => chain.toggleHeaderColumn())
                         }
-                        className="rounded border border-zinc-200 px-2 py-1 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
+                        className="rounded border border-zinc-200 px-2 py-1 whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
                     >
-                        Header col
+                        첫 열 머리글
                     </button>
                 </div>
             </div>
@@ -250,18 +254,18 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
 
 function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
     return (
-        <PopoverShell title="셀 속성" button="Cell">
+        <PopoverShell title="셀 설정: 배경색과 정렬 변경" button="셀 설정">
             <div className="space-y-3">
                 <div>
                     <p className="mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                        Background
+                        셀 배경색
                     </p>
                     <div className="flex flex-wrap gap-1">
                         {CELL_COLORS.map((color) => (
                             <button
                                 key={color.label}
                                 type="button"
-                                title={color.label}
+                                title={`셀 배경색: ${color.label}`}
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => {
                                     run(editor, (chain) =>
@@ -279,18 +283,19 @@ function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
                 </div>
                 <div>
                     <p className="mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                        Align
+                        셀 텍스트 정렬
                     </p>
                     <div className="grid grid-cols-4 gap-1">
                         {[
-                            ["left", "L"],
-                            ["center", "C"],
-                            ["right", "R"],
-                            ["justify", "J"],
+                            ["left", "왼쪽"],
+                            ["center", "가운데"],
+                            ["right", "오른쪽"],
+                            ["justify", "양쪽"],
                         ].map(([value, label]) => (
                             <button
                                 key={value}
                                 type="button"
+                                title={`셀 텍스트 ${label} 정렬`}
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() =>
                                     run(editor, (chain) =>
@@ -300,7 +305,7 @@ function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
                                         )
                                     )
                                 }
-                                className="rounded border border-zinc-200 px-2 py-1 hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
+                                className="rounded border border-zinc-200 px-2 py-1 text-xs whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700"
                             >
                                 {label}
                             </button>
@@ -326,73 +331,73 @@ export function KTableControls({ editor }: { editor: Editor }) {
                         onClick={() =>
                             run(editor, (chain) => chain.addRowAfter())
                         }
-                        title="아래 행 추가"
+                        title="현재 행 아래에 새 행 추가"
                     >
-                        ↓+
+                        아래 행
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.addRowBefore())
                         }
-                        title="위 행 추가"
+                        title="현재 행 위에 새 행 추가"
                     >
-                        ↑+
+                        위 행
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.deleteRow())
                         }
-                        title="행 삭제"
+                        title="현재 행 삭제"
                     >
-                        ↕✕
+                        행 삭제
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.addColumnAfter())
                         }
-                        title="오른쪽 열 추가"
+                        title="현재 열 오른쪽에 새 열 추가"
                     >
-                        →+
+                        오른쪽 열
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.addColumnBefore())
                         }
-                        title="왼쪽 열 추가"
+                        title="현재 열 왼쪽에 새 열 추가"
                     >
-                        ←+
+                        왼쪽 열
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.deleteColumn())
                         }
-                        title="열 삭제"
+                        title="현재 열 삭제"
                     >
-                        ↔✕
+                        열 삭제
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.mergeCells())
                         }
-                        title="셀 병합"
+                        title="선택한 셀 병합"
                     >
-                        ⊞
+                        셀 병합
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.splitCell())
                         }
-                        title="셀 분할"
+                        title="병합된 셀 분할"
                     >
-                        ⊟
+                        셀 분할
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() =>
                             run(editor, (chain) => chain.deleteTable())
                         }
-                        title="테이블 삭제"
+                        title="표 전체 삭제"
                     >
-                        🗑
+                        표 삭제
                     </ToolbarButton>
                 </>
             )}
