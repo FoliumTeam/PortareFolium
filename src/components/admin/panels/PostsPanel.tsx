@@ -23,6 +23,7 @@ import {
     savePostTocStyle,
     setPostPublished,
 } from "@/app/admin/actions/posts";
+import { createPostCategory } from "@/app/admin/actions/tags";
 import {
     Eye,
     EyeOff,
@@ -132,6 +133,7 @@ export default function PostsPanel({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
     const [activeJobField, setActiveJobField] = useState<string>("");
     // slug → 목차 스타일 ('hover' | 'github' | 'both')
     const [postTocStyles, setPostTocStyles] = useState<Record<string, string>>(
@@ -191,6 +193,7 @@ export default function PostsPanel({
         setPosts(result.posts);
         setStateCounts(result.stateCounts);
         setJobFields(dedupeJobFieldsById(result.jobFields));
+        setCategories(result.categories);
         setActiveJobField(normalizeJobFieldValue(result.activeJobField));
         setPostTocStyles(result.postTocStyles);
         setLoading(false);
@@ -442,6 +445,25 @@ export default function PostsPanel({
         );
     };
 
+    const handleCreateCategory = async (name: string) => {
+        const trimmed = name.trim();
+        if (!trimmed) return false;
+
+        const result = await createPostCategory(trimmed);
+        if (!result.success) {
+            setError(result.error ?? "카테고리 생성 실패");
+            return false;
+        }
+
+        setCategories((current) =>
+            [...new Set([...current, trimmed])].sort((a, b) =>
+                a.localeCompare(b)
+            )
+        );
+        setSuccess("카테고리가 생성되었습니다.");
+        return true;
+    };
+
     // editPath 복원 대기 중 (list 깜빡임 방지)
     if (editPath && !editTarget && !editPathRestoredRef.current) {
         return (
@@ -640,13 +662,8 @@ export default function PostsPanel({
                     onChange={handleMetaChange}
                     onPublishToggle={handlePublishToggle}
                     jobFields={jobFields}
-                    categories={[
-                        ...new Set(
-                            posts
-                                .map((p) => p.category)
-                                .filter((c): c is string => !!c?.trim())
-                        ),
-                    ]}
+                    categories={categories}
+                    onCreateCategory={handleCreateCategory}
                     tocStyle={postTocStyles[form.slug] ?? "hover"}
                     onTocStyleChange={(style) => {
                         if (form.slug) saveTocStyle(form.slug, style);

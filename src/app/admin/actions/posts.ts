@@ -26,6 +26,7 @@ type AdminPostRow = {
 };
 
 type JobFieldItem = { id: string; name: string; emoji: string };
+type CategoryCountRow = { category: string; count: number };
 
 type PostPayload = {
     slug: string;
@@ -49,6 +50,7 @@ type PostsPanelBootstrap = {
     jobFields: JobFieldItem[];
     activeJobField: string;
     postTocStyles: Record<string, string>;
+    categories: string[];
 };
 
 // PostsPanel 초기 데이터 조회
@@ -61,6 +63,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
             jobFields: [],
             activeJobField: "",
             postTocStyles: {},
+            categories: [],
         };
     }
 
@@ -70,6 +73,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
         { data: jobFieldsRow, error: jobFieldsError },
         { data: activeJobFieldRow, error: activeJobFieldError },
         { data: tocStylesRow, error: tocStylesError },
+        { data: categoryRows, error: categoriesError },
     ] = await Promise.all([
         serverClient
             .from("posts")
@@ -95,6 +99,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
             .select("value")
             .eq("key", "post_toc_styles")
             .single(),
+        serverClient.from("post_category_counts").select("category, count"),
     ]);
 
     // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
@@ -118,14 +123,30 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
         console.error(
             `[posts.ts::getPostsPanelBootstrap] ${tocStylesError.message}`
         );
+    if (categoriesError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${categoriesError.message}`
+        );
 
     const stateCounts: Record<string, number> = {};
     for (const row of stateData ?? []) {
         stateCounts[row.entity_slug] = (stateCounts[row.entity_slug] ?? 0) + 1;
     }
 
+    const posts = (postsData as AdminPostRow[]) ?? [];
+    const categories = [
+        ...new Set([
+            ...((categoryRows as CategoryCountRow[] | null) ?? [])
+                .map((row) => row.category?.trim())
+                .filter((category): category is string => !!category),
+            ...posts
+                .map((post) => post.category?.trim())
+                .filter((category): category is string => !!category),
+        ]),
+    ].sort((a, b) => a.localeCompare(b));
+
     return {
-        posts: (postsData as AdminPostRow[]) ?? [],
+        posts,
         stateCounts,
         jobFields: (jobFieldsRow?.value as JobFieldItem[]) ?? [],
         activeJobField:
@@ -136,6 +157,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
             tocStylesRow?.value && typeof tocStylesRow.value === "object"
                 ? (tocStylesRow.value as Record<string, string>)
                 : {},
+        categories,
     };
 }
 

@@ -135,7 +135,9 @@ export async function createPostCategory(
 
     const { error } = await serverClient
         .from("post_categories")
-        .insert({ name: trimmed } satisfies CategoryPayload);
+        .upsert({ name: trimmed } satisfies CategoryPayload, {
+            onConflict: "name",
+        });
     if (error) return { success: false, error: error.message };
     return { success: true };
 }

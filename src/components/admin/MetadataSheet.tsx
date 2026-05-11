@@ -82,6 +82,7 @@ interface PostSheetProps {
     onPublishToggle?: (published: boolean) => void;
     jobFields: JobFieldItem[];
     categories: string[];
+    onCreateCategory?: (value: string) => boolean | Promise<boolean>;
     tocStyle?: string;
     onTocStyleChange?: (style: string) => void;
     tocDisabled?: boolean;
@@ -309,7 +310,11 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     options={
                                         (props as PostSheetProps).categories
                                     }
-                                    placeholder="선택 또는 새로 입력"
+                                    onCreate={
+                                        (props as PostSheetProps)
+                                            .onCreateCategory
+                                    }
+                                    placeholder="선택 또는 생성"
                                 />
                             </div>
                         )}

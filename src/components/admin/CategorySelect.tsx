@@ -3,111 +3,165 @@
 /**
  * CategorySelect
  *
- * Headless UI Combobox 기반 카테고리 선택.
- * 기존 카테고리 선택 또는 새로 입력 가능.
+ * shadcn Command + Popover 기반 카테고리 combobox.
+ * 기존 카테고리 선택 또는 즉시 생성 가능.
  */
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-    Combobox,
-    ComboboxInput,
-    ComboboxOption,
-    ComboboxOptions,
-} from "@headlessui/react";
-import { useState, useMemo } from "react";
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface CategorySelectProps {
     value: string;
     onChange: (value: string) => void;
-    /** 기존 포스트에서 추출한 카테고리 목록 */
+    /** registry와 기존 포스트에서 추출한 카테고리 목록 */
     options: string[];
     placeholder?: string;
     className?: string;
     disabled?: boolean;
+    onCreate?: (value: string) => boolean | Promise<boolean>;
+}
+
+function normalizeCategory(value: string): string {
+    return value.trim().replace(/\s+/g, " ");
 }
 
 export default function CategorySelect({
     value,
     onChange,
     options,
-    placeholder = "선택 또는 입력",
+    placeholder = "선택 또는 생성",
     className = "",
     disabled = false,
+    onCreate,
 }: CategorySelectProps) {
+    const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const [creating, setCreating] = useState(false);
 
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        if (!q) return [...options].sort((a, b) => a.localeCompare(b));
-        const matched = options.filter((c) => c.toLowerCase().includes(q));
-        return matched.sort((a, b) => a.localeCompare(b));
-    }, [options, query]);
+    const normalizedOptions = useMemo(
+        () =>
+            [...new Set(options.map(normalizeCategory).filter(Boolean))].sort(
+                (a, b) => a.localeCompare(b)
+            ),
+        [options]
+    );
 
-    const showCreateOption =
-        query.trim() !== "" &&
-        !options.some((c) => c.toLowerCase() === query.trim().toLowerCase());
+    const createValue = normalizeCategory(query);
+    const hasExactMatch = normalizedOptions.some(
+        (category) => category.toLowerCase() === createValue.toLowerCase()
+    );
+    const canCreate = createValue !== "" && !hasExactMatch;
 
-    const displayOptions = showCreateOption
-        ? [query.trim(), ...filtered]
-        : filtered;
+    const selectCategory = (next: string) => {
+        onChange(next);
+        setQuery("");
+        setOpen(false);
+    };
+
+    const createCategory = async () => {
+        if (!canCreate || creating) return;
+        setCreating(true);
+        const ok = onCreate ? await onCreate(createValue) : true;
+        setCreating(false);
+        if (!ok) return;
+        selectCategory(createValue);
+    };
 
     return (
-        <Combobox
-            value={value || null}
-            onChange={(v) => onChange(v ?? "")}
-            onClose={() => setQuery("")}
-            disabled={disabled}
-        >
-            <div className={`relative ${className}`}>
-                <ComboboxInput
-                    displayValue={(v: string | null) => v ?? query}
-                    onChange={(e) => {
-                        const next = e.target.value;
-                        setQuery(next);
-                        if (next === "") onChange("");
-                    }}
-                    onBlur={() => {
-                        if (query.trim() && value !== query.trim()) {
-                            onChange(query.trim());
-                        }
-                    }}
-                    placeholder={placeholder}
-                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-base text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    autoComplete="off"
-                />
-                <ComboboxOptions
-                    anchor="bottom"
-                    className="tablet:min-w-96 z-50 mt-1 max-h-48 w-full min-w-0 overflow-y-auto rounded-lg border border-(--color-border) bg-(--color-surface) py-1 shadow-lg empty:invisible"
-                >
-                    {displayOptions.length === 0 && !showCreateOption ? (
-                        <div className="px-3 py-2 text-base text-(--color-muted)">
-                            카테고리가 없습니다. 입력 후 Enter로 추가하세요.
-                        </div>
-                    ) : (
-                        displayOptions.map((opt, idx) => (
-                            <ComboboxOption
-                                key={idx}
-                                value={opt}
-                                className="group cursor-pointer px-3 py-2 text-base text-(--color-foreground) data-focus:bg-(--color-accent)/10 data-selected:bg-(--color-accent)/20"
-                            >
-                                {idx === 0 && showCreateOption ? (
-                                    <span className="flex items-center gap-2">
-                                        <span className="text-(--color-muted)">
-                                            ➕
-                                        </span>
-                                        <span className="font-medium">
-                                            {opt}
-                                        </span>
-                                        <span className="text-sm text-(--color-muted)">
-                                            (새로 만들기)
-                                        </span>
-                                    </span>
-                                ) : (
-                                    opt
-                                )}
-                            </ComboboxOption>
-                        ))
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    disabled={disabled}
+                    className={cn(
+                        "w-full justify-between border-(--color-border) bg-(--color-surface) px-3 py-2 text-left text-base font-normal text-(--color-foreground) hover:bg-(--color-surface-subtle)",
+                        !value && "text-(--color-muted)",
+                        className
                     )}
-                </ComboboxOptions>
-            </div>
-        </Combobox>
+                >
+                    <span className="min-w-0 truncate">
+                        {value || placeholder}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                align="start"
+                className="w-(--radix-popover-trigger-width) min-w-72 p-0"
+            >
+                <Command shouldFilter>
+                    <CommandInput
+                        value={query}
+                        onValueChange={setQuery}
+                        placeholder="카테고리 검색 또는 생성"
+                    />
+                    <CommandList>
+                        <CommandEmpty className="py-3 text-center text-sm text-(--color-muted)">
+                            일치하는 카테고리가 없습니다.
+                        </CommandEmpty>
+                        <CommandGroup>
+                            {canCreate && (
+                                <CommandItem
+                                    value={createValue}
+                                    onSelect={() => void createCategory()}
+                                    disabled={creating}
+                                    className="font-medium"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    <span className="truncate">
+                                        {creating
+                                            ? "생성 중..."
+                                            : `새 카테고리 생성: ${createValue}`}
+                                    </span>
+                                </CommandItem>
+                            )}
+                            {normalizedOptions.map((category) => (
+                                <CommandItem
+                                    key={category}
+                                    value={category}
+                                    onSelect={() => selectCategory(category)}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "h-4 w-4",
+                                            value === category
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                        )}
+                                    />
+                                    <span className="truncate">{category}</span>
+                                </CommandItem>
+                            ))}
+                            {value && (
+                                <CommandItem
+                                    value="__clear_category__"
+                                    onSelect={() => selectCategory("")}
+                                    className="text-(--color-muted)"
+                                >
+                                    선택 해제
+                                </CommandItem>
+                            )}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     );
 }
