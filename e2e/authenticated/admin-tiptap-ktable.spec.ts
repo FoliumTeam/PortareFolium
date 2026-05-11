@@ -14,17 +14,19 @@ test.describe("Admin Tiptap KTable controls", () => {
         const editor = page.locator(".ProseMirror").first();
         await expect(editor).toBeVisible({ timeout: 15_000 });
 
-        await page.getByTitle("Source 편집").click();
+        await page.getByLabel("소스 편집").click();
         const sourceEditor = page.locator("textarea.font-mono").first();
         await expect(sourceEditor).toBeVisible();
         await sourceEditor.fill("KTable E2E scratch area");
         await expect(sourceEditor).toHaveValue("KTable E2E scratch area");
-        await page.getByTitle("Markdown 뷰").click();
+        await page.getByLabel("미리보기 편집").click();
         await expect(editor).toContainText("KTable E2E scratch area");
         await expect(editor.locator("table")).toHaveCount(0);
 
-        await page.getByTitle("테이블 삽입 / 프리셋").click();
-        await page.getByRole("button", { name: "3 x 3", exact: true }).click();
+        await page.getByLabel("표 삽입").click();
+        await page
+            .getByRole("button", { name: "3×3 머리글", exact: true })
+            .click();
 
         const table = editor.locator("table").first();
         await expect(table).toBeVisible();
@@ -35,17 +37,17 @@ test.describe("Admin Tiptap KTable controls", () => {
         await page.keyboard.type("KTable cell");
         await expect(firstBodyCell).toContainText("KTable cell");
 
-        await page.getByTitle("아래 행 추가").click();
+        await page.getByLabel("현재 행 아래에 새 행 추가").click();
         await expect(table.locator("tr")).toHaveCount(4);
 
-        await page.getByTitle("오른쪽 열 추가").click();
+        await page.getByLabel("현재 열 오른쪽에 새 열 추가").click();
         await expect(table.locator("tr").first().locator("th, td")).toHaveCount(
             4
         );
 
-        await page.getByTitle("셀 속성").click();
-        await page.getByTitle("Blue").click();
-        await page.getByRole("button", { name: "C", exact: true }).click();
+        await page.getByLabel("셀 설정").click();
+        await page.getByLabel("셀 배경색: 파랑").click();
+        await page.getByLabel("셀 텍스트 가운데 정렬").click();
         await expect(firstBodyCell).toHaveAttribute(
             "data-tw-color",
             "blue-200"
@@ -55,7 +57,7 @@ test.describe("Admin Tiptap KTable controls", () => {
             "center"
         );
 
-        await page.getByTitle("Source 편집").click();
+        await page.getByLabel("소스 편집").click();
         await expect(sourceEditor).toHaveValue(/<table[\s\S]*data-table-width/);
         await expect(sourceEditor).toHaveValue(/data-tw-color="blue-200"/);
         await expect(sourceEditor).toHaveValue(/data-text-align="center"/);

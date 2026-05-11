@@ -79,6 +79,13 @@ function trackRuntimeErrors(page: Page) {
         ) {
             return;
         }
+        if (
+            text.includes(
+                "Permissions policy violation: compute-pressure is not allowed in this document."
+            )
+        ) {
+            return;
+        }
         runtimeErrors.push(`console: ${text}`);
     });
 
