@@ -452,6 +452,26 @@ html.dark .ProseMirror table {
 .ProseMirror.resize-cursor {
     cursor: col-resize;
 }
+.ProseMirror.row-resize-cursor,
+.ProseMirror.row-resize-cursor * {
+    cursor: row-resize !important;
+}
+.ProseMirror table[data-ktable="true"] tr:hover > :is(th, td)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    z-index: 9;
+    height: 4px;
+    cursor: row-resize;
+    border-bottom: 2px solid rgba(99, 102, 241, 0.45);
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+.ProseMirror table[data-ktable="true"] tr:hover > :is(th, td):hover::after {
+    opacity: 1;
+}
 
 .ProseMirror table[data-ktable="true"],
 .post-content.prose :where(table[data-ktable="true"]),
