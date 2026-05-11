@@ -456,21 +456,15 @@ html.dark .ProseMirror table {
 .ProseMirror.row-resize-cursor * {
     cursor: row-resize !important;
 }
-.ProseMirror table[data-ktable="true"] tr:hover > :is(th, td)::after {
-    content: "";
+.ProseMirror .row-resize-handle {
     position: absolute;
     right: 0;
     bottom: -2px;
     left: 0;
-    z-index: 9;
     height: 4px;
-    cursor: row-resize;
-    border-bottom: 2px solid rgba(99, 102, 241, 0.45);
-    opacity: 0;
-    transition: opacity 0.12s ease;
-}
-.ProseMirror table[data-ktable="true"] tr:hover > :is(th, td):hover::after {
-    opacity: 1;
+    background-color: #6366f1;
+    pointer-events: none;
+    z-index: 10;
 }
 
 .ProseMirror table[data-ktable="true"],

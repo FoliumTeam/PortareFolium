@@ -1,6 +1,7 @@
 import { Fragment } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import type { EditorView } from "@tiptap/pm/view";
+import type { EditorState } from "@tiptap/pm/state";
+import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import { getHTMLFromFragment, mergeAttributes } from "@tiptap/core";
 import { Table } from "@tiptap/extension-table";
 import { TableCell } from "@tiptap/extension-table-cell";
@@ -131,69 +132,192 @@ function setRowHeight(view: EditorView, rowPosition: number, height: number) {
     view.dispatch(tr);
 }
 
+const rowResizingPluginKey = new PluginKey<{
+    activeHandle: number;
+    dragging: { startY: number; startHeight: number } | null;
+}>("ktableRowResize");
+
+function updateRowHandle(view: EditorView, value: number) {
+    view.dispatch(
+        view.state.tr.setMeta(rowResizingPluginKey, { setHandle: value })
+    );
+}
+
+function handleRowMouseMove(view: EditorView, event: MouseEvent) {
+    if (!view.editable) return;
+
+    const pluginState = rowResizingPluginKey.getState(view.state);
+    if (!pluginState || pluginState.dragging) return;
+
+    const cell = findCellElement(event.target);
+    const rowPosition =
+        cell && isNearRowBottom(event, cell)
+            ? getRowPosition(view, cell)
+            : null;
+    const activeHandle = rowPosition ?? -1;
+
+    if (activeHandle !== pluginState.activeHandle) {
+        updateRowHandle(view, activeHandle);
+    }
+}
+
+function handleRowMouseLeave(view: EditorView) {
+    if (!view.editable) return;
+
+    const pluginState = rowResizingPluginKey.getState(view.state);
+    if (pluginState && pluginState.activeHandle > -1 && !pluginState.dragging) {
+        updateRowHandle(view, -1);
+    }
+}
+
+function handleRowMouseDown(view: EditorView, event: MouseEvent) {
+    if (!view.editable) return false;
+
+    const pluginState = rowResizingPluginKey.getState(view.state);
+    if (
+        !pluginState ||
+        pluginState.activeHandle === -1 ||
+        pluginState.dragging
+    ) {
+        return false;
+    }
+
+    const cell = findCellElement(event.target);
+    const row = cell?.parentElement;
+    if (!(row instanceof HTMLTableRowElement)) return false;
+
+    const rowPosition = pluginState.activeHandle;
+    const startHeight = Math.max(
+        row.getBoundingClientRect().height,
+        MIN_ROW_HEIGHT
+    );
+
+    view.dispatch(
+        view.state.tr.setMeta(rowResizingPluginKey, {
+            setDragging: { startY: event.clientY, startHeight },
+        })
+    );
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+        const dragging = rowResizingPluginKey.getState(view.state)?.dragging;
+        if (!dragging) return;
+
+        moveEvent.preventDefault();
+        const nextHeight = Math.max(
+            MIN_ROW_HEIGHT,
+            dragging.startHeight + moveEvent.clientY - dragging.startY
+        );
+        setRowHeight(view, rowPosition, nextHeight);
+    };
+
+    const handleMouseUp = (upEvent: MouseEvent) => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        handleMouseMove(upEvent);
+        view.dispatch(
+            view.state.tr.setMeta(rowResizingPluginKey, { setDragging: null })
+        );
+        updateRowHandle(view, -1);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    event.preventDefault();
+    return true;
+}
+
+function rowHandleDecorations(state: EditorState, rowPosition: number) {
+    const row = state.doc.nodeAt(rowPosition);
+    if (!row || row.type.name !== "tableRow") return DecorationSet.empty;
+
+    const decorations: Decoration[] = [];
+    const pluginState = rowResizingPluginKey.getState(state);
+    let cellPosition = rowPosition + 1;
+
+    if (pluginState?.dragging) {
+        decorations.push(
+            Decoration.node(rowPosition, rowPosition + row.nodeSize, {
+                class: "row-resize-dragging",
+            })
+        );
+    }
+
+    row.forEach((cell) => {
+        const dom = document.createElement("div");
+        dom.className = "row-resize-handle";
+        decorations.push(
+            Decoration.widget(cellPosition + cell.nodeSize - 1, dom)
+        );
+        cellPosition += cell.nodeSize;
+    });
+
+    return DecorationSet.create(state.doc, decorations);
+}
+
 function createRowResizePlugin() {
-    let cleanup: (() => void) | null = null;
-
     return new Plugin({
-        key: new PluginKey("ktableRowResize"),
-        view: () => ({
-            destroy() {
-                cleanup?.();
-                cleanup = null;
-            },
-        }),
-        props: {
-            handleDOMEvents: {
-                mousedown(view, event) {
-                    const mouseEvent = event as MouseEvent;
-                    const cell = findCellElement(mouseEvent.target);
-                    if (!cell || !isNearRowBottom(mouseEvent, cell)) {
-                        return false;
-                    }
-
-                    const row = cell.parentElement;
-                    if (!(row instanceof HTMLTableRowElement)) return false;
-
-                    const rowPosition = getRowPosition(view, cell);
-                    if (rowPosition === null) return false;
-
-                    cleanup?.();
-
-                    const startY = mouseEvent.clientY;
-                    const startHeight = Math.max(
-                        row.getBoundingClientRect().height,
-                        MIN_ROW_HEIGHT
+        key: rowResizingPluginKey,
+        state: {
+            init: () => ({ activeHandle: -1, dragging: null }),
+            apply(tr, previous) {
+                const action = tr.getMeta(rowResizingPluginKey);
+                if (action?.setHandle !== undefined) {
+                    return {
+                        activeHandle: action.setHandle as number,
+                        dragging: null,
+                    };
+                }
+                if (action?.setDragging !== undefined) {
+                    return {
+                        ...previous,
+                        dragging: action.setDragging,
+                    };
+                }
+                if (previous.activeHandle > -1 && tr.docChanged) {
+                    const activeHandle = tr.mapping.map(
+                        previous.activeHandle,
+                        -1
                     );
-
-                    const handleMouseMove = (moveEvent: MouseEvent) => {
-                        moveEvent.preventDefault();
-                        const nextHeight = Math.max(
-                            MIN_ROW_HEIGHT,
-                            startHeight + moveEvent.clientY - startY
-                        );
-                        setRowHeight(view, rowPosition, nextHeight);
+                    const row = tr.doc.nodeAt(activeHandle);
+                    return {
+                        ...previous,
+                        activeHandle:
+                            row?.type.name === "tableRow" ? activeHandle : -1,
                     };
-
-                    const handleMouseUp = () => {
-                        cleanup?.();
-                        cleanup = null;
-                    };
-
-                    cleanup = () => {
-                        document.removeEventListener(
-                            "mousemove",
-                            handleMouseMove
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                        view.dom.classList.remove("row-resize-cursor");
-                    };
-
-                    view.dom.classList.add("row-resize-cursor");
-                    document.addEventListener("mousemove", handleMouseMove);
-                    document.addEventListener("mouseup", handleMouseUp);
-                    mouseEvent.preventDefault();
-                    return true;
+                }
+                return previous;
+            },
+        },
+        props: {
+            attributes: (state): Record<string, string> => {
+                const pluginState = rowResizingPluginKey.getState(state);
+                if (pluginState && pluginState.activeHandle > -1) {
+                    return { class: "row-resize-cursor" };
+                }
+                return {};
+            },
+            handleDOMEvents: {
+                mousemove(view, event) {
+                    handleRowMouseMove(view, event as MouseEvent);
+                    return false;
                 },
+                mouseleave(view) {
+                    handleRowMouseLeave(view);
+                    return false;
+                },
+                mousedown(view, event) {
+                    return handleRowMouseDown(view, event as MouseEvent);
+                },
+            },
+            decorations: (state) => {
+                const pluginState = rowResizingPluginKey.getState(state);
+                if (pluginState && pluginState.activeHandle > -1) {
+                    return rowHandleDecorations(
+                        state,
+                        pluginState.activeHandle
+                    );
+                }
+                return undefined;
             },
         },
     });
