@@ -223,12 +223,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                 </DialogHeader>
 
                 <div className="laptop:px-6 max-h-[calc(88vh-8rem)] overflow-x-hidden overflow-y-auto px-4 py-5">
-                    <div className="laptop:grid-cols-[minmax(0,1fr)_minmax(20rem,0.72fr)] grid min-w-0 gap-4">
-                        <div className="min-w-0 space-y-4">
+                    <div className="grid min-w-0 grid-cols-1 gap-4">
+                        <div className="contents">
                             <SettingsSection
                                 eyebrow="Publish"
                                 title="발행 상태"
                                 description="공개 여부와 표시 우선순위를 빠르게 제어합니다."
+                                className="order-1"
                             >
                                 <div className="tablet:grid-cols-2 grid gap-3">
                                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface) p-3">
@@ -311,6 +312,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                 eyebrow="Metadata"
                                 title="기본 정보"
                                 description="URL, 요약, 도서/프로젝트 전용 필드를 관리합니다."
+                                className="order-2"
                             >
                                 <FieldBlock
                                     label="Slug"
@@ -435,6 +437,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     eyebrow="Project"
                                     title="프로젝트 상세"
                                     description="기간, 역할, 목표와 성과를 포트폴리오 카드에 반영합니다."
+                                    className="order-2"
                                 >
                                     <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
                                         <FieldBlock label="시작일">
@@ -576,6 +579,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                 eyebrow="SEO"
                                 title="검색 및 공유 메타데이터"
                                 description="검색 결과와 SNS 공유 카드에 표시되는 정보를 조정합니다."
+                                className="order-6"
                             >
                                 <FieldBlock
                                     label="SEO 제목 (Meta Title)"
@@ -645,11 +649,12 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                             </SettingsSection>
                         </div>
 
-                        <aside className="min-w-0 space-y-4">
+                        <aside className="contents">
                             <SettingsSection
                                 eyebrow="Taxonomy"
                                 title="분류"
                                 description="콘텐츠 탐색과 필터링에 쓰이는 분류 정보를 설정합니다."
+                                className="order-4"
                             >
                                 {type === "post" && (
                                     <FieldBlock
@@ -711,6 +716,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                 eyebrow="Media"
                                 title="대표 이미지"
                                 description="목록 카드, 상세 페이지, 공유 썸네일의 기본 이미지를 설정합니다."
+                                className="order-3"
                             >
                                 {type !== "book" && (
                                     <ThumbnailUploadField
@@ -750,6 +756,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         eyebrow="TOC"
                                         title="목차 표시"
                                         description="본문 목차가 표시되는 방식을 선택합니다."
+                                        className="order-5"
                                     >
                                         <FieldBlock label="목차 스타일">
                                             <select
