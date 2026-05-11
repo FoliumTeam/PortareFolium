@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
+    createPostCategory,
     deletePostCategory,
     deleteTagItem,
     getTagsPanelBootstrap,
@@ -279,6 +280,14 @@ export default function TagsPanel() {
         setOklchH(parsed.h);
     };
 
+    const openCategoryNew = () => {
+        setEditCat("new");
+        setEditSlug(null);
+        setCatForm("");
+        setError(null);
+        setSuccess(null);
+    };
+
     const openCategoryEdit = (name: string) => {
         setEditCat(name);
         setEditSlug(null);
@@ -355,21 +364,41 @@ export default function TagsPanel() {
         void loadPanelData();
     };
 
-    const renameCategory = async (oldName: string, newName: string) => {
-        const trimmed = newName.trim();
-        if (!trimmed || trimmed === oldName) return;
-
-        setSaving(true);
-        setError(null);
-        const result = await renamePostCategory(oldName, trimmed);
-        setSaving(false);
-
-        if (!result.success) {
-            setError(result.error ?? "카테고리 이름 변경 실패");
+    const saveCategory = async () => {
+        const trimmed = catForm.trim();
+        if (!trimmed) {
+            setError("카테고리 이름은 필수입니다.");
+            return;
+        }
+        if (!editCat) return;
+        if (editCat !== "new" && trimmed === editCat) {
+            cancel();
             return;
         }
 
-        setSuccess("카테고리 이름이 변경되었습니다.");
+        setSaving(true);
+        setError(null);
+        const result =
+            editCat === "new"
+                ? await createPostCategory(trimmed)
+                : await renamePostCategory(editCat, trimmed);
+        setSaving(false);
+
+        if (!result.success) {
+            setError(
+                result.error ??
+                    (editCat === "new"
+                        ? "카테고리 생성 실패"
+                        : "카테고리 이름 변경 실패")
+            );
+            return;
+        }
+
+        setSuccess(
+            editCat === "new"
+                ? "카테고리가 생성되었습니다."
+                : "카테고리 이름이 변경되었습니다."
+        );
         setEditCat(null);
         clearPostRevealCache();
         void loadPanelData();
@@ -872,12 +901,14 @@ export default function TagsPanel() {
                         </Button>
                         <Button
                             type="button"
-                            onClick={openNew}
+                            onClick={tab === "tags" ? openNew : openCategoryNew}
                             className={primaryButtonClassName}
                         >
                             <Plus className="h-4 w-4" />
                             <span className="whitespace-nowrap">
-                                새 태그 추가
+                                {tab === "tags"
+                                    ? "새 태그 추가"
+                                    : "새 카테고리 추가"}
                             </span>
                         </Button>
                     </div>
@@ -921,7 +952,7 @@ export default function TagsPanel() {
                             {categories.length}
                         </span>
                         <span className="text-xs opacity-80">
-                            이름 변경, 사용 포스트 확인, 삭제
+                            생성, 이름 변경, 사용 포스트 확인, 삭제
                         </span>
                     </button>
                 </div>
@@ -1105,6 +1136,81 @@ export default function TagsPanel() {
 
             {tab === "categories" && (
                 <div className="space-y-4">
+                    {editCat === "new" && (
+                        <section className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5 shadow-sm">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-bold tracking-[0.18em] text-(--color-muted) uppercase">
+                                        Category editor
+                                    </p>
+                                    <h3 className="mt-1 text-xl font-bold text-(--color-foreground)">
+                                        새 카테고리 추가
+                                    </h3>
+                                    <p className="mt-1 text-sm text-(--color-muted)">
+                                        포스트에 아직 쓰이지 않은 카테고리도
+                                        먼저 등록할 수 있습니다.
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={cancel}
+                                    className={secondaryButtonClassName}
+                                >
+                                    <X className="h-4 w-4" />
+                                    <span className="whitespace-nowrap">
+                                        편집 닫기
+                                    </span>
+                                </Button>
+                            </div>
+                            <div className="mt-5">
+                                <label className="mb-1 block text-sm font-semibold text-(--color-foreground)">
+                                    카테고리 이름
+                                </label>
+                                <Input
+                                    value={catForm}
+                                    onChange={(event) =>
+                                        setCatForm(event.target.value)
+                                    }
+                                    autoFocus
+                                    placeholder="예: Technical Art"
+                                    onKeyDown={(event) => {
+                                        if (event.key === "Enter") {
+                                            void saveCategory();
+                                        }
+                                        if (event.key === "Escape") {
+                                            cancel();
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                                <Button
+                                    type="button"
+                                    onClick={saveCategory}
+                                    disabled={saving || !catForm.trim()}
+                                    className={successButtonClassName}
+                                >
+                                    <Save className="h-4 w-4" />
+                                    <span className="whitespace-nowrap">
+                                        {saving
+                                            ? "카테고리 저장 중..."
+                                            : "카테고리 저장"}
+                                    </span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={cancel}
+                                    className={secondaryButtonClassName}
+                                >
+                                    <X className="h-4 w-4" />
+                                    <span className="whitespace-nowrap">
+                                        취소
+                                    </span>
+                                </Button>
+                            </div>
+                        </section>
+                    )}
+
                     {loading ? (
                         <p className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 text-sm text-(--color-muted)">
                             카테고리를 불러오는 중...
@@ -1146,10 +1252,7 @@ export default function TagsPanel() {
                                                             event.key ===
                                                             "Enter"
                                                         ) {
-                                                            void renameCategory(
-                                                                category.name,
-                                                                catForm
-                                                            );
+                                                            void saveCategory();
                                                         }
                                                         if (
                                                             event.key ===
@@ -1165,10 +1268,7 @@ export default function TagsPanel() {
                                                     type="button"
                                                     size="sm"
                                                     onClick={() =>
-                                                        renameCategory(
-                                                            category.name,
-                                                            catForm
-                                                        )
+                                                        saveCategory()
                                                     }
                                                     disabled={
                                                         saving ||

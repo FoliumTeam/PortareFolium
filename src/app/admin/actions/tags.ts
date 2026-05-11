@@ -5,7 +5,8 @@ import { serverClient } from "@/lib/supabase";
 
 type TagPayload = { slug: string; name: string; color: string | null };
 type TagItem = TagPayload & { count: number };
-type Category = { name: string; count: number };
+type CategoryPayload = { name: string };
+type Category = CategoryPayload & { count: number };
 type TagCountRow = { tag_slug: string; count: number };
 type CategoryCountRow = { category: string; count: number };
 type TaxonomyPost = {
@@ -121,6 +122,24 @@ export async function deleteTagItem(
     return { success: true };
 }
 
+// 카테고리 생성
+export async function createPostCategory(
+    name: string
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const trimmed = name.trim();
+    if (!trimmed)
+        return { success: false, error: "카테고리 이름은 필수입니다." };
+
+    const { error } = await serverClient
+        .from("post_categories")
+        .insert({ name: trimmed } satisfies CategoryPayload);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
 // 카테고리 이름 변경
 export async function renamePostCategory(
     oldName: string,
@@ -129,11 +148,31 @@ export async function renamePostCategory(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    const { error } = await serverClient
+    const trimmed = newName.trim();
+    if (!trimmed)
+        return { success: false, error: "카테고리 이름은 필수입니다." };
+
+    const { error: upsertError } = await serverClient
+        .from("post_categories")
+        .upsert({ name: trimmed } satisfies CategoryPayload, {
+            onConflict: "name",
+        });
+    if (upsertError) return { success: false, error: upsertError.message };
+
+    const { error: postsError } = await serverClient
         .from("posts")
-        .update({ category: newName.trim() })
+        .update({ category: trimmed })
         .eq("category", oldName);
-    if (error) return { success: false, error: error.message };
+    if (postsError) return { success: false, error: postsError.message };
+
+    if (oldName !== trimmed) {
+        const { error: deleteError } = await serverClient
+            .from("post_categories")
+            .delete()
+            .eq("name", oldName);
+        if (deleteError) return { success: false, error: deleteError.message };
+    }
+
     return { success: true };
 }
 
@@ -144,11 +183,18 @@ export async function deletePostCategory(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    const { error } = await serverClient
+    const { error: postsError } = await serverClient
         .from("posts")
         .update({ category: null })
         .eq("category", name);
-    if (error) return { success: false, error: error.message };
+    if (postsError) return { success: false, error: postsError.message };
+
+    const { error: categoryError } = await serverClient
+        .from("post_categories")
+        .delete()
+        .eq("name", name);
+    if (categoryError) return { success: false, error: categoryError.message };
+
     return { success: true };
 }
 

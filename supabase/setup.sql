@@ -83,6 +83,12 @@ CREATE TABLE IF NOT EXISTS tags (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 포스트 카테고리 registry (0개 사용 카테고리도 관리)
+CREATE TABLE IF NOT EXISTS post_categories (
+    name        TEXT        PRIMARY KEY,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- 포스트-태그 정규화 조회 테이블
 CREATE TABLE IF NOT EXISTS post_tags (
     post_id    UUID        NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -174,6 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_posts_published   ON posts(published, pub_date DE
 CREATE INDEX IF NOT EXISTS idx_posts_category    ON posts(category);
 CREATE INDEX IF NOT EXISTS idx_posts_category_pub_date ON posts(category, pub_date DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_tags_gin    ON posts USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_post_categories_created_at ON post_categories(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_post_tags_tag_pub_date ON post_tags(tag_slug, pub_date DESC, post_id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
@@ -273,15 +280,36 @@ SELECT
 FROM post_tags
 GROUP BY tag_slug;
 
-CREATE OR REPLACE VIEW post_category_counts
-WITH (security_invoker = true) AS
-SELECT
-    btrim(category) AS category,
-    COUNT(*)::int AS count
+INSERT INTO post_categories (name)
+SELECT DISTINCT btrim(category) AS name
 FROM posts
 WHERE category IS NOT NULL
   AND btrim(category) <> ''
-GROUP BY btrim(category);
+ON CONFLICT (name) DO NOTHING;
+
+CREATE OR REPLACE VIEW post_category_counts
+WITH (security_invoker = true) AS
+WITH post_counts AS (
+    SELECT
+        btrim(category) AS category,
+        COUNT(*)::int AS count
+    FROM posts
+    WHERE category IS NOT NULL
+      AND btrim(category) <> ''
+    GROUP BY btrim(category)
+)
+SELECT
+    post_categories.name AS category,
+    COALESCE(post_counts.count, 0)::int AS count
+FROM post_categories
+LEFT JOIN post_counts ON post_counts.category = post_categories.name
+UNION
+SELECT
+    post_counts.category,
+    post_counts.count
+FROM post_counts
+LEFT JOIN post_categories ON post_categories.name = post_counts.category
+WHERE post_categories.name IS NULL;
 
 -- ── Row Level Security ───────────────────────────────────────
 
@@ -292,6 +320,7 @@ ALTER TABLE posts            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_tags        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE portfolio_items  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_categories  ENABLE ROW LEVEL SECURITY;
 
 -- site_config: 누구나 읽기 / 인증된 사용자만 쓰기
 CREATE POLICY "site_config_public_read"
@@ -360,6 +389,15 @@ CREATE POLICY "tags_public_read"
 
 CREATE POLICY "tags_auth_write"
     ON tags FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+-- post_categories: 누구나 읽기 / 인증된 사용자만 쓰기
+CREATE POLICY "post_categories_public_read"
+    ON post_categories FOR SELECT USING (true);
+
+CREATE POLICY "post_categories_auth_write"
+    ON post_categories FOR ALL
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 

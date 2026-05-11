@@ -7,6 +7,7 @@ export const REFUGE_SUPPORTED_TABLES = [
     "posts",
     "portfolio_items",
     "tags",
+    "post_categories",
     "books",
     "editor_states",
     "gantt_chart_archives",
@@ -68,6 +69,7 @@ const REFUGE_TABLE_COLUMNS: Record<string, readonly string[]> = {
         "updated_at",
     ],
     tags: ["slug", "name", "color", "created_at"],
+    post_categories: ["name", "created_at"],
     books: [
         "id",
         "slug",
@@ -171,6 +173,7 @@ const TABLE_IDENTITY_KEYS: Record<string, string[]> = {
     posts: ["slug"],
     portfolio_items: ["slug"],
     tags: ["slug"],
+    post_categories: ["name"],
     books: ["slug"],
     editor_states: ["id"],
     gantt_chart_archives: ["id"],
