@@ -87,11 +87,13 @@ function ToolbarButton({
     label,
     children,
     disabled,
+    destructive = false,
 }: {
     onClick: () => void;
     label: string;
     children: ReactNode;
     disabled?: boolean;
+    destructive?: boolean;
 }) {
     return (
         <IconTooltip label={label}>
@@ -101,7 +103,11 @@ function ToolbarButton({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={onClick}
                 disabled={disabled}
-                className={iconButtonClassName}
+                className={
+                    destructive
+                        ? "inline-flex h-8 w-8 items-center justify-center rounded bg-red-600 text-white transition-colors hover:bg-red-500 disabled:opacity-40 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
+                        : iconButtonClassName
+                }
             >
                 {children}
             </button>
@@ -483,6 +489,7 @@ export function KTableControls({ editor }: { editor: Editor }) {
                     <ToolbarButton
                         onClick={() => void handleDeleteTable()}
                         label="표 전체 삭제"
+                        destructive
                     >
                         <Trash2 className="h-4 w-4" />
                     </ToolbarButton>
