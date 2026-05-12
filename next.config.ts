@@ -7,6 +7,11 @@ const r2Hostname = process.env.R2_PUBLIC_URL
 const nextConfig: NextConfig = {
     reactStrictMode: true,
     reactCompiler: true,
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "4mb",
+        },
+    },
     images: {
         remotePatterns: [
             { protocol: "https", hostname: "img.youtube.com" },
