@@ -38,6 +38,7 @@ import {
     AlertTriangle,
     Settings,
     ExternalLink,
+    Clock3,
     GripVertical,
 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
@@ -689,9 +690,14 @@ export default function PortfolioPanel({
                             <button
                                 type="button"
                                 onClick={() => setStateModalOpen(true)}
-                                className="rounded-lg bg-yellow-500 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-base font-semibold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-indigo-500 dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-500"
+                                aria-label={`임시 저장 열기: ${snapshotCount}/6`}
                             >
-                                상태 기록: {snapshotCount}/6
+                                <Clock3 className="h-4 w-4" />
+                                <span>임시 저장</span>
+                                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
+                                    {snapshotCount}/6
+                                </span>
                             </button>
                             {editTarget !== "new" && (
                                 <button
