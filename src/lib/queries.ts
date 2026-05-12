@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { serverClient } from "@/lib/supabase";
+import { readPostContentById } from "@/lib/post-content-chunks";
 
 // request 단위 포스트 조회 캐싱 (generateMetadata + page 컴포넌트 중복 DB 호출 제거)
 export const getPost = cache(async (slug: string) => {
@@ -9,7 +10,12 @@ export const getPost = cache(async (slug: string) => {
         .select("*")
         .eq("slug", slug)
         .single();
-    return data;
+    if (!data) return data;
+    const { content } = await readPostContentById(
+        data.id as string,
+        typeof data.content === "string" ? data.content : ""
+    );
+    return { ...data, content };
 });
 
 // request 단위 포트폴리오 아이템 조회 캐싱

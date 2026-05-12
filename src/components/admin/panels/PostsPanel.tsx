@@ -119,6 +119,62 @@ interface PostsPanelProps {
     onEditPathChange?: (path: string) => void;
 }
 
+type PostContentStorageMode = "inline" | "chunked";
+
+type SavePostResult =
+    | { success: true; post: Post; storageMode?: PostContentStorageMode }
+    | { success: false; error: string };
+
+const SERVER_ACTION_SAFE_BYTES = 3.5 * 1024 * 1024;
+const POST_CONTENT_CHUNK_BYTES = 256 * 1024;
+const textEncoder = new TextEncoder();
+
+function getUtf8ByteSize(value: string): number {
+    return new Blob([value]).size;
+}
+
+function splitUtf8Chunks(value: string, maxBytes: number): string[] {
+    const chunks: string[] = [];
+    let current = "";
+    let currentBytes = 0;
+
+    for (const char of value) {
+        const charBytes = textEncoder.encode(char).byteLength;
+        if (current && currentBytes + charBytes > maxBytes) {
+            chunks.push(current);
+            current = "";
+            currentBytes = 0;
+        }
+        current += char;
+        currentBytes += charBytes;
+    }
+
+    if (current || chunks.length === 0) chunks.push(current);
+    return chunks;
+}
+
+async function sha256Hex(value: string): Promise<string> {
+    const hash = await crypto.subtle.digest(
+        "SHA-256",
+        textEncoder.encode(value)
+    );
+    return [...new Uint8Array(hash)]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+async function postChunkedContentRequest<T>(body: unknown): Promise<T> {
+    const response = await fetch("/api/admin/posts/chunked-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const json = (await response.json()) as T & { error?: string };
+    if (!response.ok)
+        throw new Error(json.error ?? "chunked content 요청 실패");
+    return json;
+}
+
 export default function PostsPanel({
     editPath = "",
     onEditPathChange,
@@ -129,6 +185,8 @@ export default function PostsPanel({
     const [form, setForm] = useState<PostForm>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+    const [contentStorageMode, setContentStorageMode] =
+        useState<PostContentStorageMode>("inline");
     const [stateModalOpen, setStateModalOpen] = useState(false);
     const [snapshotCount, setSnapshotCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -220,7 +278,7 @@ export default function PostsPanel({
         } else if (editPath.startsWith("edit/")) {
             const slug = editPath.slice(5);
             const post = posts.find((p) => p.slug === slug);
-            if (post) openEdit(post);
+            if (post) void openEdit(post);
             else onEditPathChange?.("");
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,6 +289,27 @@ export default function PostsPanel({
         const next = { ...postTocStyles, [slug]: style };
         setPostTocStyles(next);
         await savePostTocStyle(slug, style);
+    };
+
+    const fetchPostContent = async (
+        postId: string
+    ): Promise<{ content: string; storageMode: PostContentStorageMode }> => {
+        const response = await fetch(
+            `/api/admin/posts/chunked-content?postId=${encodeURIComponent(postId)}`
+        );
+        const json = (await response.json()) as {
+            success?: boolean;
+            content?: string;
+            storageMode?: PostContentStorageMode;
+            error?: string;
+        };
+        if (!response.ok || !json.success) {
+            throw new Error(json.error ?? "post content 조회 실패");
+        }
+        return {
+            content: json.content ?? "",
+            storageMode: json.storageMode ?? "inline",
+        };
     };
 
     // form → DB payload 변환
@@ -256,42 +335,49 @@ export default function PostsPanel({
     });
 
     // 편집 화면 열기 — T3 안전망: snapshot 0건이면 full true-orphan cleanup
-    const openEdit = (post: Post) => {
-        void maybeCleanupOnOpen("post", post.slug, {
-            folderPath: `blog/${post.slug}`,
-            entityType: "post",
-            entitySlug: post.slug,
-            currentContent: post.content,
-            thumbnail: post.thumbnail ?? "",
-        });
-        const jf = post.job_field;
-        const f: PostForm = {
-            slug: post.slug,
-            title: post.title,
-            description: post.description ?? "",
-            pub_date: new Date(
-                new Date(post.pub_date).getTime() + 9 * 60 * 60 * 1000
-            )
-                .toISOString()
-                .slice(0, 16),
-            category: post.category ?? "",
-            tags: post.tags.join(", "),
-            jobField: normalizeUniqueJobFieldList(jf),
-            thumbnail: post.thumbnail ?? "",
-            content: post.content,
-            published: post.published,
-            meta_title: post.meta_title ?? "",
-            meta_description: post.meta_description ?? "",
-            og_image: post.og_image ?? "",
-        };
-        initialFormRef.current = f;
-        savedSlugRef.current = post.slug;
-        setSlugLocked(true);
-        setForm(f);
-        setEditTarget(post);
-        onEditPathChange?.(`edit/${post.slug}`);
+    const openEdit = async (post: Post) => {
         setError(null);
         setSuccess(null);
+        try {
+            const contentResult = await fetchPostContent(post.id);
+            const hydratedPost = { ...post, content: contentResult.content };
+            void maybeCleanupOnOpen("post", post.slug, {
+                folderPath: `blog/${post.slug}`,
+                entityType: "post",
+                entitySlug: post.slug,
+                currentContent: contentResult.content,
+                thumbnail: post.thumbnail ?? "",
+            });
+            const jf = post.job_field;
+            const f: PostForm = {
+                slug: post.slug,
+                title: post.title,
+                description: post.description ?? "",
+                pub_date: new Date(
+                    new Date(post.pub_date).getTime() + 9 * 60 * 60 * 1000
+                )
+                    .toISOString()
+                    .slice(0, 16),
+                category: post.category ?? "",
+                tags: post.tags.join(", "),
+                jobField: normalizeUniqueJobFieldList(jf),
+                thumbnail: post.thumbnail ?? "",
+                content: contentResult.content,
+                published: post.published,
+                meta_title: post.meta_title ?? "",
+                meta_description: post.meta_description ?? "",
+                og_image: post.og_image ?? "",
+            };
+            initialFormRef.current = f;
+            savedSlugRef.current = post.slug;
+            setSlugLocked(true);
+            setContentStorageMode(contentResult.storageMode);
+            setForm(f);
+            setEditTarget(hydratedPost);
+            onEditPathChange?.(`edit/${post.slug}`);
+        } catch (err) {
+            setError((err as Error).message);
+        }
     };
 
     // 신규 생성 화면 열기
@@ -303,6 +389,7 @@ export default function PostsPanel({
         initialFormRef.current = base;
         savedSlugRef.current = "";
         setSlugLocked(false);
+        setContentStorageMode("inline");
         setForm(base);
         setEditTarget("new");
         onEditPathChange?.("new");
@@ -337,20 +424,91 @@ export default function PostsPanel({
         }
     };
 
+    const savePostChunked = async (
+        payload: ReturnType<typeof buildPayload>,
+        editTargetId?: string | null
+    ): Promise<SavePostResult> => {
+        try {
+            const chunks = splitUtf8Chunks(
+                payload.content,
+                POST_CONTENT_CHUNK_BYTES
+            );
+            const contentHash = await sha256Hex(payload.content);
+            const init = await postChunkedContentRequest<{
+                success: true;
+                revisionId: string;
+                post: Post;
+            }>({
+                action: "init",
+                payload: { ...payload, content: "" },
+                editTargetId,
+                contentHash,
+                contentSize: getUtf8ByteSize(payload.content),
+                chunkSize: POST_CONTENT_CHUNK_BYTES,
+                chunkCount: chunks.length,
+            });
+
+            for (let index = 0; index < chunks.length; index += 1) {
+                const chunk = chunks[index] ?? "";
+                await postChunkedContentRequest<{ success: true }>({
+                    action: "chunk",
+                    revisionId: init.revisionId,
+                    chunkIndex: index,
+                    content: chunk,
+                    checksum: await sha256Hex(chunk),
+                });
+            }
+
+            const committed = await postChunkedContentRequest<{
+                success: true;
+                post: Post;
+                storageMode: PostContentStorageMode;
+            }>({ action: "commit", revisionId: init.revisionId });
+
+            return {
+                success: true,
+                post: { ...committed.post, content: payload.content },
+                storageMode: committed.storageMode,
+            };
+        } catch (err) {
+            return { success: false, error: (err as Error).message };
+        }
+    };
+
+    const savePostDynamic = async (
+        payload: ReturnType<typeof buildPayload>,
+        editTargetId?: string | null
+    ): Promise<SavePostResult> => {
+        const shouldUseChunked =
+            contentStorageMode === "chunked" ||
+            getUtf8ByteSize(payload.content) > SERVER_ACTION_SAFE_BYTES;
+
+        if (shouldUseChunked) return savePostChunked(payload, editTargetId);
+
+        const result = await savePost(payload, editTargetId);
+        if (!result.success) return result;
+        return { success: true, post: result.post, storageMode: "inline" };
+    };
+
     // 자동 저장 (DB에 직접 저장)
     const autoSave = async () => {
         if (!form.title || !form.slug) return;
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        const result = await savePost(
+        const result = await savePostDynamic(
             payload,
             editTarget === "new" ? null : editTarget?.id
         );
-        if (result.success) {
-            initialFormRef.current = form;
-            savedSlugRef.current = result.post.slug;
-            setEditTarget(result.post);
+        if (!result.success) {
+            setError(result.error);
+            throw new Error(result.error);
         }
+
+        const savedForm = { ...form, content: migratedContent };
+        initialFormRef.current = savedForm;
+        savedSlugRef.current = result.post.slug;
+        setContentStorageMode(result.storageMode ?? "inline");
+        setEditTarget(result.post);
     };
 
     const { savedAt: autoSavedAt, saving: autoSaving } = useAutoSave(
@@ -370,7 +528,7 @@ export default function PostsPanel({
 
         const migratedContent = await migrateAssetsIfNeeded();
         const payload = { ...buildPayload(), content: migratedContent };
-        const result = await savePost(
+        const result = await savePostDynamic(
             payload,
             editTarget === "new" ? null : (editTarget as Post).id
         );
@@ -379,11 +537,13 @@ export default function PostsPanel({
         if (!result.success) {
             setError(result.error);
         } else {
-            initialFormRef.current = form;
+            initialFormRef.current = { ...form, content: migratedContent };
             savedSlugRef.current = result.post.slug;
+            setContentStorageMode(result.storageMode ?? "inline");
             setSuccess("저장 완료");
             void loadPosts();
             if (editTarget === "new") setEditTarget(null);
+            else setEditTarget(result.post);
         }
     }, [form, editTarget]);
 
@@ -1099,7 +1259,9 @@ export default function PostsPanel({
                                                 </span>
                                             </button>
                                             <button
-                                                onClick={() => openEdit(post)}
+                                                onClick={() =>
+                                                    void openEdit(post)
+                                                }
                                                 className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                             >
                                                 <Pencil size={12} />

@@ -32,9 +32,14 @@ export function useAutoSave(
 
         timerRef.current = setTimeout(async () => {
             setSaving(true);
-            await saveFnRef.current();
-            setSaving(false);
-            setSavedAt(new Date());
+            try {
+                await saveFnRef.current();
+                setSavedAt(new Date());
+            } catch (err) {
+                console.error(`[useAutoSave::save] ${(err as Error).message}`);
+            } finally {
+                setSaving(false);
+            }
         }, DEBOUNCE_MS);
 
         return () => {

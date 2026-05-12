@@ -6,6 +6,8 @@ import { revalidatePost } from "@/app/admin/actions/revalidate";
 
 const POST_SELECT_FIELDS =
     "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
+const POST_BOOTSTRAP_SELECT_FIELDS =
+    "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, published, updated_at, meta_title, meta_description, og_image";
 
 type AdminPostRow = {
     id: string;
@@ -77,7 +79,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
     ] = await Promise.all([
         serverClient
             .from("posts")
-            .select(POST_SELECT_FIELDS)
+            .select(POST_BOOTSTRAP_SELECT_FIELDS)
             .order("pub_date", { ascending: false }),
         serverClient
             .from("editor_states")
@@ -133,7 +135,9 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
         stateCounts[row.entity_slug] = (stateCounts[row.entity_slug] ?? 0) + 1;
     }
 
-    const posts = (postsData as AdminPostRow[]) ?? [];
+    const posts = (
+        (postsData as Omit<AdminPostRow, "content">[] | null) ?? []
+    ).map((post) => ({ ...post, content: "" })) as AdminPostRow[];
     const categories = [
         ...new Set([
             ...((categoryRows as CategoryCountRow[] | null) ?? [])

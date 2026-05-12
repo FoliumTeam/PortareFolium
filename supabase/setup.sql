@@ -89,6 +89,29 @@ CREATE TABLE IF NOT EXISTS post_categories (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 긴 포스트 본문 chunk 저장
+CREATE TABLE IF NOT EXISTS post_content_revisions (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id      UUID        NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    content_hash TEXT        NOT NULL,
+    content_size INTEGER     NOT NULL CHECK (content_size >= 0),
+    chunk_size   INTEGER     NOT NULL CHECK (chunk_size > 0),
+    chunk_count  INTEGER     NOT NULL CHECK (chunk_count > 0),
+    active       BOOLEAN     NOT NULL DEFAULT FALSE,
+    status       TEXT        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'committed')),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    committed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS post_content_chunks (
+    revision_id UUID    NOT NULL REFERENCES post_content_revisions(id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL CHECK (chunk_index >= 0),
+    content     TEXT    NOT NULL,
+    checksum    TEXT    NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (revision_id, chunk_index)
+);
+
 -- 포스트-태그 정규화 조회 테이블
 CREATE TABLE IF NOT EXISTS post_tags (
     post_id    UUID        NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -182,6 +205,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_category_pub_date ON posts(category, pub_da
 CREATE INDEX IF NOT EXISTS idx_posts_tags_gin    ON posts USING GIN (tags);
 CREATE INDEX IF NOT EXISTS idx_post_categories_created_at ON post_categories(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_post_tags_tag_pub_date ON post_tags(tag_slug, pub_date DESC, post_id);
+CREATE INDEX IF NOT EXISTS idx_post_content_revisions_post_active ON post_content_revisions(post_id, active, committed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_content_chunks_revision_index ON post_content_chunks(revision_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
 CREATE INDEX IF NOT EXISTS idx_books_slug        ON books(slug);
@@ -316,9 +341,11 @@ WHERE post_categories.name IS NULL;
 ALTER TABLE site_config      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE about_data       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resume_data      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE posts            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE post_tags        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE portfolio_items  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE posts                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_tags              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_content_revisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_content_chunks    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE portfolio_items        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_categories  ENABLE ROW LEVEL SECURITY;
 
@@ -371,6 +398,43 @@ CREATE POLICY "post_tags_public_read"
 
 CREATE POLICY "post_tags_auth_all"
     ON post_tags FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+-- post_content_revisions: published post의 active committed revision만 공개 읽기 / 인증된 사용자는 전체 접근
+CREATE POLICY "post_content_revisions_public_read"
+    ON post_content_revisions FOR SELECT USING (
+        status = 'committed'
+        AND active = true
+        AND EXISTS (
+            SELECT 1
+            FROM posts
+            WHERE posts.id = post_content_revisions.post_id
+              AND posts.published = true
+        )
+    );
+
+CREATE POLICY "post_content_revisions_auth_all"
+    ON post_content_revisions FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+-- post_content_chunks: published post의 active committed chunk만 공개 읽기 / 인증된 사용자는 전체 접근
+CREATE POLICY "post_content_chunks_public_read"
+    ON post_content_chunks FOR SELECT USING (
+        EXISTS (
+            SELECT 1
+            FROM post_content_revisions r
+            JOIN posts ON posts.id = r.post_id
+            WHERE r.id = post_content_chunks.revision_id
+              AND r.status = 'committed'
+              AND r.active = true
+              AND posts.published = true
+        )
+    );
+
+CREATE POLICY "post_content_chunks_auth_all"
+    ON post_content_chunks FOR ALL
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 
