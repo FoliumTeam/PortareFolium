@@ -31,8 +31,6 @@ import {
     StarOff,
     ArrowUpAZ,
     ArrowDownAZ,
-    CalendarArrowDown,
-    CalendarArrowUp,
     Pencil,
     Trash2,
     AlertTriangle,
@@ -571,20 +569,22 @@ export default function PortfolioPanel({
                 </p>
 
                 {/* 제목 입력 */}
-                <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => {
-                        const t = e.target.value;
-                        setForm((f) => ({
-                            ...f,
-                            title: t,
-                            slug: slugLocked ? f.slug : toSlug(t),
-                        }));
-                    }}
-                    placeholder="프로젝트 이름을 입력하세요"
-                    className="w-full border-none bg-transparent py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
-                />
+                <div className="px-1">
+                    <input
+                        type="text"
+                        value={form.title}
+                        onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => ({
+                                ...f,
+                                title: t,
+                                slug: slugLocked ? f.slug : toSlug(t),
+                            }));
+                        }}
+                        placeholder="프로젝트 이름을 입력하세요"
+                        className="w-full border-none bg-transparent py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
+                    />
+                </div>
                 {/* slug 입력 */}
                 <div className="flex items-center gap-2 border-t border-(--color-border) px-1 py-2">
                     <span className="shrink-0 text-xs text-(--color-muted)">
