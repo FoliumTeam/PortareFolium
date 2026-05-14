@@ -156,6 +156,34 @@ export default function VideoGifSettingsForm({
                 </label>
             </div>
 
+            <div className="space-y-1 text-sm">
+                <label
+                    htmlFor="video-gif-optimization-mode"
+                    className="block font-medium text-(--color-muted)"
+                >
+                    파일 크기 최적화
+                </label>
+                <select
+                    id="video-gif-optimization-mode"
+                    value={settings.optimizationMode}
+                    onChange={(event) =>
+                        update({
+                            optimizationMode: event.target
+                                .value as VideoGifSettings["optimizationMode"],
+                        })
+                    }
+                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2"
+                >
+                    <option value="quality">색상 우선 (큰 파일)</option>
+                    <option value="balanced">균형 (중간 파일)</option>
+                    <option value="size">용량 우선 (작은 파일)</option>
+                </select>
+                <p className="text-xs text-(--color-muted)">
+                    용량 우선은 색상 수와 디더링을 줄여 파일을 작게 만들지만,
+                    그라데이션 품질이 낮아질 수 있습니다.
+                </p>
+            </div>
+
             <div className="space-y-2 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-3">
                 <div className="flex items-center justify-between gap-3">
                     <label

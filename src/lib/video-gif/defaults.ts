@@ -1,4 +1,8 @@
-import type { CropRect, VideoGifDefaults } from "@/lib/video-gif/types";
+import type {
+    CropRect,
+    VideoGifDefaults,
+    VideoGifOptimizationMode,
+} from "@/lib/video-gif/types";
 
 export const VIDEO_GIF_LOCAL_STORAGE_KEY = "portare-folium.video-gif.defaults";
 
@@ -16,6 +20,7 @@ export const VIDEO_GIF_LIMITS = {
     maxOutputEdge: 1280,
     defaultOutputWidth: 480,
     defaultOutputHeight: 270,
+    defaultOptimizationMode: "quality",
     maxRecommendedFrames: 240,
     maxRecommendedMegapixels: 75,
 } as const;
@@ -28,6 +33,7 @@ export const DEFAULT_VIDEO_GIF_DEFAULTS: VideoGifDefaults = {
     outputHeight: VIDEO_GIF_LIMITS.defaultOutputHeight,
     preserveAspectRatio: true,
     sampleEstimate: false,
+    optimizationMode: VIDEO_GIF_LIMITS.defaultOptimizationMode,
 };
 
 export function clampNumber(value: number, min: number, max: number): number {
@@ -37,6 +43,15 @@ export function clampNumber(value: number, min: number, max: number): number {
 
 export function roundInt(value: number): number {
     return Math.max(0, Math.round(Number.isFinite(value) ? value : 0));
+}
+
+export function sanitizeOptimizationMode(
+    value: unknown
+): VideoGifOptimizationMode {
+    if (value === "balanced" || value === "size" || value === "quality") {
+        return value;
+    }
+    return VIDEO_GIF_LIMITS.defaultOptimizationMode;
 }
 
 export function sanitizeVideoGifDefaults(
@@ -101,6 +116,7 @@ export function sanitizeVideoGifDefaults(
             typeof input.sampleEstimate === "boolean"
                 ? input.sampleEstimate
                 : DEFAULT_VIDEO_GIF_DEFAULTS.sampleEstimate,
+        optimizationMode: sanitizeOptimizationMode(input.optimizationMode),
     };
 }
 

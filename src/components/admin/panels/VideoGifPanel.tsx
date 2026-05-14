@@ -194,6 +194,7 @@ export default function VideoGifPanel() {
                 settings.fps,
                 settings.playbackSpeed
             ),
+            optimizationMode: settings.optimizationMode,
         });
     }, [settings]);
 
@@ -270,6 +271,7 @@ export default function VideoGifPanel() {
                 trimEnd: settings.trimEnd,
                 fps: settings.fps,
                 playbackSpeed: settings.playbackSpeed,
+                optimizationMode: settings.optimizationMode,
                 onProgress: setProgress,
                 signal: controller.signal,
             });

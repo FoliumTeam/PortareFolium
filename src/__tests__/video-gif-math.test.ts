@@ -80,6 +80,7 @@ describe("video gif math", () => {
             trimEnd: 2.5,
             fps: 12,
             playbackSpeed: 1.5,
+            optimizationMode: "quality",
         });
         const filter = args[args.indexOf("-filter_complex") + 1];
 
@@ -93,6 +94,25 @@ describe("video gif math", () => {
         expect(filter).toContain("crop=320:180:10:20");
         expect(filter).toContain("scale=160:90:flags=lanczos");
         expect(filter).toContain("setpts=(PTS-STARTPTS)/1.5");
+    });
+
+    it("builds smaller optimized ffmpeg commands when size mode is selected", () => {
+        const args = buildFfmpegGifArgs({
+            inputName: "input.mp4",
+            outputName: "output.gif",
+            crop: { x: 0, y: 0, width: 320, height: 180 },
+            outputWidth: 320,
+            outputHeight: 180,
+            trimStart: 0,
+            trimEnd: 1,
+            fps: 10,
+            playbackSpeed: 1,
+            optimizationMode: "size",
+        });
+        const filter = args[args.indexOf("-filter_complex") + 1];
+
+        expect(filter).toContain("max_colors=64");
+        expect(filter).toContain("paletteuse=dither=none");
     });
 
     it("estimates larger gifs for larger frame workloads", () => {
@@ -111,6 +131,23 @@ describe("video gif math", () => {
         expect(large.megapixels).toBeGreaterThan(small.megapixels);
     });
 
+    it("estimates smaller gifs when optimization is set to size mode", () => {
+        const quality = estimateGifBytes({
+            width: 320,
+            height: 180,
+            frameCount: 20,
+            optimizationMode: "quality",
+        });
+        const size = estimateGifBytes({
+            width: 320,
+            height: 180,
+            frameCount: 20,
+            optimizationMode: "size",
+        });
+
+        expect(size.bytes).toBeLessThan(quality.bytes);
+    });
+
     it("normalizes a full settings object against metadata limits", () => {
         const normalized = normalizeVideoGifSettings(
             {
@@ -121,6 +158,7 @@ describe("video gif math", () => {
                 outputHeight: 999,
                 preserveAspectRatio: false,
                 sampleEstimate: false,
+                optimizationMode: "not-real" as never,
                 trimStart: 9,
                 trimEnd: 20,
                 crop: { x: 100, y: 50, width: 1000, height: 1000 },
@@ -144,5 +182,8 @@ describe("video gif math", () => {
         expect(normalized.outputWidth).toBe(640);
         expect(normalized.outputHeight).toBe(360);
         expect(normalized.trimEnd).toBe(10);
+        expect(normalized.optimizationMode).toBe(
+            VIDEO_GIF_LIMITS.defaultOptimizationMode
+        );
     });
 });

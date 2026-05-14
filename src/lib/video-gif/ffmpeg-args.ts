@@ -1,5 +1,5 @@
 import { clampNumber, VIDEO_GIF_LIMITS } from "@/lib/video-gif/defaults";
-import type { CropRect } from "@/lib/video-gif/types";
+import type { CropRect, VideoGifOptimizationMode } from "@/lib/video-gif/types";
 
 export type FfmpegGifArgsInput = {
     inputName: string;
@@ -11,6 +11,36 @@ export type FfmpegGifArgsInput = {
     trimEnd: number;
     fps: number;
     playbackSpeed: number;
+    optimizationMode: VideoGifOptimizationMode;
+};
+
+export const GIF_OPTIMIZATION_PRESETS: Record<
+    VideoGifOptimizationMode,
+    {
+        maxColors: number;
+        dither: string;
+        description: string;
+        estimateMultiplier: number;
+    }
+> = {
+    quality: {
+        maxColors: 256,
+        dither: "sierra2_4a",
+        description: "Best color preservation, largest file",
+        estimateMultiplier: 1,
+    },
+    balanced: {
+        maxColors: 128,
+        dither: "sierra2_4a",
+        description: "Fewer palette colors for a smaller file",
+        estimateMultiplier: 0.72,
+    },
+    size: {
+        maxColors: 64,
+        dither: "none",
+        description: "Smallest file, most visible color banding",
+        estimateMultiplier: 0.48,
+    },
 };
 
 function ffmpegNumber(value: number): string {
@@ -41,6 +71,7 @@ export function buildFfmpegGifArgs({
     trimEnd,
     fps,
     playbackSpeed,
+    optimizationMode,
 }: FfmpegGifArgsInput): string[] {
     const safeFps = Math.round(
         clampNumber(fps, VIDEO_GIF_LIMITS.minFps, VIDEO_GIF_LIMITS.maxFps)
@@ -58,6 +89,9 @@ export function buildFfmpegGifArgs({
     const height = Math.max(1, Math.round(outputHeight));
     const start = Math.max(0, trimStart);
     const end = Math.max(start + 0.01, trimEnd);
+    const optimization =
+        GIF_OPTIMIZATION_PRESETS[optimizationMode] ??
+        GIF_OPTIMIZATION_PRESETS.quality;
 
     const filter = [
         `[0:v]trim=start=${ffmpegNumber(start)}:end=${ffmpegNumber(end)}`,
@@ -66,8 +100,8 @@ export function buildFfmpegGifArgs({
         `scale=${width}:${height}:flags=lanczos`,
         `fps=${safeFps}`,
         "split[palette_source][gif_source]",
-        "[palette_source]palettegen=stats_mode=diff[palette]",
-        "[gif_source][palette]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+        `[palette_source]palettegen=stats_mode=diff:max_colors=${optimization.maxColors}[palette]`,
+        `[gif_source][palette]paletteuse=dither=${optimization.dither}:diff_mode=rectangle`,
     ].join(",");
 
     return [
