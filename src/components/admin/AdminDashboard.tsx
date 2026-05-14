@@ -8,6 +8,7 @@ import CommandPalette from "@/components/admin/CommandPalette";
 import MainPanel from "@/components/admin/panels/MainPanel";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
 import PortfolioPanel from "@/components/admin/panels/PortfolioPanel";
+import VideoGifPanel from "@/components/admin/panels/VideoGifPanel";
 import TagsPanel from "@/components/admin/panels/TagsPanel";
 import GanttChartPanel from "@/components/admin/panels/GanttChartPanel";
 import AboutPanel from "@/components/admin/panels/AboutPanel";
@@ -29,6 +30,7 @@ const WARN_BEFORE_MS = 60 * 1000;
 const PANELS_OWN_HEIGHT = new Set<TabId>([
     "posts",
     "portfolio",
+    "video-gif",
     "gantt-chart",
     "resume",
     "snapshots",
@@ -47,6 +49,7 @@ const VALID_TABS: TabId[] = [
     "main",
     "posts",
     "portfolio",
+    "video-gif",
     "tags",
     "gantt-chart",
     "about",
@@ -116,6 +119,12 @@ export default function AdminDashboard({
         const suffix = editPath ? `/${editPath}` : "";
         window.history.replaceState(null, "", `#${activeTab}${suffix}`);
     }, [activeTab, editPath, hashReady]);
+
+    useEffect(() => {
+        if (activeTab === "video-gif") {
+            setSidebarVisible(false);
+        }
+    }, [activeTab]);
 
     // 비활동 타이머: 1초마다 남은 시간 갱신, 만료 시 자동 로그아웃
     useEffect(() => {
@@ -256,6 +265,9 @@ export default function AdminDashboard({
                                     editPath={editPath}
                                     onEditPathChange={handleEditPathChange}
                                 />
+                            )}
+                            {activeTab === "video-gif" && (
+                                <VideoGifPanel key={`video-gif-${tabKey}`} />
                             )}
                             {activeTab === "tags" && (
                                 <TagsPanel key={`tags-${tabKey}`} />

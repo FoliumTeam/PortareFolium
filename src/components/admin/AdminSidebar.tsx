@@ -14,6 +14,7 @@ import {
     MessageSquare,
     ExternalLink,
     Bug,
+    Film,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -22,6 +23,7 @@ export const REFUGE_ADMIN_TABS = [
     "main",
     "posts",
     "portfolio",
+    "video-gif",
     "tags",
     "gantt-chart",
     "about",
@@ -42,6 +44,7 @@ const SECTIONS = [
         items: [
             { id: "posts", label: "포스트", icon: FileText },
             { id: "portfolio", label: "포트폴리오", icon: Briefcase },
+            { id: "video-gif", label: "Video → GIF", icon: Film },
             { id: "tags", label: "태그", icon: Tag },
             { id: "gantt-chart", label: "Gantt Chart", icon: ChartNoAxesGantt },
         ],
@@ -73,6 +76,7 @@ export type TabId =
     | "main"
     | "posts"
     | "portfolio"
+    | "video-gif"
     | "gantt-chart"
     | "tags"
     | "about"
