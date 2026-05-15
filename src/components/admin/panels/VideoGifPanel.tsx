@@ -12,6 +12,7 @@ import {
     getFrameCount,
     normalizeVideoGifSettings,
 } from "@/lib/video-gif/math";
+import { getOptimizedGifFps } from "@/lib/video-gif/ffmpeg-args";
 import { convertVideoToGif } from "@/lib/video-gif/encoder";
 import type {
     CropRect,
@@ -191,10 +192,10 @@ export default function VideoGifPanel() {
             frameCount: getFrameCount(
                 settings.trimStart,
                 settings.trimEnd,
-                settings.fps,
+                getOptimizedGifFps(settings.fps, settings.compressionRate),
                 settings.playbackSpeed
             ),
-            optimizationMode: settings.optimizationMode,
+            compressionRate: settings.compressionRate,
         });
     }, [settings]);
 
@@ -271,7 +272,7 @@ export default function VideoGifPanel() {
                 trimEnd: settings.trimEnd,
                 fps: settings.fps,
                 playbackSpeed: settings.playbackSpeed,
-                optimizationMode: settings.optimizationMode,
+                compressionRate: settings.compressionRate,
                 onProgress: setProgress,
                 signal: controller.signal,
             });

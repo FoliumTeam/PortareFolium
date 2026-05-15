@@ -156,31 +156,56 @@ export default function VideoGifSettingsForm({
                 </label>
             </div>
 
-            <div className="space-y-1 text-sm">
-                <label
-                    htmlFor="video-gif-optimization-mode"
-                    className="block font-medium text-(--color-muted)"
-                >
-                    파일 크기 최적화
-                </label>
-                <select
-                    id="video-gif-optimization-mode"
-                    value={settings.optimizationMode}
+            <div className="space-y-2 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-3">
+                <div className="flex items-center justify-between gap-3">
+                    <label
+                        htmlFor="video-gif-compression-rate"
+                        className="text-sm font-medium text-(--color-muted)"
+                    >
+                        압축률
+                    </label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            min={VIDEO_GIF_LIMITS.minCompressionRate}
+                            max={VIDEO_GIF_LIMITS.maxCompressionRate}
+                            step={1}
+                            value={settings.compressionRate}
+                            onChange={(event) =>
+                                update({
+                                    compressionRate: numberValue(
+                                        event.target.value,
+                                        settings.compressionRate
+                                    ),
+                                })
+                            }
+                            className="w-20 rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1 text-right"
+                        />
+                        <span className="text-sm text-(--color-muted)">%</span>
+                    </div>
+                </div>
+                <input
+                    id="video-gif-compression-rate"
+                    type="range"
+                    min={VIDEO_GIF_LIMITS.minCompressionRate}
+                    max={VIDEO_GIF_LIMITS.maxCompressionRate}
+                    step={1}
+                    value={settings.compressionRate}
                     onChange={(event) =>
                         update({
-                            optimizationMode: event.target
-                                .value as VideoGifSettings["optimizationMode"],
+                            compressionRate: numberValue(
+                                event.target.value,
+                                settings.compressionRate
+                            ),
                         })
                     }
-                    className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2"
-                >
-                    <option value="quality">색상 우선 (큰 파일)</option>
-                    <option value="balanced">균형 (중간 파일)</option>
-                    <option value="size">용량 우선 (작은 파일)</option>
-                </select>
+                    className="w-full"
+                />
                 <p className="text-xs text-(--color-muted)">
-                    용량 우선은 색상 수와 디더링을 줄여 파일을 작게 만들지만,
-                    그라데이션 품질이 낮아질 수 있습니다.
+                    권장값은 25–40%입니다. 0%는 색상과 움직임을 최대한 보존해
+                    파일이 큽니다. 50% 이상은 프레임을 줄여 더 작아지지만
+                    움직임이 덜 부드러울 수 있고, 80% 이상은 유사 프레임 제거가
+                    강해져 짧은 미리보기용에 적합합니다.
                 </p>
             </div>
 

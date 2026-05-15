@@ -93,7 +93,7 @@ describe("VideoGifPanel", () => {
         expect(screen.getByLabelText("Y")).toHaveValue(20);
         expect(screen.getByLabelText("너비")).toHaveValue(320);
         expect(screen.getByLabelText("높이")).toHaveValue(180);
-        expect(screen.getByLabelText("파일 크기 최적화")).toHaveValue("size");
+        expect(screen.getByLabelText("압축률")).toHaveValue("65");
     });
 
     it("remembers every current option in localStorage without a database action", async () => {
@@ -122,8 +122,8 @@ describe("VideoGifPanel", () => {
         await changeNumberInput("높이", "180");
         await changeNumberInput("X", "12");
         await changeNumberInput("Y", "24");
-        fireEvent.change(screen.getByLabelText("파일 크기 최적화"), {
-            target: { value: "balanced" },
+        fireEvent.change(screen.getByLabelText("압축률"), {
+            target: { value: "40" },
         });
         fireEvent.click(screen.getByText("마지막 설정 기억하기"));
 
@@ -137,7 +137,7 @@ describe("VideoGifPanel", () => {
             outputScale: 100,
             preserveAspectRatio: true,
             sampleEstimate: false,
-            optimizationMode: "balanced",
+            compressionRate: 40,
             trimStart: 0.5,
             trimEnd: 1.5,
             crop: { x: 12, y: 24, width: 320, height: 180 },
@@ -160,7 +160,7 @@ describe("VideoGifPanel", () => {
                 outputHeight: 360,
                 preserveAspectRatio: true,
                 sampleEstimate: false,
-                optimizationMode: "quality",
+                compressionRate: 0,
                 trimStart: 5,
                 trimEnd: 20,
                 crop: { x: 500, y: 500, width: 1000, height: 800 },
@@ -224,7 +224,7 @@ describe("VideoGifPanel", () => {
         fireEvent.click(screen.getByText("GIF 만들기"));
         expect(mocks.convertVideoToGif.mock.calls[0]?.[0]).toMatchObject({
             playbackSpeed: 1,
-            optimizationMode: "quality",
+            compressionRate: 30,
         });
 
         const firstSignal = mocks.convertVideoToGif.mock.calls[0]?.[0]

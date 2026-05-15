@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { VIDEO_GIF_LIMITS } from "@/lib/video-gif/defaults";
 import {
     buildFfmpegGifArgs,
+    getOptimizedGifFps,
     getPlaybackAdjustedDuration,
 } from "@/lib/video-gif/ffmpeg-args";
 import {
@@ -80,12 +81,19 @@ describe("video gif math", () => {
             trimEnd: 2.5,
             fps: 12,
             playbackSpeed: 1.5,
-            optimizationMode: "quality",
+            compressionRate: 0,
         });
         const filter = args[args.indexOf("-filter_complex") + 1];
 
         expect(args).toEqual(
-            expect.arrayContaining(["-i", "input.mp4", "-loop", "0"])
+            expect.arrayContaining([
+                "-i",
+                "input.mp4",
+                "-gifflags",
+                "+offsetting+transdiff",
+                "-loop",
+                "0",
+            ])
         );
         expect(filter).toContain("palettegen=stats_mode=diff");
         expect(filter).toContain(
@@ -96,7 +104,7 @@ describe("video gif math", () => {
         expect(filter).toContain("setpts=(PTS-STARTPTS)/1.5");
     });
 
-    it("builds smaller optimized ffmpeg commands when size mode is selected", () => {
+    it("builds compression-rate optimized ffmpeg commands at high compression", () => {
         const args = buildFfmpegGifArgs({
             inputName: "input.mp4",
             outputName: "output.gif",
@@ -107,12 +115,16 @@ describe("video gif math", () => {
             trimEnd: 1,
             fps: 10,
             playbackSpeed: 1,
-            optimizationMode: "size",
+            compressionRate: 65,
         });
         const filter = args[args.indexOf("-filter_complex") + 1];
 
-        expect(filter).toContain("max_colors=64");
-        expect(filter).toContain("paletteuse=dither=none");
+        expect(filter).toContain("fps=7");
+        expect(filter).toContain("mpdecimate=hi=768:lo=320:frac=0.33");
+        expect(filter).toContain("max_colors=214");
+        expect(filter).toContain("paletteuse=dither=sierra2_4a");
+        expect(getOptimizedGifFps(10, 30)).toBe(9);
+        expect(getOptimizedGifFps(10, 0)).toBe(10);
     });
 
     it("estimates larger gifs for larger frame workloads", () => {
@@ -131,18 +143,18 @@ describe("video gif math", () => {
         expect(large.megapixels).toBeGreaterThan(small.megapixels);
     });
 
-    it("estimates smaller gifs when optimization is set to size mode", () => {
+    it("estimates smaller gifs when compression rate is higher", () => {
         const quality = estimateGifBytes({
             width: 320,
             height: 180,
             frameCount: 20,
-            optimizationMode: "quality",
+            compressionRate: 0,
         });
         const size = estimateGifBytes({
             width: 320,
             height: 180,
             frameCount: 20,
-            optimizationMode: "size",
+            compressionRate: 80,
         });
 
         expect(size.bytes).toBeLessThan(quality.bytes);
@@ -158,7 +170,7 @@ describe("video gif math", () => {
                 outputHeight: 999,
                 preserveAspectRatio: false,
                 sampleEstimate: false,
-                optimizationMode: "not-real" as never,
+                compressionRate: 999,
                 trimStart: 9,
                 trimEnd: 20,
                 crop: { x: 100, y: 50, width: 1000, height: 1000 },
@@ -182,8 +194,8 @@ describe("video gif math", () => {
         expect(normalized.outputWidth).toBe(640);
         expect(normalized.outputHeight).toBe(360);
         expect(normalized.trimEnd).toBe(10);
-        expect(normalized.optimizationMode).toBe(
-            VIDEO_GIF_LIMITS.defaultOptimizationMode
+        expect(normalized.compressionRate).toBe(
+            VIDEO_GIF_LIMITS.maxCompressionRate
         );
     });
 });

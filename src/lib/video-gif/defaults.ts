@@ -1,8 +1,4 @@
-import type {
-    CropRect,
-    VideoGifDefaults,
-    VideoGifOptimizationMode,
-} from "@/lib/video-gif/types";
+import type { CropRect, VideoGifDefaults } from "@/lib/video-gif/types";
 
 export const VIDEO_GIF_LOCAL_STORAGE_KEY = "portare-folium.video-gif.defaults";
 
@@ -13,6 +9,9 @@ export const VIDEO_GIF_LIMITS = {
     minPlaybackSpeed: 0.25,
     maxPlaybackSpeed: 4,
     defaultPlaybackSpeed: 1,
+    minCompressionRate: 0,
+    maxCompressionRate: 100,
+    defaultCompressionRate: 30,
     minOutputScale: 25,
     maxOutputScale: 100,
     defaultOutputScale: 100,
@@ -20,7 +19,6 @@ export const VIDEO_GIF_LIMITS = {
     maxOutputEdge: 1280,
     defaultOutputWidth: 480,
     defaultOutputHeight: 270,
-    defaultOptimizationMode: "quality",
     maxRecommendedFrames: 240,
     maxRecommendedMegapixels: 75,
 } as const;
@@ -28,12 +26,12 @@ export const VIDEO_GIF_LIMITS = {
 export const DEFAULT_VIDEO_GIF_DEFAULTS: VideoGifDefaults = {
     fps: VIDEO_GIF_LIMITS.defaultFps,
     playbackSpeed: VIDEO_GIF_LIMITS.defaultPlaybackSpeed,
+    compressionRate: VIDEO_GIF_LIMITS.defaultCompressionRate,
     outputScale: VIDEO_GIF_LIMITS.defaultOutputScale,
     outputWidth: VIDEO_GIF_LIMITS.defaultOutputWidth,
     outputHeight: VIDEO_GIF_LIMITS.defaultOutputHeight,
     preserveAspectRatio: true,
     sampleEstimate: false,
-    optimizationMode: VIDEO_GIF_LIMITS.defaultOptimizationMode,
 };
 
 export function clampNumber(value: number, min: number, max: number): number {
@@ -45,13 +43,17 @@ export function roundInt(value: number): number {
     return Math.max(0, Math.round(Number.isFinite(value) ? value : 0));
 }
 
-export function sanitizeOptimizationMode(
-    value: unknown
-): VideoGifOptimizationMode {
-    if (value === "balanced" || value === "size" || value === "quality") {
-        return value;
-    }
-    return VIDEO_GIF_LIMITS.defaultOptimizationMode;
+export function sanitizeCompressionRate(value: unknown): number {
+    if (value === "quality") return 0;
+    if (value === "balanced") return 30;
+    if (value === "size") return 65;
+    return Math.round(
+        clampNumber(
+            Number(value ?? DEFAULT_VIDEO_GIF_DEFAULTS.compressionRate),
+            VIDEO_GIF_LIMITS.minCompressionRate,
+            VIDEO_GIF_LIMITS.maxCompressionRate
+        )
+    );
 }
 
 export function sanitizeVideoGifDefaults(
@@ -79,6 +81,14 @@ export function sanitizeVideoGifDefaults(
                 VIDEO_GIF_LIMITS.minPlaybackSpeed,
                 VIDEO_GIF_LIMITS.maxPlaybackSpeed
             ).toFixed(2)
+        ),
+        compressionRate: sanitizeCompressionRate(
+            input.compressionRate ??
+                (
+                    input as Partial<VideoGifDefaults> & {
+                        optimizationMode?: unknown;
+                    }
+                ).optimizationMode
         ),
         outputScale: Math.round(
             clampNumber(
@@ -116,7 +126,6 @@ export function sanitizeVideoGifDefaults(
             typeof input.sampleEstimate === "boolean"
                 ? input.sampleEstimate
                 : DEFAULT_VIDEO_GIF_DEFAULTS.sampleEstimate,
-        optimizationMode: sanitizeOptimizationMode(input.optimizationMode),
     };
 }
 

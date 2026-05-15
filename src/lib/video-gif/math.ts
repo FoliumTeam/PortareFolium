@@ -1,10 +1,10 @@
 import {
     clampNumber,
     roundInt,
-    sanitizeOptimizationMode,
+    sanitizeCompressionRate,
     VIDEO_GIF_LIMITS,
 } from "@/lib/video-gif/defaults";
-import { GIF_OPTIMIZATION_PRESETS } from "@/lib/video-gif/ffmpeg-args";
+import { getGifCompressionPreset } from "@/lib/video-gif/ffmpeg-args";
 import type {
     CropRect,
     GifEstimate,
@@ -147,7 +147,7 @@ export function estimateGifBytes(args: {
     width: number;
     height: number;
     frameCount: number;
-    optimizationMode?: VideoGifDefaults["optimizationMode"];
+    compressionRate?: VideoGifDefaults["compressionRate"];
     sampleBytes?: number | null;
     sampleFrameCount?: number | null;
 }): GifEstimate {
@@ -155,10 +155,9 @@ export function estimateGifBytes(args: {
     const height = Math.max(1, Math.round(args.height));
     const frameCount = Math.max(1, Math.round(args.frameCount));
     const megapixels = (width * height * frameCount) / 1_000_000;
-    const optimization =
-        GIF_OPTIMIZATION_PRESETS[
-            sanitizeOptimizationMode(args.optimizationMode)
-        ];
+    const compression = getGifCompressionPreset(
+        sanitizeCompressionRate(args.compressionRate)
+    );
 
     if (
         args.sampleBytes &&
@@ -170,7 +169,7 @@ export function estimateGifBytes(args: {
             bytes: Math.round(
                 (args.sampleBytes / args.sampleFrameCount) *
                     frameCount *
-                    optimization.estimateMultiplier
+                    compression.estimateMultiplier
             ),
             frameCount,
             megapixels,
@@ -185,7 +184,7 @@ export function estimateGifBytes(args: {
     return {
         bytes: Math.round(
             (indexedPixels * compressionFactor + paletteOverhead) *
-                optimization.estimateMultiplier +
+                compression.estimateMultiplier +
                 headerOverhead
         ),
         frameCount,
@@ -219,6 +218,7 @@ export function normalizeVideoGifSettings(
                 VIDEO_GIF_LIMITS.maxPlaybackSpeed
             ).toFixed(2)
         ),
+        compressionRate: sanitizeCompressionRate(value.compressionRate),
         outputScale: Math.round(
             clampNumber(
                 value.outputScale,
@@ -226,7 +226,6 @@ export function normalizeVideoGifSettings(
                 VIDEO_GIF_LIMITS.maxOutputScale
             )
         ),
-        optimizationMode: sanitizeOptimizationMode(value.optimizationMode),
         ...size,
         ...trim,
         crop,

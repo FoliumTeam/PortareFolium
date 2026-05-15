@@ -1,9 +1,10 @@
-# CHANGES
+﻿# CHANGES
 
 Date-based changelogs are stored in `docs/changelogs/`.
 
 | Date       | File                                      |
 | ---------- | ----------------------------------------- |
+| 2026-05-15 | [2026-05-15.md](changelogs/2026-05-15.md) |
 | 2026-05-11 | [2026-05-11.md](changelogs/2026-05-11.md) |
 | 2026-05-10 | [2026-05-10.md](changelogs/2026-05-10.md) |
 | 2026-05-09 | [2026-05-09.md](changelogs/2026-05-09.md) |

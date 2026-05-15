@@ -5,7 +5,6 @@ import type {
     CropRect,
     GifConversionProgress,
     GifConversionResult,
-    VideoGifOptimizationMode,
 } from "@/lib/video-gif/types";
 
 export type ConvertVideoToGifArgs = {
@@ -17,7 +16,7 @@ export type ConvertVideoToGifArgs = {
     trimEnd: number;
     fps: number;
     playbackSpeed: number;
-    optimizationMode: VideoGifOptimizationMode;
+    compressionRate: number;
     onProgress?: (progress: GifConversionProgress) => void;
     signal?: AbortSignal;
 };
@@ -93,7 +92,7 @@ export async function convertVideoToGif({
     trimEnd,
     fps,
     playbackSpeed,
-    optimizationMode,
+    compressionRate,
     onProgress,
     signal,
 }: ConvertVideoToGifArgs): Promise<GifConversionResult> {
@@ -130,7 +129,7 @@ export async function convertVideoToGif({
                 trimEnd,
                 fps,
                 playbackSpeed,
-                optimizationMode,
+                compressionRate,
             })
         );
         ensureNotAborted(signal);

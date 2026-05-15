@@ -11,17 +11,15 @@ export type VideoMetadata = {
     duration: number;
 };
 
-export type VideoGifOptimizationMode = "quality" | "balanced" | "size";
-
 export type VideoGifDefaults = {
     fps: number;
     playbackSpeed: number;
+    compressionRate: number;
     outputScale: number;
     outputWidth: number;
     outputHeight: number;
     preserveAspectRatio: boolean;
     sampleEstimate: boolean;
-    optimizationMode: VideoGifOptimizationMode;
 };
 
 export type VideoGifSettings = VideoGifDefaults & {
