@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.180",
+    "version": "0.12.181",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -17,7 +17,7 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "purge": "rm -rf .next",
-        "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
+        "reinstall": "node -e \"const fs=require('node:fs'); fs.rmSync('node_modules', { recursive: true, force: true }); fs.rmSync('pnpm-lock.yaml', { force: true });\" && pnpm install",
         "prepare": "husky || true",
         "postinstall": "node scripts/sync-omc-directives.mjs",
         "sync-omc": "node scripts/sync-omc-directives.mjs",
