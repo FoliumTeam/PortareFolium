@@ -35,6 +35,7 @@ export async function handleGetSchema(): Promise<unknown> {
             "get_post({ slug: string })",
             "create_post({ slug*, title*, description?, pub_date?, category?, tags?, job_field?, thumbnail?, content?, published?, meta_title?, meta_description?, og_image? })",
             "update_post({ slug*, ...partial_fields })",
+            "rename_post_slug({ current_slug*, new_slug* })",
             "list_portfolio_items({ limit?: int })",
             "get_portfolio_item({ slug: string })",
             "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx?, published? })",
@@ -162,6 +163,10 @@ export async function handleGetSchema(): Promise<unknown> {
     };
 }
 
+function isValidPostSlug(slug: string): boolean {
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
 // posts 목록 조회
 export async function handleListPosts(args: {
     published?: boolean;
@@ -263,6 +268,81 @@ export async function handleUpdatePost(args: {
 
     const { revalidatePath } = await import("next/cache");
     revalidatePath(`/blog/${slug}`);
+    revalidatePath("/blog");
+
+    return data;
+}
+
+// post slug 변경
+export async function handleRenamePostSlug(args: {
+    current_slug: string;
+    new_slug: string;
+}): Promise<unknown> {
+    if (!serverClient)
+        throw new Error("[mcp-tools::handleRenamePostSlug] serverClient 없음");
+
+    const currentSlug = args.current_slug;
+    const newSlug = args.new_slug;
+
+    if (!currentSlug || !newSlug) {
+        throw new Error(
+            "[mcp-tools::handleRenamePostSlug] current_slug, new_slug 필수"
+        );
+    }
+
+    if (!isValidPostSlug(newSlug)) {
+        throw new Error(
+            `[mcp-tools::handleRenamePostSlug] 유효하지 않은 slug: ${newSlug}`
+        );
+    }
+
+    const { data: current, error: currentError } = await serverClient
+        .from("posts")
+        .select("id, slug")
+        .eq("slug", currentSlug)
+        .single();
+
+    if (currentError || !current) {
+        throw new Error(
+            `[mcp-tools::handleRenamePostSlug] current_slug 없음: ${currentSlug}`
+        );
+    }
+
+    if (currentSlug === newSlug) {
+        return current;
+    }
+
+    const { data: existing } = await serverClient
+        .from("posts")
+        .select("id, slug")
+        .eq("slug", newSlug)
+        .maybeSingle();
+
+    if (existing) {
+        throw new Error(
+            `[mcp-tools::handleRenamePostSlug] new_slug 중복: ${newSlug}`
+        );
+    }
+
+    const { data, error } = await serverClient
+        .from("posts")
+        .update({ slug: newSlug })
+        .eq("slug", currentSlug)
+        .select("id, slug")
+        .single();
+
+    if (error) {
+        if (error.code === "23505") {
+            throw new Error(
+                `[mcp-tools::handleRenamePostSlug] new_slug 중복: ${newSlug}`
+            );
+        }
+        throw new Error(`[mcp-tools::handleRenamePostSlug] ${error.message}`);
+    }
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath(`/blog/${currentSlug}`);
+    revalidatePath(`/blog/${newSlug}`);
     revalidatePath("/blog");
 
     return data;
@@ -544,6 +624,18 @@ export const MCP_TOOLS = [
         },
     },
     {
+        name: "rename_post_slug",
+        description: "포스트 slug 변경 (기존 row 유지, slug 충돌 시 실패)",
+        inputSchema: {
+            type: "object",
+            properties: {
+                current_slug: { type: "string" },
+                new_slug: { type: "string" },
+            },
+            required: ["current_slug", "new_slug"],
+        },
+    },
+    {
         name: "list_portfolio_items",
         description: "포트폴리오 목록 조회",
         inputSchema: {
@@ -649,6 +741,10 @@ export async function dispatchTool(
             return handleCreatePost(args);
         case "update_post":
             return handleUpdatePost(args as { slug: string });
+        case "rename_post_slug":
+            return handleRenamePostSlug(
+                args as { current_slug: string; new_slug: string }
+            );
         case "list_portfolio_items":
             return handleListPortfolioItems(args as { limit?: number });
         case "get_portfolio_item":
