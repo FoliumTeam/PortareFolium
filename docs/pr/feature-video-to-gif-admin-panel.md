@@ -11,3 +11,4 @@
 
 - MCP `rename_post_slug` 도구 추가.
 - posts row 유지 기반 slug 변경, 중복 slug 검증, blog route revalidate 적용.
+- 누락 또는 구버전 의존성 발견 시 `pnpm reinstall` 우선 실행 agent 지침 추가.

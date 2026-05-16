@@ -9,6 +9,12 @@
 
 ## Testing Gate
 
+### Dependency Sync
+
+- **Missing/outdated dependency 발견 시 즉시 `pnpm reinstall` 실행**: 일반 구현 세션, 분석 중 테스트/빌드 실행, commit 준비, push 준비 중 어느 시점이든 `Cannot find module`, lockfile/package mismatch, stale `node_modules`, 다른 머신에서 갱신된 의존성 미반영으로 의심되는 오류를 발견하면 먼저 `pnpm reinstall`을 실행해 현재 머신의 의존성을 `package.json`/`pnpm-lock.yaml` 기준으로 재동기화한다.
+- `pnpm reinstall` 후에도 같은 오류가 남으면 그때 실제 코드/설정 문제로 보고 추가 진단한다.
+- commit/push gate 중 의존성 누락 또는 구버전이 발견된 경우에도 gate를 우회하지 말고 `pnpm reinstall`을 먼저 실행한 뒤 해당 gate 명령을 다시 실행한다.
+
 ### Tooling 명령
 
 | 도구                     | 용도                      | 명령                                      |
