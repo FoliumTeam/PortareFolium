@@ -313,3 +313,82 @@ export async function batchSetPostJobField(
     await Promise.all((data ?? []).map((row) => revalidatePost(row.slug)));
     return { success: true };
 }
+
+export async function batchRenamePostTitlesByRegex(
+    ids: string[],
+    pattern: string,
+    replacement: string,
+    options: { global?: boolean; ignoreCase?: boolean } = {}
+): Promise<{ success: boolean; updated?: number; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+    if (ids.length === 0) return { success: true, updated: 0 };
+    if (!pattern.trim()) {
+        return { success: false, error: "정규식 패턴은 필수입니다." };
+    }
+
+    let regex: RegExp;
+    try {
+        regex = new RegExp(
+            pattern,
+            `${options.global === false ? "" : "g"}${options.ignoreCase ? "i" : ""}`
+        );
+    } catch (err) {
+        return {
+            success: false,
+            error: `정규식 오류: ${(err as Error).message}`,
+        };
+    }
+
+    const { data: targets, error: selectError } = await serverClient
+        .from("posts")
+        .select("id, slug, title")
+        .in("id", ids);
+    if (selectError) return { success: false, error: selectError.message };
+
+    let updated = 0;
+    const changedSlugs: string[] = [];
+    for (const post of targets ?? []) {
+        const nextTitle = post.title.replace(regex, replacement);
+        if (!nextTitle.trim()) {
+            return {
+                success: false,
+                error: `"${post.title}" 변경 결과가 빈 제목입니다.`,
+            };
+        }
+        if (nextTitle === post.title) continue;
+
+        const { error } = await serverClient
+            .from("posts")
+            .update({ title: nextTitle })
+            .eq("id", post.id);
+        if (error) return { success: false, error: error.message };
+
+        updated += 1;
+        changedSlugs.push(post.slug);
+    }
+
+    await Promise.all(changedSlugs.map((slug) => revalidatePost(slug)));
+    return { success: true, updated };
+}
+
+export async function batchDeletePostsByIds(
+    ids: string[]
+): Promise<{ success: boolean; slugs?: string[]; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+    if (ids.length === 0) return { success: true, slugs: [] };
+
+    const { data: targets, error: selectError } = await serverClient
+        .from("posts")
+        .select("id, slug")
+        .in("id", ids);
+    if (selectError) return { success: false, error: selectError.message };
+
+    const slugs = (targets ?? []).map((row) => row.slug).filter(Boolean);
+    const { error } = await serverClient.from("posts").delete().in("id", ids);
+    if (error) return { success: false, error: error.message };
+
+    await Promise.all(slugs.map((slug) => revalidatePost(slug)));
+    return { success: true, slugs };
+}

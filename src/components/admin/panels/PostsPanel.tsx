@@ -15,6 +15,8 @@ import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
 import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
+    batchDeletePostsByIds,
+    batchRenamePostTitlesByRegex,
     batchSetPostJobField,
     batchSetPostPublished,
     deletePostById,
@@ -221,6 +223,11 @@ export default function PostsPanel({
     const [filterSearch, setFilterSearch] = useState("");
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [batchJobField, setBatchJobField] = useState("");
+    const [batchRenameOpen, setBatchRenameOpen] = useState(false);
+    const [batchRenamePattern, setBatchRenamePattern] = useState("");
+    const [batchRenameReplacement, setBatchRenameReplacement] = useState("");
+    const [batchRenameIgnoreCase, setBatchRenameIgnoreCase] = useState(false);
+    const [batchRenameGlobal, setBatchRenameGlobal] = useState(true);
     const [batchSaving, setBatchSaving] = useState(false);
     // editor_states count (목록 yellow highlight용)
     const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
@@ -902,6 +909,39 @@ export default function PostsPanel({
         displayedPosts.length > 0 &&
         displayedPosts.every((p) => selected.has(p.id));
     const someSelected = selected.size > 0;
+    const selectedPosts = posts.filter((post) => selected.has(post.id));
+
+    let batchRenameError: string | null = null;
+    let batchRenameChanged = 0;
+    const batchRenamePreview: { id: string; before: string; after: string }[] =
+        [];
+
+    if (batchRenamePattern.trim()) {
+        try {
+            const regex = new RegExp(
+                batchRenamePattern,
+                `${batchRenameGlobal ? "g" : ""}${batchRenameIgnoreCase ? "i" : ""}`
+            );
+            for (const post of selectedPosts) {
+                const nextTitle = post.title.replace(
+                    regex,
+                    batchRenameReplacement
+                );
+                if (nextTitle !== post.title) {
+                    batchRenameChanged += 1;
+                    if (batchRenamePreview.length < 3) {
+                        batchRenamePreview.push({
+                            id: post.id,
+                            before: post.title,
+                            after: nextTitle,
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            batchRenameError = (err as Error).message;
+        }
+    }
 
     const toggleSelect = (id: string) => {
         setSelected((prev) => {
@@ -940,6 +980,88 @@ export default function PostsPanel({
         setBatchJobField("");
         void loadPosts();
         showToast(`${selected.size}개 포스트의 직무 분야를 변경했습니다.`);
+    };
+
+    const batchRenameTitles = async () => {
+        if (selected.size === 0 || !batchRenamePattern.trim()) return;
+        if (batchRenameError) {
+            setError(`정규식 오류: ${batchRenameError}`);
+            return;
+        }
+        if (batchRenameChanged === 0) {
+            showToast("변경될 제목이 없습니다.");
+            return;
+        }
+
+        const ok = await confirm({
+            title: "제목 일괄 변경",
+            description: `선택한 포스트 중 ${batchRenameChanged}개의 제목을 정규식으로 변경할까요? slug는 변경하지 않습니다.`,
+            confirmText: "변경",
+            cancelText: "취소",
+        });
+        if (!ok) return;
+
+        const count = selected.size;
+        setBatchSaving(true);
+        setError(null);
+        const result = await batchRenamePostTitlesByRegex(
+            [...selected],
+            batchRenamePattern,
+            batchRenameReplacement,
+            {
+                global: batchRenameGlobal,
+                ignoreCase: batchRenameIgnoreCase,
+            }
+        );
+        setBatchSaving(false);
+
+        if (!result.success) {
+            setError(result.error ?? "제목 일괄 변경 실패");
+            return;
+        }
+
+        setSelected(new Set());
+        setBatchRenameOpen(false);
+        setBatchRenamePattern("");
+        setBatchRenameReplacement("");
+        void loadPosts();
+        showToast(
+            `${result.updated ?? 0}개 포스트 제목을 변경했습니다. (${count}개 선택)`
+        );
+    };
+
+    const batchDeletePosts = async () => {
+        if (selected.size === 0) return;
+        const count = selected.size;
+        const ok = await confirm({
+            title: "포스트 일괄 삭제",
+            description: `선택한 ${count}개 포스트를 삭제할까요? 연결된 blog storage 폴더도 함께 삭제합니다.`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
+
+        setBatchSaving(true);
+        setError(null);
+        const result = await batchDeletePostsByIds([...selected]);
+        if (result.success) {
+            await Promise.allSettled(
+                (result.slugs ?? []).map((slug) =>
+                    deleteStorageFolder(`blog/${slug}`)
+                )
+            );
+        }
+        setBatchSaving(false);
+
+        if (!result.success) {
+            setError(result.error ?? "포스트 일괄 삭제 실패");
+            return;
+        }
+
+        setSelected(new Set());
+        void loadPosts();
+        showToast(`${count}개 포스트를 삭제했습니다.`);
     };
 
     return (
@@ -1096,11 +1218,126 @@ export default function PostsPanel({
                         )}
                         <button
                             type="button"
+                            onClick={() =>
+                                setBatchRenameOpen((current) => !current)
+                            }
+                            disabled={batchSaving}
+                            className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                            <Pencil size={13} /> Regex rename
+                        </button>
+                        <button
+                            type="button"
+                            onClick={batchDeletePosts}
+                            disabled={batchSaving}
+                            className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                            <Trash2 size={13} /> Delete
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setSelected(new Set())}
                             className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
                         >
                             선택 해제
                         </button>
+                        {batchRenameOpen && (
+                            <div className="mt-2 grid w-full gap-2 border-t border-(--color-border) pt-3">
+                                <div className="tablet:grid-cols-[1fr_1fr_auto] grid gap-2">
+                                    <input
+                                        type="text"
+                                        value={batchRenamePattern}
+                                        onChange={(event) =>
+                                            setBatchRenamePattern(
+                                                event.target.value
+                                            )
+                                        }
+                                        placeholder="정규식 패턴"
+                                        className="min-w-0 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={batchRenameReplacement}
+                                        onChange={(event) =>
+                                            setBatchRenameReplacement(
+                                                event.target.value
+                                            )
+                                        }
+                                        placeholder="치환 문자열"
+                                        className="min-w-0 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={batchRenameTitles}
+                                        disabled={
+                                            batchSaving ||
+                                            !batchRenamePattern.trim() ||
+                                            !!batchRenameError ||
+                                            batchRenameChanged === 0
+                                        }
+                                        className="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
+                                    >
+                                        {batchRenameChanged}개 변경
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-4 text-xs text-(--color-muted)">
+                                    <label className="inline-flex items-center gap-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={batchRenameGlobal}
+                                            onChange={(event) =>
+                                                setBatchRenameGlobal(
+                                                    event.target.checked
+                                                )
+                                            }
+                                        />
+                                        전체 일치
+                                    </label>
+                                    <label className="inline-flex items-center gap-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={batchRenameIgnoreCase}
+                                            onChange={(event) =>
+                                                setBatchRenameIgnoreCase(
+                                                    event.target.checked
+                                                )
+                                            }
+                                        />
+                                        대소문자 무시
+                                    </label>
+                                    {batchRenameError && (
+                                        <span className="text-red-500">
+                                            정규식 오류: {batchRenameError}
+                                        </span>
+                                    )}
+                                    {!batchRenameError &&
+                                        batchRenamePattern.trim() &&
+                                        batchRenameChanged === 0 && (
+                                            <span>변경될 제목이 없습니다.</span>
+                                        )}
+                                </div>
+                                {batchRenamePreview.length > 0 && (
+                                    <div className="space-y-1 text-xs">
+                                        {batchRenamePreview.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="tablet:grid-cols-[1fr_auto_1fr] grid gap-1 rounded-lg bg-(--color-surface) px-2 py-1"
+                                            >
+                                                <span className="truncate text-(--color-muted)">
+                                                    {item.before}
+                                                </span>
+                                                <span className="tablet:inline hidden text-(--color-muted)">
+                                                    →
+                                                </span>
+                                                <span className="truncate text-(--color-foreground)">
+                                                    {item.after}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 

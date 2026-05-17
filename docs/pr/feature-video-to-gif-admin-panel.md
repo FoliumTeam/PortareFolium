@@ -16,3 +16,8 @@
 ## v0.12.181 - reinstall script Windows 호환
 
 - `pnpm reinstall` script의 `rm -rf` 의존을 제거하고 Node 기반 삭제 명령으로 전환.
+
+## v0.12.182 - PostsPanel batch rename/delete
+
+- PostsPanel 다중 선택 액션에 제목 정규식 일괄 변경 UI와 미리보기 추가.
+- 선택된 포스트를 한 번에 삭제하는 batch delete 액션 추가.
