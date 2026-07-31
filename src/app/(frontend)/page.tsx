@@ -3,6 +3,13 @@ import { serverClient } from "@/lib/supabase";
 import { formatPubDateKST } from "@/lib/blog";
 import type { Metadata } from "next";
 import LandingHero from "@/components/LandingHeroSwitcher";
+import PortfolioProjectGrid from "@/components/portfolio/PortfolioProjectGrid";
+import {
+    groupPortfolioProjects,
+    matchesPortfolioJobField,
+    normalizePortfolioProject,
+} from "@/lib/portfolio";
+import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 
 export const revalidate = false;
 
@@ -58,13 +65,6 @@ interface WorkItem {
     endDate?: string;
     jobField?: string | string[];
 }
-interface FeaturedItem {
-    slug: string;
-    title: string;
-    description: string | null;
-    tags: string[] | null;
-    thumbnail: string | null;
-}
 interface PostPreview {
     slug: string;
     title: string;
@@ -96,6 +96,7 @@ export default async function HomePage() {
     let siteName = "";
     let profileImage: string | undefined;
     let workItems: WorkItem[] = [];
+    let activeJobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
 
     if (serverClient) {
         const [aboutRes, siteRes, resumeRes, jobFieldRes] = await Promise.all([
@@ -130,21 +131,24 @@ export default async function HomePage() {
             const img = resumeFull.basics?.image?.trim();
             if (img) profileImage = img;
 
-            let jobField = "";
             if (jobFieldRes.data?.value) {
                 const raw = jobFieldRes.data.value;
-                jobField =
-                    typeof raw === "string" && raw.startsWith('"')
-                        ? JSON.parse(raw)
-                        : raw;
+                try {
+                    activeJobField =
+                        typeof raw === "string" && raw.startsWith('"')
+                            ? JSON.parse(raw)
+                            : raw;
+                } catch {
+                    activeJobField = "game";
+                }
             }
             workItems = (resumeFull.work?.entries ?? [])
                 .filter((w) => {
                     const jf = w.jobField;
                     if (!jf || (Array.isArray(jf) && jf.length === 0))
                         return false;
-                    if (Array.isArray(jf)) return jf.includes(jobField);
-                    return jf === jobField;
+                    if (Array.isArray(jf)) return jf.includes(activeJobField);
+                    return jf === activeJobField;
                 })
                 .sort((a, b) =>
                     (b.startDate ?? "").localeCompare(a.startDate ?? "")
@@ -153,16 +157,26 @@ export default async function HomePage() {
         }
     }
 
-    let featuredItems: FeaturedItem[] = [];
+    let featuredItems: PortfolioProject[] = [];
     if (serverClient) {
         const { data } = await serverClient
             .from("portfolio_items")
-            .select("slug, title, description, tags, thumbnail")
+            .select(
+                "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, job_field"
+            )
             .eq("published", true)
-            .eq("featured", true)
-            .order("order_idx", { ascending: true })
-            .limit(PORTFOLIO_PROJ_MAX_NUM);
-        if (data) featuredItems = data as FeaturedItem[];
+            .order("order_idx", { ascending: true });
+        if (data) {
+            featuredItems = groupPortfolioProjects(
+                data
+                    .map((item) =>
+                        normalizePortfolioProject(item as PortfolioRawRow)
+                    )
+                    .filter((project) =>
+                        matchesPortfolioJobField(project, activeJobField)
+                    )
+            ).selected.slice(0, PORTFOLIO_PROJ_MAX_NUM);
+        }
     }
 
     let latestPosts: PostPreview[] = [];
@@ -251,104 +265,10 @@ export default async function HomePage() {
                         </Link>
                     </div>
 
-                    {featuredItems[0] && (
-                        <Link
-                            href={`/portfolio/${featuredItems[0].slug}`}
-                            className="card-lift group mb-4 block overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)"
-                        >
-                            <div className="tablet:flex-row flex flex-col">
-                                {featuredItems[0].thumbnail && (
-                                    <div className="tablet:w-1/2 aspect-video overflow-hidden bg-(--color-border)">
-                                        <img
-                                            src={featuredItems[0].thumbnail}
-                                            alt=""
-                                            width={640}
-                                            height={360}
-                                            loading="eager"
-                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                                        />
-                                    </div>
-                                )}
-                                <div className="tablet:w-1/2 flex flex-col justify-center p-7">
-                                    <span className="mb-3 inline-flex w-fit items-center rounded-md bg-(--color-accent) px-3 py-1 text-xs font-semibold text-(--color-on-accent)">
-                                        Featured
-                                    </span>
-                                    <h3 className="mb-3 text-xl font-(--font-display) font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                        {featuredItems[0].title}
-                                    </h3>
-                                    {featuredItems[0].description && (
-                                        <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-(--color-muted)">
-                                            {featuredItems[0].description}
-                                        </p>
-                                    )}
-                                    {featuredItems[0].tags &&
-                                        featuredItems[0].tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {featuredItems[0].tags
-                                                    .slice(0, 4)
-                                                    .map((t) => (
-                                                        <span
-                                                            key={t}
-                                                            className="rounded-md bg-(--color-tag-bg) px-2.5 py-0.5 text-xs font-medium text-(--color-tag-fg)"
-                                                        >
-                                                            {t}
-                                                        </span>
-                                                    ))}
-                                            </div>
-                                        )}
-                                </div>
-                            </div>
-                        </Link>
-                    )}
-
-                    {featuredItems.length > 1 && (
-                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                            {featuredItems.slice(1).map((item) => (
-                                <Link
-                                    key={item.slug}
-                                    href={`/portfolio/${item.slug}`}
-                                    className="card-lift group block overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)"
-                                >
-                                    {item.thumbnail && (
-                                        <div className="aspect-video overflow-hidden bg-(--color-border)">
-                                            <img
-                                                src={item.thumbnail}
-                                                alt=""
-                                                width={480}
-                                                height={270}
-                                                loading="lazy"
-                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="p-5">
-                                        <h3 className="mb-2 font-(--font-display) font-semibold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                            {item.title}
-                                        </h3>
-                                        {item.description && (
-                                            <p className="mb-3 line-clamp-2 text-sm text-(--color-muted)">
-                                                {item.description}
-                                            </p>
-                                        )}
-                                        {item.tags && item.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {item.tags
-                                                    .slice(0, 4)
-                                                    .map((t) => (
-                                                        <span
-                                                            key={t}
-                                                            className="rounded-md bg-(--color-tag-bg) px-2.5 py-0.5 text-xs font-medium text-(--color-tag-fg)"
-                                                        >
-                                                            {t}
-                                                        </span>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    <PortfolioProjectGrid
+                        projects={featuredItems}
+                        featuredLayout
+                    />
                 </section>
             )}
 

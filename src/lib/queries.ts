@@ -25,6 +25,7 @@ export const getPortfolioItem = cache(async (slug: string) => {
         .from("portfolio_items")
         .select("*")
         .eq("slug", slug)
+        .eq("published", true)
         .single();
     return data;
 });
@@ -60,6 +61,7 @@ export const getPortfolioItemMeta = cache(async (slug: string) => {
             "title, meta_title, meta_description, og_image, thumbnail, description, slug"
         )
         .eq("slug", slug)
+        .eq("published", true)
         .single();
     return data;
 });

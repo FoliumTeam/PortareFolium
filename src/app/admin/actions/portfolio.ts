@@ -3,9 +3,14 @@
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
+import {
+    getPortfolioValidationMessage,
+    validatePortfolioForPublish,
+} from "@/lib/portfolio";
+import type { PortfolioRawRow } from "@/types/portfolio";
 
 const PORTFOLIO_SELECT_FIELDS =
-    "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, meta_title, meta_description, og_image";
+    "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, job_field, meta_title, meta_description, og_image";
 
 type PortfolioRow = {
     id: string;
@@ -19,6 +24,7 @@ type PortfolioRow = {
     featured: boolean;
     order_idx: number;
     published: boolean;
+    job_field: string | null;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
@@ -36,11 +42,23 @@ type PortfolioPayload = {
     featured: boolean;
     order_idx: number;
     published: boolean;
-    job_field: string[] | null;
+    job_field: string | null;
     data: Record<string, unknown>;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
+};
+
+const validatePublishedRow = (
+    row: PortfolioRawRow
+): { success: true } | { success: false; error: string } => {
+    if (row.published !== true) return { success: true };
+    const validation = validatePortfolioForPublish(row);
+    if (validation.valid) return { success: true };
+    return {
+        success: false,
+        error: getPortfolioValidationMessage(validation),
+    };
 };
 
 // PortfolioPanel 초기 데이터 조회
@@ -126,6 +144,9 @@ export async function savePortfolioItem(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
+    const validation = validatePublishedRow(payload as PortfolioRawRow);
+    if (!validation.success) return validation;
+
     if (editTargetId) {
         const { error } = await serverClient
             .from("portfolio_items")
@@ -186,6 +207,25 @@ export async function setPortfolioPublished(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    if (published) {
+        const { data: target, error: targetError } = await serverClient
+            .from("portfolio_items")
+            .select(PORTFOLIO_SELECT_FIELDS)
+            .eq("id", id)
+            .single();
+        if (targetError || !target) {
+            return {
+                success: false,
+                error: targetError?.message ?? "Published 검증 대상 조회 실패",
+            };
+        }
+        const validation = validatePublishedRow({
+            ...(target as PortfolioRawRow),
+            published: true,
+        });
+        if (!validation.success) return validation;
+    }
 
     const { error } = await serverClient
         .from("portfolio_items")
@@ -260,6 +300,27 @@ export async function batchSetPortfolioPublished(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
     if (ids.length === 0) return { success: true };
 
+    if (publish) {
+        const { data: targets, error: targetError } = await serverClient
+            .from("portfolio_items")
+            .select(PORTFOLIO_SELECT_FIELDS)
+            .in("id", ids);
+        if (targetError) return { success: false, error: targetError.message };
+        if ((targets ?? []).length !== ids.length) {
+            return {
+                success: false,
+                error: "Published 검증 대상을 모두 찾을 수 없습니다.",
+            };
+        }
+        for (const target of targets ?? []) {
+            const validation = validatePublishedRow({
+                ...(target as PortfolioRawRow),
+                published: true,
+            });
+            if (!validation.success) return validation;
+        }
+    }
+
     const { error } = await serverClient
         .from("portfolio_items")
         .update({ published: publish })
@@ -278,7 +339,11 @@ export async function batchSetPortfolioPublished(
 
 // 배치 직무 분야 변경
 export async function batchSetPortfolioJobField(
-    updates: { id: string; data: Record<string, unknown> }[]
+    updates: {
+        id: string;
+        job_field: string | null;
+        data: Record<string, unknown>;
+    }[]
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
@@ -287,8 +352,11 @@ export async function batchSetPortfolioJobField(
 
     // 업데이트 병렬 실행
     const results = await Promise.all(
-        updates.map(({ id, data }) =>
-            serverClient!.from("portfolio_items").update({ data }).eq("id", id)
+        updates.map(({ id, job_field, data }) =>
+            serverClient!
+                .from("portfolio_items")
+                .update({ job_field, data })
+                .eq("id", id)
         )
     );
     const firstError = results.find((r) => r.error)?.error;

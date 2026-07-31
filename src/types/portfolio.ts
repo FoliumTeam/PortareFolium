@@ -1,39 +1,143 @@
-// 포트폴리오 프로젝트 타입 정의
-// 개인 연락처/이력서 정보는 제외하고 프로젝트 정보만 포함
+export type PortfolioOutcome = {
+    result: string;
+    evidence?: string;
+};
 
-export interface PortfolioProject {
-    /** URL 경로용 슬러그 (예: /portfolio/timeout) */
-    slug: string;
-    /** 썸네일 이미지 URL (블록 뷰용) */
-    thumbnail?: string;
-    /** 프로젝트 제목 */
+export type PortfolioImageMedia = {
+    type: "image";
+    src: string;
+    alt: string;
+    caption?: string;
+    poster?: never;
+};
+
+export type PortfolioVideoMedia = {
+    type: "video";
+    src: string;
+    poster: string;
+    alt: string;
+    caption?: string;
+};
+
+export type PortfolioMedia = PortfolioImageMedia | PortfolioVideoMedia;
+
+export type PortfolioLink = {
+    kind: "demo" | "play" | "release" | "source";
+    url: string;
+    label: string;
+};
+
+export type PortfolioDevlog = {
     title: string;
-    /** 프로젝트 설명 */
-    description: string;
-    /** 프로젝트 시작일 (YYYY-MM-DD) */
-    startDate: string;
-    /** 프로젝트 종료일 (YYYY-MM-DD) */
-    endDate: string;
-    /** 프로젝트 목표 */
-    goal: string;
-    /** 내 역할 */
-    role: string;
-    /** 프로젝트 참여 인원 수 */
-    teamSize: number;
-    /** 성과/달성 사항 */
-    accomplishments: string[];
-    /** 기술 키워드/태그 */
-    keywords: string[];
-    /** GitHub 저장소 링크 */
-    github: string;
-    /** 공개 여부 (false면 목록·상세 페이지에 노출 안 함) */
-    public: boolean;
-    /** 노출 분야: "web" | "game" 또는 둘 다. 비면 PUBLIC_JOB_FIELD와 무관하게 노출 */
-    jobField?: "web" | "game" | ("web" | "game")[];
-    /** 블록 뷰용 보조 문구 (예: "STOVE 스토어 출시", "BIC 루키 선정") */
-    badges?: { text: string }[];
-}
+    url: string;
+};
 
-export interface Portfolio {
+export type PortfolioCredit = {
+    name: string;
+    role: string;
+    url?: string;
+};
+
+export type PortfolioDataV2 = {
+    caseStudyVersion: 2;
+    oneLinePitch: string;
+    engine: string;
+    platforms: string[];
+    ownership: string[];
+    outcomes: PortfolioOutcome[];
+    gallery: PortfolioMedia[];
+    links: PortfolioLink[];
+    devlogs: PortfolioDevlog[];
+    credits: PortfolioCredit[];
+};
+
+export const KNOWN_PORTFOLIO_DATA_KEYS = [
+    "startDate",
+    "endDate",
+    "goal",
+    "role",
+    "teamSize",
+    "github",
+    "liveUrl",
+    "accomplishments",
+    "jobField",
+    "badges",
+    "keywords",
+    "caseStudyVersion",
+    "oneLinePitch",
+    "ownership",
+    "outcomes",
+    "gallery",
+    "links",
+    "devlogs",
+    "engine",
+    "platforms",
+    "credits",
+] as const;
+
+export const PRESERVED_LEGACY_DATA_KEYS = ["badges", "keywords"] as const;
+
+export const EDITABLE_PORTFOLIO_DATA_KEYS = KNOWN_PORTFOLIO_DATA_KEYS.filter(
+    (key) =>
+        !PRESERVED_LEGACY_DATA_KEYS.includes(
+            key as (typeof PRESERVED_LEGACY_DATA_KEYS)[number]
+        )
+);
+
+export type PortfolioDataKey = (typeof KNOWN_PORTFOLIO_DATA_KEYS)[number];
+
+export type PortfolioRawRow = {
+    id?: string;
+    slug: string;
+    title: string;
+    description?: string | null;
+    tags?: unknown;
+    thumbnail?: string | null;
+    content?: string | null;
+    data?: Record<string, unknown> | null;
+    featured?: boolean | null;
+    order_idx?: number | null;
+    published?: boolean | null;
+    job_field?: unknown;
+    meta_title?: string | null;
+    meta_description?: string | null;
+    og_image?: string | null;
+};
+
+export type PortfolioProject = {
+    id?: string;
+    slug: string;
+    thumbnail?: string;
+    title: string;
+    description: string;
+    content: string;
+    startDate: string;
+    endDate: string;
+    goal: string;
+    role: string;
+    teamSize: number;
+    accomplishments: string[];
+    keywords: string[];
+    github: string;
+    public: boolean;
+    published: boolean;
+    featured: boolean;
+    orderIdx: number | null;
+    jobField: string | string[];
+    badges: { text: string }[];
+    caseStudyVersion: 1 | 2;
+    oneLinePitch: string;
+    engine: string;
+    platforms: string[];
+    ownership: string[];
+    outcomes: PortfolioOutcome[];
+    gallery: PortfolioMedia[];
+    links: PortfolioLink[];
+    devlogs: PortfolioDevlog[];
+    credits: PortfolioCredit[];
+    primaryMedia?: PortfolioMedia;
+};
+
+export type Portfolio = {
     projects: PortfolioProject[];
-}
+};
