@@ -1,23 +1,14 @@
-﻿# PR: feature/video-to-gif-admin-panel
+# feature/video-to-gif-admin-panel → main: Video GIF 관리자 기능 추가
 
-## v0.12.179 - GIF 압축률 slider 전환
+## 변경 사항
 
-- GIF 최적화 select를 압축률 slider/number input으로 전환.
-- 권장 압축률과 고압축 시 예상되는 움직임 저하/유사 프레임 제거 안내 추가.
-- 압축률 기반 FPS, palette, 유사 프레임 제거, 예상 크기 계산으로 최적화 로직 보정.
-- 기존 localStorage 최적화 모드 값을 압축률로 migration.
+- browser 내 FFmpeg WebAssembly 기반 Video → GIF 변환, trim, crop, 해상도, FPS, 압축률 설정 추가
+- 변환 결과와 원본을 browser memory에만 유지하고 자동 저장하지 않는 흐름 반영
+- MCP `rename_post_slug` 도구와 PostsPanel의 다중 선택 batch rename/delete 추가
+- Windows에서 동작하는 `pnpm reinstall` script와 의존성 재설치 지침 추가
 
-## v0.12.180 - MCP post slug rename 도구 추가
+## Test plan
 
-- MCP `rename_post_slug` 도구 추가.
-- posts row 유지 기반 slug 변경, 중복 slug 검증, blog route revalidate 적용.
-- 누락 또는 구버전 의존성 발견 시 `pnpm reinstall` 우선 실행 agent 지침 추가.
-
-## v0.12.181 - reinstall script Windows 호환
-
-- `pnpm reinstall` script의 `rm -rf` 의존을 제거하고 Node 기반 삭제 명령으로 전환.
-
-## v0.12.182 - PostsPanel batch rename/delete
-
-- PostsPanel 다중 선택 액션에 제목 정규식 일괄 변경 UI와 미리보기 추가.
-- 선택된 포스트를 한 번에 삭제하는 batch delete 액션 추가.
+- [x] `pnpm exec vitest run src/__tests__/video-gif-math.test.ts src/__tests__/video-gif-panel.test.tsx src/__tests__/video-gif-preview.test.tsx`
+- [ ] admin의 Video → GIF 화면에서 local video를 선택하고 GIF 변환 및 다운로드 확인
+- [ ] PostsPanel에서 다중 선택 rename 미리보기와 batch delete 동작 확인
