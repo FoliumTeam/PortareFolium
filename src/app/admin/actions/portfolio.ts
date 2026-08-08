@@ -24,7 +24,7 @@ type PortfolioRow = {
     featured: boolean;
     order_idx: number;
     published: boolean;
-    job_field: string | null;
+    job_field: string[] | string | null;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
@@ -146,17 +146,21 @@ export async function savePortfolioItem(
 
     const validation = validatePublishedRow(payload as PortfolioRawRow);
     if (!validation.success) return validation;
+    const persistedPayload = {
+        ...payload,
+        job_field: payload.job_field ? [payload.job_field] : [],
+    };
 
     if (editTargetId) {
         const { error } = await serverClient
             .from("portfolio_items")
-            .update(payload)
+            .update(persistedPayload)
             .eq("id", editTargetId);
         if (error) return { success: false, error: error.message };
     } else {
         const { error } = await serverClient
             .from("portfolio_items")
-            .insert(payload);
+            .insert(persistedPayload);
         if (error) return { success: false, error: error.message };
     }
 
@@ -355,7 +359,7 @@ export async function batchSetPortfolioJobField(
         updates.map(({ id, job_field, data }) =>
             serverClient!
                 .from("portfolio_items")
-                .update({ job_field, data })
+                .update({ job_field: job_field ? [job_field] : [], data })
                 .eq("id", id)
         )
     );

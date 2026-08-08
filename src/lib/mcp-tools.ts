@@ -40,6 +40,18 @@ const getPortfolioDataInput = (value: unknown): Record<string, unknown> => {
     return value as Record<string, unknown>;
 };
 
+const toPersistedPortfolioJobField = (value: unknown): unknown => {
+    if (typeof value === "string") return value ? [value] : [];
+    if (Array.isArray(value)) {
+        const first = value.find(
+            (item): item is string =>
+                typeof item === "string" && item.length > 0
+        );
+        return first ? [first] : [];
+    }
+    return value;
+};
+
 const assertPortfolioPublishable = (row: PortfolioRawRow): void => {
     if (row.published !== true) return;
     const validation = validatePortfolioForPublish(row);
@@ -52,9 +64,10 @@ export const prepareMcpPortfolioCreate = (
     args: Record<string, unknown>
 ): Record<string, unknown> => {
     const mutationFields = pickPortfolioMutationFields(args);
-    if (Array.isArray(mutationFields.job_field)) {
-        mutationFields.job_field =
-            (mutationFields.job_field as string[])[0] ?? null;
+    if (Object.hasOwn(mutationFields, "job_field")) {
+        mutationFields.job_field = toPersistedPortfolioJobField(
+            mutationFields.job_field
+        );
     }
     const createFields = sanitizeContentField({
         slug: args.slug,
@@ -71,8 +84,8 @@ export const prepareMcpPortfolioUpdate = (
     rawFields: Record<string, unknown>
 ): { updateFields: Record<string, unknown>; finalRow: PortfolioRawRow } => {
     const fields = pickPortfolioMutationFields(rawFields);
-    if (Array.isArray(fields.job_field)) {
-        fields.job_field = (fields.job_field as string[])[0] ?? null;
+    if (Object.hasOwn(fields, "job_field")) {
+        fields.job_field = toPersistedPortfolioJobField(fields.job_field);
     }
     const hasDataPatch = Object.hasOwn(rawFields, "data");
     const currentData = getPortfolioDataInput(current.data);

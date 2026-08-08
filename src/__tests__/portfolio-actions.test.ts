@@ -242,6 +242,7 @@ describe("portfolio server publication paths", () => {
 
         expect(result.success).toBe(true);
         expect(database.state.rows[0]?.published).toBe(true);
+        expect(database.state.rows[0]?.job_field).toEqual(["game"]);
     });
 
     it("setPortfolioPublished는 invalid v2를 차단하고 legacy를 허용", async () => {

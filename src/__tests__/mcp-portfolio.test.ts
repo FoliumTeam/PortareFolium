@@ -76,6 +76,7 @@ describe("MCP portfolio contract", () => {
             title: "Draft",
             featured: true,
             order_idx: 2,
+            job_field: "game",
             data: {
                 caseStudyVersion: 2,
                 featured: false,
@@ -90,6 +91,7 @@ describe("MCP portfolio contract", () => {
         expect(prepared.published).toBe(false);
         expect(prepared.featured).toBe(true);
         expect(prepared.order_idx).toBe(2);
+        expect(prepared.job_field).toEqual(["game"]);
         expect(prepared.data).toEqual({
             caseStudyVersion: 2,
             oneLinePitch: "Draft pitch",
@@ -103,6 +105,13 @@ describe("MCP portfolio contract", () => {
         });
         expect(prepared.updateFields).toEqual({ title: "Renamed" });
         expect(prepared.finalRow.data).toEqual(current.data);
+    });
+
+    it("update 직무 분야는 Supabase text[] 계약으로 변환", () => {
+        const prepared = prepareMcpPortfolioUpdate(current, {
+            job_field: "game",
+        });
+        expect(prepared.updateFields.job_field).toEqual(["game"]);
     });
 
     it("known null 삭제, shallow replacement, unknown null 보존", () => {

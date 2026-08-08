@@ -20,7 +20,7 @@ export type PortfolioAdminItem = {
     featured: boolean;
     order_idx: number;
     published: boolean;
-    job_field: string | null;
+    job_field: string[] | string | null;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
