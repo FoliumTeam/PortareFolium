@@ -108,7 +108,7 @@ async function expectButtonTooltip(
     button: Locator,
     tooltipText: string
 ) {
-    await button.hover({ force: true });
+    await button.focus();
     const tooltip = page
         .locator('[data-slot="tooltip-content"]')
         .filter({ hasText: tooltipText })
@@ -209,7 +209,7 @@ test.describe("콘텐츠 렌더링", () => {
         );
         await expectButtonTooltip(
             page,
-            dialog.getByRole("button", { name: "확대" }),
+            dialog.getByRole("button", { name: "확대", exact: true }),
             "확대"
         );
         await expectButtonTooltip(

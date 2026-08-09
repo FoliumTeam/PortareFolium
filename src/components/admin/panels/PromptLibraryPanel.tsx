@@ -6,74 +6,87 @@ import { Button } from "@/components/ui/button";
 
 const GET_PORTFOLIO_PROMPT = (
     origin: string
-) => `넌 내 개인 포트폴리오 웹사이트의 포트폴리오 아이템 작성 전문가야.
-MCP 엔드포인트를 사용하여 포트폴리오 항목을 생성해줘.
+) => `넌 내 개인 포트폴리오 웹사이트의 사례 연구 작성 전문가야.
+MCP 엔드포인트를 사용하여 포트폴리오 v2 Draft를 생성해줘.
 
 Endpoint: ${origin}/api/mcp
 Auth: Bearer <YOUR_AGENT_TOKEN_HERE>
 Protocol: JSON-RPC 2.0
 
 Rules:
-1. IMPORTANT: 툴 요청은 반드시 다음 JSON-RPC 2.0 형식을 따를 것:
-   method: "tools/call"
-   params: { name: "<tool_name>", arguments: { ... } }
-2. 먼저 \`tools/list\`를 호출하여 사용 가능한 툴과 스키마를 파악할 것.
-3. \`get_schema\`를 호출하여 portfolio_items 필드 명세를 확인할 것.
-4. \`list_portfolio_items\` → \`get_portfolio_item\`으로 기존 포트폴리오 항목을 먼저 읽어 스타일·구조를 파악할 것.
-5. CAUTION: content가 긴 경우 파일에 먼저 작성 후 fs.readFileSync로 읽어 payload에 포함할 것 (백틱·이스케이프 충돌 방지).
-6. job_field는 문자열 "web" 또는 "game" 사용. 배열 전달 금지.
-7. published: false가 기본값. 명시적으로 요청받지 않는 한 true 설정 금지.
+1. 툴 요청은 method: "tools/call", params: { name: "<tool_name>", arguments: { ... } } 형식의 JSON-RPC 2.0을 사용할 것.
+2. 먼저 \`tools/list\`와 \`get_schema\`를 호출해 최신 계약을 확인할 것.
+3. README, source, release page에서 확인된 근거만 사용하고 수치를 추측하지 말 것.
+4. job_field는 "web" 또는 "game" 문자열을 사용하고 featured, order_idx, published는 data 밖에 둘 것.
+5. caseStudyVersion은 숫자 2, published는 항상 false로 생성할 것. 자동 Published 금지.
+6. oneLinePitch 180자, ownership 5개, outcomes 3개, gallery 8개 제한을 지킬 것.
+7. metric이 없으면 중립적인 완료 상태와 검증 방법을 작성하고 수치를 만들지 말 것.
+8. gallery image는 non-empty alt가 필요하고 poster는 금지. video는 direct R2/relative src와 poster가 모두 필요함. YouTube는 demo link로만 사용할 것.
+9. links kind는 demo | play | release | source만 사용하고 store URL은 release로 구분할 것.
+10. content에는 아래 형식의 ## Deep Dive를 정확히 두 개 또는 세 개만 작성할 것. 긴 연대기와 전체 code dump는 devlogs로 분리할 것.
 
-Content 구조 (마크다운):
+content MDX template:
 \`\`\`
-| ?? | ?? |
-| --- | --- |
-| ?? ?? | ... |
-| ??? | ... |
-| ?? ?? | 1? |
-| ?? ?? | ... |
-| ???? ?? | YYYY.MM.DD ~ YYYY.MM.DD |
+## [핵심 기술 의사결정 1]
+### Problem
+[사용자 또는 기술 문제]
+### Decision
+[선택과 이유]
+### Implementation
+[핵심 구현, 필요한 경우 10~20줄 code]
+### Result
+[검증 결과와 근거]
+### Trade-off
+[남은 비용 또는 제한]
 
-## 게임/프로젝트 소개
-[1~2문단 프로젝트 개요 — 핵심 메커니즘, 기술 선택 이유]
-
-## 개발 내용
-
-### 1. [주요 구현 항목]
-**구현 목적:** [왜 이걸 구현했는지]
-**구현 내용:**
-[설명 + 코드 스니펫]
-
-### 2. ...
-
-## 트러블슈팅
-
-### [버그명]
-[현상 → 원인 → 해결 코드]
-
-## 보완할 점
-- ...
-
-## 프로젝트 성과
-- ...
-
-## 상세 회고
-[관련 블로그 포스트 링크 목록]
+## [핵심 기술 의사결정 2]
+### Problem
+[문제]
+### Decision
+[결정]
+### Implementation
+[구현]
+### Result
+[결과]
+### Trade-off
+[trade-off]
 \`\`\`
 
-Target Item Meta (원하는 설정으로 수정 후 진행):
-- slug: "<프로젝트-slug>"
-- job_field: "game" | "web"
-- featured: true
-- order_idx: <정렬 순서>
-- published: false
-- data: { startDate: "YYYY-MM-DD", endDate: "YYYY-MM-DD", goal: "...", role: "...", teamSize: 1, jobField: ["game"] }
-
-Reference Item (스타일 참고용 기존 포트폴리오 slug):
-- <REFERENCE_PORTFOLIO_SLUG>
+Target payload template:
+\`\`\`json
+{
+  "slug": "<project-slug>",
+  "title": "<project title>",
+  "description": "<short fallback summary>",
+  "job_field": "game",
+  "featured": false,
+  "order_idx": 0,
+  "published": false,
+  "thumbnail": "/portfolio/<project-slug>/cover.webp",
+  "content": "<two or three Deep Dives>",
+  "data": {
+    "caseStudyVersion": 2,
+    "startDate": "YYYY-MM-DD",
+    "endDate": "YYYY-MM-DD",
+    "goal": "<project context>",
+    "role": "<legacy role fallback>",
+    "teamSize": 1,
+    "jobField": ["game"],
+    "oneLinePitch": "<what was built and why it matters>",
+    "engine": "<engine or runtime>",
+    "platforms": ["Windows"],
+    "ownership": ["<exact personal contribution>"],
+    "outcomes": [{ "result": "<verified result>", "evidence": "<how it is verified>" }],
+    "gallery": [{ "type": "image", "src": "/portfolio/<project-slug>/proof.webp", "alt": "<what the image shows>", "caption": "<what to inspect>" }],
+    "links": [{ "kind": "source", "url": "https://github.com/...", "label": "Source" }],
+    "devlogs": [{ "title": "<optional technical record>", "url": "/blog/..." }],
+    "credits": [{ "name": "<name>", "role": "<role>" }]
+  }
+}
+\`\`\`
 
 Task:
-제공되는 프로젝트 정보(README, CHANGELOG, 소스코드 등)를 읽고 위 Content 구조에 맞춰 포트폴리오 항목 본문을 작성한 뒤, \`create_portfolio_item\` 툴로 데이터베이스에 저장해줘.`;
+제공되는 README, CHANGELOG, source, media를 검토하고 개인 기여와 검증 근거를 먼저 추출해. 위 v2 계약으로 concise case study Draft를 만든 뒤 \`create_portfolio_item\`으로 저장하고, 다시 조회해 published: false와 field round-trip을 확인해줘.`;
 
 const GET_DEFAULT_PROMPT = (
     origin: string
@@ -225,10 +238,10 @@ export default function PromptLibraryPanel() {
                         </h2>
                     </div>
                     <p className="text-sm text-(--color-muted)">
-                        프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가
-                        포트폴리오 항목 본문(?? ?, 개발 내용, 트러블슈팅 등)을
-                        작성하여 데이터베이스에 저장합니다. 토큰은 보안을 위해
-                        직접 발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
+                        프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가 개인
+                        기여와 검증 근거 중심의 v2 사례 연구 Draft를 작성하여
+                        데이터베이스에 저장합니다. 토큰은 보안을 위해 직접
+                        발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
                         위치에 붙여넣어주세요.
                     </p>
 

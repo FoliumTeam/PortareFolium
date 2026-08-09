@@ -60,104 +60,18 @@ import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import BooksSubPanel from "@/components/admin/panels/BooksSubPanel";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+    EMPTY_PORTFOLIO_FORM,
+    buildPortfolioSavePayload,
+    createPortfolioTemplateForm,
+    itemToPortfolioForm,
+    type PortfolioAdminItem,
+    type PortfolioEditorForm,
+} from "@/lib/portfolio-admin";
 
-interface PortfolioItem {
-    id: string;
-    slug: string;
-    title: string;
-    description: string | null;
-    tags: string[];
-    thumbnail: string | null;
-    content: string;
-    data: Record<string, unknown>;
-    featured: boolean;
-    order_idx: number;
-    published: boolean;
-    meta_title: string | null;
-    meta_description: string | null;
-    og_image: string | null;
-}
-
-interface ItemForm {
-    slug: string;
-    title: string;
-    description: string;
-    tags: string;
-    thumbnail: string;
-    content: string;
-    featured: boolean;
-    order_idx: number;
-    published: boolean;
-    // data 필드 (구조화된 메타데이터)
-    startDate: string;
-    endDate: string;
-    goal: string;
-    role: string;
-    teamSize: string;
-    github: string;
-    liveUrl: string;
-    accomplishments: string;
-    jobField: string[];
-    meta_title: string;
-    meta_description: string;
-    og_image: string;
-}
-
-const EMPTY_FORM: ItemForm = {
-    slug: "",
-    title: "",
-    description: "",
-    tags: "",
-    thumbnail: "",
-    content: "",
-    featured: false,
-    order_idx: 0,
-    published: true,
-    startDate: "",
-    endDate: "",
-    goal: "",
-    role: "",
-    teamSize: "",
-    github: "",
-    liveUrl: "",
-    accomplishments: "",
-    jobField: [],
-    meta_title: "",
-    meta_description: "",
-    og_image: "",
-};
-
-// PortfolioItem의 data JSONB에서 폼 필드를 추출
-function itemToForm(item: PortfolioItem): ItemForm {
-    const d = item.data ?? {};
-    return {
-        slug: item.slug,
-        title: item.title,
-        description: item.description ?? "",
-        tags: item.tags.join(", "),
-        thumbnail: item.thumbnail ?? "",
-        content: item.content,
-        featured: item.featured,
-        order_idx: item.order_idx,
-        published: item.published,
-        startDate: (d.startDate as string) ?? "",
-        endDate: (d.endDate as string) ?? "",
-        goal: (d.goal as string) ?? "",
-        role: (d.role as string) ?? "",
-        teamSize: String(d.teamSize ?? ""),
-        github: (d.github as string) ?? "",
-        liveUrl: (d.liveUrl as string) ?? "",
-        accomplishments: Array.isArray(d.accomplishments)
-            ? (d.accomplishments as string[]).join("\n")
-            : "",
-        jobField: normalizeUniqueJobFieldList(
-            d.jobField as string | string[] | null | undefined
-        ),
-        meta_title: item.meta_title ?? "",
-        meta_description: item.meta_description ?? "",
-        og_image: item.og_image ?? "",
-    };
-}
+type PortfolioItem = PortfolioAdminItem;
+type ItemForm = PortfolioEditorForm;
+const EMPTY_FORM = EMPTY_PORTFOLIO_FORM;
 
 interface PortfolioPanelProps {
     editPath?: string;
@@ -190,6 +104,7 @@ export default function PortfolioPanel({
     const [metadataOpen, setMetadataOpen] = useState(false);
 
     const initialFormRef = useRef<ItemForm>(EMPTY_FORM);
+    const originalDataRef = useRef<Record<string, unknown>>({});
 
     // 정렬 + 필터 + 선택 상태
     const [sortKey, setSortKey] = useState<string>(
@@ -266,44 +181,8 @@ export default function PortfolioPanel({
     }, [editPath, loading, items]);
 
     // form → DB payload 변환
-    const buildPayload = () => ({
-        slug: form.slug,
-        title: form.title,
-        description: form.description || null,
-        tags: form.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-        thumbnail: form.thumbnail || null,
-        content: form.content,
-        featured: form.featured,
-        order_idx: form.order_idx,
-        published: form.published,
-        job_field: form.jobField.length
-            ? normalizeUniqueJobFieldList(form.jobField)
-            : null,
-        data: {
-            startDate: form.startDate || undefined,
-            endDate: form.endDate || undefined,
-            goal: form.goal || undefined,
-            role: form.role || undefined,
-            teamSize: form.teamSize ? Number(form.teamSize) : undefined,
-            github: form.github || undefined,
-            liveUrl: form.liveUrl || undefined,
-            accomplishments: form.accomplishments
-                ? form.accomplishments
-                      .split("\n")
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                : undefined,
-            jobField: form.jobField.length
-                ? normalizeUniqueJobFieldList(form.jobField)
-                : undefined,
-        },
-        meta_title: form.meta_title || null,
-        meta_description: form.meta_description || null,
-        og_image: form.og_image || null,
-    });
+    const buildPayload = () =>
+        buildPortfolioSavePayload(form, originalDataRef.current);
 
     const openEdit = (item: PortfolioItem) => {
         void maybeCleanupOnOpen("portfolio", item.slug, {
@@ -313,8 +192,9 @@ export default function PortfolioPanel({
             currentContent: item.content,
             thumbnail: item.thumbnail ?? "",
         });
-        const f = itemToForm(item);
+        const f = itemToPortfolioForm(item);
         initialFormRef.current = f;
+        originalDataRef.current = { ...item.data };
         savedSlugRef.current = item.slug;
         setSlugLocked(true);
         setForm(f);
@@ -324,13 +204,17 @@ export default function PortfolioPanel({
         setSuccess(null);
     };
 
-    const openNew = () => {
-        const base: ItemForm = {
-            ...EMPTY_FORM,
-            order_idx: items.length,
-            jobField: getInitialJobFieldSelection(activeJobField),
-        };
+    const openNew = (useCaseStudyTemplate = false) => {
+        const jobField = getInitialJobFieldSelection(activeJobField);
+        const base: ItemForm = useCaseStudyTemplate
+            ? createPortfolioTemplateForm(items.length, jobField)
+            : {
+                  ...EMPTY_FORM,
+                  order_idx: items.length,
+                  jobField,
+              };
         initialFormRef.current = base;
+        originalDataRef.current = {};
         savedSlugRef.current = "";
         setSlugLocked(false);
         setForm(base);
@@ -382,15 +266,19 @@ export default function PortfolioPanel({
                 : (editTarget as PortfolioItem | null)?.id
         );
         if (result.success) {
-            initialFormRef.current = form;
+            const persistedForm = itemToPortfolioForm(result.item);
+            initialFormRef.current = persistedForm;
+            originalDataRef.current = { ...result.item.data };
             savedSlugRef.current = result.item.slug;
             setEditTarget(result.item);
+            setForm(persistedForm);
+            onEditPathChange?.(`edit/${result.item.slug}`);
         }
     };
 
     const { savedAt: autoSavedAt, saving: autoSaving } = useAutoSave(
         isDirty,
-        editTarget !== null,
+        editTarget !== null && editTarget !== "new",
         autoSave
     );
 
@@ -414,11 +302,15 @@ export default function PortfolioPanel({
         if (!result.success) {
             setError(result.error);
         } else {
-            initialFormRef.current = form;
+            const persistedForm = itemToPortfolioForm(result.item);
+            initialFormRef.current = persistedForm;
+            originalDataRef.current = { ...result.item.data };
             savedSlugRef.current = result.item.slug;
+            setForm(persistedForm);
+            setEditTarget(result.item);
+            onEditPathChange?.(`edit/${result.item.slug}`);
             setSuccess("저장 완료");
             void loadItems();
-            if (editTarget === "new") setEditTarget(null);
         }
     }, [form, editTarget]);
 
@@ -457,7 +349,15 @@ export default function PortfolioPanel({
     };
 
     const togglePublish = async (item: PortfolioItem) => {
-        await setPortfolioPublished(item.id, item.slug, !item.published);
+        const result = await setPortfolioPublished(
+            item.id,
+            item.slug,
+            !item.published
+        );
+        if (!result.success) {
+            showToast(result.error ?? "Published 상태 변경 실패");
+            return;
+        }
         void loadItems();
     };
 
@@ -514,11 +414,20 @@ export default function PortfolioPanel({
     // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
     const handlePublishToggle = async (published: boolean) => {
         if (editTarget === null || editTarget === "new") return;
-        await setPortfolioPublished(
+        const result = await setPortfolioPublished(
             editTarget.id,
             (editTarget as PortfolioItem).slug,
             published
         );
+        if (!result.success) {
+            setError(result.error ?? "Published 상태 변경 실패");
+            setForm((current) => ({
+                ...current,
+                published: !published,
+            }));
+            return;
+        }
+        setForm((current) => ({ ...current, published }));
         setItems((prev) =>
             prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
         );
@@ -729,7 +638,9 @@ export default function PortfolioPanel({
                     type="portfolio"
                     form={form}
                     onChange={handleMetaChange}
-                    onPublishToggle={handlePublishToggle}
+                    onPublishToggle={
+                        editTarget === "new" ? undefined : handlePublishToggle
+                    }
                     jobFields={jobFields}
                     folderPath={`portfolio/${form.slug || "untitled"}`}
                 />
@@ -757,7 +668,9 @@ export default function PortfolioPanel({
             if (filterStatus === "published" && !item.published) return false;
             if (filterStatus === "draft" && item.published) return false;
             if (filterJobField) {
-                const jf = item.data?.jobField as string | string[] | undefined;
+                const jf =
+                    item.job_field ??
+                    (item.data?.jobField as string | string[] | undefined);
                 if (!jf) return false;
                 const arr = normalizeUniqueJobFieldList(jf);
                 if (!arr.includes(filterJobField)) return false;
@@ -809,13 +722,18 @@ export default function PortfolioPanel({
 
     const batchPublish = async (publish: boolean) => {
         if (selected.size === 0) return;
+        const selectedCount = selected.size;
         setBatchSaving(true);
-        await batchSetPortfolioPublished([...selected], publish);
+        const result = await batchSetPortfolioPublished([...selected], publish);
         setBatchSaving(false);
+        if (!result.success) {
+            showToast(result.error ?? "Published 상태 일괄 변경 실패");
+            return;
+        }
         setSelected(new Set());
         void loadItems();
         showToast(
-            `${selected.size}개 항목을 ${publish ? "Published" : "Draft"}로 변경했습니다.`
+            `${selectedCount}개 항목을 ${publish ? "Published" : "Draft"}로 변경했습니다.`
         );
     };
 
@@ -826,6 +744,7 @@ export default function PortfolioPanel({
         await batchSetPortfolioJobField(
             selectedItems.map((item) => ({
                 id: item.id,
+                job_field: batchJobField,
                 data: { ...item.data, jobField: [batchJobField] },
             }))
         );
@@ -875,12 +794,17 @@ export default function PortfolioPanel({
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
-                                {/* 보기 방식 설정 */}
                                 <button
-                                    onClick={openNew}
-                                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                                    onClick={() => openNew(false)}
+                                    className="rounded-lg bg-(--color-muted) px-4 py-2 text-base font-semibold whitespace-nowrap text-white hover:opacity-90"
                                 >
                                     + 새 항목
+                                </button>
+                                <button
+                                    onClick={() => openNew(true)}
+                                    className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                                >
+                                    사례 연구 템플릿으로 생성
                                 </button>
                             </div>
                         </div>
@@ -1125,10 +1049,12 @@ export default function PortfolioPanel({
                                 </span>
                             </div>
                             {displayedItems.map((item) => {
-                                const jf = item.data?.jobField as
-                                    | string
-                                    | string[]
-                                    | undefined;
+                                const jf =
+                                    item.job_field ??
+                                    (item.data?.jobField as
+                                        | string
+                                        | string[]
+                                        | undefined);
                                 const hasJobField =
                                     !!jf &&
                                     (Array.isArray(jf) ? jf.length > 0 : true);

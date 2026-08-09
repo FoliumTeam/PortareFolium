@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import TagSelector from "@/components/admin/TagSelector";
 import CategorySelect from "@/components/admin/CategorySelect";
 import ThumbnailUploadField from "@/components/admin/ThumbnailUploadField";
+import PortfolioCaseStudyFields from "@/components/admin/PortfolioCaseStudyFields";
+import type { PortfolioEditorForm } from "@/lib/portfolio-admin";
 import {
     JobFieldSelector,
     type JobFieldItem,
@@ -34,27 +36,7 @@ interface PostFields {
     og_image: string;
 }
 
-// 포트폴리오 전용 폼 필드
-interface PortfolioFields {
-    slug: string;
-    description: string;
-    tags: string;
-    jobField: string[];
-    thumbnail: string;
-    published: boolean;
-    featured: boolean;
-    startDate: string;
-    endDate: string;
-    goal: string;
-    role: string;
-    teamSize: string;
-    github: string;
-    liveUrl: string;
-    accomplishments: string;
-    meta_title: string;
-    meta_description: string;
-    og_image: string;
-}
+type PortfolioFields = PortfolioEditorForm;
 
 // 도서 전용 폼 필드
 interface BookFields {
@@ -249,8 +231,11 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             <Switch
                                                 checked={form.published}
                                                 onCheckedChange={(v) => {
+                                                    if (onPublishToggle) {
+                                                        onPublishToggle(v);
+                                                        return;
+                                                    }
                                                     onChange("published", v);
-                                                    onPublishToggle?.(v);
                                                 }}
                                             />
                                         </div>
@@ -340,6 +325,28 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             }
                                             rows={3}
                                             className={`${inputClass} resize-y`}
+                                        />
+                                    </FieldBlock>
+                                )}
+
+                                {type === "portfolio" && (
+                                    <FieldBlock
+                                        label="표시 순서"
+                                        helper="Selected와 Other 그룹 안에서 낮은 숫자가 먼저 표시됩니다."
+                                    >
+                                        <input
+                                            type="number"
+                                            value={
+                                                (form as PortfolioFields)
+                                                    .order_idx
+                                            }
+                                            onChange={(event) =>
+                                                onChange(
+                                                    "order_idx",
+                                                    Number(event.target.value)
+                                                )
+                                            }
+                                            className={inputClass}
                                         />
                                     </FieldBlock>
                                 )}
@@ -572,6 +579,10 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             className={`${inputClass} resize-y`}
                                         />
                                     </FieldBlock>
+                                    <PortfolioCaseStudyFields
+                                        form={form as PortfolioFields}
+                                        onChange={onChange}
+                                    />
                                 </SettingsSection>
                             )}
 

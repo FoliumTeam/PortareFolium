@@ -4,9 +4,14 @@ import { getEffectiveAdminSession } from "@/lib/server-admin";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
 import { serverClient } from "@/lib/supabase";
-import type { PortfolioProject } from "@/types/portfolio";
+import {
+    matchesPortfolioJobField,
+    normalizePortfolioProject,
+} from "@/lib/portfolio";
+import { getSiteConfig } from "@/lib/queries";
+import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 import Link from "next/link";
-import { BookOpen, Star } from "lucide-react";
+import { ArrowUpRight, BookOpen, FileText, Star } from "lucide-react";
 
 interface BookItem {
     slug: string;
@@ -28,6 +33,7 @@ export const metadata: Metadata = {
 export default async function PortfolioPage() {
     const session = await getEffectiveAdminSession();
     const initialAuthed = isAdminSession(session);
+    const configRows = await getSiteConfig();
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     if (serverClient) {
         const { data: cfg } = await serverClient
@@ -37,18 +43,21 @@ export default async function PortfolioPage() {
             .single();
         if (cfg?.value) {
             const raw = cfg.value;
-            jobField =
-                typeof raw === "string" && raw.startsWith('"')
-                    ? JSON.parse(raw)
-                    : raw;
+            try {
+                jobField =
+                    typeof raw === "string" && raw.startsWith('"')
+                        ? JSON.parse(raw)
+                        : raw;
+            } catch {
+                jobField = "game";
+            }
         }
     }
-
-    function matchesJobField(jf: string | string[] | undefined): boolean {
-        if (jf == null) return true;
-        if (Array.isArray(jf)) return jf.includes(jobField);
-        return jf === jobField;
-    }
+    const githubConfig = configRows.find((row) => row.key === "github_url");
+    const githubUrl =
+        typeof githubConfig?.value === "string"
+            ? githubConfig.value.replace(/^"|"$/g, "")
+            : "";
 
     let publicBooks: BookItem[] = [];
     if (serverClient) {
@@ -67,36 +76,18 @@ export default async function PortfolioPage() {
         const { data: items } = await serverClient
             .from("portfolio_items")
             .select(
-                "slug, title, description, tags, thumbnail, data, published"
+                "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, job_field"
             )
             .eq("published", true)
             .order("order_idx", { ascending: true });
 
         if (items) {
             publicProjects = items
-                .map((item): PortfolioProject => {
-                    const d = item.data ?? {};
-                    return {
-                        slug: item.slug,
-                        title: item.title,
-                        description: item.description ?? "",
-                        startDate: d.startDate,
-                        endDate: d.endDate,
-                        goal: d.goal,
-                        role: d.role,
-                        teamSize: d.teamSize,
-                        accomplishments: d.accomplishments ?? [],
-                        keywords: item.tags ?? [],
-                        github: d.github ?? "",
-                        public: true,
-                        jobField: d.jobField,
-                        thumbnail: item.thumbnail,
-                        badges: d.badges,
-                    };
-                })
-                .filter((p) => matchesJobField(p.jobField))
-                .sort((a, b) =>
-                    (b.startDate ?? "").localeCompare(a.startDate ?? "")
+                .map((item) =>
+                    normalizePortfolioProject(item as PortfolioRawRow)
+                )
+                .filter((project) =>
+                    matchesPortfolioJobField(project, jobField)
                 );
         }
     }
@@ -114,9 +105,51 @@ export default async function PortfolioPage() {
             ]}
         >
             <div>
-                <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
-                    Portfolio
-                </h1>
+                <header className="mb-12 max-w-3xl" data-pdf-block>
+                    <p className="mb-3 text-xs font-bold tracking-[0.2em] text-(--color-accent) uppercase">
+                        Gameplay & Engine Programming
+                    </p>
+                    <h1 className="tablet:text-5xl text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
+                        Portfolio
+                    </h1>
+                    <p className="mt-4 text-lg leading-relaxed text-(--color-muted)">
+                        프로젝트별 문제, 개인 기여, 기술적 결정과 검증 가능한
+                        결과를 짧은 사례 연구로 정리했습니다.
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-2">
+                        <Link
+                            href="/resume"
+                            className="inline-flex items-center gap-2 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                        >
+                            <FileText className="h-4 w-4" aria-hidden="true" />
+                            Resume
+                        </Link>
+                        {githubUrl && (
+                            <a
+                                href={githubUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                            >
+                                GitHub
+                                <ArrowUpRight
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                            </a>
+                        )}
+                        <Link
+                            href="/about"
+                            className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                        >
+                            Contact
+                            <ArrowUpRight
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                            />
+                        </Link>
+                    </div>
+                </header>
                 <PortfolioView projects={publicProjects} />
 
                 {publicBooks.length > 0 && (

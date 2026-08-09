@@ -1,6 +1,8 @@
 import type { ResumeProject } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPortfolioItem } from "@/lib/queries";
+import { normalizePortfolioProject } from "@/lib/portfolio";
+import type { PortfolioRawRow } from "@/types/portfolio";
 import { ExternalLinkIcon } from "lucide-react";
 
 // 날짜 포맷
@@ -37,13 +39,17 @@ export default async function ProjectsSection({
     const portfolioSlugs = projects
         .map((p) => p.portfolioSlug)
         .filter((s): s is string => Boolean(s));
-    const portfolioItemsArr = await Promise.all(
+    const portfolioRows = await Promise.all(
         portfolioSlugs.map((slug) => getPortfolioItem(slug))
     );
-    const portfolioItemMap: Record<string, (typeof portfolioItemsArr)[number]> =
-        Object.fromEntries(
-            portfolioSlugs.map((slug, i) => [slug, portfolioItemsArr[i]])
-        );
+    const portfolioItemMap = Object.fromEntries(
+        portfolioSlugs.flatMap((slug, index) => {
+            const row = portfolioRows[index];
+            return row
+                ? [[slug, normalizePortfolioProject(row as PortfolioRawRow)]]
+                : [];
+        })
+    );
 
     return (
         <section className="mb-10" data-pdf-block>
@@ -62,14 +68,13 @@ export default async function ProjectsSection({
                     const pf = project.portfolioSlug
                         ? portfolioItemMap[project.portfolioSlug]
                         : null;
-                    const pfData = pf?.data as
-                        | {
-                              role?: string;
-                              teamSize?: string | number;
-                              github?: string;
-                          }
-                        | undefined;
-                    const pfTags = pf?.tags as string[] | undefined;
+                    const pfTags = pf?.keywords;
+                    const sourceLink = pf?.links.find(
+                        (link) => link.kind === "source"
+                    );
+                    const media = pf?.primaryMedia;
+                    const imageSource =
+                        media?.type === "video" ? media.poster : media?.src;
                     return (
                         <div
                             key={pIdx}
@@ -84,11 +89,14 @@ export default async function ProjectsSection({
                                 />
                             ) : null}
                             {/* Thumbnail */}
-                            {pf?.thumbnail ? (
+                            {imageSource ? (
                                 <div className="relative aspect-video w-full overflow-hidden bg-(--color-border)">
                                     <img
-                                        src={pf.thumbnail as string}
-                                        alt={project.name ?? ""}
+                                        src={imageSource}
+                                        alt={
+                                            media?.alt ||
+                                            `${project.name ?? "프로젝트"} 대표 이미지`
+                                        }
                                         className="h-full w-full object-cover"
                                         loading="lazy"
                                     />
@@ -126,12 +134,12 @@ export default async function ProjectsSection({
                                     </div>
                                 ) : null}
                                 {/* Role · Team size */}
-                                {pfData?.role || pfData?.teamSize ? (
+                                {pf?.ownership[0] || pf?.teamSize ? (
                                     <p className="relative z-10 m-0 mb-1.5 text-xs text-(--color-muted)">
                                         {[
-                                            pfData.role,
-                                            pfData.teamSize
-                                                ? `${pfData.teamSize}인`
+                                            pf?.ownership[0],
+                                            pf?.teamSize
+                                                ? `${pf.teamSize}인`
                                                 : null,
                                         ]
                                             .filter(Boolean)
@@ -203,10 +211,10 @@ export default async function ProjectsSection({
                                     </>
                                 )}
                                 {/* GitHub */}
-                                {pfData?.github ? (
+                                {sourceLink ? (
                                     <div className="relative z-10 mt-auto pt-2">
                                         <a
-                                            href={pfData.github}
+                                            href={sourceLink.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#24292e] px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white transition-opacity hover:opacity-80"
@@ -223,7 +231,7 @@ export default async function ProjectsSection({
                                                     clipRule="evenodd"
                                                 />
                                             </svg>
-                                            GitHub
+                                            {sourceLink.label}
                                             <span className="ml-1">
                                                 <ExternalLinkIcon className="h-3.5 w-3.5" />
                                             </span>

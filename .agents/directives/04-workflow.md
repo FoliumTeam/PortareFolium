@@ -3,6 +3,8 @@
 ## Branch Strategy
 
 - **Trunk-based hybrid**: `main` 브랜치가 production이며 작은 변경(bug fix, doc update, single-file refactor)은 `main`에 직접 commit + push.
+- **작업 유형 기반 이름**: 브랜치가 필요하면 `<type>/<kebab-case-description>` 형식을 사용한다. 신규 기능은 `feature/`, 버그 수정은 `fix/`, 문서는 `docs/`, 리팩터링은 `refactor/`, 테스트는 `test/`, 유지보수는 `chore/`를 사용한다.
+- **Agent 식별자 금지**: `codex/`, `agent/`, `claude/`, `gemini/`처럼 도구·모델·agent 이름을 브랜치 접두사로 사용하지 않는다.
 - **Large work**: 여러 commit이 필요하거나 리뷰가 필요한 큰 작업(신규 feature, 광범위 refactor, 디자인 시스템 변경 등)은 `feature/<설명>` 브랜치를 만들어 작업 후 `gh pr create`로 PR을 열고 main에 머지.
 - 판단 기준: **3 commit 이상 예상되거나 ≥3 파일 도메인 영역에 걸쳐 있으면 feature branch 권장**. 그 외엔 main 직접 push.
 - `main`에는 절대 force push 하지 않는다. release tag(`v*.*.0`)는 `main`의 head에서만 생성.
