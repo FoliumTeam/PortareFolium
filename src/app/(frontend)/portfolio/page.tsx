@@ -9,6 +9,7 @@ import {
     matchesPortfolioJobField,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
+import { getPublicPortfolioRow } from "@/lib/portfolio-review";
 import { getSiteConfig } from "@/lib/queries";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 import Link from "next/link";
@@ -100,9 +101,9 @@ export async function PortfolioPageContent({
 
         if (items) {
             publicProjects = items
-                .map((item) =>
-                    normalizePortfolioProject(item as PortfolioRawRow)
-                )
+                .map((item) => getPublicPortfolioRow(item as PortfolioRawRow))
+                .filter((item): item is PortfolioRawRow => item !== null)
+                .map((item) => normalizePortfolioProject(item))
                 .filter((project) =>
                     matchesPortfolioJobField(project, jobField)
                 );

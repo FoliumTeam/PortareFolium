@@ -1,11 +1,8 @@
 import { serverClient } from "@/lib/supabase";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
-import {
-    getPortfolioValidationMessage,
-    mergePortfolioDataPatch,
-    validatePortfolioForPublish,
-} from "@/lib/portfolio";
+import { mergePortfolioDataPatch } from "@/lib/portfolio";
+import { preparePortfolioDraftSave } from "@/lib/portfolio-review";
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const PORTFOLIO_MUTATION_KEYS = [
@@ -52,18 +49,15 @@ const toPersistedPortfolioJobField = (value: unknown): unknown => {
     return value;
 };
 
-const assertPortfolioPublishable = (row: PortfolioRawRow): void => {
-    if (row.published !== true) return;
-    const validation = validatePortfolioForPublish(row);
-    if (!validation.valid) {
-        throw new Error(getPortfolioValidationMessage(validation));
-    }
-};
-
 export const prepareMcpPortfolioCreate = (
     args: Record<string, unknown>
 ): Record<string, unknown> => {
     const mutationFields = pickPortfolioMutationFields(args);
+    if (mutationFields.published === true) {
+        throw new Error(
+            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
+        );
+    }
     if (Object.hasOwn(mutationFields, "job_field")) {
         mutationFields.job_field = toPersistedPortfolioJobField(
             mutationFields.job_field
@@ -73,17 +67,26 @@ export const prepareMcpPortfolioCreate = (
         slug: args.slug,
         ...mutationFields,
         data: mergePortfolioDataPatch({}, getPortfolioDataInput(args.data)),
-        published: mutationFields.published === true,
+        published: false,
     });
-    assertPortfolioPublishable(createFields as PortfolioRawRow);
-    return createFields;
+    return preparePortfolioDraftSave(
+        null,
+        createFields as PortfolioRawRow,
+        new Date().toISOString()
+    );
 };
 
 export const prepareMcpPortfolioUpdate = (
     current: PortfolioRawRow,
     rawFields: Record<string, unknown>
 ): { updateFields: Record<string, unknown>; finalRow: PortfolioRawRow } => {
+    if (rawFields.published === true) {
+        throw new Error(
+            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
+        );
+    }
     const fields = pickPortfolioMutationFields(rawFields);
+    delete fields.published;
     if (Object.hasOwn(fields, "job_field")) {
         fields.job_field = toPersistedPortfolioJobField(fields.job_field);
     }
@@ -95,16 +98,28 @@ export const prepareMcpPortfolioUpdate = (
               getPortfolioDataInput(rawFields.data)
           )
         : currentData;
-    const updateFields = sanitizeContentField({
+    const changedRow = sanitizeContentField({
         ...fields,
         ...(hasDataPatch ? { data: mergedData } : {}),
     });
+    const draftRow = preparePortfolioDraftSave(
+        current,
+        {
+            ...current,
+            ...changedRow,
+            data: mergedData,
+        } as PortfolioRawRow,
+        new Date().toISOString()
+    );
+    const updateFields = {
+        ...changedRow,
+        published: draftRow.published,
+        data: draftRow.data,
+    };
     const finalRow = {
         ...current,
         ...updateFields,
-        data: mergedData,
     } as PortfolioRawRow;
-    assertPortfolioPublishable(finalRow);
     return { updateFields, finalRow };
 };
 

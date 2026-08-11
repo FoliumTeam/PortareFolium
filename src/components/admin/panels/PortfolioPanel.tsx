@@ -23,7 +23,13 @@ import {
     savePortfolioItem,
     setPortfolioFeatured,
     setPortfolioPublished,
+    transitionPortfolioReviewStatus,
 } from "@/app/admin/actions/portfolio";
+import {
+    getPortfolioReview,
+    getPortfolioReviewStatusLabel,
+    type PortfolioReviewStatus,
+} from "@/lib/portfolio-review";
 import {
     Eye,
     EyeOff,
@@ -361,6 +367,22 @@ export default function PortfolioPanel({
         void loadItems();
     };
 
+    const advancePortfolioReview = async (
+        item: PortfolioItem,
+        nextStatus: Exclude<PortfolioReviewStatus, "draft">
+    ) => {
+        const result = await transitionPortfolioReviewStatus(
+            item.id,
+            item.slug,
+            nextStatus
+        );
+        if (!result.success) {
+            showToast(result.error ?? "검토 상태 변경 실패");
+            return;
+        }
+        void loadItems();
+    };
+
     const toggleFeatured = async (item: PortfolioItem) => {
         if (!item.featured) {
             const featuredCount = items.filter((i) => i.featured).length;
@@ -411,28 +433,6 @@ export default function PortfolioPanel({
         setForm((f) => ({ ...f, [field]: value }));
     };
 
-    // 발행 상태 즉시 저장 (Sheet 토글 시 DB 직접 반영)
-    const handlePublishToggle = async (published: boolean) => {
-        if (editTarget === null || editTarget === "new") return;
-        const result = await setPortfolioPublished(
-            editTarget.id,
-            (editTarget as PortfolioItem).slug,
-            published
-        );
-        if (!result.success) {
-            setError(result.error ?? "Published 상태 변경 실패");
-            setForm((current) => ({
-                ...current,
-                published: !published,
-            }));
-            return;
-        }
-        setForm((current) => ({ ...current, published }));
-        setItems((prev) =>
-            prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
-        );
-    };
-
     // editPath 복원 대기 중 (list 깜빡임 방지)
     if (editPath && !editTarget && !editPathRestoredRef.current) {
         return (
@@ -455,9 +455,11 @@ export default function PortfolioPanel({
                         ← 목록
                     </button>
                     <button
-                        disabled={!form.published}
                         onClick={() =>
-                            window.open(`/portfolio/${form.slug}`, "_blank")
+                            window.open(
+                                `/admin/preview/portfolio/${form.slug}`,
+                                "_blank"
+                            )
                         }
                         className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
@@ -473,8 +475,8 @@ export default function PortfolioPanel({
                     </button>
                 </div>
                 <p className="text-center text-base text-(--color-muted)">
-                    저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
-                    즉시 제공됩니다.
+                    Draft는 관리자 전용 미리보기에서 확인하고, 검토·승인 후에만
+                    공개됩니다.
                 </p>
 
                 {/* 제목 입력 */}
@@ -638,9 +640,7 @@ export default function PortfolioPanel({
                     type="portfolio"
                     form={form}
                     onChange={handleMetaChange}
-                    onPublishToggle={
-                        editTarget === "new" ? undefined : handlePublishToggle
-                    }
+                    showPublishControl={false}
                     jobFields={jobFields}
                     folderPath={`portfolio/${form.slug || "untitled"}`}
                 />
@@ -732,9 +732,7 @@ export default function PortfolioPanel({
         }
         setSelected(new Set());
         void loadItems();
-        showToast(
-            `${selectedCount}개 항목을 ${publish ? "Published" : "Draft"}로 변경했습니다.`
-        );
+        showToast(`${selectedCount}개 항목을 비공개 Draft로 변경했습니다.`);
     };
 
     const batchSetJobField = async () => {
@@ -971,19 +969,11 @@ export default function PortfolioPanel({
                             </span>
                             <button
                                 type="button"
-                                onClick={() => batchPublish(true)}
-                                disabled={batchSaving}
-                                className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
-                            >
-                                <Eye size={13} /> Publish
-                            </button>
-                            <button
-                                type="button"
                                 onClick={() => batchPublish(false)}
                                 disabled={batchSaving}
                                 className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                             >
-                                <EyeOff size={13} /> Unpublish
+                                <EyeOff size={13} /> 비공개
                             </button>
                             {jobFields.length > 0 && (
                                 <div className="flex items-center gap-1.5">
@@ -1060,6 +1050,26 @@ export default function PortfolioPanel({
                                     (Array.isArray(jf) ? jf.length > 0 : true);
                                 const tags = item.tags ?? [];
                                 const stateCount = stateCounts[item.slug] ?? 0;
+                                const reviewStatus = getPortfolioReview(
+                                    item.data
+                                ).status;
+                                const nextReviewAction =
+                                    reviewStatus === "draft"
+                                        ? {
+                                              status: "ready" as const,
+                                              label: "검토 요청",
+                                          }
+                                        : reviewStatus === "ready"
+                                          ? {
+                                                status: "approved" as const,
+                                                label: "승인",
+                                            }
+                                          : reviewStatus === "approved"
+                                            ? {
+                                                  status: "published" as const,
+                                                  label: "발행",
+                                              }
+                                            : null;
                                 return (
                                     <div
                                         key={item.id}
@@ -1104,6 +1114,11 @@ export default function PortfolioPanel({
                                                     {item.published
                                                         ? "Published"
                                                         : "Draft"}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                                    {getPortfolioReviewStatusLabel(
+                                                        reviewStatus
+                                                    )}
                                                 </span>
                                                 {!hasJobField && (
                                                     <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
@@ -1175,27 +1190,34 @@ export default function PortfolioPanel({
                                                         : "Featured"}
                                                 </span>
                                             </button>
-                                            <button
-                                                onClick={() =>
-                                                    togglePublish(item)
-                                                }
-                                                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
-                                                    item.published
-                                                        ? "bg-amber-500"
-                                                        : "bg-green-600"
-                                                }`}
-                                            >
-                                                {item.published ? (
-                                                    <EyeOff size={12} />
-                                                ) : (
+                                            {nextReviewAction ? (
+                                                <button
+                                                    onClick={() =>
+                                                        advancePortfolioReview(
+                                                            item,
+                                                            nextReviewAction.status
+                                                        )
+                                                    }
+                                                    className="flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                                >
                                                     <Eye size={12} />
-                                                )}
-                                                <span className="tablet:inline hidden">
-                                                    {item.published
-                                                        ? "Unpublish"
-                                                        : "Publish"}
-                                                </span>
-                                            </button>
+                                                    <span className="tablet:inline hidden">
+                                                        {nextReviewAction.label}
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() =>
+                                                        togglePublish(item)
+                                                    }
+                                                    className="flex items-center gap-1 rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                                >
+                                                    <EyeOff size={12} />
+                                                    <span className="tablet:inline hidden">
+                                                        비공개
+                                                    </span>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => openEdit(item)}
                                                 className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"

@@ -127,7 +127,9 @@ import {
     batchSetPortfolioPublished,
     savePortfolioItem,
     setPortfolioPublished,
+    transitionPortfolioReviewStatus,
 } from "@/app/admin/actions/portfolio";
+import { getPortfolioReview } from "@/lib/portfolio-review";
 
 const content = `## Rendering
 ### Problem
@@ -200,7 +202,7 @@ describe("portfolio server publication paths", () => {
         database.state.writes = 0;
     });
 
-    it("savePortfolioItem은 invalid Published v2를 mutation 전에 차단", async () => {
+    it("savePortfolioItem은 incomplete v2도 Draft로 저장", async () => {
         const result = await savePortfolioItem({
             slug: "invalid",
             title: "Invalid",
@@ -218,11 +220,17 @@ describe("portfolio server publication paths", () => {
             og_image: null,
         });
 
-        expect(result.success).toBe(false);
-        expect(database.state.writes).toBe(0);
+        expect(result.success).toBe(true);
+        expect(database.state.writes).toBe(1);
+        expect(database.state.rows[0]?.published).toBe(false);
+        expect(
+            getPortfolioReview(
+                database.state.rows[0]?.data as Record<string, unknown>
+            ).status
+        ).toBe("draft");
     });
 
-    it("savePortfolioItem은 valid Published v2를 저장", async () => {
+    it("savePortfolioItem은 Published 요청도 Draft로 시작", async () => {
         const result = await savePortfolioItem({
             slug: "valid",
             title: "Valid",
@@ -241,11 +249,11 @@ describe("portfolio server publication paths", () => {
         });
 
         expect(result.success).toBe(true);
-        expect(database.state.rows[0]?.published).toBe(true);
+        expect(database.state.rows[0]?.published).toBe(false);
         expect(database.state.rows[0]?.job_field).toEqual(["game"]);
     });
 
-    it("setPortfolioPublished는 invalid v2를 차단하고 legacy를 허용", async () => {
+    it("setPortfolioPublished는 검토 절차를 우회하는 발행을 차단", async () => {
         database.state.rows = [
             createRow("invalid", "invalid", { caseStudyVersion: 2 }),
             createRow("legacy", "legacy", { role: "Programmer" }),
@@ -255,9 +263,9 @@ describe("portfolio server publication paths", () => {
         const legacy = await setPortfolioPublished("legacy", "legacy", true);
 
         expect(invalid.success).toBe(false);
-        expect(legacy.success).toBe(true);
+        expect(legacy.success).toBe(false);
         expect(database.state.rows[0]?.published).toBe(false);
-        expect(database.state.rows[1]?.published).toBe(true);
+        expect(database.state.rows[1]?.published).toBe(false);
     });
 
     it("batch Published는 한 항목이라도 invalid면 전체 mutation을 중단", async () => {
@@ -278,17 +286,33 @@ describe("portfolio server publication paths", () => {
         ).toBe(true);
     });
 
-    it("batch Published는 모든 항목이 valid면 한 번에 저장", async () => {
-        database.state.rows = [
-            createRow("one", "one", validData),
-            createRow("two", "two", { role: "Programmer" }),
-        ];
+    it("Approved 항목만 순서대로 Published로 전환", async () => {
+        database.state.rows = [createRow("one", "one", validData)];
 
-        const result = await batchSetPortfolioPublished(["one", "two"], true);
-
-        expect(result.success).toBe(true);
-        expect(database.state.rows.every((row) => row.published === true)).toBe(
-            true
+        const ready = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "ready"
         );
+        const approved = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "approved"
+        );
+        const published = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "published"
+        );
+
+        expect(ready.success).toBe(true);
+        expect(approved.success).toBe(true);
+        expect(published.success).toBe(true);
+        expect(database.state.rows[0]?.published).toBe(true);
+        expect(
+            getPortfolioReview(
+                database.state.rows[0]?.data as Record<string, unknown>
+            ).status
+        ).toBe("published");
     });
 });

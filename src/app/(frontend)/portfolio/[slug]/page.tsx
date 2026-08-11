@@ -43,13 +43,11 @@ export async function generateMetadata({
     const { slug } = await params;
     const item = await getPortfolioItemMeta(slug);
     if (!item) return {};
+    const image = item.og_image ?? item.thumbnail ?? undefined;
     return {
         title: item.meta_title || `${item.title} - Portfolio`,
         description: item.meta_description || item.description || undefined,
-        openGraph:
-            item.og_image || item.thumbnail
-                ? { images: [item.og_image || item.thumbnail] }
-                : undefined,
+        openGraph: image ? { images: [image] } : undefined,
     };
 }
 
@@ -121,14 +119,18 @@ type PortfolioDetailContentProps = {
     slug: string;
     jobField?: string;
     portfolioBasePath?: string;
+    itemOverride?: PortfolioRawRow;
+    preview?: boolean;
 };
 
 export async function PortfolioDetailContent({
     slug,
     jobField,
     portfolioBasePath = "/portfolio",
+    itemOverride,
+    preview = false,
 }: PortfolioDetailContentProps) {
-    const item = await getPortfolioItem(slug);
+    const item = itemOverride ?? (await getPortfolioItem(slug));
     if (!item) notFound();
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
@@ -153,6 +155,15 @@ export async function PortfolioDetailContent({
 
     return (
         <div className="portfolio-case-study min-w-0">
+            {preview && (
+                <aside
+                    className="mb-6 rounded-xl border border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"
+                    aria-label="관리자 Draft 미리보기"
+                >
+                    관리자 전용 Draft 미리보기입니다. 공개 페이지에는 마지막
+                    Published 버전만 표시됩니다.
+                </aside>
+            )}
             <Link
                 href={portfolioBasePath}
                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
