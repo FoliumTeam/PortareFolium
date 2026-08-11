@@ -9,7 +9,6 @@
 ## Chat
 
 - **Language**: Answer everything in Korean.
-- **English Input Handling**: When the user sends a question in English (often happens on remote environments where Korean IME is unavailable), answer in Korean as usual, then append `> Corrected English: "<교정된 영어 문장>"` at the end. The corrected sentence is for the user's English study reference — fix grammar/word choice while preserving the original intent.
 - **Token Efficiency**:
     - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.

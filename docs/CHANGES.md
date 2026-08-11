@@ -4,6 +4,7 @@ Date-based changelogs are stored in `docs/changelogs/`.
 
 | Date       | File                                      |
 | ---------- | ----------------------------------------- |
+| 2026-08-12 | [2026-08-12.md](changelogs/2026-08-12.md) |
 | 2026-08-09 | [2026-08-09.md](changelogs/2026-08-09.md) |
 | 2026-08-01 | [2026-08-01.md](changelogs/2026-08-01.md) |
 | 2026-05-11 | [2026-05-11.md](changelogs/2026-05-11.md) |
