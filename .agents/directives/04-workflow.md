@@ -45,7 +45,7 @@
 
 ## Commit Conventions
 
-- **형식**: `<type>: <Korean description> (v<version>)` — version suffix는 `package.json`의 bump된 patch 버전과 일치해야 함.
+- **형식**: `<type>: <Korean description>`. 릴리스 commit만 `(v<version>)` suffix를 사용하며, 이 경우 `package.json` version과 일치해야 함.
 - **제목 규칙**: 명령형 현재 시제, 첫 글자 소문자, 끝 punctuation 없음, 한글 (파일명·고유명사·기술 용어는 영어 원문 유지).
 - **타입**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `revert`.
 - **본문 스타일**: non-trivial commit은 `02e080e539a608a24e134aa29ff8ccf44b557e42`처럼 파일/경로 단위 bullet body를 사용한다.
@@ -85,7 +85,7 @@
 
 - Add brief docstrings in Korean for newly created functions.
 - Concisely document what changes you have done in `docs/changelogs/<YYYY-MM-DD>.md` (today's date). Create the file with `# Changelog: YYYY-MM-DD` header if it doesn't exist, and add a row to the `docs/CHANGES.md` index. Never write version entries directly into `docs/CHANGES.md` — it is the index only.
-- Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change. Only update 1st/2nd if explicitly requested.
+- `package.json` version은 명시적인 릴리스 또는 사용자 요청이 있을 때만 변경한다. 일반 문서, plan, directive, test, formatting, 내부 workflow 변경은 version을 올리지 않는다. Only update 1st/2nd if explicitly requested.
 - Planning-only 문서 작업(`docs/plans/**/*.md`, 조사 메모 등)에서는 `package.json` version과 changelog를 변경하지 않는다.
 - Plan 파일은 `docs/plans/active/<slug>.md` (진행 중) 또는 `docs/plans/archive/<slug>.md` (완료/보류) 위치에만 생성한다. `PLAN_` prefix 사용 금지 — 폴더가 의미를 담당.
 - `docs/plans/`, `docs/pr/`, `docs/TODO.md`, `docs/USER_TASKS.md` 는 gitignored 라 사용자가 명시적으로 요구하지 않는 한 commit 하지 않는다.
