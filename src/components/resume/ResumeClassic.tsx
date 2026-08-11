@@ -14,6 +14,7 @@ interface Props {
     resume: Resume;
     coreCompetencies?: CoreValue[];
     sectionLayout?: ResumeSectionLayout;
+    portfolioBasePath?: string;
 }
 
 const formatDateRange = (
@@ -29,6 +30,7 @@ export default async function ResumeClassic({
     resume,
     coreCompetencies = [],
     sectionLayout,
+    portfolioBasePath,
 }: Props) {
     const basics = resume.basics ?? {};
 
@@ -322,6 +324,7 @@ export default async function ResumeClassic({
             key="projects"
             projects={resume.projects?.entries ?? []}
             label={getLabel("projects")}
+            portfolioBasePath={portfolioBasePath}
         />
     );
 

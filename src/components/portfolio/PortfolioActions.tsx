@@ -12,6 +12,7 @@ type PortfolioActionsProps = {
     slug?: string;
     links: PortfolioLink[];
     className?: string;
+    portfolioBasePath?: string;
 };
 
 const actionIcon = {
@@ -28,12 +29,13 @@ export default function PortfolioActions({
     slug,
     links,
     className = "",
+    portfolioBasePath = "/portfolio",
 }: PortfolioActionsProps) {
     return (
         <div className={`flex flex-wrap gap-2 ${className}`}>
             {slug && (
                 <Link
-                    href={`/portfolio/${slug}`}
+                    href={`${portfolioBasePath}/${slug}`}
                     className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 ${focusClass}`}
                 >
                     Case Study

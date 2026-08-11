@@ -7,6 +7,7 @@ type PortfolioProjectCardProps = {
     project: PortfolioProject;
     priority?: boolean;
     prominent?: boolean;
+    portfolioBasePath?: string;
 };
 
 const focusClass =
@@ -16,6 +17,7 @@ export default function PortfolioProjectCard({
     project,
     priority = false,
     prominent = false,
+    portfolioBasePath = "/portfolio",
 }: PortfolioProjectCardProps) {
     const media = project.primaryMedia;
     const imageSource = media?.type === "video" ? media.poster : media?.src;
@@ -27,7 +29,7 @@ export default function PortfolioProjectCard({
             data-pdf-block-item
         >
             <Link
-                href={`/portfolio/${project.slug}`}
+                href={`${portfolioBasePath}/${project.slug}`}
                 aria-label={`${project.title} 사례 연구 보기`}
                 className={`relative block aspect-video overflow-hidden bg-(--color-border) ${focusClass}`}
             >
@@ -66,7 +68,7 @@ export default function PortfolioProjectCard({
                 </div>
                 <h3 className="text-xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     <Link
-                        href={`/portfolio/${project.slug}`}
+                        href={`${portfolioBasePath}/${project.slug}`}
                         className={`rounded-sm transition-colors hover:text-(--color-accent) ${focusClass}`}
                     >
                         {project.title}
@@ -117,6 +119,7 @@ export default function PortfolioProjectCard({
                     slug={project.slug}
                     links={project.links}
                     className="mt-auto pt-6"
+                    portfolioBasePath={portfolioBasePath}
                 />
             </div>
         </article>

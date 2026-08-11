@@ -17,6 +17,7 @@ import { getCachedMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import {
     extractLegacyPortfolioGallery,
+    matchesPortfolioJobField,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
 import type { PortfolioMedia, PortfolioRawRow } from "@/types/portfolio";
@@ -116,16 +117,22 @@ const ProjectHeroMedia = ({ media }: { media?: PortfolioMedia }) => {
     );
 };
 
-export default async function PortfolioDetailPage({
-    params,
-}: {
-    params: Promise<{ slug: string }>;
-}) {
-    const { slug } = await params;
+type PortfolioDetailContentProps = {
+    slug: string;
+    jobField?: string;
+    portfolioBasePath?: string;
+};
+
+export async function PortfolioDetailContent({
+    slug,
+    jobField,
+    portfolioBasePath = "/portfolio",
+}: PortfolioDetailContentProps) {
     const item = await getPortfolioItem(slug);
     if (!item) notFound();
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
+    if (jobField && !matchesPortfolioJobField(project, jobField)) notFound();
     const contentHtml = await getCachedMarkdown(slug, project.content);
     const tocEntries = extractTocFromHtml(contentHtml);
     const isV2 = project.caseStudyVersion === 2;
@@ -147,7 +154,7 @@ export default async function PortfolioDetailPage({
     return (
         <div className="portfolio-case-study min-w-0">
             <Link
-                href="/portfolio"
+                href={portfolioBasePath}
                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -481,18 +488,20 @@ export default async function PortfolioDetailPage({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Link
-                        href="/portfolio"
+                        href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         Selected Work
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
-                    <Link
-                        href="/about"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
-                    >
-                        Contact
-                    </Link>
+                    {!jobField && (
+                        <Link
+                            href="/about"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
+                        >
+                            Contact
+                        </Link>
+                    )}
                 </div>
             </section>
 
@@ -503,4 +512,12 @@ export default async function PortfolioDetailPage({
             <ImageLightbox contentSelector=".portfolio-case-study" />
         </div>
     );
+}
+
+export default async function PortfolioDetailPage({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}) {
+    return <PortfolioDetailContent slug={(await params).slug} />;
 }

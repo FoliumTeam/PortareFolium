@@ -1,3 +1,12 @@
+import { filterByJobField } from "@/lib/job-field";
+import type { FieldIntroduction } from "@/types/about";
+import type {
+    Resume,
+    ResumeCoreCompetency,
+    ResumeSection,
+    ResumeSkill,
+} from "@/types/resume";
+
 type JobFieldValue = string | string[] | null | undefined;
 
 type JsonRecord = Record<string, unknown>;
@@ -65,4 +74,69 @@ export function inheritResumeJobField<T extends JsonRecord>(
         if (!current.includes(parentId)) return value;
         return Array.from(new Set([...current, newId]));
     }) as T;
+}
+
+function filterResumeSection<T extends { jobField?: string | string[] }>(
+    section: ResumeSection<T> | undefined,
+    jobField: string
+): ResumeSection<T> | undefined {
+    if (!section) return undefined;
+    return { ...section, entries: filterByJobField(section.entries, jobField) };
+}
+
+function filterResumeSkills(
+    section: ResumeSection<ResumeSkill> | undefined,
+    jobField: string
+): ResumeSection<ResumeSkill> | undefined {
+    if (!section) return undefined;
+    const entries = section.entries
+        .map((skill) => ({
+            ...skill,
+            keywords: filterByJobField(skill.keywords, jobField),
+        }))
+        .filter((skill) => (skill.keywords?.length ?? 0) > 0);
+    return { ...section, entries };
+}
+
+function filterCoreCompetencies(
+    section: Resume["coreCompetencies"],
+    jobField: string
+): Resume["coreCompetencies"] {
+    if (!section) return undefined;
+    return {
+        ...section,
+        entries: filterByJobField<ResumeCoreCompetency>(
+            section.entries,
+            jobField
+        ),
+    };
+}
+
+export function createJobFieldResumeView(
+    resume: Resume,
+    jobField: string,
+    introduction?: FieldIntroduction
+): Resume {
+    const basics = introduction
+        ? {
+              ...resume.basics,
+              label: undefined,
+              summary: [introduction.description, introduction.descriptionSub]
+                  .filter(Boolean)
+                  .join("\n"),
+          }
+        : resume.basics;
+
+    return {
+        ...resume,
+        basics,
+        work: filterResumeSection(resume.work, jobField),
+        projects: filterResumeSection(resume.projects, jobField),
+        careerPhases: filterResumeSection(resume.careerPhases, jobField),
+        skills: filterResumeSkills(resume.skills, jobField),
+        coreCompetencies: filterCoreCompetencies(
+            resume.coreCompetencies,
+            jobField
+        ),
+    };
 }

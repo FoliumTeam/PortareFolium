@@ -30,12 +30,19 @@ export const metadata: Metadata = {
     description: "프로젝트 포트폴리오",
 };
 
-export default async function PortfolioPage() {
+type PortfolioPageContentProps = {
+    jobFieldOverride?: string;
+};
+
+export async function PortfolioPageContent({
+    jobFieldOverride,
+}: PortfolioPageContentProps) {
     const session = await getEffectiveAdminSession();
     const initialAuthed = isAdminSession(session);
     const configRows = await getSiteConfig();
-    let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
-    if (serverClient) {
+    let jobField =
+        jobFieldOverride ?? process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
+    if (serverClient && !jobFieldOverride) {
         const { data: cfg } = await serverClient
             .from("site_config")
             .select("value")
@@ -58,6 +65,15 @@ export default async function PortfolioPage() {
         typeof githubConfig?.value === "string"
             ? githubConfig.value.replace(/^"|"$/g, "")
             : "";
+    const portfolioEyebrow =
+        jobField === "game"
+            ? "Gameplay & Engine Programming"
+            : jobField === "web"
+              ? "Web Product & Full-Stack Development"
+              : "Selected Work";
+    const portfolioBasePath = jobFieldOverride
+        ? `/${jobField}/portfolio`
+        : "/portfolio";
 
     let publicBooks: BookItem[] = [];
     if (serverClient) {
@@ -107,7 +123,7 @@ export default async function PortfolioPage() {
             <div>
                 <header className="mb-12 max-w-3xl" data-pdf-block>
                     <p className="mb-3 text-xs font-bold tracking-[0.2em] text-(--color-accent) uppercase">
-                        Gameplay & Engine Programming
+                        {portfolioEyebrow}
                     </p>
                     <h1 className="tablet:text-5xl text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                         Portfolio
@@ -118,7 +134,11 @@ export default async function PortfolioPage() {
                     </p>
                     <div className="mt-6 flex flex-wrap gap-2">
                         <Link
-                            href="/resume"
+                            href={
+                                jobFieldOverride
+                                    ? `/${jobField}/resume`
+                                    : "/resume"
+                            }
                             className="inline-flex items-center gap-2 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                             <FileText className="h-4 w-4" aria-hidden="true" />
@@ -138,19 +158,24 @@ export default async function PortfolioPage() {
                                 />
                             </a>
                         )}
-                        <Link
-                            href="/about"
-                            className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
-                        >
-                            Contact
-                            <ArrowUpRight
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                            />
-                        </Link>
+                        {!jobFieldOverride && (
+                            <Link
+                                href="/about"
+                                className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                            >
+                                Contact
+                                <ArrowUpRight
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                            </Link>
+                        )}
                     </div>
                 </header>
-                <PortfolioView projects={publicProjects} />
+                <PortfolioView
+                    projects={publicProjects}
+                    portfolioBasePath={portfolioBasePath}
+                />
 
                 {publicBooks.length > 0 && (
                     <div data-pdf-section="books">
@@ -224,4 +249,8 @@ export default async function PortfolioPage() {
             </div>
         </PdfExportButton>
     );
+}
+
+export default async function PortfolioPage() {
+    return <PortfolioPageContent />;
 }

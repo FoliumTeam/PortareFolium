@@ -13,6 +13,7 @@ interface Props {
     projects: ResumeProject[];
     label?: string;
     badge?: string;
+    portfolioBasePath?: string;
 }
 
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
@@ -20,6 +21,7 @@ export default async function ProjectsSection({
     projects,
     label = "프로젝트",
     badge,
+    portfolioBasePath = "/portfolio",
 }: Props) {
     if (projects.length === 0) return null;
 
@@ -83,7 +85,7 @@ export default async function ProjectsSection({
                         >
                             {project.portfolioSlug ? (
                                 <a
-                                    href={`/portfolio/${project.portfolioSlug}`}
+                                    href={`${portfolioBasePath}/${project.portfolioSlug}`}
                                     className="absolute inset-0 z-0"
                                     aria-label={project.name ?? ""}
                                 />

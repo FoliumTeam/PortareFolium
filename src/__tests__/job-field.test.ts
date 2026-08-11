@@ -9,6 +9,7 @@ import {
     getInitialJobFieldSelection,
 } from "@/lib/job-field";
 import {
+    createJobFieldResumeView,
     inheritResumeJobField,
     removeResumeJobField,
 } from "@/lib/resume-job-field";
@@ -224,5 +225,97 @@ describe("resume job field cascade helpers", () => {
         expect(inheritResumeJobField(resume, "game", "nexon")).toEqual({
             projects: [{ name: "A", jobField: ["web", "game", "nexon"] }],
         });
+    });
+});
+
+describe("createJobFieldResumeView", () => {
+    it("web mode에서 game 전용 Resume 데이터와 기술을 제거", () => {
+        const result = createJobFieldResumeView(
+            {
+                basics: {
+                    label: "게임 개발자",
+                    summary: "게임 개발 경력",
+                },
+                work: {
+                    emoji: "💼",
+                    showEmoji: true,
+                    entries: [
+                        { name: "Web work", jobField: "web" },
+                        { name: "Game work", jobField: "game" },
+                    ],
+                },
+                projects: {
+                    emoji: "🚀",
+                    showEmoji: true,
+                    entries: [
+                        {
+                            name: "Web project",
+                            jobField: ["web", "game"],
+                        },
+                        { name: "Game project", jobField: "game" },
+                    ],
+                },
+                careerPhases: {
+                    emoji: "🧭",
+                    showEmoji: true,
+                    entries: [
+                        { name: "Web phase", jobField: "web" },
+                        { name: "Game phase", jobField: "game" },
+                    ],
+                },
+                skills: {
+                    emoji: "💻",
+                    showEmoji: true,
+                    entries: [
+                        {
+                            name: "Development",
+                            keywords: [
+                                { name: "React", jobField: "web" },
+                                { name: "Unreal", jobField: "game" },
+                            ],
+                        },
+                    ],
+                },
+                coreCompetencies: {
+                    entries: [
+                        {
+                            title: "Web core",
+                            description: "Web",
+                            jobField: "web",
+                        },
+                        {
+                            title: "Game core",
+                            description: "Game",
+                            jobField: "game",
+                        },
+                    ],
+                },
+            },
+            "web",
+            {
+                description: "웹 풀스택 개발자",
+                descriptionSub: "제품 개발 경험",
+            }
+        );
+
+        expect(result.basics).toEqual({
+            label: undefined,
+            summary: "웹 풀스택 개발자\n제품 개발 경험",
+        });
+        expect(result.work?.entries.map((item) => item.name)).toEqual([
+            "Web work",
+        ]);
+        expect(result.projects?.entries.map((item) => item.name)).toEqual([
+            "Web project",
+        ]);
+        expect(result.careerPhases?.entries.map((item) => item.name)).toEqual([
+            "Web phase",
+        ]);
+        expect(
+            result.skills?.entries[0]?.keywords?.map((item) => item.name)
+        ).toEqual(["React"]);
+        expect(
+            result.coreCompetencies?.entries.map((item) => item.title)
+        ).toEqual(["Web core"]);
     });
 });
