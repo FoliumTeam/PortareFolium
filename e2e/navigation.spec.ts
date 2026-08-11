@@ -11,24 +11,22 @@ test.describe("헤더 네비게이션", () => {
     test("네비게이션 링크로 페이지 이동", async ({ page }) => {
         await page.goto("/", { waitUntil: "domcontentloaded" });
 
-        // Resume 링크 클릭
         const resumeLink = page.getByRole("link", {
             name: "Resume",
             exact: true,
         });
-        if (await resumeLink.isVisible()) {
-            await resumeLink.click();
-            await expect(page).toHaveURL(/\/resume/);
-            expect(page.url()).toContain("/resume");
-        }
+        await expect(resumeLink).toBeVisible();
+        await expect(resumeLink).toHaveAttribute("href", "/resume");
+        await Promise.all([
+            page.waitForURL(/\/resume(?:\?.*)?$/),
+            resumeLink.click(),
+        ]);
     });
 
     test("로고/홈 링크로 홈 복귀", async ({ page }) => {
         await page.goto("/resume", { waitUntil: "domcontentloaded" });
         const homeLink = page.locator('header a[href="/"]').first();
-        if (await homeLink.isVisible()) {
-            await homeLink.click();
-            await expect(page).toHaveURL(/\/$/);
-        }
+        await expect(homeLink).toBeVisible();
+        await Promise.all([page.waitForURL(/\/$/), homeLink.click()]);
     });
 });
