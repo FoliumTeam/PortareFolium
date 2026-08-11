@@ -4,10 +4,17 @@ import type { PortfolioProject } from "@/types/portfolio";
 
 type PortfolioViewProps = {
     projects: PortfolioProject[];
+    portfolioBasePath?: string;
+    jobField?: string;
 };
 
-export default function PortfolioView({ projects }: PortfolioViewProps) {
-    const { selected, other } = groupPortfolioProjects(projects);
+export default function PortfolioView({
+    projects,
+    portfolioBasePath,
+    jobField,
+}: PortfolioViewProps) {
+    const { selected, other } = groupPortfolioProjects(projects, jobField);
+    const isWebPortfolio = jobField === "web";
 
     if (selected.length === 0 && other.length === 0) {
         return (
@@ -29,10 +36,16 @@ export default function PortfolioView({ projects }: PortfolioViewProps) {
                             id="selected-work-heading"
                             className="text-2xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
                         >
-                            가장 강한 결과와 기여
+                            {isWebPortfolio
+                                ? "성과와 책임이 분명한 프로젝트"
+                                : "가장 강한 결과와 기여"}
                         </h2>
                     </div>
-                    <PortfolioProjectGrid projects={selected} featuredLayout />
+                    <PortfolioProjectGrid
+                        projects={selected}
+                        featuredLayout
+                        portfolioBasePath={portfolioBasePath}
+                    />
                 </section>
             )}
 
@@ -46,10 +59,15 @@ export default function PortfolioView({ projects }: PortfolioViewProps) {
                             id="other-work-heading"
                             className="text-2xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
                         >
-                            추가 프로젝트와 실험
+                            {isWebPortfolio
+                                ? "추가 실무·개인 프로젝트"
+                                : "추가 프로젝트와 실험"}
                         </h2>
                     </div>
-                    <PortfolioProjectGrid projects={other} />
+                    <PortfolioProjectGrid
+                        projects={other}
+                        portfolioBasePath={portfolioBasePath}
+                    />
                 </section>
             )}
         </div>

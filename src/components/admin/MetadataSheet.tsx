@@ -80,6 +80,7 @@ interface PortfolioSheetProps {
     form: PortfolioFields;
     onChange: (field: string, value: unknown) => void;
     onPublishToggle?: (published: boolean) => void;
+    showPublishControl?: boolean;
     jobFields: JobFieldItem[];
     folderPath?: string;
 }
@@ -161,6 +162,8 @@ function FieldBlock({
 export default function MetadataSheet(props: MetadataSheetProps) {
     const { open, onOpenChange, type, form, onChange, jobFields } = props;
     const onPublishToggle = (props as PostSheetProps).onPublishToggle;
+    const showPublishControl =
+        type === "portfolio" ? props.showPublishControl !== false : true;
 
     const title =
         type === "post"
@@ -228,16 +231,25 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                         : "관리자에서만 보입니다."}
                                                 </p>
                                             </div>
-                                            <Switch
-                                                checked={form.published}
-                                                onCheckedChange={(v) => {
-                                                    if (onPublishToggle) {
-                                                        onPublishToggle(v);
-                                                        return;
-                                                    }
-                                                    onChange("published", v);
-                                                }}
-                                            />
+                                            {showPublishControl ? (
+                                                <Switch
+                                                    checked={form.published}
+                                                    onCheckedChange={(v) => {
+                                                        if (onPublishToggle) {
+                                                            onPublishToggle(v);
+                                                            return;
+                                                        }
+                                                        onChange(
+                                                            "published",
+                                                            v
+                                                        );
+                                                    }}
+                                                />
+                                            ) : (
+                                                <span className="text-xs font-semibold text-(--color-muted)">
+                                                    검토 흐름에서 관리
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 

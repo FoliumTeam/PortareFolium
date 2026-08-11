@@ -17,6 +17,9 @@ import { getCachedMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import {
     extractLegacyPortfolioGallery,
+    getPortfolioCaseStudyStyle,
+    matchesPortfolioJobField,
+    normalizePortfolioCaseStudyContent,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
 import type { PortfolioMedia, PortfolioRawRow } from "@/types/portfolio";
@@ -42,13 +45,11 @@ export async function generateMetadata({
     const { slug } = await params;
     const item = await getPortfolioItemMeta(slug);
     if (!item) return {};
+    const image = item.og_image ?? item.thumbnail ?? undefined;
     return {
         title: item.meta_title || `${item.title} - Portfolio`,
         description: item.meta_description || item.description || undefined,
-        openGraph:
-            item.og_image || item.thumbnail
-                ? { images: [item.og_image || item.thumbnail] }
-                : undefined,
+        openGraph: image ? { images: [image] } : undefined,
     };
 }
 
@@ -116,19 +117,37 @@ const ProjectHeroMedia = ({ media }: { media?: PortfolioMedia }) => {
     );
 };
 
-export default async function PortfolioDetailPage({
-    params,
-}: {
-    params: Promise<{ slug: string }>;
-}) {
-    const { slug } = await params;
-    const item = await getPortfolioItem(slug);
+type PortfolioDetailContentProps = {
+    slug: string;
+    jobField?: string;
+    portfolioBasePath?: string;
+    itemOverride?: PortfolioRawRow;
+    preview?: boolean;
+};
+
+export async function PortfolioDetailContent({
+    slug,
+    jobField,
+    portfolioBasePath = "/portfolio",
+    itemOverride,
+    preview = false,
+}: PortfolioDetailContentProps) {
+    const item = itemOverride ?? (await getPortfolioItem(slug));
     if (!item) notFound();
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
-    const contentHtml = await getCachedMarkdown(slug, project.content);
-    const tocEntries = extractTocFromHtml(contentHtml);
+    if (jobField && !matchesPortfolioJobField(project, jobField)) notFound();
     const isV2 = project.caseStudyVersion === 2;
+    const contentHtml = await getCachedMarkdown(
+        slug,
+        isV2
+            ? normalizePortfolioCaseStudyContent(
+                  project.content,
+                  getPortfolioCaseStudyStyle(item as PortfolioRawRow)
+              )
+            : project.content
+    );
+    const tocEntries = extractTocFromHtml(contentHtml);
     const derivedLegacyGallery = isV2
         ? []
         : extractLegacyPortfolioGallery(contentHtml).filter(
@@ -146,8 +165,17 @@ export default async function PortfolioDetailPage({
 
     return (
         <div className="portfolio-case-study min-w-0">
+            {preview && (
+                <aside
+                    className="mb-6 rounded-xl border border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"
+                    aria-label="관리자 Draft 미리보기"
+                >
+                    관리자 전용 Draft 미리보기입니다. 공개 페이지에는 마지막
+                    Published 버전만 표시됩니다.
+                </aside>
+            )}
             <Link
-                href="/portfolio"
+                href={portfolioBasePath}
                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -481,18 +509,20 @@ export default async function PortfolioDetailPage({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Link
-                        href="/portfolio"
+                        href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         Selected Work
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
-                    <Link
-                        href="/about"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
-                    >
-                        Contact
-                    </Link>
+                    {!jobField && (
+                        <Link
+                            href="/about"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
+                        >
+                            Contact
+                        </Link>
+                    )}
                 </div>
             </section>
 
@@ -503,4 +533,12 @@ export default async function PortfolioDetailPage({
             <ImageLightbox contentSelector=".portfolio-case-study" />
         </div>
     );
+}
+
+export default async function PortfolioDetailPage({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}) {
+    return <PortfolioDetailContent slug={(await params).slug} />;
 }

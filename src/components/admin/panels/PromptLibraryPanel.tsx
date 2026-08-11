@@ -23,33 +23,41 @@ Rules:
 7. metric이 없으면 중립적인 완료 상태와 검증 방법을 작성하고 수치를 만들지 말 것.
 8. gallery image는 non-empty alt가 필요하고 poster는 금지. video는 direct R2/relative src와 poster가 모두 필요함. YouTube는 demo link로만 사용할 것.
 9. links kind는 demo | play | release | source만 사용하고 store URL은 release로 구분할 것.
-10. content에는 아래 형식의 ## Deep Dive를 정확히 두 개 또는 세 개만 작성할 것. 긴 연대기와 전체 code dump는 devlogs로 분리할 것.
+10. content에는 ## 섹션을 정확히 두 개 또는 세 개만 작성할 것. game은 목표와 제약 → 내 역할 → 핵심 구현 → 게임 효과, web은 배경과 목표 → 담당 범위 → 실행 → 결과와 근거 순서를 사용할 것. 긴 연대기와 전체 code dump는 devlogs로 분리할 것.
 
 content MDX template:
 \`\`\`
-## [핵심 기술 의사결정 1]
-### Problem
-[사용자 또는 기술 문제]
-### Decision
-[선택과 이유]
-### Implementation
-[핵심 구현, 필요한 경우 10~20줄 code]
-### Result
-[검증 결과와 근거]
-### Trade-off
-[남은 비용 또는 제한]
+## [프로젝트의 전환점 1]
+### 목표와 제약
+[플레이어 경험과 실제 제약]
+### 내 역할
+[개인 책임과 협업 경계]
+### 핵심 구현
+[중요한 선택과 구현]
+### 게임 효과
+[시연·빌드·검증으로 확인한 변화]
 
-## [핵심 기술 의사결정 2]
-### Problem
-[문제]
-### Decision
-[결정]
-### Implementation
+## [프로젝트의 전환점 2]
+### 목표와 제약
+[플레이어 경험과 제약]
+### 내 역할
+[기여 범위]
+### 핵심 구현
 [구현]
-### Result
-[결과]
-### Trade-off
-[trade-off]
+### 게임 효과
+[검증 근거]
+\`\`\`
+
+web entry에서는 위 각 \`##\` 섹션 안의 heading을 아래처럼 바꿀 것:
+\`\`\`
+### 배경과 목표
+[업무 또는 제품 맥락과 해결할 문제]
+### 담당 범위
+[개인 책임과 협업 경계]
+### 실행
+[근거를 둔 의사결정과 구현]
+### 결과와 근거
+[수치, 운영 기록, 사용자·팀의 확인 근거]
 \`\`\`
 
 Target payload template:

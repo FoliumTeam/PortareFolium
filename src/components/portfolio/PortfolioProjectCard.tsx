@@ -7,6 +7,7 @@ type PortfolioProjectCardProps = {
     project: PortfolioProject;
     priority?: boolean;
     prominent?: boolean;
+    portfolioBasePath?: string;
 };
 
 const focusClass =
@@ -16,6 +17,7 @@ export default function PortfolioProjectCard({
     project,
     priority = false,
     prominent = false,
+    portfolioBasePath = "/portfolio",
 }: PortfolioProjectCardProps) {
     const media = project.primaryMedia;
     const imageSource = media?.type === "video" ? media.poster : media?.src;
@@ -23,14 +25,15 @@ export default function PortfolioProjectCard({
 
     return (
         <article
-            className={`card-lift group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) ${prominent ? "tablet:col-span-2 laptop:grid laptop:grid-cols-2" : ""}`}
+            className={`card-lift group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) ${prominent ? "tablet:col-span-2 laptop:grid laptop:grid-cols-2" : ""}`}
             data-pdf-block-item
         >
             <Link
-                href={`/portfolio/${project.slug}`}
-                aria-label={`${project.title} 사례 연구 보기`}
-                className={`relative block aspect-video overflow-hidden bg-(--color-border) ${focusClass}`}
-            >
+                href={`${portfolioBasePath}/${project.slug}`}
+                aria-label={`${project.title} 프로젝트 기록 보기`}
+                className={`absolute inset-0 z-10 rounded-2xl ${focusClass}`}
+            />
+            <div className="relative block aspect-video overflow-hidden bg-(--color-border)">
                 {imageSource ? (
                     <img
                         src={imageSource}
@@ -52,7 +55,7 @@ export default function PortfolioProjectCard({
                         Video
                     </span>
                 )}
-            </Link>
+            </div>
 
             <div className="tablet:p-6 flex min-w-0 flex-1 flex-col p-5">
                 <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
@@ -65,12 +68,7 @@ export default function PortfolioProjectCard({
                     )}
                 </div>
                 <h3 className="text-xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                    <Link
-                        href={`/portfolio/${project.slug}`}
-                        className={`rounded-sm transition-colors hover:text-(--color-accent) ${focusClass}`}
-                    >
-                        {project.title}
-                    </Link>
+                    {project.title}
                 </h3>
                 {pitch && (
                     <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-(--color-muted)">
@@ -116,7 +114,8 @@ export default function PortfolioProjectCard({
                 <PortfolioActions
                     slug={project.slug}
                     links={project.links}
-                    className="mt-auto pt-6"
+                    className="relative z-20 mt-auto pt-6"
+                    portfolioBasePath={portfolioBasePath}
                 />
             </div>
         </article>

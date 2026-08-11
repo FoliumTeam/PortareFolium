@@ -10,7 +10,7 @@ function trackRuntimeErrors(page: Page) {
     return errors;
 }
 
-test("Selected/Other grid에서 사례 연구로 이동하고 keyboard focus가 표시", async ({
+test("Portfolio 카드 전체 클릭으로 프로젝트 기록에 이동하고 keyboard focus가 표시", async ({
     page,
 }) => {
     const runtimeErrors = trackRuntimeErrors(page);
@@ -19,11 +19,13 @@ test("Selected/Other grid에서 사례 연구로 이동하고 keyboard focus가 
     await expect(
         page.getByRole("heading", { name: "Portfolio" })
     ).toBeVisible();
-    const caseStudy = page.getByRole("link", { name: "Case Study" }).first();
-    await expect(caseStudy).toBeVisible();
-    await caseStudy.focus();
-    await expect(caseStudy).toBeFocused();
-    const focusVisible = await caseStudy.evaluate((element) =>
+    const projectRecord = page
+        .getByRole("link", { name: /프로젝트 기록 보기$/ })
+        .first();
+    await expect(projectRecord).toBeVisible();
+    await projectRecord.focus();
+    await expect(projectRecord).toBeFocused();
+    const focusVisible = await projectRecord.evaluate((element) =>
         element.matches(":focus-visible")
     );
     expect(focusVisible).toBe(true);
@@ -40,7 +42,7 @@ test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 legacy �
     const runtimeErrors = trackRuntimeErrors(page);
     await page.goto("/portfolio", { waitUntil: "networkidle" });
     const href = await page
-        .getByRole("link", { name: "Case Study" })
+        .getByRole("link", { name: /프로젝트 기록 보기$/ })
         .first()
         .getAttribute("href");
     await page.goto(href!, { waitUntil: "domcontentloaded" });

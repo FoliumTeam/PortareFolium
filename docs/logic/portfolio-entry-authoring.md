@@ -16,7 +16,7 @@ Recruiter가 다음 내용을 순서대로 빠르게 확인할 수 있어야 한
 6. 중요한 문제를 어떻게 해결했는지: 2~3개의 Deep Dive
 7. 협업 프로젝트라면 누구와 함께했는지: credits
 
-Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → evidence gallery → Deep Dive → devlogs → credits다. `featured: true`인 Published entry는 Selected Work에, 나머지는 Other Work에 표시된다. 각 그룹에서는 `order_idx`가 낮은 entry가 먼저 표시된다.
+Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → evidence gallery → case study → devlogs → credits다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
 
 ## 2. 작성 전에 준비할 context packet
 
@@ -65,15 +65,12 @@ Public page의 주요 section 순서는 hero → project facts → ownership →
 
 ### Deep Dive 후보
 
-서로 다른 2개, 최대 3개의 기술적 의사결정을 고른다. 각 후보마다 다음 질문에 답할 수 있어야 한다.
+서로 다른 2개, 최대 3개의 프로젝트 전환점을 고른다. 각 후보마다 다음 질문에 답할 수 있어야 한다.
 
-- Problem: 사용자 또는 개발 과정에서 실제로 무엇이 실패했는가
-- Decision: 여러 선택지 중 무엇을 선택했고 왜 선택했는가
-- Implementation: 본인이 작성한 핵심 구조, algorithm, data flow 또는 code는 무엇인가
-- Result: 무엇으로 성공 여부를 확인했는가
-- Trade-off: 비용, 제한, 미해결 위험 또는 다음 개선점은 무엇인가
+- game: 목표와 제약, 내 역할, 핵심 구현, 게임 효과를 한 가지 플레이 경험에 연결한다
+- web: 배경과 목표, 담당 범위, 실행, 결과와 근거를 한 가지 업무 성과에 연결한다
 
-긴 개발 일지를 요약하는 것이 아니라 의사결정의 원인과 결과를 보여주는 것이 목적이다.
+긴 개발 일지를 요약하는 것이 아니라, 내가 만든 변화와 배운 점을 보여주는 것이 목적이다.
 
 ### Media manifest
 
@@ -196,69 +193,33 @@ Admin image uploader는 `portfolio/<slug>/` 아래에 image를 저장하며 현�
 
 `links.kind`는 `demo`, `play`, `release`, `source` 중 하나다. Link URL은 `/`로 시작하는 same-origin relative URL 또는 HTTPS URL만 허용한다. Media URL은 relative URL 또는 `R2_PUBLIC_URL`과 hostname이 같은 HTTPS URL만 허용한다. URL 최대 길이는 2048자다. Image에는 `poster`를 넣지 않고 video에는 반드시 `poster`를 넣는다.
 
-## 4. Deep Dive MDX contract
+## 4. 직무 분야별 사례 구조
 
-`content`에는 정확히 2개 또는 3개의 level-2 heading만 사용한다. 각 `##` section은 하나의 Deep Dive로 계산되므로 서론·결론에 별도의 `##`를 만들지 않는다.
+`content`에는 정확히 2개 또는 3개의 level-2 heading만 사용한다. 각 `##` section은 한 가지 핵심 주장으로 계산되므로 서론·결론에 별도의 `##`를 만들지 않는다.
 
-각 Deep Dive 안에는 아래 level-3 heading이 영문 그대로, 같은 순서로 모두 존재해야 한다.
+### Game portfolio
 
-1. `### Problem`
-2. `### Decision`
-3. `### Implementation`
-4. `### Result`
-5. `### Trade-off`
+Unreal portfolio 형식은 game 항목에만 사용한다. 각 사례는 완성된 게임 경험을 먼저 설명하고, 다음 네 heading을 같은 순서로 둔다.
 
-복사 가능한 template:
+1. `### 목표와 제약`
+2. `### 내 역할`
+3. `### 핵심 구현`
+4. `### 게임 효과`
 
-````mdx
-## [핵심 기술 의사결정 1]
+`목표와 제약`에는 플레이어 경험과 실제 제약을, `내 역할`에는 개인 책임을 쓴다. `핵심 구현`은 필요한 판단만 남기고, `게임 효과`는 시연·빌드·검증 기록으로 확인한 변화를 쓴다.
 
-### Problem
+### Web portfolio
 
-[어떤 사용자·system 문제가 어떤 조건에서 발생했는지 2~4문장]
+Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달한다. 다음 네 heading을 같은 순서로 둔다.
 
-### Decision
+1. `### 배경과 목표`
+2. `### 담당 범위`
+3. `### 실행`
+4. `### 결과와 근거`
 
-[검토한 선택지, 최종 선택, 선택 기준과 이유]
+`결과와 근거`에는 배포물, 운영 기록, 측정값, 승인 또는 재현 방법처럼 사실을 확인할 수 있는 근거만 쓴다. 확인되지 않은 수치, 팀 전체 성과의 개인화, 장황한 개발 일지는 넣지 않는다.
 
-### Implementation
-
-[본인이 구현한 data flow와 핵심 구조]
-
-```text
-[의사결정을 이해하는 데 꼭 필요한 10~30줄의 code 또는 pseudocode]
-```
-
-### Result
-
-[검증 방법, 전후 비교, 측정값 또는 release 결과]
-
-### Trade-off
-
-[남은 비용, 적용 범위, 실패 가능성 또는 후속 개선]
-
-## [핵심 기술 의사결정 2]
-
-### Problem
-
-[문제]
-
-### Decision
-
-[결정과 이유]
-
-### Implementation
-
-[핵심 구현]
-
-### Result
-
-[검증 결과]
-
-### Trade-off
-
-[trade-off]
-````
+공통 규칙: code는 구현량을 보여주기 위해 길게 붙이지 않는다. 책임과 결과를 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
 Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
@@ -273,7 +234,7 @@ Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결�
     "description": "근접 전투의 입력 반응성과 animation state 안정성을 검증한 팀 프로젝트",
     "tags": ["Unreal Engine 5", "C++", "Gameplay Ability System"],
     "thumbnail": "/portfolio/arena-combat-prototype/hero.webp",
-    "content": "## Combat state authority\n\n### Problem\n\n[...]\n\n### Decision\n\n[...]\n\n### Implementation\n\n[...]\n\n### Result\n\n[...]\n\n### Trade-off\n\n[...]\n\n## Hit detection timing\n\n### Problem\n\n[...]\n\n### Decision\n\n[...]\n\n### Implementation\n\n[...]\n\n### Result\n\n[...]\n\n### Trade-off\n\n[...]",
+    "content": "## Combat state authority\n\n### 목표와 제약\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 핵심 구현\n\n[...]\n\n### 게임 효과\n\n[...]\n\n## Hit detection timing\n\n### 목표와 제약\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 핵심 구현\n\n[...]\n\n### 게임 효과\n\n[...]",
     "featured": true,
     "order_idx": 0,
     "published": false,
@@ -345,7 +306,7 @@ Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결�
 8. 저장된 field와 문구를 다시 fact-check한다. 특히 ownership, outcome, credit, 외부 URL을 확인한다.
 9. Published toggle을 켠다. Server가 v2 publication contract를 검사하며 실패하면 누락 field와 Deep Dive 오류를 반환한다.
 10. Published 이후 **미리보기**를 열어 desktop과 mobile에서 card, hero, action, gallery, content, credits를 확인한다.
-11. Selected Work에 둘 entry만 `featured: true`로 지정하고 `order_idx`를 조정한다.
+11. Selected Work에 둘 entry만 `featured: true`로 지정한다. Featured 최대 5개와 순서는 `job_field`별로 독립 관리하므로, 관리 화면에서 먼저 해당 직무 분야를 선택한 뒤 순서를 조정한다.
 
 현재 public query는 `published: true`만 허용하므로 Draft URL은 404가 되고 Admin 미리보기 button도 Draft에서는 비활성화된다. Public 공개 없이 Draft를 보여주는 별도 preview route는 없다. Published 전 visual 확인이 필요하면 local/refuge data 또는 별도 preview 기능을 구현해야 한다.
 
@@ -434,19 +395,19 @@ MCP patch 규칙:
 
 ## 9. Common validation failures
 
-| Error 의미            | 확인할 부분                                                                  |
-| --------------------- | ---------------------------------------------------------------------------- |
-| 한 줄 소개 필요       | `data.oneLinePitch`가 비어 있거나 180자 이후 잘렸는지 확인                   |
-| Engine 정보 필요      | `data.engine` 확인                                                           |
-| Platform 필요         | `data.platforms`가 non-empty string array인지 확인                           |
-| 개인 기여 필요        | `data.ownership`에 구체적 책임 최소 1개 추가                                 |
-| 검증 가능한 결과 필요 | `data.outcomes[].result`가 비어 있지 않은지 확인                             |
-| 대표 media 필요       | valid gallery 첫 항목 또는 thumbnail 추가                                    |
-| Credit 필요           | team size를 정확히 입력하거나 collaborator credit 추가                       |
-| Gallery invalid       | media URL host, video poster, image poster 금지, alt 확인                    |
-| Deep Dive 개수 오류   | content의 모든 `##` heading을 확인. 정확히 2~3개만 유지                      |
-| Deep Dive 순서 오류   | 각 section의 `Problem → Decision → Implementation → Result → Trade-off` 확인 |
-| MDX parse 오류        | 닫히지 않은 JSX/code fence, `<` 문자, 잘못된 MDX expression 확인             |
+| Error 의미            | 확인할 부분                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 한 줄 소개 필요       | `data.oneLinePitch`가 비어 있거나 180자 이후 잘렸는지 확인                                                        |
+| Engine 정보 필요      | `data.engine` 확인                                                                                                |
+| Platform 필요         | `data.platforms`가 non-empty string array인지 확인                                                                |
+| 개인 기여 필요        | `data.ownership`에 구체적 책임 최소 1개 추가                                                                      |
+| 검증 가능한 결과 필요 | `data.outcomes[].result`가 비어 있지 않은지 확인                                                                  |
+| 대표 media 필요       | valid gallery 첫 항목 또는 thumbnail 추가                                                                         |
+| Credit 필요           | team size를 정확히 입력하거나 collaborator credit 추가                                                            |
+| Gallery invalid       | media URL host, video poster, image poster 금지, alt 확인                                                         |
+| Deep Dive 개수 오류   | content의 모든 `##` heading을 확인. 정확히 2~3개만 유지                                                           |
+| 사례 순서 오류        | game은 `목표와 제약 → 내 역할 → 핵심 구현 → 게임 효과`, web은 `배경과 목표 → 담당 범위 → 실행 → 결과와 근거` 확인 |
+| MDX parse 오류        | 닫히지 않은 JSX/code fence, `<` 문자, 잘못된 MDX expression 확인                                                  |
 
 ## 10. When application code must change
 
@@ -480,7 +441,7 @@ Portfolio entry는 다음 상태일 때 완료다.
 
 - 사실 context와 collaborator credit이 검토됨
 - card만 읽어도 역할과 가장 중요한 outcome을 이해할 수 있음
-- 각 Deep Dive가 문제보다 decision과 개인 implementation을 중심으로 작성됨
+- 각 프로젝트 이야기가 내가 만든 변화와 개인 기여를 중심으로 작성됨
 - gallery의 모든 media가 하나 이상의 claim을 증명함
 - 모든 link와 media가 실제로 열림
 - Published validation 통과

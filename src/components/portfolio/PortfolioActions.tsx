@@ -12,6 +12,7 @@ type PortfolioActionsProps = {
     slug?: string;
     links: PortfolioLink[];
     className?: string;
+    portfolioBasePath?: string;
 };
 
 const actionIcon = {
@@ -21,6 +22,13 @@ const actionIcon = {
     source: Code2,
 } as const;
 
+const actionLabel = {
+    demo: "시연 보기",
+    play: "플레이하기",
+    release: "결과물 보기",
+    source: "소스 보기",
+} as const;
+
 const focusClass =
     "focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-surface) focus-visible:outline-none";
 
@@ -28,15 +36,16 @@ export default function PortfolioActions({
     slug,
     links,
     className = "",
+    portfolioBasePath = "/portfolio",
 }: PortfolioActionsProps) {
     return (
         <div className={`flex flex-wrap gap-2 ${className}`}>
             {slug && (
                 <Link
-                    href={`/portfolio/${slug}`}
+                    href={`${portfolioBasePath}/${slug}`}
                     className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 ${focusClass}`}
                 >
-                    Case Study
+                    프로젝트 기록 보기
                     <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
             )}
@@ -46,7 +55,7 @@ export default function PortfolioActions({
                 const content = (
                     <>
                         <Icon className="h-4 w-4" aria-hidden="true" />
-                        {link.label}
+                        {actionLabel[link.kind]}
                         <ArrowUpRight
                             className="h-3.5 w-3.5"
                             aria-hidden="true"

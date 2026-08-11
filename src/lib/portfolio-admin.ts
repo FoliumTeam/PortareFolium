@@ -70,70 +70,75 @@ export type PortfolioSavePayload = {
     featured: boolean;
     order_idx: number;
     published: boolean;
-    job_field: string | null;
+    job_field: string[];
     data: Record<string, unknown>;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
 };
 
-export const PORTFOLIO_DEEP_DIVE_TEMPLATE = `## [핵심 기술 의사결정 1]
+export const PORTFOLIO_GAME_CASE_STUDY_TEMPLATE = `## [게임플레이 목표 1]
 
-### Problem
+### 목표와 제약
 
-[해결할 사용자 또는 기술 문제]
+[플레이어에게 만들고 싶은 경험과 해결할 제약]
 
-### Decision
+### 내 역할
 
-[선택한 접근과 이유]
+[내가 책임진 범위와 협업 경계]
 
-### Implementation
+### 핵심 구현
 
-[핵심 구현과 필요한 짧은 code]
+[중요한 기술 판단과 구현 과정]
 
-### Result
+### 게임 효과
 
-[검증 결과와 근거]
+[플레이·가독성·제작 과정에서 확인한 변화]
 
-### Trade-off
+## [게임플레이 목표 2]
 
-[남은 제한 또는 비용]
-
-## [핵심 기술 의사결정 2]
-
-### Problem
-
-[해결할 사용자 또는 기술 문제]
-
-### Decision
-
-[선택한 접근과 이유]
-
-### Implementation
-
-[핵심 구현과 필요한 짧은 code]
-
-### Result
-
-[검증 결과와 근거]
-
-### Trade-off
-
-[남은 제한 또는 비용]
-
-{/* Optional third Deep Dive
-## [핵심 기술 의사결정 3]
-### Problem
-[문제]
-### Decision
-[결정]
-### Implementation
+### 목표와 제약
+[플레이 목표]
+### 내 역할
+[기여 범위]
+### 핵심 구현
 [구현]
-### Result
-[결과]
-### Trade-off
-[trade-off]
-*/}`;
+### 게임 효과
+[검증한 변화]`;
+
+export const PORTFOLIO_WEB_CASE_STUDY_TEMPLATE = `## [업무 성과 1]
+
+### 배경과 목표
+
+[업무 또는 사용자 문제와 성공 기준]
+
+### 담당 범위
+
+[내가 책임진 범위와 협업 경계]
+
+### 실행
+
+[사실로 확인한 구현·협업·운영 행동]
+
+### 결과와 근거
+
+[측정값, 배포물, 운영 기록 또는 확인 방법]
+
+## [업무 성과 2]
+
+### 배경과 목표
+[문제]
+### 담당 범위
+[기여 범위]
+### 실행
+[실행 내용]
+### 결과와 근거
+[결과]`;
+
+export const getPortfolioCaseStudyTemplate = (jobField: string[]): string =>
+    jobField.includes("game") && !jobField.includes("web")
+        ? PORTFOLIO_GAME_CASE_STUDY_TEMPLATE
+        : PORTFOLIO_WEB_CASE_STUDY_TEMPLATE;
 
 export const EMPTY_PORTFOLIO_FORM: PortfolioEditorForm = {
     slug: "",
@@ -288,7 +293,7 @@ export const createPortfolioTemplateForm = (
     order_idx: orderIdx,
     jobField: [...jobField],
     caseStudyVersion: 2,
-    content: PORTFOLIO_DEEP_DIVE_TEMPLATE,
+    content: getPortfolioCaseStudyTemplate(jobField),
     published: false,
     platforms: [],
     ownership: [],
@@ -333,6 +338,12 @@ export const buildPortfolioSavePayload = (
 
     if (form.caseStudyVersion === 2) {
         data.caseStudyVersion = 2;
+        if (data.caseStudyStyle !== "game" && data.caseStudyStyle !== "web") {
+            data.caseStudyStyle =
+                jobField.includes("game") && !jobField.includes("web")
+                    ? "game"
+                    : "web";
+        }
         assignString(data, "oneLinePitch", form.oneLinePitch);
         assignString(data, "engine", form.engine);
         data.platforms = [...form.platforms];
@@ -378,7 +389,7 @@ export const buildPortfolioSavePayload = (
         featured: form.featured,
         order_idx: form.order_idx,
         published: form.published,
-        job_field: jobField[0] ?? null,
+        job_field: jobField,
         data,
         meta_title: form.meta_title || null,
         meta_description: form.meta_description || null,

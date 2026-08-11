@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { serverClient } from "@/lib/supabase";
 import AboutView from "@/components/AboutView";
-import type { AboutData } from "@/components/AboutView";
+import ProfileSelectionPage from "@/components/ProfileSelectionPage";
+import type { AboutData } from "@/types/about";
 
 export const revalidate = false;
 
@@ -10,7 +11,13 @@ export const metadata: Metadata = {
     description: "개발자 소개",
 };
 
-export default async function AboutPage() {
+type AboutPageContentProps = {
+    jobFieldOverride?: string;
+};
+
+export async function AboutPageContent({
+    jobFieldOverride,
+}: AboutPageContentProps) {
     let aboutData: AboutData | null = null;
     let profileImage: string | null = null;
 
@@ -47,5 +54,22 @@ export default async function AboutPage() {
         );
     }
 
-    return <AboutView data={aboutData} profileImage={profileImage} />;
+    const introduction = jobFieldOverride
+        ? aboutData.introductions?.[jobFieldOverride]
+        : undefined;
+    const profileAboutData = {
+        ...aboutData,
+        description: introduction?.description ?? aboutData.description,
+        descriptionSub:
+            introduction?.descriptionSub ?? aboutData.descriptionSub,
+        sections: jobFieldOverride === "game" ? {} : aboutData.sections,
+        competencySections:
+            jobFieldOverride === "game" ? {} : aboutData.competencySections,
+    };
+
+    return <AboutView data={profileAboutData} profileImage={profileImage} />;
+}
+
+export default async function AboutPage() {
+    return <ProfileSelectionPage content="about" />;
 }

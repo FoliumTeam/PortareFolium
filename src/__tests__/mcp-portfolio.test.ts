@@ -7,28 +7,24 @@ import {
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const content = `## Rendering
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 목표와 제약
+Goal
+### 내 역할
+Contribution
+### 핵심 구현
+Build
+### 게임 효과
 Result
-### Trade-off
-Trade-off
 
 ## Performance
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
-Result
-### Trade-off
-Trade-off`;
+### 목표와 제약
+Goal
+### 내 역할
+Contribution
+### 핵심 구현
+Build
+### 게임 효과
+Result`;
 
 const current: PortfolioRawRow = {
     slug: "project",
@@ -92,10 +88,11 @@ describe("MCP portfolio contract", () => {
         expect(prepared.featured).toBe(true);
         expect(prepared.order_idx).toBe(2);
         expect(prepared.job_field).toEqual(["game"]);
-        expect(prepared.data).toEqual({
+        expect(prepared.data).toMatchObject({
             caseStudyVersion: 2,
             oneLinePitch: "Draft pitch",
             futureKey: "keep",
+            review: { status: "draft" },
         });
     });
 
@@ -103,8 +100,12 @@ describe("MCP portfolio contract", () => {
         const prepared = prepareMcpPortfolioUpdate(current, {
             title: "Renamed",
         });
-        expect(prepared.updateFields).toEqual({ title: "Renamed" });
-        expect(prepared.finalRow.data).toEqual(current.data);
+        expect(prepared.updateFields).toMatchObject({
+            title: "Renamed",
+            published: false,
+            data: { review: { status: "draft" } },
+        });
+        expect(prepared.finalRow.data).toMatchObject(current.data ?? {});
     });
 
     it("update 직무 분야는 Supabase text[] 계약으로 변환", () => {
@@ -134,7 +135,7 @@ describe("MCP portfolio contract", () => {
         expect(prepared.finalRow.published).toBe(false);
     });
 
-    it("불완전한 v2 Published create와 update를 차단", () => {
+    it("MCP의 직접 Published create와 update를 차단", () => {
         expect(() =>
             prepareMcpPortfolioCreate({
                 slug: "invalid",
@@ -142,22 +143,22 @@ describe("MCP portfolio contract", () => {
                 published: true,
                 data: { caseStudyVersion: 2 },
             })
-        ).toThrow(/한 줄 소개/);
+        ).toThrow(/MCP에서는 Portfolio를 발행할 수 없습니다/);
 
         expect(() =>
             prepareMcpPortfolioUpdate(current, {
                 published: true,
                 data: { engine: null },
             })
-        ).toThrow(/Engine/);
+        ).toThrow(/MCP에서는 Portfolio를 발행할 수 없습니다/);
     });
 
-    it("완전한 v2 Published update와 Release link를 유지", () => {
+    it("MCP update는 Release link를 유지하며 Draft로 되돌린다", () => {
         const prepared = prepareMcpPortfolioUpdate(current, {
-            published: true,
+            title: "Renamed",
         });
-        expect(prepared.updateFields.published).toBe(true);
-        expect(prepared.finalRow.published).toBe(true);
+        expect(prepared.updateFields.published).toBe(false);
+        expect(prepared.finalRow.published).toBe(false);
         expect(
             (prepared.finalRow.data?.links as Array<{ kind: string }>)[0]?.kind
         ).toBe("release");
@@ -172,6 +173,6 @@ describe("MCP portfolio contract", () => {
         };
         expect(schema.portfolio_items.data).toHaveProperty("caseStudyVersion");
         expect(schema.portfolio_items.data).toHaveProperty("gallery");
-        expect(schema.portfolio_items.v2_content).toContain("Trade-off");
+        expect(schema.portfolio_items.v2_content).toContain("목표와 제약");
     });
 });

@@ -9,6 +9,11 @@ backup/
 # Working docs / drafts (모든 plan/PR/operations 노트는 docs/ 밑에)
 docs/TODO.md
 docs/USER_TASKS.md
+docs/plans/
+docs/pr/
+
+# Private application and personal context (never commit)
+docs/private/
 
 # Wrangler
 .wrangler/

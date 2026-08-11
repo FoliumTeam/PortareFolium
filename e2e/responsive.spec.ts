@@ -59,7 +59,7 @@ for (const vp of viewports) {
             await page.goto("/portfolio", { waitUntil: "networkidle" });
             const firstCaseStudy = page
                 .getByRole("link", {
-                    name: "Case Study",
+                    name: /프로젝트 기록 보기$/,
                 })
                 .first();
             await expect(firstCaseStudy).toBeVisible();

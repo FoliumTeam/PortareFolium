@@ -69,7 +69,14 @@ describe("portfolio admin projection", () => {
         const form = itemToPortfolioForm(item);
         const payload = buildPortfolioSavePayload(form, item.data);
 
-        for (const key of KNOWN_PORTFOLIO_DATA_KEYS) {
+        for (const key of KNOWN_PORTFOLIO_DATA_KEYS.filter(
+            (key) =>
+                ![
+                    "caseStudyStyle",
+                    "featuredByJobField",
+                    "featuredOrderByJobField",
+                ].includes(key)
+        )) {
             expect(payload.data).toHaveProperty(key);
         }
         expect(payload.data.badges).toEqual(item.data.badges);
@@ -77,7 +84,7 @@ describe("portfolio admin projection", () => {
         expect(payload.data.futureKey).toEqual(item.data.futureKey);
         expect(payload.featured).toBe(true);
         expect(payload.order_idx).toBe(3);
-        expect(payload.job_field).toBe("game");
+        expect(payload.job_field).toEqual(["game"]);
     });
 
     it("row job_field를 legacy data.jobField보다 우선", () => {
@@ -88,9 +95,9 @@ describe("portfolio admin projection", () => {
         });
 
         expect(form.jobField).toEqual(["game"]);
-        expect(buildPortfolioSavePayload(form, item.data).job_field).toBe(
-            "game"
-        );
+        expect(buildPortfolioSavePayload(form, item.data).job_field).toEqual([
+            "game",
+        ]);
     });
 
     it.each([
@@ -114,8 +121,17 @@ describe("portfolio admin projection", () => {
         expect(form.published).toBe(false);
         expect(form.order_idx).toBe(7);
         expect(form.content.split("{/*")[0].match(/^## /gm)).toHaveLength(2);
-        expect(form.content).toContain("Optional third Deep Dive");
+        expect(form.content).toContain("### 목표와 제약");
         expect(form.gallery).toEqual([]);
+    });
+
+    it("복수 직무 v2 항목은 web 사례 계약을 기본으로 저장", () => {
+        const form = createPortfolioTemplateForm(7, ["web", "game"]);
+        const payload = buildPortfolioSavePayload(form, {});
+
+        expect(form.content).toContain("### 배경과 목표");
+        expect(payload.data.caseStudyStyle).toBe("web");
+        expect(payload.job_field).toEqual(["web", "game"]);
     });
 
     it("미완성 v2 Draft 편집 행을 저장 후에도 유지", () => {

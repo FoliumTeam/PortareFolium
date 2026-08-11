@@ -125,32 +125,32 @@ vi.mock("@/app/admin/actions/revalidate", () => ({
 
 import {
     batchSetPortfolioPublished,
+    reorderFeaturedPortfolioItems,
     savePortfolioItem,
+    setPortfolioFeatured,
     setPortfolioPublished,
+    transitionPortfolioReviewStatus,
 } from "@/app/admin/actions/portfolio";
+import { getPortfolioReview } from "@/lib/portfolio-review";
 
 const content = `## Rendering
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 목표와 제약
+Goal
+### 내 역할
+Contribution
+### 핵심 구현
+Build
+### 게임 효과
 Result
-### Trade-off
-Trade-off
 ## Performance
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
-Result
-### Trade-off
-Trade-off`;
+### 목표와 제약
+Goal
+### 내 역할
+Contribution
+### 핵심 구현
+Build
+### 게임 효과
+Result`;
 
 const validData = {
     caseStudyVersion: 2,
@@ -200,7 +200,7 @@ describe("portfolio server publication paths", () => {
         database.state.writes = 0;
     });
 
-    it("savePortfolioItem은 invalid Published v2를 mutation 전에 차단", async () => {
+    it("savePortfolioItem은 incomplete v2도 Draft로 저장", async () => {
         const result = await savePortfolioItem({
             slug: "invalid",
             title: "Invalid",
@@ -218,11 +218,17 @@ describe("portfolio server publication paths", () => {
             og_image: null,
         });
 
-        expect(result.success).toBe(false);
-        expect(database.state.writes).toBe(0);
+        expect(result.success).toBe(true);
+        expect(database.state.writes).toBe(1);
+        expect(database.state.rows[0]?.published).toBe(false);
+        expect(
+            getPortfolioReview(
+                database.state.rows[0]?.data as Record<string, unknown>
+            ).status
+        ).toBe("draft");
     });
 
-    it("savePortfolioItem은 valid Published v2를 저장", async () => {
+    it("savePortfolioItem은 Published 요청도 Draft로 시작", async () => {
         const result = await savePortfolioItem({
             slug: "valid",
             title: "Valid",
@@ -241,11 +247,11 @@ describe("portfolio server publication paths", () => {
         });
 
         expect(result.success).toBe(true);
-        expect(database.state.rows[0]?.published).toBe(true);
+        expect(database.state.rows[0]?.published).toBe(false);
         expect(database.state.rows[0]?.job_field).toEqual(["game"]);
     });
 
-    it("setPortfolioPublished는 invalid v2를 차단하고 legacy를 허용", async () => {
+    it("setPortfolioPublished는 검토 절차를 우회하는 발행을 차단", async () => {
         database.state.rows = [
             createRow("invalid", "invalid", { caseStudyVersion: 2 }),
             createRow("legacy", "legacy", { role: "Programmer" }),
@@ -255,9 +261,79 @@ describe("portfolio server publication paths", () => {
         const legacy = await setPortfolioPublished("legacy", "legacy", true);
 
         expect(invalid.success).toBe(false);
-        expect(legacy.success).toBe(true);
+        expect(legacy.success).toBe(false);
         expect(database.state.rows[0]?.published).toBe(false);
-        expect(database.state.rows[1]?.published).toBe(true);
+        expect(database.state.rows[1]?.published).toBe(false);
+    });
+
+    it("Featured 최대 개수를 직무 분야별로 적용", async () => {
+        database.state.rows = [
+            ...Array.from({ length: 5 }, (_, index) => ({
+                ...createRow(`game-${index}`, `game-${index}`, validData),
+                featured: true,
+                job_field: ["game"],
+            })),
+            {
+                ...createRow("web", "web", validData),
+                job_field: ["web"],
+            },
+            createRow("game", "game", validData),
+        ];
+
+        const web = await setPortfolioFeatured("web", "web", "web", true);
+        const game = await setPortfolioFeatured("game", "game", "game", true);
+
+        expect(web.success).toBe(true);
+        expect(game.success).toBe(false);
+        expect(
+            database.state.rows.find((row) => row.id === "web")?.featured
+        ).toBe(true);
+        expect(
+            database.state.rows.find((row) => row.id === "game")?.featured
+        ).toBe(false);
+    });
+
+    it("한 항목의 web Featured가 game Featured 정원에 영향을 주지 않음", async () => {
+        database.state.rows = [
+            ...Array.from({ length: 5 }, (_, index) => ({
+                ...createRow(`game-${index}`, `game-${index}`, validData),
+                featured: true,
+                job_field: ["game"],
+            })),
+            {
+                ...createRow("maple", "maple", validData),
+                job_field: ["web", "game"],
+                data: { ...validData, jobField: ["web", "game"] },
+            },
+        ];
+
+        const web = await setPortfolioFeatured("maple", "maple", "web", true);
+        const game = await setPortfolioFeatured("maple", "maple", "game", true);
+        const maple = database.state.rows.find((row) => row.id === "maple");
+
+        expect(web.success).toBe(true);
+        expect(game.success).toBe(false);
+        expect(
+            (maple?.data as Record<string, unknown>).featuredByJobField
+        ).toEqual({ web: true, game: false });
+    });
+
+    it("Featured 순서는 선택한 직무 분야 안에서만 변경", async () => {
+        database.state.rows = [
+            {
+                ...createRow("web", "web", validData),
+                featured: true,
+                job_field: ["web"],
+            },
+        ];
+
+        const result = await reorderFeaturedPortfolioItems(
+            [{ id: "web", order_idx: 0 }],
+            "game"
+        );
+
+        expect(result.success).toBe(false);
+        expect(database.state.writes).toBe(0);
     });
 
     it("batch Published는 한 항목이라도 invalid면 전체 mutation을 중단", async () => {
@@ -278,17 +354,33 @@ describe("portfolio server publication paths", () => {
         ).toBe(true);
     });
 
-    it("batch Published는 모든 항목이 valid면 한 번에 저장", async () => {
-        database.state.rows = [
-            createRow("one", "one", validData),
-            createRow("two", "two", { role: "Programmer" }),
-        ];
+    it("Approved 항목만 순서대로 Published로 전환", async () => {
+        database.state.rows = [createRow("one", "one", validData)];
 
-        const result = await batchSetPortfolioPublished(["one", "two"], true);
-
-        expect(result.success).toBe(true);
-        expect(database.state.rows.every((row) => row.published === true)).toBe(
-            true
+        const ready = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "ready"
         );
+        const approved = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "approved"
+        );
+        const published = await transitionPortfolioReviewStatus(
+            "one",
+            "one",
+            "published"
+        );
+
+        expect(ready.success).toBe(true);
+        expect(approved.success).toBe(true);
+        expect(published.success).toBe(true);
+        expect(database.state.rows[0]?.published).toBe(true);
+        expect(
+            getPortfolioReview(
+                database.state.rows[0]?.data as Record<string, unknown>
+            ).status
+        ).toBe("published");
     });
 });

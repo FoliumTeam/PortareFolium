@@ -15,6 +15,12 @@
 - **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `docs/USER_TASKS.md` for the user to follow.
 - **Discord Message Acknowledgement**: When a user message arrives via the Discord channel (messages wrapped in `<channel source="plugin:discord:discord" ...>`), send a brief acknowledgement reply (e.g., "확인했습니다 — 작업 시작합니다.") through the Discord `reply` tool before starting the task. The ack should be a single short line so the user sees the message was received; then proceed with the work and send the actual result as a follow-up reply.
 
+## Privacy and Public Repository Safety
+
+- **No Personal Information in Git**: Never write a user's personal information, job application details, target companies, contact data, credentials, or private notes into tracked files, commit messages, pull requests, issues, or any other remote-bound artifact.
+- **Private Context Location**: Store necessary local-only personal context only under `docs/private/`. This directory is gitignored; verify `git check-ignore` before treating a new private file as safe.
+- **Before Commit or Push**: Review the staged diff and commit message for personal information. If any is present, remove it from tracked scope before committing or pushing. Do not rely only on `.gitignore` for already tracked files.
+
 ## Autonomous Workflow & Goal-Driven Execution
 
 - **TODO.md Driven (Mandatory)**: Before starting ANY task, automatically analyze requirements and create/update a `docs/TODO.md` file with a checklist. Check off items as you complete them. Only report "Done" when the checklist is fully verified. This avoids massive single git commits and keeps the user informed without requiring them to micro-manage.

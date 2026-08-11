@@ -95,6 +95,7 @@ interface Props {
     posts: PostItem[];
     categories: FilterMeta[];
     tags: FilterMeta[];
+    blogBasePath?: string;
 }
 
 const ALL_CATEGORY = "all";
@@ -147,7 +148,12 @@ function GridIcon({ className }: { className?: string }) {
     );
 }
 
-export default function BlogPage({ posts, categories, tags }: Props) {
+export default function BlogPage({
+    posts,
+    categories,
+    tags,
+    blogBasePath = "/blog",
+}: Props) {
     const { data: session, status } = useSession();
     const showManagePost =
         status === "authenticated" && session?.user?.isAdmin === true;
@@ -189,19 +195,22 @@ export default function BlogPage({ posts, categories, tags }: Props) {
         hasSyncedFromUrl.current = true;
     }, [categoryNames, tagSlugs]);
 
-    const updateUrl = useCallback((category: string, tag: string | null) => {
-        if (typeof window === "undefined") return;
-        const params = new URLSearchParams();
-        if (category && category !== ALL_CATEGORY) {
-            params.set("category", category);
-        }
-        if (tag) {
-            params.set("tag", tag);
-        }
-        const query = params.toString();
-        const url = query ? `/blog?${query}` : "/blog";
-        window.history.replaceState({ category, tag }, "", url);
-    }, []);
+    const updateUrl = useCallback(
+        (category: string, tag: string | null) => {
+            if (typeof window === "undefined") return;
+            const params = new URLSearchParams();
+            if (category && category !== ALL_CATEGORY) {
+                params.set("category", category);
+            }
+            if (tag) {
+                params.set("tag", tag);
+            }
+            const query = params.toString();
+            const url = query ? `${blogBasePath}?${query}` : blogBasePath;
+            window.history.replaceState({ category, tag }, "", url);
+        },
+        [blogBasePath]
+    );
 
     useEffect(() => {
         if (!hasSyncedFromUrl.current) return;
@@ -456,7 +465,7 @@ export default function BlogPage({ posts, categories, tags }: Props) {
                         {paginatedPosts.map((post) => (
                             <a
                                 key={post.slug}
-                                href={`/blog/${post.slug}`}
+                                href={`${blogBasePath}/${post.slug}`}
                                 className="card-lift group flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
                             >
                                 {/* Thumbnail */}
@@ -552,7 +561,7 @@ export default function BlogPage({ posts, categories, tags }: Props) {
                         {paginatedPosts.map((post) => (
                             <li key={post.slug}>
                                 <a
-                                    href={`/blog/${post.slug}`}
+                                    href={`${blogBasePath}/${post.slug}`}
                                     className="card-lift group tablet:flex-row flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                                 >
                                     <div className="tablet:order-1 order-2 min-w-0 flex-1">

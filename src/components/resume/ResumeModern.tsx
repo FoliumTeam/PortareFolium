@@ -15,6 +15,7 @@ interface Props {
     coreCompetencies?: CoreValue[];
     sectionLayout?: ResumeSectionLayout;
     activeJobField?: string;
+    portfolioBasePath?: string;
 }
 
 // 날짜 포맷
@@ -32,6 +33,7 @@ export default async function ResumeModern({
     coreCompetencies = [],
     sectionLayout,
     activeJobField,
+    portfolioBasePath,
 }: Props) {
     const basics = resume.basics ?? {};
 
@@ -210,6 +212,7 @@ export default async function ResumeModern({
             key="projects"
             projects={resume.projects?.entries ?? []}
             label={getLabel("projects")}
+            portfolioBasePath={portfolioBasePath}
         />
     );
 
