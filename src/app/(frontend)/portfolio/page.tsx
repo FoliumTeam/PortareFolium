@@ -131,8 +131,8 @@ export async function PortfolioPageContent({
                         Portfolio
                     </h1>
                     <p className="mt-4 text-lg leading-relaxed text-(--color-muted)">
-                        프로젝트별 문제, 개인 기여, 기술적 결정과 검증 가능한
-                        결과를 짧은 사례 연구로 정리했습니다.
+                        프로젝트의 배경, 내가 맡은 일, 만든 과정과 결과를
+                        이야기처럼 정리했습니다.
                     </p>
                     <div className="mt-6 flex flex-wrap gap-2">
                         <Link

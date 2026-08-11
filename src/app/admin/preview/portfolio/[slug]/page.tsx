@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PortfolioDetailContent } from "@/app/(frontend)/portfolio/[slug]/page";
+import ContentWrapper from "@/components/ContentWrapper";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import {
@@ -31,7 +32,10 @@ export default async function PortfolioDraftPreviewPage({ params }: PageProps) {
     const diff = getPortfolioReviewDiff(row);
 
     return (
-        <div className="space-y-8">
+        <ContentWrapper
+            width="wide"
+            className="tablet:px-6 laptop:px-8 space-y-8 px-4 py-8"
+        >
             <section className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -80,6 +84,6 @@ export default async function PortfolioDraftPreviewPage({ params }: PageProps) {
                 portfolioBasePath="/admin#portfolio"
                 preview
             />
-        </div>
+        </ContentWrapper>
     );
 }

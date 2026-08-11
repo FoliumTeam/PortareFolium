@@ -77,62 +77,62 @@ export type PortfolioSavePayload = {
     og_image: string | null;
 };
 
-export const PORTFOLIO_DEEP_DIVE_TEMPLATE = `## [핵심 기술 의사결정 1]
+export const PORTFOLIO_DEEP_DIVE_TEMPLATE = `## [프로젝트의 전환점 1]
 
-### Problem
+### 배경
 
-[해결할 사용자 또는 기술 문제]
+[무엇을 만들었고, 어떤 상황에서 시작했는가]
 
-### Decision
+### 내 역할
 
-[선택한 접근과 이유]
+[내가 책임진 범위와 협업 경계]
 
-### Implementation
+### 만든 과정
 
-[핵심 구현과 필요한 짧은 code]
+[중요한 선택, 시행착오, 구현 과정과 필요한 짧은 code]
 
-### Result
-
-[검증 결과와 근거]
-
-### Trade-off
-
-[남은 제한 또는 비용]
-
-## [핵심 기술 의사결정 2]
-
-### Problem
-
-[해결할 사용자 또는 기술 문제]
-
-### Decision
-
-[선택한 접근과 이유]
-
-### Implementation
-
-[핵심 구현과 필요한 짧은 code]
-
-### Result
+### 결과
 
 [검증 결과와 근거]
 
-### Trade-off
+### 회고
 
-[남은 제한 또는 비용]
+[다음에 더 잘할 수 있는 점]
+
+## [프로젝트의 전환점 2]
+
+### 배경
+
+[무엇을 만들었고, 어떤 상황에서 시작했는가]
+
+### 내 역할
+
+[내가 책임진 범위와 협업 경계]
+
+### 만든 과정
+
+[중요한 선택, 시행착오, 구현 과정과 필요한 짧은 code]
+
+### 결과
+
+[검증 결과와 근거]
+
+### 회고
+
+[다음에 더 잘할 수 있는 점]
 
 {/* Optional third Deep Dive
-## [핵심 기술 의사결정 3]
-### Problem
-[문제]
-### Decision
-[결정]
-### Implementation
-[구현]
-### Result
-[결과]
-### Trade-off
-[trade-off]
+## [프로젝트의 전환점 3]
+### 배경
+[시작점]
+### 내 역할
+[기여 범위]
+### 만든 과정
+[과정]
+### 결과
+[근거]
+### 회고
+[다음 단계]
 */}`;
 
 export const EMPTY_PORTFOLIO_FORM: PortfolioEditorForm = {

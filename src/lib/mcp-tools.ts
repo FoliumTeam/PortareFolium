@@ -234,7 +234,7 @@ export async function handleGetSchema(): Promise<unknown> {
                 ],
             },
             v2_content:
-                "Exactly 2 or 3 ## deep dives. Each needs ### Problem, ### Decision, ### Implementation, ### Result, ### Trade-off in that order.",
+                "Exactly 2 or 3 ## project stories. Each needs ### 배경, ### 내 역할, ### 만든 과정, ### 결과, ### 회고 in that order.",
             publication:
                 "New items default to published: false. Incomplete v2 drafts can be saved but cannot be published.",
         },

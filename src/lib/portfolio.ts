@@ -74,12 +74,20 @@ const LINK_KINDS = new Set<PortfolioLink["kind"]>([
 ]);
 
 const REQUIRED_DEEP_DIVE_HEADINGS = [
-    "Problem",
-    "Decision",
-    "Implementation",
-    "Result",
-    "Trade-off",
+    "배경",
+    "내 역할",
+    "만든 과정",
+    "결과",
+    "회고",
 ] as const;
+
+const LEGACY_DEEP_DIVE_HEADING_MAP: Record<string, string> = {
+    Problem: "배경",
+    Decision: "내 역할",
+    Implementation: "만든 과정",
+    Result: "결과",
+    "Trade-off": "회고",
+};
 
 const cleanString = (value: unknown, maxLength: number): string =>
     typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -440,6 +448,13 @@ export const matchesPortfolioJobField = (
         : project.jobField === jobField;
 };
 
+export const normalizePortfolioCaseStudyContent = (content: string): string =>
+    content.replace(
+        /^(###)\s+(Problem|Decision|Implementation|Result|Trade-off)\s*$/gm,
+        (_, heading: string, title: string) =>
+            `${heading} ${LEGACY_DEEP_DIVE_HEADING_MAP[title]}`
+    );
+
 const getHeadingText = (node: MarkdownNode): string => {
     if (!("children" in node) || !Array.isArray(node.children)) return "";
     return node.children
@@ -492,7 +507,7 @@ const validateDeepDives = (content: string): string[] => {
         );
         if (!complete) {
             errors.push(
-                `${deepDive.title || "제목 없는 Deep Dive"}에 Problem → Decision → Implementation → Result → Trade-off 순서가 필요합니다.`
+                `${deepDive.title || "제목 없는 사례"}에 배경 → 내 역할 → 만든 과정 → 결과 → 회고 순서가 필요합니다.`
             );
         }
     }

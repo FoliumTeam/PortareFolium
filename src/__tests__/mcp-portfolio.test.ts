@@ -7,28 +7,28 @@ import {
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const content = `## Rendering
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off
+### 회고
+Reflection
 
 ## Performance
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off`;
+### 회고
+Reflection`;
 
 const current: PortfolioRawRow = {
     slug: "project",
@@ -177,6 +177,6 @@ describe("MCP portfolio contract", () => {
         };
         expect(schema.portfolio_items.data).toHaveProperty("caseStudyVersion");
         expect(schema.portfolio_items.data).toHaveProperty("gallery");
-        expect(schema.portfolio_items.v2_content).toContain("Trade-off");
+        expect(schema.portfolio_items.v2_content).toContain("### 회고");
     });
 });

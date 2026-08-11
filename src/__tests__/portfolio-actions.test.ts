@@ -125,34 +125,36 @@ vi.mock("@/app/admin/actions/revalidate", () => ({
 
 import {
     batchSetPortfolioPublished,
+    reorderFeaturedPortfolioItems,
     savePortfolioItem,
+    setPortfolioFeatured,
     setPortfolioPublished,
     transitionPortfolioReviewStatus,
 } from "@/app/admin/actions/portfolio";
 import { getPortfolioReview } from "@/lib/portfolio-review";
 
 const content = `## Rendering
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off
+### 회고
+Reflection
 ## Performance
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off`;
+### 회고
+Reflection`;
 
 const validData = {
     caseStudyVersion: 2,
@@ -266,6 +268,51 @@ describe("portfolio server publication paths", () => {
         expect(legacy.success).toBe(false);
         expect(database.state.rows[0]?.published).toBe(false);
         expect(database.state.rows[1]?.published).toBe(false);
+    });
+
+    it("Featured 최대 개수를 직무 분야별로 적용", async () => {
+        database.state.rows = [
+            ...Array.from({ length: 5 }, (_, index) => ({
+                ...createRow(`game-${index}`, `game-${index}`, validData),
+                featured: true,
+                job_field: ["game"],
+            })),
+            {
+                ...createRow("web", "web", validData),
+                job_field: ["web"],
+            },
+            createRow("game", "game", validData),
+        ];
+
+        const web = await setPortfolioFeatured("web", "web", true);
+        const game = await setPortfolioFeatured("game", "game", true);
+
+        expect(web.success).toBe(true);
+        expect(game.success).toBe(false);
+        expect(
+            database.state.rows.find((row) => row.id === "web")?.featured
+        ).toBe(true);
+        expect(
+            database.state.rows.find((row) => row.id === "game")?.featured
+        ).toBe(false);
+    });
+
+    it("Featured 순서는 선택한 직무 분야 안에서만 변경", async () => {
+        database.state.rows = [
+            {
+                ...createRow("web", "web", validData),
+                featured: true,
+                job_field: ["web"],
+            },
+        ];
+
+        const result = await reorderFeaturedPortfolioItems(
+            [{ id: "web", order_idx: 0 }],
+            "game"
+        );
+
+        expect(result.success).toBe(false);
+        expect(database.state.writes).toBe(0);
     });
 
     it("batch Published는 한 항목이라도 invalid면 전체 mutation을 중단", async () => {

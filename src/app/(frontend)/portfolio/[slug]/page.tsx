@@ -18,6 +18,7 @@ import { extractTocFromHtml } from "@/lib/toc";
 import {
     extractLegacyPortfolioGallery,
     matchesPortfolioJobField,
+    normalizePortfolioCaseStudyContent,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
 import type { PortfolioMedia, PortfolioRawRow } from "@/types/portfolio";
@@ -135,9 +136,14 @@ export async function PortfolioDetailContent({
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
     if (jobField && !matchesPortfolioJobField(project, jobField)) notFound();
-    const contentHtml = await getCachedMarkdown(slug, project.content);
-    const tocEntries = extractTocFromHtml(contentHtml);
     const isV2 = project.caseStudyVersion === 2;
+    const contentHtml = await getCachedMarkdown(
+        slug,
+        isV2
+            ? normalizePortfolioCaseStudyContent(project.content)
+            : project.content
+    );
+    const tocEntries = extractTocFromHtml(contentHtml);
     const derivedLegacyGallery = isV2
         ? []
         : extractLegacyPortfolioGallery(contentHtml).filter(

@@ -79,6 +79,12 @@ type PortfolioItem = PortfolioAdminItem;
 type ItemForm = PortfolioEditorForm;
 const EMPTY_FORM = EMPTY_PORTFOLIO_FORM;
 
+const getItemJobFields = (item: PortfolioItem): string[] =>
+    normalizeUniqueJobFieldList(
+        item.job_field ??
+            (item.data?.jobField as string | string[] | null | undefined)
+    );
+
 interface PortfolioPanelProps {
     editPath?: string;
     onEditPathChange?: (path: string) => void;
@@ -385,13 +391,35 @@ export default function PortfolioPanel({
 
     const toggleFeatured = async (item: PortfolioItem) => {
         if (!item.featured) {
-            const featuredCount = items.filter((i) => i.featured).length;
-            if (featuredCount >= 5) {
-                showToast("Featured 항목은 최대 5개까지만 설정할 수 있습니다.");
+            const itemJobFields = getItemJobFields(item);
+            if (itemJobFields.length === 0) {
+                showToast("직무 분야를 먼저 지정하세요.");
+                return;
+            }
+            const fullJobField = itemJobFields.find(
+                (jobField) =>
+                    items.filter(
+                        (candidate) =>
+                            candidate.featured &&
+                            getItemJobFields(candidate).includes(jobField)
+                    ).length >= 5
+            );
+            if (fullJobField) {
+                showToast(
+                    `${fullJobField} Featured 항목은 최대 5개까지만 설정할 수 있습니다.`
+                );
                 return;
             }
         }
-        await setPortfolioFeatured(item.id, item.slug, !item.featured);
+        const result = await setPortfolioFeatured(
+            item.id,
+            item.slug,
+            !item.featured
+        );
+        if (!result.success) {
+            showToast(result.error ?? "Featured 상태 변경 실패");
+            return;
+        }
         void loadItems();
     };
 
@@ -407,8 +435,17 @@ export default function PortfolioPanel({
         )
             return;
 
+        if (!filterJobField) {
+            showToast("Featured 순서를 바꿀 직무 분야를 선택하세요.");
+            return;
+        }
+
         const featuredItems = items
-            .filter((i) => i.featured)
+            .filter(
+                (item) =>
+                    item.featured &&
+                    getItemJobFields(item).includes(filterJobField)
+            )
             .sort((a, b) => a.order_idx - b.order_idx);
 
         const reordered = [...featuredItems];
@@ -421,7 +458,13 @@ export default function PortfolioPanel({
             order_idx: idx,
         }));
 
-        await reorderFeaturedPortfolioItems(updates);
+        const result = await reorderFeaturedPortfolioItems(
+            updates,
+            filterJobField
+        );
+        if (!result.success) {
+            showToast(result.error ?? "Featured 순서 변경 실패");
+        }
 
         dragItemRef.current = null;
         dragOverItemRef.current = null;
@@ -753,7 +796,25 @@ export default function PortfolioPanel({
         showToast(`${selected.size}개 항목의 직무 분야를 변경했습니다.`);
     };
 
-    const featuredCount = items.filter((i) => i.featured).length;
+    const featuredCountsByJobField = jobFields.map((jobField) => ({
+        ...jobField,
+        count: items.filter(
+            (item) =>
+                item.featured && getItemJobFields(item).includes(jobField.id)
+        ).length,
+    }));
+    const scopedFeaturedItems = filterJobField
+        ? items
+              .filter(
+                  (item) =>
+                      item.featured &&
+                      getItemJobFields(item).includes(filterJobField)
+              )
+              .sort((a, b) => a.order_idx - b.order_idx)
+        : [];
+    const featuredScopeLabel =
+        jobFields.find((jobField) => jobField.id === filterJobField)?.name ??
+        filterJobField;
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -788,7 +849,14 @@ export default function PortfolioPanel({
                                     포트폴리오
                                 </h2>
                                 <p className="mt-0.5 text-sm text-(--color-muted)">
-                                    Featured: {featuredCount}/5
+                                    {featuredCountsByJobField.length > 0
+                                        ? featuredCountsByJobField
+                                              .map(
+                                                  (jobField) =>
+                                                      `${jobField.name} ${jobField.count}/5`
+                                              )
+                                              .join(" · ")
+                                        : "직무 분야별 Featured 0/5"}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -918,47 +986,49 @@ export default function PortfolioPanel({
             {tab === "portfolio" && (
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     {/* Featured 순서 조정 */}
-                    {items.filter((i) => i.featured).length > 0 && (
+                    {filterJobField && scopedFeaturedItems.length > 0 && (
                         <div className="mb-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                             <p className="mb-2 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
-                                Featured 순서 (드래그하여 변경)
+                                Featured 순서 · {featuredScopeLabel} (드래그하여
+                                변경)
                             </p>
                             <div className="space-y-1">
-                                {items
-                                    .filter((i) => i.featured)
-                                    .sort((a, b) => a.order_idx - b.order_idx)
-                                    .map((item, idx) => (
-                                        <div
-                                            key={item.id}
-                                            draggable
-                                            onDragStart={() => {
-                                                dragItemRef.current = idx;
-                                            }}
-                                            onDragEnter={() => {
-                                                dragOverItemRef.current = idx;
-                                            }}
-                                            onDragOver={(e) =>
-                                                e.preventDefault()
-                                            }
-                                            onDragEnd={handleFeaturedReorder}
-                                            className="flex cursor-grab items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 transition-colors hover:border-(--color-accent)/50 active:cursor-grabbing"
-                                        >
-                                            <GripVertical className="h-4 w-4 shrink-0 text-(--color-muted)" />
-                                            <span className="font-mono text-xs font-bold text-(--color-accent)">
-                                                {idx + 1}
+                                {scopedFeaturedItems.map((item, idx) => (
+                                    <div
+                                        key={item.id}
+                                        draggable
+                                        onDragStart={() => {
+                                            dragItemRef.current = idx;
+                                        }}
+                                        onDragEnter={() => {
+                                            dragOverItemRef.current = idx;
+                                        }}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDragEnd={handleFeaturedReorder}
+                                        className="flex cursor-grab items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 transition-colors hover:border-(--color-accent)/50 active:cursor-grabbing"
+                                    >
+                                        <GripVertical className="h-4 w-4 shrink-0 text-(--color-muted)" />
+                                        <span className="font-mono text-xs font-bold text-(--color-accent)">
+                                            {idx + 1}
+                                        </span>
+                                        <span className="truncate text-sm font-medium text-(--color-foreground)">
+                                            {item.title}
+                                        </span>
+                                        {!item.published && (
+                                            <span className="ml-auto shrink-0 rounded bg-(--color-border) px-1.5 py-0.5 text-[10px] font-medium text-(--color-muted)">
+                                                Draft
                                             </span>
-                                            <span className="truncate text-sm font-medium text-(--color-foreground)">
-                                                {item.title}
-                                            </span>
-                                            {!item.published && (
-                                                <span className="ml-auto shrink-0 rounded bg-(--color-border) px-1.5 py-0.5 text-[10px] font-medium text-(--color-muted)">
-                                                    Draft
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
+                    )}
+                    {!filterJobField && items.some((item) => item.featured) && (
+                        <p className="mb-4 text-sm text-(--color-muted)">
+                            직무 분야를 선택하면 해당 분야의 Featured 순서를
+                            조정할 수 있습니다.
+                        </p>
                     )}
 
                     {/* 배치 액션 바 */}

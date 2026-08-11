@@ -7,6 +7,7 @@ import {
     getPortfolioValidationMessage,
     validatePortfolioForPublish,
 } from "@/lib/portfolio";
+import { normalizeUniqueJobFieldList } from "@/lib/job-field";
 import {
     getPortfolioReview,
     preparePortfolioDraftSave,
@@ -326,6 +327,67 @@ export async function setPortfolioFeatured(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
+    const { data: target, error: targetError } = await serverClient
+        .from("portfolio_items")
+        .select("id, job_field, data")
+        .eq("id", id)
+        .single();
+    if (targetError || !target) {
+        return {
+            success: false,
+            error: targetError?.message ?? "Featured 대상을 찾을 수 없습니다.",
+        };
+    }
+
+    const targetJobFields = normalizeUniqueJobFieldList(
+        target.job_field ??
+            ((target.data as Record<string, unknown> | null)?.jobField as
+                | string
+                | string[]
+                | null
+                | undefined)
+    );
+    if (featured && targetJobFields.length === 0) {
+        return { success: false, error: "직무 분야를 먼저 지정하세요." };
+    }
+
+    if (featured) {
+        const { data: featuredRows, error: featuredError } = await serverClient
+            .from("portfolio_items")
+            .select("id, job_field, data")
+            .eq("featured", true);
+        if (featuredError) {
+            return { success: false, error: featuredError.message };
+        }
+        const occupiedFields = new Map<string, number>();
+        for (const row of featuredRows ?? []) {
+            if (row.id === id) continue;
+            const jobFields = normalizeUniqueJobFieldList(
+                row.job_field ??
+                    ((row.data as Record<string, unknown> | null)?.jobField as
+                        | string
+                        | string[]
+                        | null
+                        | undefined)
+            );
+            for (const jobField of jobFields) {
+                occupiedFields.set(
+                    jobField,
+                    (occupiedFields.get(jobField) ?? 0) + 1
+                );
+            }
+        }
+        const fullJobField = targetJobFields.find(
+            (jobField) => (occupiedFields.get(jobField) ?? 0) >= 5
+        );
+        if (fullJobField) {
+            return {
+                success: false,
+                error: `${fullJobField} Featured 항목은 최대 5개까지 설정할 수 있습니다.`,
+            };
+        }
+    }
+
     const { error } = await serverClient
         .from("portfolio_items")
         .update({ featured })
@@ -337,20 +399,42 @@ export async function setPortfolioFeatured(
 
 // Featured 순서 저장
 export async function reorderFeaturedPortfolioItems(
-    updates: { id: string; order_idx: number }[]
+    updates: { id: string; order_idx: number }[],
+    jobField: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
+    if (!jobField) return { success: false, error: "직무 분야를 선택하세요." };
+    if (updates.length === 0) return { success: true };
 
     const ids = updates.map((u) => u.id);
 
-    // 슬러그 일괄 조회
-    const { data: slugRows } = await serverClient
+    const { data: featuredRows, error: featuredError } = await serverClient
         .from("portfolio_items")
-        .select("id, slug")
+        .select("id, slug, featured, job_field, data")
         .in("id", ids);
+    if (featuredError) return { success: false, error: featuredError.message };
+    if (
+        (featuredRows ?? []).length !== ids.length ||
+        (featuredRows ?? []).some((row) => {
+            const jobFields = normalizeUniqueJobFieldList(
+                row.job_field ??
+                    ((row.data as Record<string, unknown> | null)?.jobField as
+                        | string
+                        | string[]
+                        | null
+                        | undefined)
+            );
+            return row.featured !== true || !jobFields.includes(jobField);
+        })
+    ) {
+        return {
+            success: false,
+            error: "선택한 직무 분야의 Featured 항목만 정렬할 수 있습니다.",
+        };
+    }
     const slugById = Object.fromEntries(
-        (slugRows ?? []).map((r) => [r.id, r.slug])
+        (featuredRows ?? []).map((row) => [row.id, row.slug])
     );
 
     // 업데이트 병렬 실행

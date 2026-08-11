@@ -8,6 +8,7 @@ import {
     isValidPortfolioLinkUrl,
     isValidPortfolioMediaUrl,
     mergePortfolioDataPatch,
+    normalizePortfolioCaseStudyContent,
     normalizePortfolioProject,
     validatePortfolioForPublish,
 } from "@/lib/portfolio";
@@ -33,28 +34,28 @@ const createRow = (
 });
 
 const validContent = `## Rendering
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off
+### 회고
+Reflection
 
 ## Performance
-### Problem
-Problem
-### Decision
-Decision
-### Implementation
-Implementation
-### Result
+### 배경
+Background
+### 내 역할
+Contribution
+### 만든 과정
+Build
+### 결과
 Result
-### Trade-off
-Trade-off`;
+### 회고
+Reflection`;
 
 const validV2Data = {
     caseStudyVersion: 2,
@@ -77,6 +78,14 @@ const validV2Data = {
 };
 
 describe("portfolio domain", () => {
+    it("기존 Deep Dive heading을 포트폴리오 서사 heading으로 표시", () => {
+        expect(
+            normalizePortfolioCaseStudyContent(
+                "### Problem\n### Decision\n### Implementation\n### Result\n### Trade-off"
+            )
+        ).toBe("### 배경\n### 내 역할\n### 만든 과정\n### 결과\n### 회고");
+    });
+
     it("legacy와 malformed v2를 예외 없이 정규화", () => {
         const legacy = normalizePortfolioProject(
             createRow({
