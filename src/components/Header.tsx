@@ -19,6 +19,25 @@ export default function Header({
 }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
+    const profileMatch = pathname.match(
+        /^\/(web|game)(?:\/(?:about|resume|portfolio|blog)(?:\/|$)|$)/
+    );
+    const profileJobField = profileMatch?.[1];
+    const profilePrefix = profileJobField ? `/${profileJobField}` : "";
+    const activeJobField = profileJobField ?? jobField;
+    const navigationItems = profileJobField
+        ? [
+              [`${profilePrefix}/about`, "About me"],
+              [`${profilePrefix}/resume`, "Resume"],
+              [`${profilePrefix}/portfolio`, "Portfolio"],
+              [`${profilePrefix}/blog`, "Blog"],
+          ]
+        : [
+              ["/about", "About me"],
+              ["/resume", "Resume"],
+              ["/portfolio", "Portfolio"],
+              ["/blog", "Blog"],
+          ];
 
     return (
         <header
@@ -30,7 +49,7 @@ export default function Header({
             >
                 {/* 사이트 로고 */}
                 <Link
-                    href="/"
+                    href={profileJobField ? `${profilePrefix}/portfolio` : "/"}
                     className="flex items-center gap-2 text-(--color-foreground) transition-opacity hover:opacity-80"
                 >
                     {/* 액센트 색상 각괄호 */}
@@ -102,14 +121,7 @@ export default function Header({
                     ].join(" ")}
                     role="navigation"
                 >
-                    {(
-                        [
-                            ["/about", "About me"],
-                            ["/resume", "Resume"],
-                            ["/portfolio", "Portfolio"],
-                            ["/blog", "Blog"],
-                        ] as [string, string][]
-                    ).map(([href, label]) => (
+                    {navigationItems.map(([href, label]) => (
                         <Link
                             key={href}
                             href={href}
@@ -127,7 +139,7 @@ export default function Header({
                         className="tablet:block tablet:h-5 tablet:w-px tablet:mx-2 hidden bg-(--color-border)"
                         aria-hidden="true"
                     />
-                    <GlobalSearch jobField={jobField} />
+                    <GlobalSearch jobField={activeJobField} />
                     <a
                         href={githubUrl || "https://github.com/"}
                         target="_blank"

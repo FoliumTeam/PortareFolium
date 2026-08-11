@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.183",
+    "version": "0.12.189",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -111,6 +111,7 @@
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
         "@testing-library/user-event": "^14.6.1",
+        "@types/node": "26.2.0",
         "@types/react": "^19.2.10",
         "@types/react-dom": "^19.2.3",
         "@vitest/ui": "^4.0.18",

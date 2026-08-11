@@ -190,6 +190,13 @@ export interface ResumeCareerPhase {
     name?: string;
     description?: string;
     keywords?: string[];
+    jobField?: string | string[];
+}
+
+export interface ResumeCoreCompetency {
+    title: string;
+    description: string;
+    jobField?: string | string[];
 }
 
 // 섹션별 이모지 및 entries 래퍼
@@ -217,6 +224,6 @@ export interface Resume {
     coreCompetencies?: {
         emoji?: string;
         showEmoji?: boolean;
-        entries: { title: string; description: string }[];
+        entries: ResumeCoreCompetency[];
     };
 }

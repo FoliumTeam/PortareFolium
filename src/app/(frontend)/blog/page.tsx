@@ -3,6 +3,7 @@ import { serverClient } from "@/lib/supabase";
 import { formatPubDateKST } from "@/lib/blog";
 import type { PostItem, FilterMeta } from "@/components/BlogPage";
 import BlogPage from "@/components/BlogPage";
+import ProfileSelectionPage from "@/components/ProfileSelectionPage";
 
 export const revalidate = false;
 
@@ -11,7 +12,13 @@ export const metadata: Metadata = {
     description: "기술 블로그",
 };
 
-export default async function BlogListPage() {
+type BlogListContentProps = {
+    jobFieldOverride?: string;
+};
+
+export async function BlogListContent({
+    jobFieldOverride,
+}: BlogListContentProps) {
     let slugToTagName = new Map<string, string>();
     let slugToTagColor = new Map<string, string>();
     if (serverClient) {
@@ -33,13 +40,17 @@ export default async function BlogListPage() {
     let tags: FilterMeta[] = [];
 
     if (serverClient) {
-        const { data: posts } = await serverClient
+        let postsQuery = serverClient
             .from("posts")
             .select(
                 "slug, title, description, pub_date, category, tags, thumbnail"
             )
             .eq("published", true)
             .order("pub_date", { ascending: false });
+        if (jobFieldOverride) {
+            postsQuery = postsQuery.contains("job_field", [jobFieldOverride]);
+        }
+        const { data: posts } = await postsQuery;
 
         if (posts) {
             postItems = posts.map((post) => {
@@ -105,8 +116,15 @@ export default async function BlogListPage() {
                     posts={postItems}
                     categories={categories}
                     tags={tags}
+                    blogBasePath={
+                        jobFieldOverride ? `/${jobFieldOverride}/blog` : "/blog"
+                    }
                 />
             )}
         </article>
     );
+}
+
+export default async function BlogListPage() {
+    return <ProfileSelectionPage content="blog" />;
 }

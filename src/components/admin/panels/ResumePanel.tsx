@@ -657,6 +657,7 @@ export default function ResumePanel() {
                                         name: "",
                                         description: "",
                                         keywords: [],
+                                        jobField: activeJobField || undefined,
                                     };
                                     const updated = {
                                         ...resumeData,
@@ -842,6 +843,28 @@ export default function ResumePanel() {
                                                     )
                                                 }
                                                 placeholder="React, TypeScript, FastAPI"
+                                            />
+                                            <JobFieldSelector
+                                                value={cp.jobField}
+                                                fields={jobFields}
+                                                onChange={(v) => {
+                                                    const entries = [
+                                                        ...(resumeData
+                                                            .careerPhases
+                                                            ?.entries ?? []),
+                                                    ];
+                                                    entries[idx] = {
+                                                        ...entries[idx],
+                                                        jobField: v,
+                                                    };
+                                                    setResumeData({
+                                                        ...resumeData,
+                                                        careerPhases: {
+                                                            ...resumeData.careerPhases!,
+                                                            entries,
+                                                        },
+                                                    });
+                                                }}
                                             />
                                             <div className="flex gap-2 pt-1">
                                                 <button
@@ -1186,6 +1209,42 @@ export default function ResumePanel() {
                                                 className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                             />
                                         </div>
+                                        <JobFieldSelector
+                                            value={comp.jobField}
+                                            fields={jobFields}
+                                            onChange={(v) =>
+                                                setResumeData((prev) =>
+                                                    prev
+                                                        ? {
+                                                              ...prev,
+                                                              coreCompetencies:
+                                                                  {
+                                                                      ...prev.coreCompetencies,
+                                                                      entries: (
+                                                                          prev
+                                                                              .coreCompetencies
+                                                                              ?.entries ??
+                                                                          []
+                                                                      ).map(
+                                                                          (
+                                                                              c,
+                                                                              i
+                                                                          ) =>
+                                                                              i ===
+                                                                              idx
+                                                                                  ? {
+                                                                                        ...c,
+                                                                                        jobField:
+                                                                                            v,
+                                                                                    }
+                                                                                  : c
+                                                                      ),
+                                                                  },
+                                                          }
+                                                        : prev
+                                                )
+                                            }
+                                        />
                                     </div>
                                 </div>
                             )
@@ -1208,6 +1267,9 @@ export default function ResumePanel() {
                                                           {
                                                               title: "",
                                                               description: "",
+                                                              jobField:
+                                                                  activeJobField ||
+                                                                  undefined,
                                                           },
                                                       ],
                                                   },

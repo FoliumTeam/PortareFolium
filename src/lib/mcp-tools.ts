@@ -1,6 +1,127 @@
 import { serverClient } from "@/lib/supabase";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
+import { mergePortfolioDataPatch } from "@/lib/portfolio";
+import { preparePortfolioDraftSave } from "@/lib/portfolio-review";
+import type { PortfolioRawRow } from "@/types/portfolio";
+
+const PORTFOLIO_MUTATION_KEYS = [
+    "title",
+    "description",
+    "tags",
+    "job_field",
+    "thumbnail",
+    "content",
+    "featured",
+    "order_idx",
+    "published",
+    "meta_title",
+    "meta_description",
+    "og_image",
+] as const;
+
+const pickPortfolioMutationFields = (
+    fields: Record<string, unknown>
+): Record<string, unknown> =>
+    Object.fromEntries(
+        PORTFOLIO_MUTATION_KEYS.flatMap((key) =>
+            Object.hasOwn(fields, key) ? [[key, fields[key]]] : []
+        )
+    );
+
+const getPortfolioDataInput = (value: unknown): Record<string, unknown> => {
+    if (value == null) return {};
+    if (typeof value !== "object" || Array.isArray(value)) {
+        throw new Error("portfolio data는 object여야 합니다.");
+    }
+    return value as Record<string, unknown>;
+};
+
+const toPersistedPortfolioJobField = (value: unknown): unknown => {
+    if (typeof value === "string") return value ? [value] : [];
+    if (Array.isArray(value)) {
+        const first = value.find(
+            (item): item is string =>
+                typeof item === "string" && item.length > 0
+        );
+        return first ? [first] : [];
+    }
+    return value;
+};
+
+export const prepareMcpPortfolioCreate = (
+    args: Record<string, unknown>
+): Record<string, unknown> => {
+    const mutationFields = pickPortfolioMutationFields(args);
+    if (mutationFields.published === true) {
+        throw new Error(
+            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
+        );
+    }
+    if (Object.hasOwn(mutationFields, "job_field")) {
+        mutationFields.job_field = toPersistedPortfolioJobField(
+            mutationFields.job_field
+        );
+    }
+    const createFields = sanitizeContentField({
+        slug: args.slug,
+        ...mutationFields,
+        data: mergePortfolioDataPatch({}, getPortfolioDataInput(args.data)),
+        published: false,
+    });
+    return preparePortfolioDraftSave(
+        null,
+        createFields as PortfolioRawRow,
+        new Date().toISOString()
+    );
+};
+
+export const prepareMcpPortfolioUpdate = (
+    current: PortfolioRawRow,
+    rawFields: Record<string, unknown>
+): { updateFields: Record<string, unknown>; finalRow: PortfolioRawRow } => {
+    if (rawFields.published === true) {
+        throw new Error(
+            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
+        );
+    }
+    const fields = pickPortfolioMutationFields(rawFields);
+    delete fields.published;
+    if (Object.hasOwn(fields, "job_field")) {
+        fields.job_field = toPersistedPortfolioJobField(fields.job_field);
+    }
+    const hasDataPatch = Object.hasOwn(rawFields, "data");
+    const currentData = getPortfolioDataInput(current.data);
+    const mergedData = hasDataPatch
+        ? mergePortfolioDataPatch(
+              currentData,
+              getPortfolioDataInput(rawFields.data)
+          )
+        : currentData;
+    const changedRow = sanitizeContentField({
+        ...fields,
+        ...(hasDataPatch ? { data: mergedData } : {}),
+    });
+    const draftRow = preparePortfolioDraftSave(
+        current,
+        {
+            ...current,
+            ...changedRow,
+            data: mergedData,
+        } as PortfolioRawRow,
+        new Date().toISOString()
+    );
+    const updateFields = {
+        ...changedRow,
+        published: draftRow.published,
+        data: draftRow.data,
+    };
+    const finalRow = {
+        ...current,
+        ...updateFields,
+    } as PortfolioRawRow;
+    return { updateFields, finalRow };
+};
 
 // content field가 있으면 JSX 태그 내부 \[ \] escape 복원
 function sanitizeContentField<T extends Record<string, unknown>>(fields: T): T {
@@ -70,7 +191,7 @@ export async function handleGetSchema(): Promise<unknown> {
             order_idx: "integer",
             published: "boolean, default false",
             data: {
-                _note: "JSONB — all fields optional",
+                _note: "JSONB — legacy fields are optional; v2 uses explicit caseStudyVersion: 2",
                 startDate: "YYYY-MM-DD",
                 endDate: "YYYY-MM-DD — omit if ongoing",
                 goal: "string",
@@ -81,7 +202,42 @@ export async function handleGetSchema(): Promise<unknown> {
                 github: "URL string",
                 badges: [{ text: "string" }],
                 jobField: "'web' | 'game' | ['web','game']",
+                caseStudyVersion: "exact numeric 2",
+                oneLinePitch: "string, max 180",
+                engine: "string, max 80",
+                platforms: "string[1..5]",
+                ownership: "string[1..5]",
+                outcomes: [
+                    {
+                        result: "string, max 180",
+                        evidence: "optional string, max 240",
+                    },
+                ],
+                gallery: [
+                    {
+                        type: "'image' | 'video'",
+                        src: "relative same-origin or configured R2 HTTPS URL",
+                        poster: "required for video, forbidden for image",
+                        alt: "required nonempty string",
+                        caption: "optional string",
+                    },
+                ],
+                links: [
+                    {
+                        kind: "'demo' | 'play' | 'release' | 'source'",
+                        url: "relative same-origin or HTTPS URL",
+                        label: "string",
+                    },
+                ],
+                devlogs: [{ title: "string", url: "relative or HTTPS URL" }],
+                credits: [
+                    { name: "string", role: "string", url: "optional URL" },
+                ],
             },
+            v2_content:
+                "Exactly 2 or 3 ## sections. Game entries use 목표와 제약, 내 역할, 핵심 구현, 게임 효과; web entries use 배경과 목표, 담당 범위, 실행, 결과와 근거.",
+            publication:
+                "New items default to published: false. Incomplete v2 drafts can be saved but cannot be published.",
         },
         resume_data: {
             _note: "Single Korean resume row only ('ko'). data column is a Resume object.",
@@ -411,14 +567,11 @@ export async function handleCreatePortfolioItem(
         );
     }
 
-    // job_field 배열 → 첫 번째 문자열 정규화
-    if (Array.isArray(args.job_field)) {
-        args = { ...args, job_field: (args.job_field as string[])[0] ?? null };
-    }
+    const createFields = prepareMcpPortfolioCreate(args);
 
     const { data, error } = await serverClient
         .from("portfolio_items")
-        .insert(sanitizeContentField(args))
+        .insert(createFields)
         .select("id, slug")
         .single();
 
@@ -447,28 +600,25 @@ export async function handleUpdatePortfolioItem(args: {
 
     const { slug, ...rawFields } = args;
 
-    // job_field 배열 → 첫 번째 문자열 정규화
-    const fields = Array.isArray(rawFields.job_field)
-        ? {
-              ...rawFields,
-              job_field: (rawFields.job_field as string[])[0] ?? null,
-          }
-        : rawFields;
-
-    const { data: current } = await serverClient
+    const { data: current, error: currentError } = await serverClient
         .from("portfolio_items")
         .select("*")
         .eq("slug", slug)
         .single();
 
-    if (!current)
+    if (currentError || !current)
         throw new Error(
-            `[mcp-tools::handleUpdatePortfolioItem] slug 없음: ${slug}`
+            `[mcp-tools::handleUpdatePortfolioItem] ${currentError?.message ?? `slug 없음: ${slug}`}`
         );
+
+    const { updateFields } = prepareMcpPortfolioUpdate(
+        current as PortfolioRawRow,
+        rawFields
+    );
 
     const { data, error } = await serverClient
         .from("portfolio_items")
-        .update(sanitizeContentField(fields))
+        .update(updateFields)
         .eq("slug", slug)
         .select("id, slug")
         .single();
@@ -550,6 +700,128 @@ export async function handleUpdateResume(args: {
 }
 
 // ─── 툴 정의 (MCP tool schema) ────────────────────────────────────────────────
+
+const PORTFOLIO_DATA_INPUT_SCHEMA = {
+    type: "object",
+    description:
+        "caseStudyVersion 2 uses the documented case-study keys; unknown forward-compatible keys are preserved",
+    properties: {
+        startDate: { type: ["string", "null"] },
+        endDate: { type: ["string", "null"] },
+        goal: { type: ["string", "null"] },
+        role: { type: ["string", "null"] },
+        teamSize: { type: ["number", "null"] },
+        github: { type: ["string", "null"] },
+        liveUrl: { type: ["string", "null"] },
+        accomplishments: {
+            type: ["array", "null"],
+            items: { type: "string" },
+        },
+        jobField: {
+            oneOf: [
+                { type: "string" },
+                { type: "array", items: { type: "string" } },
+                { type: "null" },
+            ],
+        },
+        caseStudyVersion: { type: ["number", "null"], enum: [2, null] },
+        oneLinePitch: { type: ["string", "null"], maxLength: 180 },
+        engine: { type: ["string", "null"], maxLength: 80 },
+        platforms: {
+            type: ["array", "null"],
+            maxItems: 5,
+            items: { type: "string", maxLength: 80 },
+        },
+        ownership: {
+            type: ["array", "null"],
+            maxItems: 5,
+            items: { type: "string", maxLength: 160 },
+        },
+        outcomes: {
+            type: ["array", "null"],
+            maxItems: 3,
+            items: {
+                type: "object",
+                properties: {
+                    result: { type: "string", maxLength: 180 },
+                    evidence: { type: "string", maxLength: 240 },
+                },
+                required: ["result"],
+            },
+        },
+        gallery: {
+            type: ["array", "null"],
+            maxItems: 8,
+            items: {
+                oneOf: [
+                    {
+                        type: "object",
+                        properties: {
+                            type: { const: "image" },
+                            src: { type: "string" },
+                            alt: { type: "string", minLength: 1 },
+                            caption: { type: "string", maxLength: 240 },
+                        },
+                        required: ["type", "src", "alt"],
+                    },
+                    {
+                        type: "object",
+                        properties: {
+                            type: { const: "video" },
+                            src: { type: "string" },
+                            poster: { type: "string" },
+                            alt: { type: "string", minLength: 1 },
+                            caption: { type: "string", maxLength: 240 },
+                        },
+                        required: ["type", "src", "poster", "alt"],
+                    },
+                ],
+            },
+        },
+        links: {
+            type: ["array", "null"],
+            maxItems: 4,
+            items: {
+                type: "object",
+                properties: {
+                    kind: {
+                        type: "string",
+                        enum: ["demo", "play", "release", "source"],
+                    },
+                    url: { type: "string" },
+                    label: { type: "string", maxLength: 80 },
+                },
+                required: ["kind", "url", "label"],
+            },
+        },
+        devlogs: {
+            type: ["array", "null"],
+            maxItems: 5,
+            items: {
+                type: "object",
+                properties: {
+                    title: { type: "string", maxLength: 180 },
+                    url: { type: "string" },
+                },
+                required: ["title", "url"],
+            },
+        },
+        credits: {
+            type: ["array", "null"],
+            maxItems: 20,
+            items: {
+                type: "object",
+                properties: {
+                    name: { type: "string", maxLength: 120 },
+                    role: { type: "string", maxLength: 160 },
+                    url: { type: "string" },
+                },
+                required: ["name", "role"],
+            },
+        },
+    },
+    additionalProperties: true,
+} as const;
 
 export const MCP_TOOLS = [
     {
@@ -670,14 +942,15 @@ export const MCP_TOOLS = [
                 featured: { type: "boolean" },
                 order_idx: { type: "integer" },
                 published: { type: "boolean" },
-                data: { type: "object" },
+                data: PORTFOLIO_DATA_INPUT_SCHEMA,
             },
             required: ["slug", "title"],
         },
     },
     {
         name: "update_portfolio_item",
-        description: "포트폴리오 항목 부분 수정 (스냅샷 자동 저장)",
+        description:
+            "포트폴리오 항목 부분 수정. omitted data key는 유지, non-null은 shallow replace, known null은 삭제",
         inputSchema: {
             type: "object",
             properties: {
@@ -691,7 +964,7 @@ export const MCP_TOOLS = [
                 featured: { type: "boolean" },
                 order_idx: { type: "integer" },
                 published: { type: "boolean" },
-                data: { type: "object" },
+                data: PORTFOLIO_DATA_INPUT_SCHEMA,
             },
             required: ["slug"],
         },

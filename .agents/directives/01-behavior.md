@@ -9,12 +9,17 @@
 ## Chat
 
 - **Language**: Answer everything in Korean.
-- **English Input Handling**: When the user sends a question in English (often happens on remote environments where Korean IME is unavailable), answer in Korean as usual, then append `> Corrected English: "<교정된 영어 문장>"` at the end. The corrected sentence is for the user's English study reference — fix grammar/word choice while preserving the original intent.
 - **Token Efficiency**:
     - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.
 - **Manual Tasks**: Record any non-code (Deployment, etc.) tasks in `docs/USER_TASKS.md` for the user to follow.
 - **Discord Message Acknowledgement**: When a user message arrives via the Discord channel (messages wrapped in `<channel source="plugin:discord:discord" ...>`), send a brief acknowledgement reply (e.g., "확인했습니다 — 작업 시작합니다.") through the Discord `reply` tool before starting the task. The ack should be a single short line so the user sees the message was received; then proceed with the work and send the actual result as a follow-up reply.
+
+## Privacy and Public Repository Safety
+
+- **No Personal Information in Git**: Never write a user's personal information, job application details, target companies, contact data, credentials, or private notes into tracked files, commit messages, pull requests, issues, or any other remote-bound artifact.
+- **Private Context Location**: Store necessary local-only personal context only under `docs/private/`. This directory is gitignored; verify `git check-ignore` before treating a new private file as safe.
+- **Before Commit or Push**: Review the staged diff and commit message for personal information. If any is present, remove it from tracked scope before committing or pushing. Do not rely only on `.gitignore` for already tracked files.
 
 ## Autonomous Workflow & Goal-Driven Execution
 
