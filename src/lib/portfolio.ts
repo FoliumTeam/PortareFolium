@@ -3,6 +3,7 @@ import {
     EDITABLE_PORTFOLIO_DATA_KEYS,
     KNOWN_PORTFOLIO_DATA_KEYS,
     PRESERVED_LEGACY_DATA_KEYS,
+    type PortfolioCaseStudyStyle,
     type PortfolioCredit,
     type PortfolioDataV2,
     type PortfolioDevlog,
@@ -73,24 +74,39 @@ const LINK_KINDS = new Set<PortfolioLink["kind"]>([
     "source",
 ]);
 
-const REQUIRED_DEEP_DIVE_HEADINGS = [
-    "배경",
-    "내 역할",
-    "만든 과정",
-    "결과",
-    "회고",
-] as const;
+const REQUIRED_DEEP_DIVE_HEADINGS: Record<
+    PortfolioCaseStudyStyle,
+    readonly string[]
+> = {
+    game: ["목표와 제약", "내 역할", "핵심 구현", "게임 효과"],
+    web: ["배경과 목표", "담당 범위", "실행", "결과와 근거"],
+};
 
-const LEGACY_DEEP_DIVE_HEADING_MAP: Record<string, string> = {
-    Problem: "배경",
-    Decision: "내 역할",
-    Implementation: "만든 과정",
-    Result: "결과",
-    "Trade-off": "회고",
+const LEGACY_DEEP_DIVE_HEADING_MAP: Record<
+    PortfolioCaseStudyStyle,
+    Record<string, string>
+> = {
+    game: {
+        Problem: "목표와 제약",
+        Decision: "내 역할",
+        Implementation: "핵심 구현",
+        Result: "게임 효과",
+        "Trade-off": "제약과 다음 단계",
+    },
+    web: {
+        Problem: "배경과 목표",
+        Decision: "담당 범위",
+        Implementation: "실행",
+        Result: "결과와 근거",
+        "Trade-off": "다음 단계",
+    },
 };
 
 const cleanString = (value: unknown, maxLength: number): string =>
     typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
 
 const cleanStringArray = (
     value: unknown,
@@ -303,6 +319,64 @@ const normalizeJobField = (value: unknown): string | string[] | null => {
     return values.length ? values : null;
 };
 
+export const getPortfolioJobFields = (row: PortfolioRawRow): string[] => {
+    const rowJobField = normalizeJobField(row.job_field);
+    const dataJobField = normalizeJobField(row.data?.jobField);
+    return Array.from(
+        new Set(
+            [rowJobField, dataJobField].flatMap((value) =>
+                Array.isArray(value) ? value : value ? [value] : []
+            )
+        )
+    );
+};
+
+const normalizeFeaturedByJobField = (
+    value: unknown,
+    jobFields: string[],
+    fallbackFeatured: boolean
+): Record<string, boolean> => {
+    if (!isRecord(value)) {
+        return Object.fromEntries(
+            jobFields.map((jobField) => [jobField, fallbackFeatured])
+        );
+    }
+    return Object.fromEntries(
+        jobFields.map((jobField) => [jobField, value[jobField] === true])
+    );
+};
+
+const normalizeFeaturedOrderByJobField = (
+    value: unknown,
+    jobFields: string[],
+    fallbackOrder: number | null
+): Record<string, number> => {
+    const source = isRecord(value) ? value : {};
+    return Object.fromEntries(
+        jobFields.flatMap((jobField) => {
+            const valueForJobField = source[jobField];
+            if (
+                typeof valueForJobField === "number" &&
+                Number.isFinite(valueForJobField)
+            ) {
+                return [[jobField, valueForJobField]];
+            }
+            return fallbackOrder === null ? [] : [[jobField, fallbackOrder]];
+        })
+    );
+};
+
+export const getPortfolioCaseStudyStyle = (
+    row: PortfolioRawRow
+): PortfolioCaseStudyStyle => {
+    if (row.data?.caseStudyStyle === "web") return "web";
+    if (row.data?.caseStudyStyle === "game") return "game";
+    const jobFields = getPortfolioJobFields(row);
+    return jobFields.includes("web") && !jobFields.includes("game")
+        ? "web"
+        : "game";
+};
+
 export const normalizePortfolioProject = (
     row: PortfolioRawRow,
     options: PortfolioNormalizeOptions = {}
@@ -347,8 +421,7 @@ export const normalizePortfolioProject = (
                   alt: `${row.title} 대표 이미지`,
               }
             : undefined);
-    const rowJobField = normalizeJobField(row.job_field);
-    const dataJobField = normalizeJobField(data.jobField);
+    const jobFields = getPortfolioJobFields(row);
     const tags = cleanStringArray(row.tags, 20, PORTFOLIO_LIMITS.platform);
     const legacyKeywords = cleanStringArray(
         data.keywords,
@@ -359,6 +432,17 @@ export const normalizePortfolioProject = (
         typeof row.order_idx === "number" && Number.isFinite(row.order_idx)
             ? row.order_idx
             : null;
+    const featuredByJobField = normalizeFeaturedByJobField(
+        data.featuredByJobField,
+        jobFields,
+        row.featured === true
+    );
+    const featuredOrderByJobField = normalizeFeaturedOrderByJobField(
+        data.featuredOrderByJobField,
+        jobFields,
+        orderIdx
+    );
+    const caseStudyStyle = getPortfolioCaseStudyStyle(row);
 
     return {
         id: row.id,
@@ -380,11 +464,19 @@ export const normalizePortfolioProject = (
         github,
         public: row.published === true,
         published: row.published === true,
-        featured: row.featured === true,
+        featured: Object.values(featuredByJobField).some(Boolean),
+        featuredByJobField,
+        featuredOrderByJobField,
         orderIdx,
-        jobField: rowJobField ?? dataJobField ?? "game",
+        jobField:
+            jobFields.length === 0
+                ? "game"
+                : jobFields.length === 1
+                  ? jobFields[0]
+                  : jobFields,
         badges: normalizeBadges(data.badges),
         caseStudyVersion: isV2 ? 2 : 1,
+        caseStudyStyle,
         oneLinePitch: isV2
             ? cleanString(data.oneLinePitch, PORTFOLIO_LIMITS.pitch)
             : cleanString(row.description, PORTFOLIO_LIMITS.pitch),
@@ -408,10 +500,15 @@ export const normalizePortfolioProject = (
 
 const compareOrderThenSlug = (
     left: PortfolioProject,
-    right: PortfolioProject
+    right: PortfolioProject,
+    jobField?: string
 ): number => {
-    const leftOrder = left.orderIdx ?? Number.POSITIVE_INFINITY;
-    const rightOrder = right.orderIdx ?? Number.POSITIVE_INFINITY;
+    const leftOrder =
+        (jobField ? left.featuredOrderByJobField[jobField] : left.orderIdx) ??
+        Number.POSITIVE_INFINITY;
+    const rightOrder =
+        (jobField ? right.featuredOrderByJobField[jobField] : right.orderIdx) ??
+        Number.POSITIVE_INFINITY;
     if (leftOrder !== rightOrder) return leftOrder - rightOrder;
     return left.slug.localeCompare(right.slug);
 };
@@ -425,16 +522,25 @@ export const sortPortfolioProjects = (
     });
 
 export const groupPortfolioProjects = (
-    projects: PortfolioProject[]
+    projects: PortfolioProject[],
+    jobField?: string
 ): PortfolioGroups => {
     const published = projects.filter((project) => project.published);
     return {
         selected: published
-            .filter((project) => project.featured)
-            .sort(compareOrderThenSlug),
+            .filter((project) =>
+                jobField
+                    ? project.featuredByJobField[jobField] === true
+                    : project.featured
+            )
+            .sort((left, right) => compareOrderThenSlug(left, right, jobField)),
         other: published
-            .filter((project) => !project.featured)
-            .sort(compareOrderThenSlug),
+            .filter((project) =>
+                jobField
+                    ? project.featuredByJobField[jobField] !== true
+                    : !project.featured
+            )
+            .sort((left, right) => compareOrderThenSlug(left, right, jobField)),
     };
 };
 
@@ -448,11 +554,14 @@ export const matchesPortfolioJobField = (
         : project.jobField === jobField;
 };
 
-export const normalizePortfolioCaseStudyContent = (content: string): string =>
+export const normalizePortfolioCaseStudyContent = (
+    content: string,
+    style: PortfolioCaseStudyStyle
+): string =>
     content.replace(
         /^(###)\s+(Problem|Decision|Implementation|Result|Trade-off)\s*$/gm,
         (_, heading: string, title: string) =>
-            `${heading} ${LEGACY_DEEP_DIVE_HEADING_MAP[title]}`
+            `${heading} ${LEGACY_DEEP_DIVE_HEADING_MAP[style][title]}`
     );
 
 const getHeadingText = (node: MarkdownNode): string => {
@@ -468,7 +577,10 @@ const getHeadingText = (node: MarkdownNode): string => {
         .trim();
 };
 
-const validateDeepDives = (content: string): string[] => {
+const validateDeepDives = (
+    content: string,
+    style: PortfolioCaseStudyStyle
+): string[] => {
     const errors: string[] = [];
     let tree: MarkdownRoot;
     try {
@@ -497,7 +609,8 @@ const validateDeepDives = (content: string): string[] => {
         );
     }
     for (const deepDive of deepDives) {
-        const requiredPositions = REQUIRED_DEEP_DIVE_HEADINGS.map((heading) =>
+        const requiredHeadings = REQUIRED_DEEP_DIVE_HEADINGS[style];
+        const requiredPositions = requiredHeadings.map((heading) =>
             deepDive.headings.indexOf(heading)
         );
         const complete = requiredPositions.every(
@@ -507,7 +620,7 @@ const validateDeepDives = (content: string): string[] => {
         );
         if (!complete) {
             errors.push(
-                `${deepDive.title || "제목 없는 사례"}에 배경 → 내 역할 → 만든 과정 → 결과 → 회고 순서가 필요합니다.`
+                `${deepDive.title || "제목 없는 사례"}에 ${requiredHeadings.join(" → ")} 순서가 필요합니다.`
             );
         }
     }
@@ -562,7 +675,9 @@ export const validatePortfolioForPublish = (
         const error = collectionLengthError(value, key, label);
         if (error) errors.push(error);
     }
-    errors.push(...validateDeepDives(normalized.content));
+    errors.push(
+        ...validateDeepDives(normalized.content, normalized.caseStudyStyle)
+    );
     return errors.length
         ? { valid: false, errors }
         : { valid: true, errors: [] };

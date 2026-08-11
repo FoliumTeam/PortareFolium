@@ -73,6 +73,10 @@ export async function PortfolioPageContent({
             : jobField === "web"
               ? "Web Product & Full-Stack Development"
               : "Selected Work";
+    const portfolioIntroduction =
+        jobField === "web"
+            ? "업무 맥락, 개인 책임, 실행 근거와 확인 가능한 결과를 정리했습니다."
+            : "플레이 경험을 만든 목표, 개인 책임, 핵심 구현과 검증 결과를 정리했습니다.";
     const portfolioBasePath = jobFieldOverride
         ? `/${jobField}/portfolio`
         : "/portfolio";
@@ -131,8 +135,7 @@ export async function PortfolioPageContent({
                         Portfolio
                     </h1>
                     <p className="mt-4 text-lg leading-relaxed text-(--color-muted)">
-                        프로젝트의 배경, 내가 맡은 일, 만든 과정과 결과를
-                        이야기처럼 정리했습니다.
+                        {portfolioIntroduction}
                     </p>
                     <div className="mt-6 flex flex-wrap gap-2">
                         <Link
@@ -177,6 +180,7 @@ export async function PortfolioPageContent({
                 <PortfolioView
                     projects={publicProjects}
                     portfolioBasePath={portfolioBasePath}
+                    jobField={jobField}
                 />
 
                 {publicBooks.length > 0 && (

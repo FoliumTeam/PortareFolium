@@ -80,10 +80,49 @@ type ItemForm = PortfolioEditorForm;
 const EMPTY_FORM = EMPTY_PORTFOLIO_FORM;
 
 const getItemJobFields = (item: PortfolioItem): string[] =>
-    normalizeUniqueJobFieldList(
-        item.job_field ??
-            (item.data?.jobField as string | string[] | null | undefined)
+    Array.from(
+        new Set(
+            [item.job_field, item.data?.jobField].flatMap((jobField) =>
+                normalizeUniqueJobFieldList(
+                    jobField as string | string[] | null | undefined
+                )
+            )
+        )
     );
+
+const getItemFeaturedByJobField = (
+    item: PortfolioItem
+): Record<string, boolean> => {
+    const stored = item.data?.featuredByJobField as
+        | Record<string, unknown>
+        | undefined;
+    const jobFields = getItemJobFields(item);
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+        return Object.fromEntries(
+            jobFields.map((jobField) => [jobField, item.featured])
+        );
+    }
+    return Object.fromEntries(
+        jobFields.map((jobField) => [jobField, stored[jobField] === true])
+    );
+};
+
+const isItemFeaturedForJobField = (
+    item: PortfolioItem,
+    jobField: string
+): boolean => getItemFeaturedByJobField(item)[jobField] === true;
+
+const getItemFeaturedOrder = (
+    item: PortfolioItem,
+    jobField: string
+): number => {
+    const stored = item.data?.featuredOrderByJobField as
+        | Record<string, unknown>
+        | undefined;
+    return typeof stored?.[jobField] === "number"
+        ? stored[jobField]
+        : item.order_idx;
+};
 
 interface PortfolioPanelProps {
     editPath?: string;
@@ -112,6 +151,7 @@ export default function PortfolioPanel({
     const savedSlugRef = useRef<string>("");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [activeJobField, setActiveJobField] = useState<string>("");
+    const [featuredJobField, setFeaturedJobField] = useState<string>("");
     // MetadataSheet 상태
     const [metadataOpen, setMetadataOpen] = useState(false);
 
@@ -162,7 +202,11 @@ export default function PortfolioPanel({
         setItems(result.items);
         setStateCounts(result.stateCounts);
         setJobFields(dedupeJobFieldsById(result.jobFields));
-        setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+        const nextActiveJobField = normalizeJobFieldValue(
+            result.activeJobField
+        );
+        setActiveJobField(nextActiveJobField);
+        setFeaturedJobField((current) => current || nextActiveJobField);
         setLoading(false);
     };
 
@@ -390,31 +434,20 @@ export default function PortfolioPanel({
     };
 
     const toggleFeatured = async (item: PortfolioItem) => {
-        if (!item.featured) {
-            const itemJobFields = getItemJobFields(item);
-            if (itemJobFields.length === 0) {
-                showToast("직무 분야를 먼저 지정하세요.");
-                return;
-            }
-            const fullJobField = itemJobFields.find(
-                (jobField) =>
-                    items.filter(
-                        (candidate) =>
-                            candidate.featured &&
-                            getItemJobFields(candidate).includes(jobField)
-                    ).length >= 5
-            );
-            if (fullJobField) {
-                showToast(
-                    `${fullJobField} Featured 항목은 최대 5개까지만 설정할 수 있습니다.`
-                );
-                return;
-            }
+        if (!featuredJobField) {
+            showToast("Featured를 관리할 직무 분야를 선택하세요.");
+            return;
         }
+        if (!getItemJobFields(item).includes(featuredJobField)) {
+            showToast("이 항목에는 선택한 직무 분야가 없습니다.");
+            return;
+        }
+        const isFeatured = isItemFeaturedForJobField(item, featuredJobField);
         const result = await setPortfolioFeatured(
             item.id,
             item.slug,
-            !item.featured
+            featuredJobField,
+            !isFeatured
         );
         if (!result.success) {
             showToast(result.error ?? "Featured 상태 변경 실패");
@@ -435,18 +468,18 @@ export default function PortfolioPanel({
         )
             return;
 
-        if (!filterJobField) {
+        if (!featuredJobField) {
             showToast("Featured 순서를 바꿀 직무 분야를 선택하세요.");
             return;
         }
 
         const featuredItems = items
-            .filter(
-                (item) =>
-                    item.featured &&
-                    getItemJobFields(item).includes(filterJobField)
-            )
-            .sort((a, b) => a.order_idx - b.order_idx);
+            .filter((item) => isItemFeaturedForJobField(item, featuredJobField))
+            .sort(
+                (a, b) =>
+                    getItemFeaturedOrder(a, featuredJobField) -
+                    getItemFeaturedOrder(b, featuredJobField)
+            );
 
         const reordered = [...featuredItems];
         const [dragged] = reordered.splice(dragItemRef.current, 1);
@@ -460,7 +493,7 @@ export default function PortfolioPanel({
 
         const result = await reorderFeaturedPortfolioItems(
             updates,
-            filterJobField
+            featuredJobField
         );
         if (!result.success) {
             showToast(result.error ?? "Featured 순서 변경 실패");
@@ -798,23 +831,24 @@ export default function PortfolioPanel({
 
     const featuredCountsByJobField = jobFields.map((jobField) => ({
         ...jobField,
-        count: items.filter(
-            (item) =>
-                item.featured && getItemJobFields(item).includes(jobField.id)
+        count: items.filter((item) =>
+            isItemFeaturedForJobField(item, jobField.id)
         ).length,
     }));
-    const scopedFeaturedItems = filterJobField
+    const scopedFeaturedItems = featuredJobField
         ? items
-              .filter(
-                  (item) =>
-                      item.featured &&
-                      getItemJobFields(item).includes(filterJobField)
+              .filter((item) =>
+                  isItemFeaturedForJobField(item, featuredJobField)
               )
-              .sort((a, b) => a.order_idx - b.order_idx)
+              .sort(
+                  (a, b) =>
+                      getItemFeaturedOrder(a, featuredJobField) -
+                      getItemFeaturedOrder(b, featuredJobField)
+              )
         : [];
     const featuredScopeLabel =
-        jobFields.find((jobField) => jobField.id === filterJobField)?.name ??
-        filterJobField;
+        jobFields.find((jobField) => jobField.id === featuredJobField)?.name ??
+        featuredJobField;
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -848,16 +882,33 @@ export default function PortfolioPanel({
                                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                                     포트폴리오
                                 </h2>
-                                <p className="mt-0.5 text-sm text-(--color-muted)">
-                                    {featuredCountsByJobField.length > 0
-                                        ? featuredCountsByJobField
-                                              .map(
-                                                  (jobField) =>
-                                                      `${jobField.name} ${jobField.count}/5`
-                                              )
-                                              .join(" · ")
-                                        : "직무 분야별 Featured 0/5"}
-                                </p>
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="text-sm text-(--color-muted)">
+                                        Featured scope
+                                    </span>
+                                    {featuredCountsByJobField.map(
+                                        (jobField) => (
+                                            <button
+                                                key={jobField.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    setFeaturedJobField(
+                                                        jobField.id
+                                                    )
+                                                }
+                                                className={`rounded-lg px-2.5 py-1 text-xs font-bold whitespace-nowrap transition-colors ${
+                                                    featuredJobField ===
+                                                    jobField.id
+                                                        ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                        : "bg-(--color-surface-subtle) text-(--color-muted) hover:text-(--color-foreground)"
+                                                }`}
+                                            >
+                                                {jobField.emoji} {jobField.name}{" "}
+                                                {jobField.count}/5
+                                            </button>
+                                        )
+                                    )}
+                                </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
@@ -986,7 +1037,7 @@ export default function PortfolioPanel({
             {tab === "portfolio" && (
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     {/* Featured 순서 조정 */}
-                    {filterJobField && scopedFeaturedItems.length > 0 && (
+                    {featuredJobField && scopedFeaturedItems.length > 0 && (
                         <div className="mb-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                             <p className="mb-2 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
                                 Featured 순서 · {featuredScopeLabel} (드래그하여
@@ -1024,12 +1075,13 @@ export default function PortfolioPanel({
                             </div>
                         </div>
                     )}
-                    {!filterJobField && items.some((item) => item.featured) && (
-                        <p className="mb-4 text-sm text-(--color-muted)">
-                            직무 분야를 선택하면 해당 분야의 Featured 순서를
-                            조정할 수 있습니다.
-                        </p>
-                    )}
+                    {!featuredJobField &&
+                        items.some((item) => item.featured) && (
+                            <p className="mb-4 text-sm text-(--color-muted)">
+                                Featured scope를 선택하면 해당 분야의 Featured
+                                순서를 조정할 수 있습니다.
+                            </p>
+                        )}
 
                     {/* 배치 액션 바 */}
                     {someSelected && (
@@ -1118,6 +1170,17 @@ export default function PortfolioPanel({
                                 const hasJobField =
                                     !!jf &&
                                     (Array.isArray(jf) ? jf.length > 0 : true);
+                                const featuredJobFieldIds = getItemJobFields(
+                                    item
+                                ).filter((jobField) =>
+                                    isItemFeaturedForJobField(item, jobField)
+                                );
+                                const featuredInScope =
+                                    !!featuredJobField &&
+                                    isItemFeaturedForJobField(
+                                        item,
+                                        featuredJobField
+                                    );
                                 const tags = item.tags ?? [];
                                 const stateCount = stateCounts[item.slug] ?? 0;
                                 const reviewStatus = getPortfolioReview(
@@ -1163,11 +1226,22 @@ export default function PortfolioPanel({
                                         />
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                {item.featured && (
-                                                    <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
-                                                        <Star size={10} />{" "}
-                                                        Featured
-                                                    </span>
+                                                {featuredJobFieldIds.map(
+                                                    (jobField) => (
+                                                        <span
+                                                            key={jobField}
+                                                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400"
+                                                        >
+                                                            <Star size={10} />
+                                                            {jobFields.find(
+                                                                (field) =>
+                                                                    field.id ===
+                                                                    jobField
+                                                            )?.name ??
+                                                                jobField}{" "}
+                                                            Featured
+                                                        </span>
+                                                    )
                                                 )}
                                                 <span
                                                     className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${
@@ -1244,20 +1318,20 @@ export default function PortfolioPanel({
                                                     toggleFeatured(item)
                                                 }
                                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
-                                                    item.featured
+                                                    featuredInScope
                                                         ? "bg-slate-500"
                                                         : "bg-(--color-accent)"
                                                 }`}
                                             >
-                                                {item.featured ? (
+                                                {featuredInScope ? (
                                                     <StarOff size={12} />
                                                 ) : (
                                                     <Star size={12} />
                                                 )}
                                                 <span className="tablet:inline hidden">
-                                                    {item.featured
-                                                        ? "Featured 해제"
-                                                        : "Featured"}
+                                                    {featuredInScope
+                                                        ? `${featuredScopeLabel} Featured 해제`
+                                                        : `${featuredScopeLabel || "직무 분야"} Featured`}
                                                 </span>
                                             </button>
                                             {nextReviewAction ? (

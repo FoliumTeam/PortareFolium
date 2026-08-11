@@ -234,7 +234,7 @@ export async function handleGetSchema(): Promise<unknown> {
                 ],
             },
             v2_content:
-                "Exactly 2 or 3 ## project stories. Each needs ### 배경, ### 내 역할, ### 만든 과정, ### 결과, ### 회고 in that order.",
+                "Exactly 2 or 3 ## sections. Game entries use 목표와 제약, 내 역할, 핵심 구현, 게임 효과; web entries use 배경과 목표, 담당 범위, 실행, 결과와 근거.",
             publication:
                 "New items default to published: false. Incomplete v2 drafts can be saved but cannot be published.",
         },

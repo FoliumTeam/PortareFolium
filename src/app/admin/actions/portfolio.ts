@@ -5,6 +5,7 @@ import { serverClient } from "@/lib/supabase";
 import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
 import {
     getPortfolioValidationMessage,
+    getPortfolioJobFields,
     validatePortfolioForPublish,
 } from "@/lib/portfolio";
 import { normalizeUniqueJobFieldList } from "@/lib/job-field";
@@ -49,11 +50,50 @@ type PortfolioPayload = {
     featured: boolean;
     order_idx: number;
     published: boolean;
-    job_field: string | null;
+    job_field: string[];
     data: Record<string, unknown>;
     meta_title: string | null;
     meta_description: string | null;
     og_image: string | null;
+};
+
+const getFeaturedByJobField = (
+    row: Pick<PortfolioRawRow, "job_field" | "data" | "featured">
+): Record<string, boolean> => {
+    const jobFields = getPortfolioJobFields({
+        slug: "",
+        title: "",
+        job_field: row.job_field,
+        data: row.data,
+    });
+    const stored = row.data?.featuredByJobField as
+        | Record<string, unknown>
+        | undefined;
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+        return Object.fromEntries(
+            jobFields.map((jobField) => [jobField, row.featured === true])
+        );
+    }
+    return Object.fromEntries(
+        jobFields.map((jobField) => [jobField, stored[jobField] === true])
+    );
+};
+
+const getFeaturedOrderByJobField = (
+    row: Pick<PortfolioRawRow, "data" | "order_idx">
+): Record<string, number> => {
+    const stored = row.data?.featuredOrderByJobField as
+        | Record<string, unknown>
+        | undefined;
+    return stored && typeof stored === "object" && !Array.isArray(stored)
+        ? Object.fromEntries(
+              Object.entries(stored).flatMap(([jobField, order]) =>
+                  typeof order === "number" && Number.isFinite(order)
+                      ? [[jobField, order]]
+                      : []
+              )
+          )
+        : {};
 };
 
 // PortfolioPanel 초기 데이터 조회
@@ -161,7 +201,7 @@ export async function savePortfolioItem(
     );
     const persistedPayload = {
         ...reviewedPayload,
-        job_field: payload.job_field ? [payload.job_field] : [],
+        job_field: normalizeUniqueJobFieldList(payload.job_field),
     };
 
     if (editTargetId) {
@@ -322,14 +362,16 @@ export async function setPortfolioPublished(
 export async function setPortfolioFeatured(
     id: string,
     slug: string,
+    jobField: string,
     featured: boolean
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
+    if (!jobField) return { success: false, error: "직무 분야를 선택하세요." };
 
     const { data: target, error: targetError } = await serverClient
         .from("portfolio_items")
-        .select("id, job_field, data")
+        .select("id, job_field, data, featured, order_idx")
         .eq("id", id)
         .single();
     if (targetError || !target) {
@@ -339,58 +381,61 @@ export async function setPortfolioFeatured(
         };
     }
 
-    const targetJobFields = normalizeUniqueJobFieldList(
-        target.job_field ??
-            ((target.data as Record<string, unknown> | null)?.jobField as
-                | string
-                | string[]
-                | null
-                | undefined)
-    );
-    if (featured && targetJobFields.length === 0) {
-        return { success: false, error: "직무 분야를 먼저 지정하세요." };
+    const targetRow = target as PortfolioRawRow;
+    const targetJobFields = getPortfolioJobFields(targetRow);
+    if (!targetJobFields.includes(jobField)) {
+        return {
+            success: false,
+            error: "이 항목에는 선택한 직무 분야가 없습니다.",
+        };
     }
 
     if (featured) {
         const { data: featuredRows, error: featuredError } = await serverClient
             .from("portfolio_items")
-            .select("id, job_field, data")
+            .select("id, job_field, data, featured")
             .eq("featured", true);
         if (featuredError) {
             return { success: false, error: featuredError.message };
         }
-        const occupiedFields = new Map<string, number>();
-        for (const row of featuredRows ?? []) {
-            if (row.id === id) continue;
-            const jobFields = normalizeUniqueJobFieldList(
-                row.job_field ??
-                    ((row.data as Record<string, unknown> | null)?.jobField as
-                        | string
-                        | string[]
-                        | null
-                        | undefined)
-            );
-            for (const jobField of jobFields) {
-                occupiedFields.set(
-                    jobField,
-                    (occupiedFields.get(jobField) ?? 0) + 1
-                );
-            }
-        }
-        const fullJobField = targetJobFields.find(
-            (jobField) => (occupiedFields.get(jobField) ?? 0) >= 5
-        );
-        if (fullJobField) {
+        const occupied = (featuredRows ?? []).filter(
+            (candidate) =>
+                candidate.id !== id &&
+                getFeaturedByJobField(candidate as PortfolioRawRow)[jobField]
+        ).length;
+        if (occupied >= 5) {
             return {
                 success: false,
-                error: `${fullJobField} Featured 항목은 최대 5개까지 설정할 수 있습니다.`,
+                error: `${jobField} Featured 항목은 최대 5개까지 설정할 수 있습니다.`,
             };
         }
     }
 
+    const nextFeaturedByJobField = {
+        ...getFeaturedByJobField(targetRow),
+        [jobField]: featured,
+    };
+    const nextFeaturedOrderByJobField = {
+        ...getFeaturedOrderByJobField(targetRow),
+        ...(featured &&
+        getFeaturedOrderByJobField(targetRow)[jobField] === undefined
+            ? {
+                  [jobField]: targetRow.order_idx ?? 0,
+              }
+            : {}),
+    };
+    const nextData = {
+        ...(targetRow.data ?? {}),
+        featuredByJobField: nextFeaturedByJobField,
+        featuredOrderByJobField: nextFeaturedOrderByJobField,
+    };
+
     const { error } = await serverClient
         .from("portfolio_items")
-        .update({ featured })
+        .update({
+            featured: Object.values(nextFeaturedByJobField).some(Boolean),
+            data: nextData,
+        })
         .eq("id", id);
     if (error) return { success: false, error: error.message };
     await revalidatePortfolioItem(slug);
@@ -411,22 +456,14 @@ export async function reorderFeaturedPortfolioItems(
 
     const { data: featuredRows, error: featuredError } = await serverClient
         .from("portfolio_items")
-        .select("id, slug, featured, job_field, data")
+        .select("id, slug, featured, job_field, data, order_idx")
         .in("id", ids);
     if (featuredError) return { success: false, error: featuredError.message };
     if (
         (featuredRows ?? []).length !== ids.length ||
-        (featuredRows ?? []).some((row) => {
-            const jobFields = normalizeUniqueJobFieldList(
-                row.job_field ??
-                    ((row.data as Record<string, unknown> | null)?.jobField as
-                        | string
-                        | string[]
-                        | null
-                        | undefined)
-            );
-            return row.featured !== true || !jobFields.includes(jobField);
-        })
+        (featuredRows ?? []).some(
+            (row) => !getFeaturedByJobField(row as PortfolioRawRow)[jobField]
+        )
     ) {
         return {
             success: false,
@@ -439,12 +476,20 @@ export async function reorderFeaturedPortfolioItems(
 
     // 업데이트 병렬 실행
     const results = await Promise.all(
-        updates.map(({ id, order_idx }) =>
-            serverClient!
+        updates.map(({ id, order_idx }) => {
+            const row = (featuredRows ?? []).find((entry) => entry.id === id);
+            const nextData = {
+                ...(row?.data ?? {}),
+                featuredOrderByJobField: {
+                    ...getFeaturedOrderByJobField(row as PortfolioRawRow),
+                    [jobField]: order_idx,
+                },
+            };
+            return serverClient!
                 .from("portfolio_items")
-                .update({ order_idx })
-                .eq("id", id)
-        )
+                .update({ data: nextData })
+                .eq("id", id);
+        })
     );
     const firstError = results.find((r) => r.error)?.error;
     if (firstError) return { success: false, error: firstError.message };

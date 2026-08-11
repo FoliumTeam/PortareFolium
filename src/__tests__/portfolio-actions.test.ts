@@ -134,27 +134,23 @@ import {
 import { getPortfolioReview } from "@/lib/portfolio-review";
 
 const content = `## Rendering
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
+### 게임 효과
 Result
-### 회고
-Reflection
 ## Performance
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
-Result
-### 회고
-Reflection`;
+### 게임 효과
+Result`;
 
 const validData = {
     caseStudyVersion: 2,
@@ -284,8 +280,8 @@ describe("portfolio server publication paths", () => {
             createRow("game", "game", validData),
         ];
 
-        const web = await setPortfolioFeatured("web", "web", true);
-        const game = await setPortfolioFeatured("game", "game", true);
+        const web = await setPortfolioFeatured("web", "web", "web", true);
+        const game = await setPortfolioFeatured("game", "game", "game", true);
 
         expect(web.success).toBe(true);
         expect(game.success).toBe(false);
@@ -295,6 +291,31 @@ describe("portfolio server publication paths", () => {
         expect(
             database.state.rows.find((row) => row.id === "game")?.featured
         ).toBe(false);
+    });
+
+    it("한 항목의 web Featured가 game Featured 정원에 영향을 주지 않음", async () => {
+        database.state.rows = [
+            ...Array.from({ length: 5 }, (_, index) => ({
+                ...createRow(`game-${index}`, `game-${index}`, validData),
+                featured: true,
+                job_field: ["game"],
+            })),
+            {
+                ...createRow("maple", "maple", validData),
+                job_field: ["web", "game"],
+                data: { ...validData, jobField: ["web", "game"] },
+            },
+        ];
+
+        const web = await setPortfolioFeatured("maple", "maple", "web", true);
+        const game = await setPortfolioFeatured("maple", "maple", "game", true);
+        const maple = database.state.rows.find((row) => row.id === "maple");
+
+        expect(web.success).toBe(true);
+        expect(game.success).toBe(false);
+        expect(
+            (maple?.data as Record<string, unknown>).featuredByJobField
+        ).toEqual({ web: true, game: false });
     });
 
     it("Featured 순서는 선택한 직무 분야 안에서만 변경", async () => {

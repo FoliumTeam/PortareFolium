@@ -34,28 +34,24 @@ const createRow = (
 });
 
 const validContent = `## Rendering
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
+### 게임 효과
 Result
-### 회고
-Reflection
 
 ## Performance
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
-Result
-### 회고
-Reflection`;
+### 게임 효과
+Result`;
 
 const validV2Data = {
     caseStudyVersion: 2,
@@ -81,9 +77,12 @@ describe("portfolio domain", () => {
     it("기존 Deep Dive heading을 포트폴리오 서사 heading으로 표시", () => {
         expect(
             normalizePortfolioCaseStudyContent(
-                "### Problem\n### Decision\n### Implementation\n### Result\n### Trade-off"
+                "### Problem\n### Decision\n### Implementation\n### Result\n### Trade-off",
+                "web"
             )
-        ).toBe("### 배경\n### 내 역할\n### 만든 과정\n### 결과\n### 회고");
+        ).toBe(
+            "### 배경과 목표\n### 담당 범위\n### 실행\n### 결과와 근거\n### 다음 단계"
+        );
     });
 
     it("legacy와 malformed v2를 예외 없이 정규화", () => {
@@ -143,7 +142,7 @@ describe("portfolio domain", () => {
             "z-last",
         ]);
         expect(groups.other.map((project) => project.slug)).toEqual(["other"]);
-        expect(projects[0].jobField).toBe("game");
+        expect(projects[0].jobField).toEqual(["game", "web"]);
     });
 
     it("HTTPS link와 same-origin relative URL만 허용하고 media host를 제한", () => {

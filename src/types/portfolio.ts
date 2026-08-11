@@ -38,6 +38,10 @@ export type PortfolioCredit = {
     url?: string;
 };
 
+export type PortfolioCaseStudyStyle = "game" | "web";
+export type PortfolioFeaturedByJobField = Record<string, boolean>;
+export type PortfolioFeaturedOrderByJobField = Record<string, number>;
+
 export type PortfolioDataV2 = {
     caseStudyVersion: 2;
     oneLinePitch: string;
@@ -49,6 +53,9 @@ export type PortfolioDataV2 = {
     links: PortfolioLink[];
     devlogs: PortfolioDevlog[];
     credits: PortfolioCredit[];
+    caseStudyStyle?: PortfolioCaseStudyStyle;
+    featuredByJobField?: PortfolioFeaturedByJobField;
+    featuredOrderByJobField?: PortfolioFeaturedOrderByJobField;
 };
 
 export const KNOWN_PORTFOLIO_DATA_KEYS = [
@@ -73,9 +80,18 @@ export const KNOWN_PORTFOLIO_DATA_KEYS = [
     "engine",
     "platforms",
     "credits",
+    "caseStudyStyle",
+    "featuredByJobField",
+    "featuredOrderByJobField",
 ] as const;
 
-export const PRESERVED_LEGACY_DATA_KEYS = ["badges", "keywords"] as const;
+export const PRESERVED_LEGACY_DATA_KEYS = [
+    "badges",
+    "keywords",
+    "caseStudyStyle",
+    "featuredByJobField",
+    "featuredOrderByJobField",
+] as const;
 
 export const EDITABLE_PORTFOLIO_DATA_KEYS = KNOWN_PORTFOLIO_DATA_KEYS.filter(
     (key) =>
@@ -122,10 +138,13 @@ export type PortfolioProject = {
     public: boolean;
     published: boolean;
     featured: boolean;
+    featuredByJobField: PortfolioFeaturedByJobField;
+    featuredOrderByJobField: PortfolioFeaturedOrderByJobField;
     orderIdx: number | null;
     jobField: string | string[];
     badges: { text: string }[];
     caseStudyVersion: 1 | 2;
+    caseStudyStyle: PortfolioCaseStudyStyle;
     oneLinePitch: string;
     engine: string;
     platforms: string[];

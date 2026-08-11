@@ -17,6 +17,7 @@ import { getCachedMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import {
     extractLegacyPortfolioGallery,
+    getPortfolioCaseStudyStyle,
     matchesPortfolioJobField,
     normalizePortfolioCaseStudyContent,
     normalizePortfolioProject,
@@ -140,7 +141,10 @@ export async function PortfolioDetailContent({
     const contentHtml = await getCachedMarkdown(
         slug,
         isV2
-            ? normalizePortfolioCaseStudyContent(project.content)
+            ? normalizePortfolioCaseStudyContent(
+                  project.content,
+                  getPortfolioCaseStudyStyle(item as PortfolioRawRow)
+              )
             : project.content
     );
     const tocEntries = extractTocFromHtml(contentHtml);

@@ -174,7 +174,8 @@ export default async function HomePage() {
                     )
                     .filter((project) =>
                         matchesPortfolioJobField(project, activeJobField)
-                    )
+                    ),
+                activeJobField
             ).selected.slice(0, PORTFOLIO_PROJ_MAX_NUM);
         }
     }

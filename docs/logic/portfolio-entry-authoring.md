@@ -16,7 +16,7 @@ Recruiter가 다음 내용을 순서대로 빠르게 확인할 수 있어야 한
 6. 중요한 문제를 어떻게 해결했는지: 2~3개의 Deep Dive
 7. 협업 프로젝트라면 누구와 함께했는지: credits
 
-Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → evidence gallery → Deep Dive → devlogs → credits다. `featured: true`인 Published entry는 Selected Work에, 나머지는 Other Work에 표시된다. 각 그룹에서는 `order_idx`가 낮은 entry가 먼저 표시된다.
+Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → evidence gallery → case study → devlogs → credits다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
 
 ## 2. 작성 전에 준비할 context packet
 
@@ -67,11 +67,8 @@ Public page의 주요 section 순서는 hero → project facts → ownership →
 
 서로 다른 2개, 최대 3개의 프로젝트 전환점을 고른다. 각 후보마다 다음 질문에 답할 수 있어야 한다.
 
-- 배경: 무엇을 만들었고, 어떤 상황에서 시작했는가
-- 내 역할: 내가 책임진 범위와 협업 경계는 무엇인가
-- 만든 과정: 중요한 선택과 시행착오가 결과에 어떻게 이어졌는가
-- 결과: 무엇으로 성공 여부를 확인했는가
-- 회고: 다음에는 무엇을 더 잘할 수 있는가
+- game: 목표와 제약, 내 역할, 핵심 구현, 게임 효과를 한 가지 플레이 경험에 연결한다
+- web: 배경과 목표, 담당 범위, 실행, 결과와 근거를 한 가지 업무 성과에 연결한다
 
 긴 개발 일지를 요약하는 것이 아니라, 내가 만든 변화와 배운 점을 보여주는 것이 목적이다.
 
@@ -196,69 +193,33 @@ Admin image uploader는 `portfolio/<slug>/` 아래에 image를 저장하며 현�
 
 `links.kind`는 `demo`, `play`, `release`, `source` 중 하나다. Link URL은 `/`로 시작하는 same-origin relative URL 또는 HTTPS URL만 허용한다. Media URL은 relative URL 또는 `R2_PUBLIC_URL`과 hostname이 같은 HTTPS URL만 허용한다. URL 최대 길이는 2048자다. Image에는 `poster`를 넣지 않고 video에는 반드시 `poster`를 넣는다.
 
-## 4. Deep Dive MDX contract
+## 4. 직무 분야별 사례 구조
 
-`content`에는 정확히 2개 또는 3개의 level-2 heading만 사용한다. 각 `##` section은 하나의 프로젝트 이야기로 계산되므로 서론·결론에 별도의 `##`를 만들지 않는다.
+`content`에는 정확히 2개 또는 3개의 level-2 heading만 사용한다. 각 `##` section은 한 가지 핵심 주장으로 계산되므로 서론·결론에 별도의 `##`를 만들지 않는다.
 
-각 프로젝트 이야기 안에는 아래 level-3 heading이 같은 순서로 모두 존재해야 한다.
+### Game portfolio
 
-1. `### 배경`
+Unreal portfolio 형식은 game 항목에만 사용한다. 각 사례는 완성된 게임 경험을 먼저 설명하고, 다음 네 heading을 같은 순서로 둔다.
+
+1. `### 목표와 제약`
 2. `### 내 역할`
-3. `### 만든 과정`
-4. `### 결과`
-5. `### 회고`
+3. `### 핵심 구현`
+4. `### 게임 효과`
 
-복사 가능한 template:
+`목표와 제약`에는 플레이어 경험과 실제 제약을, `내 역할`에는 개인 책임을 쓴다. `핵심 구현`은 필요한 판단만 남기고, `게임 효과`는 시연·빌드·검증 기록으로 확인한 변화를 쓴다.
 
-````mdx
-## [프로젝트의 전환점 1]
+### Web portfolio
 
-### 배경
+Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달한다. 다음 네 heading을 같은 순서로 둔다.
 
-[무엇을 만들었고, 어떤 상황에서 시작했는지 2~4문장]
+1. `### 배경과 목표`
+2. `### 담당 범위`
+3. `### 실행`
+4. `### 결과와 근거`
 
-### 내 역할
+`결과와 근거`에는 배포물, 운영 기록, 측정값, 승인 또는 재현 방법처럼 사실을 확인할 수 있는 근거만 쓴다. 확인되지 않은 수치, 팀 전체 성과의 개인화, 장황한 개발 일지는 넣지 않는다.
 
-[내가 책임진 범위와 협업 경계]
-
-### 만든 과정
-
-[중요한 선택, 시행착오, 구현 과정]
-
-```text
-[의사결정을 이해하는 데 꼭 필요한 10~30줄의 code 또는 pseudocode]
-```
-
-### 결과
-
-[검증 방법, 전후 비교, 측정값 또는 release 결과]
-
-### 회고
-
-[다음에 더 잘할 수 있는 점]
-
-## [프로젝트의 전환점 2]
-
-### 배경
-
-[시작점]
-
-### 내 역할
-
-[기여 범위]
-
-### 만든 과정
-
-[과정]
-
-### 결과
-
-[검증 결과]
-
-### 회고
-
-[다음 단계]
-````
+공통 규칙: code는 구현량을 보여주기 위해 길게 붙이지 않는다. 책임과 결과를 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
 Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
@@ -273,7 +234,7 @@ Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결�
     "description": "근접 전투의 입력 반응성과 animation state 안정성을 검증한 팀 프로젝트",
     "tags": ["Unreal Engine 5", "C++", "Gameplay Ability System"],
     "thumbnail": "/portfolio/arena-combat-prototype/hero.webp",
-    "content": "## Combat state authority\n\n### 배경\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 만든 과정\n\n[...]\n\n### 결과\n\n[...]\n\n### 회고\n\n[...]\n\n## Hit detection timing\n\n### 배경\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 만든 과정\n\n[...]\n\n### 결과\n\n[...]\n\n### 회고\n\n[...]",
+    "content": "## Combat state authority\n\n### 목표와 제약\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 핵심 구현\n\n[...]\n\n### 게임 효과\n\n[...]\n\n## Hit detection timing\n\n### 목표와 제약\n\n[...]\n\n### 내 역할\n\n[...]\n\n### 핵심 구현\n\n[...]\n\n### 게임 효과\n\n[...]",
     "featured": true,
     "order_idx": 0,
     "published": false,
@@ -434,19 +395,19 @@ MCP patch 규칙:
 
 ## 9. Common validation failures
 
-| Error 의미                | 확인할 부분                                                      |
-| ------------------------- | ---------------------------------------------------------------- |
-| 한 줄 소개 필요           | `data.oneLinePitch`가 비어 있거나 180자 이후 잘렸는지 확인       |
-| Engine 정보 필요          | `data.engine` 확인                                               |
-| Platform 필요             | `data.platforms`가 non-empty string array인지 확인               |
-| 개인 기여 필요            | `data.ownership`에 구체적 책임 최소 1개 추가                     |
-| 검증 가능한 결과 필요     | `data.outcomes[].result`가 비어 있지 않은지 확인                 |
-| 대표 media 필요           | valid gallery 첫 항목 또는 thumbnail 추가                        |
-| Credit 필요               | team size를 정확히 입력하거나 collaborator credit 추가           |
-| Gallery invalid           | media URL host, video poster, image poster 금지, alt 확인        |
-| Deep Dive 개수 오류       | content의 모든 `##` heading을 확인. 정확히 2~3개만 유지          |
-| 프로젝트 이야기 순서 오류 | 각 section의 `배경 → 내 역할 → 만든 과정 → 결과 → 회고` 확인     |
-| MDX parse 오류            | 닫히지 않은 JSX/code fence, `<` 문자, 잘못된 MDX expression 확인 |
+| Error 의미            | 확인할 부분                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 한 줄 소개 필요       | `data.oneLinePitch`가 비어 있거나 180자 이후 잘렸는지 확인                                                        |
+| Engine 정보 필요      | `data.engine` 확인                                                                                                |
+| Platform 필요         | `data.platforms`가 non-empty string array인지 확인                                                                |
+| 개인 기여 필요        | `data.ownership`에 구체적 책임 최소 1개 추가                                                                      |
+| 검증 가능한 결과 필요 | `data.outcomes[].result`가 비어 있지 않은지 확인                                                                  |
+| 대표 media 필요       | valid gallery 첫 항목 또는 thumbnail 추가                                                                         |
+| Credit 필요           | team size를 정확히 입력하거나 collaborator credit 추가                                                            |
+| Gallery invalid       | media URL host, video poster, image poster 금지, alt 확인                                                         |
+| Deep Dive 개수 오류   | content의 모든 `##` heading을 확인. 정확히 2~3개만 유지                                                           |
+| 사례 순서 오류        | game은 `목표와 제약 → 내 역할 → 핵심 구현 → 게임 효과`, web은 `배경과 목표 → 담당 범위 → 실행 → 결과와 근거` 확인 |
+| MDX parse 오류        | 닫히지 않은 JSX/code fence, `<` 문자, 잘못된 MDX expression 확인                                                  |
 
 ## 10. When application code must change
 

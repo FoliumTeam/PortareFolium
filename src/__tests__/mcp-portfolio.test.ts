@@ -7,28 +7,24 @@ import {
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const content = `## Rendering
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
+### 게임 효과
 Result
-### 회고
-Reflection
 
 ## Performance
-### 배경
-Background
+### 목표와 제약
+Goal
 ### 내 역할
 Contribution
-### 만든 과정
+### 핵심 구현
 Build
-### 결과
-Result
-### 회고
-Reflection`;
+### 게임 효과
+Result`;
 
 const current: PortfolioRawRow = {
     slug: "project",
@@ -177,6 +173,6 @@ describe("MCP portfolio contract", () => {
         };
         expect(schema.portfolio_items.data).toHaveProperty("caseStudyVersion");
         expect(schema.portfolio_items.data).toHaveProperty("gallery");
-        expect(schema.portfolio_items.v2_content).toContain("### 회고");
+        expect(schema.portfolio_items.v2_content).toContain("목표와 제약");
     });
 });
