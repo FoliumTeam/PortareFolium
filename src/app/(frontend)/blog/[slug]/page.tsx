@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
     getPost,
     getPostMeta,
@@ -18,6 +18,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { isGifUrl } from "@/lib/image-url";
+import { matchesJobField } from "@/lib/job-field";
 
 export const revalidate = false;
 export const dynamicParams = true;
@@ -45,14 +46,29 @@ export async function generateMetadata({
     };
 }
 
-export default async function BlogPostPage({
-    params,
-}: {
-    params: Promise<{ slug: string }>;
-}) {
-    const { slug } = await params;
+type BlogPostContentProps = {
+    slug: string;
+    jobField?: string;
+    blogBasePath?: string;
+};
+
+export async function BlogPostContent({
+    slug,
+    jobField,
+    blogBasePath = "/blog",
+}: BlogPostContentProps) {
     const post = await getPost(slug);
-    if (!post) redirect("/blog");
+    if (!post) redirect(blogBasePath);
+    if (
+        jobField &&
+        (!post.published ||
+            !matchesJobField(
+                post.job_field as string | string[] | undefined,
+                jobField
+            ))
+    ) {
+        notFound();
+    }
 
     const tagsData = await getTags();
     const slugToTagName = new Map(tagsData.map((t) => [t.slug, t.name]));
@@ -91,7 +107,7 @@ export default async function BlogPostPage({
                 className={`min-w-0 flex-1 ${hasRightToc ? "max-w-3xl" : ""}`}
             >
                 <Link
-                    href="/blog"
+                    href={blogBasePath}
                     className="mb-8 inline-flex items-center gap-2 rounded-xl border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
@@ -146,7 +162,7 @@ export default async function BlogPostPage({
                                     {tagDisplay.map((t) => (
                                         <Link
                                             key={t.slug}
-                                            href={`/blog?tag=${encodeURIComponent(t.slug)}`}
+                                            href={`${blogBasePath}?tag=${encodeURIComponent(t.slug)}`}
                                             className="rounded-lg bg-(--color-tag-bg) px-3 py-1 text-xs font-medium text-(--color-tag-fg) transition-opacity hover:opacity-80"
                                             style={
                                                 t.color
@@ -185,4 +201,12 @@ export default async function BlogPostPage({
             <ImageLightbox contentSelector=".post-content" />
         </div>
     );
+}
+
+export default async function BlogPostPage({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}) {
+    return <BlogPostContent slug={(await params).slug} />;
 }

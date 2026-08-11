@@ -1,0 +1,19 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { BlogListContent } from "../../blog/page";
+import { sanitizePublicJobField } from "@/lib/public-job-field";
+
+type PageProps = {
+    params: Promise<{ jobField: string }>;
+};
+
+export const metadata: Metadata = {
+    title: "Blog",
+    description: "직무별 기술 블로그",
+};
+
+export default async function JobFieldBlogPage({ params }: PageProps) {
+    const jobField = sanitizePublicJobField((await params).jobField);
+    if (jobField !== "web" && jobField !== "game") notFound();
+    return <BlogListContent jobFieldOverride={jobField} />;
+}

@@ -3,6 +3,7 @@ import { isAdminSession } from "@/lib/admin-auth";
 import { getEffectiveAdminSession } from "@/lib/server-admin";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
+import ProfileSelectionPage from "@/components/ProfileSelectionPage";
 import { serverClient } from "@/lib/supabase";
 import {
     matchesPortfolioJobField,
@@ -252,5 +253,5 @@ export async function PortfolioPageContent({
 }
 
 export default async function PortfolioPage() {
-    return <PortfolioPageContent />;
+    return <ProfileSelectionPage content="portfolio" />;
 }

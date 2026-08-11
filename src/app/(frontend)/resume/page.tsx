@@ -6,6 +6,7 @@ import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import PdfExportButton from "@/components/PdfExportButton";
+import ProfileSelectionPage from "@/components/ProfileSelectionPage";
 import { createJobFieldResumeView } from "@/lib/resume-job-field";
 import type { AboutData } from "@/types/about";
 import {
@@ -162,5 +163,5 @@ export async function ResumePageContent({
 }
 
 export default async function ResumePage() {
-    return <ResumePageContent />;
+    return <ProfileSelectionPage content="resume" />;
 }
