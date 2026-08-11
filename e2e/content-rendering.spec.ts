@@ -123,9 +123,9 @@ test.describe("콘텐츠 렌더링", () => {
 
     test.beforeAll(async ({ browser }) => {
         const page = await browser.newPage();
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         await page.waitForLoadState("domcontentloaded");
-        const firstLink = page.locator('a[href^="/blog/"]').first();
+        const firstLink = page.locator('a[href^="/web/blog/"]').first();
         await expect(firstLink).toBeVisible({ timeout: 10_000 });
         const href = await firstLink.getAttribute("href").catch(() => null);
         blogSlug = href;

@@ -14,10 +14,10 @@ test("Portfolio 카드 전체 클릭으로 프로젝트 기록에 이동하고 k
     page,
 }) => {
     const runtimeErrors = trackRuntimeErrors(page);
-    await page.goto("/portfolio", { waitUntil: "networkidle" });
+    await page.goto("/web/portfolio", { waitUntil: "networkidle" });
 
     await expect(
-        page.getByRole("heading", { name: "Portfolio" })
+        page.getByRole("heading", { level: 1, name: "Portfolio" })
     ).toBeVisible();
     const projectRecord = page
         .getByRole("link", { name: /프로젝트 기록 보기$/ })
@@ -31,7 +31,7 @@ test("Portfolio 카드 전체 클릭으로 프로젝트 기록에 이동하고 k
     expect(focusVisible).toBe(true);
 
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/portfolio\/[^/]+$/);
+    await expect(page).toHaveURL(/\/web\/portfolio\/[^/]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(runtimeErrors).toEqual([]);
 });
@@ -40,7 +40,7 @@ test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 legacy �
     page,
 }) => {
     const runtimeErrors = trackRuntimeErrors(page);
-    await page.goto("/portfolio", { waitUntil: "networkidle" });
+    await page.goto("/web/portfolio", { waitUntil: "networkidle" });
     const href = await page
         .getByRole("link", { name: /프로젝트 기록 보기$/ })
         .first()

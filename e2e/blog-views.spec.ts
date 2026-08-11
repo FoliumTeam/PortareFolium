@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Blog view toggle", () => {
     test("toggle 버튼 존재 확인", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         // auth 확인 후 렌더링되므로 대기 필요
         const listBtn = page.locator('button[aria-label="List view"]');
         const blockBtn = page.locator('button[aria-label="Block view"]');
@@ -13,7 +13,7 @@ test.describe("Blog view toggle", () => {
     });
 
     test("block 모드 전환 시 grid 레이아웃 표시", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         // auth 확인 후 렌더링 대기
         const blockBtn = page.locator(
             'button[aria-label="Block view"]:visible'
@@ -25,7 +25,7 @@ test.describe("Blog view toggle", () => {
     });
 
     test("list 모드 전환 시 list 레이아웃 표시", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         // auth 확인 후 렌더링 대기
         const blockBtn = page.locator(
             'button[aria-label="Block view"]:visible'
@@ -41,7 +41,7 @@ test.describe("Blog view toggle", () => {
 
 test.describe("Blog search", () => {
     test("search input 존재 확인", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         const searchInput = page.locator(
             'input[placeholder="블로그 포스트 검색..."]:visible'
         );
@@ -49,7 +49,7 @@ test.describe("Blog search", () => {
     });
 
     test("검색 입력 시 필터링 동작", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         const searchInput = page
             .locator('input[placeholder="블로그 포스트 검색..."]:visible')
             .first();
@@ -63,7 +63,7 @@ test.describe("Blog search", () => {
 
 test.describe("Blog pagination", () => {
     test("pagination nav 조건부 표시", async ({ page }) => {
-        await page.goto("/blog");
+        await page.goto("/web/blog");
         // pagination은 포스트 12개 초과 시에만 표시
         const paginationNav = page.locator('nav[aria-label="Pagination"]');
         const exists = await paginationNav.isVisible().catch(() => false);

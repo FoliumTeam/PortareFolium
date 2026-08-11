@@ -42,21 +42,21 @@ for (const vp of viewports) {
 
         test("Resume 페이지 렌더링", async ({ page }) => {
             const runtimeErrors = trackRuntimeErrors(page);
-            await page.goto("/resume", { waitUntil: "domcontentloaded" });
+            await page.goto("/web/resume", { waitUntil: "domcontentloaded" });
             await expectNoHorizontalOverflow(page);
             expect(runtimeErrors).toEqual([]);
         });
 
         test("Portfolio 페이지 렌더링", async ({ page }) => {
             const runtimeErrors = trackRuntimeErrors(page);
-            await page.goto("/portfolio", { waitUntil: "networkidle" });
+            await page.goto("/web/portfolio", { waitUntil: "networkidle" });
             await expectNoHorizontalOverflow(page);
             expect(runtimeErrors).toEqual([]);
         });
 
         test("Portfolio 상세 페이지 렌더링", async ({ page }) => {
             const runtimeErrors = trackRuntimeErrors(page);
-            await page.goto("/portfolio", { waitUntil: "networkidle" });
+            await page.goto("/web/portfolio", { waitUntil: "networkidle" });
             const firstCaseStudy = page
                 .getByRole("link", {
                     name: /프로젝트 기록 보기$/,
@@ -64,7 +64,7 @@ for (const vp of viewports) {
                 .first();
             await expect(firstCaseStudy).toBeVisible();
             const href = await firstCaseStudy.getAttribute("href");
-            expect(href).toMatch(/^\/portfolio\//);
+            expect(href).toMatch(/^\/web\/portfolio\//);
             await page.goto(href!, { waitUntil: "domcontentloaded" });
             await expectNoHorizontalOverflow(page);
             expect(runtimeErrors).toEqual([]);

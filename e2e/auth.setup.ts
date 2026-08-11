@@ -41,12 +41,12 @@ setup("Admin 로그인 + storageState 저장", async ({ page }) => {
     });
 
     // authenticated route 사전 컴파일
-    await page.goto("/resume", { waitUntil: "load" });
+    await page.goto("/web/resume", { waitUntil: "load" });
     await expect(
         page.getByRole("button", { name: /pdf 내보내기/i })
     ).toBeVisible({ timeout: 15_000 });
 
-    await page.goto("/portfolio", { waitUntil: "load" });
+    await page.goto("/web/portfolio", { waitUntil: "load" });
     await expect(
         page.getByRole("button", { name: /pdf 내보내기/i })
     ).toBeVisible({ timeout: 15_000 });

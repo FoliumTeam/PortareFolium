@@ -41,7 +41,7 @@ async function openPdfModal(page: Page) {
 test.describe("PDF Export — Resume", () => {
     test("PDF 내보내기 버튼 표시 (인증 상태)", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         const exportBtn = page.getByRole("button", { name: /pdf 내보내기/i });
         await expect(exportBtn).toBeVisible({ timeout: 10_000 });
         expect(runtimeErrors).toEqual([]);
@@ -49,7 +49,7 @@ test.describe("PDF Export — Resume", () => {
 
     test("PDF 프리뷰 모달 열림 + 기본 UI 확인", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         const { dialogHeading } = await openPdfModal(page);
 
         // 모달 사이드바 표시
@@ -71,7 +71,7 @@ test.describe("PDF Export — Resume", () => {
 
     test("페이지 구분선 존재", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         await openPdfModal(page);
 
         // 로딩 완료 대기
@@ -88,7 +88,7 @@ test.describe("PDF Export — Resume", () => {
 
     test("컬러 스킴 변경 시 페이지 수 유지", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         await openPdfModal(page);
         await page.waitForTimeout(1500);
 
@@ -114,7 +114,7 @@ test.describe("PDF Export — Resume", () => {
 
     test("프로젝트 카드 grid 2열 레이아웃 유지", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         await openPdfModal(page);
         await page.waitForTimeout(1500);
 
@@ -133,7 +133,7 @@ test.describe("PDF Export — Resume", () => {
 
     test("ESC 키로 모달 닫기", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/resume", { waitUntil: "load" });
+        await page.goto("/web/resume", { waitUntil: "load" });
         const { dialogHeading } = await openPdfModal(page);
 
         await page.keyboard.press("Escape");
@@ -147,7 +147,7 @@ test.describe("PDF Export — Resume", () => {
 test.describe("PDF Export — Portfolio", () => {
     test("PDF 내보내기 버튼 표시 + 모달 열림", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
-        await page.goto("/portfolio", { waitUntil: "load" });
+        await page.goto("/web/portfolio", { waitUntil: "load" });
         await openPdfModal(page);
 
         // 페이지 수 표시
