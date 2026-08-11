@@ -132,7 +132,7 @@ export function createJobFieldResumeView(
         basics,
         work: filterResumeSection(resume.work, jobField),
         projects: filterResumeSection(resume.projects, jobField),
-        careerPhases: filterResumeSection(resume.careerPhases, jobField),
+        careerPhases: jobField === "game" ? resume.careerPhases : undefined,
         skills: filterResumeSkills(resume.skills, jobField),
         coreCompetencies: filterCoreCompetencies(
             resume.coreCompetencies,

@@ -308,14 +308,37 @@ describe("createJobFieldResumeView", () => {
         expect(result.projects?.entries.map((item) => item.name)).toEqual([
             "Web project",
         ]);
-        expect(result.careerPhases?.entries.map((item) => item.name)).toEqual([
-            "Web phase",
-        ]);
+        expect(result.careerPhases).toBeUndefined();
         expect(
             result.skills?.entries[0]?.keywords?.map((item) => item.name)
         ).toEqual(["React"]);
         expect(
             result.coreCompetencies?.entries.map((item) => item.title)
         ).toEqual(["Web core"]);
+    });
+
+    it("game mode에서 웹 경력과 게임 전환 단계를 함께 유지", () => {
+        const result = createJobFieldResumeView(
+            {
+                careerPhases: {
+                    emoji: "🧭",
+                    showEmoji: true,
+                    entries: [
+                        { phase: 1, name: "Web phase", jobField: "web" },
+                        {
+                            phase: 2,
+                            name: "Game phase",
+                            jobField: "game",
+                        },
+                    ],
+                },
+            },
+            "game"
+        );
+
+        expect(result.careerPhases?.entries.map((item) => item.name)).toEqual([
+            "Web phase",
+            "Game phase",
+        ]);
     });
 });
