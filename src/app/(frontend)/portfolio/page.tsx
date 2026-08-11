@@ -147,7 +147,7 @@ export async function PortfolioPageContent({
                             className="inline-flex items-center gap-2 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                             <FileText className="h-4 w-4" aria-hidden="true" />
-                            Resume
+                            이력서
                         </Link>
                         {githubUrl && (
                             <a

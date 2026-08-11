@@ -86,8 +86,8 @@ export default async function ProjectsSection({
                             {project.portfolioSlug ? (
                                 <a
                                     href={`${portfolioBasePath}/${project.portfolioSlug}`}
-                                    className="absolute inset-0 z-0"
-                                    aria-label={project.name ?? ""}
+                                    className="absolute inset-0 z-10 rounded-lg focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-surface) focus-visible:outline-none"
+                                    aria-label={`${project.name ?? "프로젝트"} 프로젝트 기록 보기`}
                                 />
                             ) : null}
                             {/* Thumbnail */}
@@ -107,8 +107,11 @@ export default async function ProjectsSection({
                             <div className="flex flex-1 flex-col p-4">
                                 {/* Name */}
                                 {project.name ? (
-                                    <h3 className="relative z-10 m-0 mb-1.5 text-base leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                        {project.url ? (
+                                    <h3
+                                        className={`${project.url && !project.portfolioSlug ? "relative z-20" : ""}m-0 mb-1.5 text-base leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)`}
+                                    >
+                                        {project.url &&
+                                        !project.portfolioSlug ? (
                                             <a
                                                 href={project.url}
                                                 target="_blank"
@@ -124,7 +127,7 @@ export default async function ProjectsSection({
                                 ) : null}
                                 {/* Tags from portfolio */}
                                 {pfTags && pfTags.length > 0 ? (
-                                    <div className="relative z-10 mb-2 flex flex-wrap gap-1">
+                                    <div className="mb-2 flex flex-wrap gap-1">
                                         {pfTags.slice(0, 5).map((tag, tIdx) => (
                                             <span
                                                 key={tIdx}
@@ -137,7 +140,7 @@ export default async function ProjectsSection({
                                 ) : null}
                                 {/* Role · Team size */}
                                 {pf?.ownership[0] || pf?.teamSize ? (
-                                    <p className="relative z-10 m-0 mb-1.5 text-xs text-(--color-muted)">
+                                    <p className="m-0 mb-1.5 text-xs text-(--color-muted)">
                                         {[
                                             pf?.ownership[0],
                                             pf?.teamSize
@@ -151,7 +154,7 @@ export default async function ProjectsSection({
                                 {/* Date range */}
                                 {(project.startDate || project.endDate) && (
                                     <div
-                                        className="relative z-10 mb-2 text-sm text-(--color-muted)"
+                                        className="mb-2 text-sm text-(--color-muted)"
                                         style={{
                                             fontVariantNumeric: "tabular-nums",
                                         }}
@@ -214,7 +217,7 @@ export default async function ProjectsSection({
                                 )}
                                 {/* GitHub */}
                                 {sourceLink ? (
-                                    <div className="relative z-10 mt-auto pt-2">
+                                    <div className="relative z-20 mt-auto pt-2">
                                         <a
                                             href={sourceLink.url}
                                             target="_blank"
