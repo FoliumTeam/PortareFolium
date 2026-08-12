@@ -2,7 +2,6 @@ import { serverClient } from "@/lib/supabase";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
 import { mergePortfolioDataPatch } from "@/lib/portfolio";
-import { preparePortfolioDraftSave } from "@/lib/portfolio-review";
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const PORTFOLIO_MUTATION_KEYS = [
@@ -14,7 +13,6 @@ const PORTFOLIO_MUTATION_KEYS = [
     "content",
     "featured",
     "order_idx",
-    "published",
     "meta_title",
     "meta_description",
     "og_image",
@@ -37,6 +35,13 @@ const getPortfolioDataInput = (value: unknown): Record<string, unknown> => {
     return value as Record<string, unknown>;
 };
 
+const withoutPortfolioReviewData = (
+    data: Record<string, unknown>
+): Record<string, unknown> => {
+    const { review: _review, ...publicData } = data;
+    return publicData;
+};
+
 const toPersistedPortfolioJobField = (value: unknown): unknown => {
     if (typeof value === "string") return value ? [value] : [];
     if (Array.isArray(value)) {
@@ -49,15 +54,22 @@ const toPersistedPortfolioJobField = (value: unknown): unknown => {
     return value;
 };
 
+const revalidateMcpPortfolio = async (slug: string) => {
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath(`/portfolio/${slug}`);
+    revalidatePath("/portfolio");
+    for (const jobField of ["web", "game"]) {
+        revalidatePath(`/${jobField}/portfolio/${slug}`);
+        revalidatePath(`/${jobField}/portfolio`);
+        revalidatePath(`/${jobField}`);
+    }
+    revalidatePath("/");
+};
+
 export const prepareMcpPortfolioCreate = (
     args: Record<string, unknown>
 ): Record<string, unknown> => {
     const mutationFields = pickPortfolioMutationFields(args);
-    if (mutationFields.published === true) {
-        throw new Error(
-            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
-        );
-    }
     if (Object.hasOwn(mutationFields, "job_field")) {
         mutationFields.job_field = toPersistedPortfolioJobField(
             mutationFields.job_field
@@ -66,27 +78,19 @@ export const prepareMcpPortfolioCreate = (
     const createFields = sanitizeContentField({
         slug: args.slug,
         ...mutationFields,
-        data: mergePortfolioDataPatch({}, getPortfolioDataInput(args.data)),
-        published: false,
+        data: withoutPortfolioReviewData(
+            mergePortfolioDataPatch({}, getPortfolioDataInput(args.data))
+        ),
+        published: true,
     });
-    return preparePortfolioDraftSave(
-        null,
-        createFields as PortfolioRawRow,
-        new Date().toISOString()
-    );
+    return createFields;
 };
 
 export const prepareMcpPortfolioUpdate = (
     current: PortfolioRawRow,
     rawFields: Record<string, unknown>
 ): { updateFields: Record<string, unknown>; finalRow: PortfolioRawRow } => {
-    if (rawFields.published === true) {
-        throw new Error(
-            "MCP에서는 Portfolio를 발행할 수 없습니다. 관리자 검토·승인 흐름을 사용하세요."
-        );
-    }
     const fields = pickPortfolioMutationFields(rawFields);
-    delete fields.published;
     if (Object.hasOwn(fields, "job_field")) {
         fields.job_field = toPersistedPortfolioJobField(fields.job_field);
     }
@@ -102,19 +106,10 @@ export const prepareMcpPortfolioUpdate = (
         ...fields,
         ...(hasDataPatch ? { data: mergedData } : {}),
     });
-    const draftRow = preparePortfolioDraftSave(
-        current,
-        {
-            ...current,
-            ...changedRow,
-            data: mergedData,
-        } as PortfolioRawRow,
-        new Date().toISOString()
-    );
     const updateFields = {
         ...changedRow,
-        published: draftRow.published,
-        data: draftRow.data,
+        published: true,
+        data: withoutPortfolioReviewData(mergedData),
     };
     const finalRow = {
         ...current,
@@ -138,7 +133,7 @@ export async function handleGetSchema(): Promise<unknown> {
     return {
         rules: [
             "slug must be lowercase, hyphen-separated, URL-safe (e.g. 'my-new-post')",
-            "Set published: false on all new content unless explicitly told otherwise",
+            "Portfolio items are published immediately after create or update",
             "No delete tool exists — use update to revise content",
             "slug collision returns error code -32000 with 'slug 중복' message — pick a different slug",
             "For update_resume: always call get_resume first, then send the FULL section (emoji + showEmoji + entries) to avoid data loss",
@@ -159,7 +154,7 @@ export async function handleGetSchema(): Promise<unknown> {
             "rename_post_slug({ current_slug*, new_slug* })",
             "list_portfolio_items({ limit?: int })",
             "get_portfolio_item({ slug: string })",
-            "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx?, published? })",
+            "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx? })",
             "update_portfolio_item({ slug*, ...partial_fields })",
             "get_resume({ lang?: 'ko' })",
             "update_resume({ lang?: 'ko', data: Partial<Resume> })",
@@ -237,7 +232,7 @@ export async function handleGetSchema(): Promise<unknown> {
             v2_content:
                 "Exactly 2 or 3 ## sections. Game entries use 목표와 제약, 내 역할, 핵심 구현, 게임 효과; web entries use 배경과 목표, 담당 범위, 실행, 결과와 근거.",
             publication:
-                "New items default to published: false. Incomplete v2 drafts can be saved but cannot be published.",
+                "Portfolio items are published immediately after create or update. Use the admin dashboard to explicitly unpublish an item.",
         },
         resume_data: {
             _note: "Single Korean resume row only ('ko'). data column is a Resume object.",
@@ -390,6 +385,7 @@ export async function handleCreatePost(
         }
         throw new Error(`[mcp-tools::handleCreatePost] ${error.message}`);
     }
+    await revalidateMcpPortfolio(String(args.slug));
     return data;
 }
 
@@ -628,9 +624,7 @@ export async function handleUpdatePortfolioItem(args: {
             `[mcp-tools::handleUpdatePortfolioItem] ${error.message}`
         );
 
-    const { revalidatePath } = await import("next/cache");
-    revalidatePath(`/portfolio/${slug}`);
-    revalidatePath("/portfolio");
+    await revalidateMcpPortfolio(slug);
 
     return data;
 }
@@ -864,7 +858,6 @@ export const MCP_TOOLS = [
                 tags: { type: "array", items: { type: "string" } },
                 job_field: { type: "string", enum: ["web", "game"] },
                 thumbnail: { type: "string" },
-                published: { type: "boolean" },
                 meta_title: { type: "string" },
                 meta_description: { type: "string" },
                 og_image: { type: "string" },
@@ -887,7 +880,6 @@ export const MCP_TOOLS = [
                 tags: { type: "array", items: { type: "string" } },
                 job_field: { type: "string", enum: ["web", "game"] },
                 thumbnail: { type: "string" },
-                published: { type: "boolean" },
                 meta_title: { type: "string" },
                 meta_description: { type: "string" },
                 og_image: { type: "string" },

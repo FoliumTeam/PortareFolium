@@ -58,9 +58,9 @@ test.describe("Admin editor viewport fit", () => {
         });
         expect(overflowDelta).toBeLessThanOrEqual(2);
         await expect(
-            page.getByText(
-                "저장은 Draft를 갱신하며, 공개 반영은 발행 단계에서 처리됩니다."
-            )
+            page
+                .getByRole("main")
+                .getByText("저장하면 공개 화면에 즉시 반영됩니다.")
         ).toBeVisible();
         expect(runtimeErrors).toEqual([]);
     });

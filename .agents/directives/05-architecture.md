@@ -70,6 +70,6 @@ $]+?\$)/g`)에 self-closing JSX 태그 패턴 포함 필수.
 - **Protocol**: JSON-RPC 2.0.
 - 진입 시 반드시 `method: "tools/list"` 먼저 호출.
 - `job_field`는 `"web"` 또는 `"game"`.
-- `published: false`가 기본값. 명시적 요청 없이 `true` 설정 금지.
+- Portfolio MCP create·update는 저장 즉시 Published한다. Post는 명시적 Published 설정을 유지한다.
 - 긴 `content`는 파일로 작성 후 `fs.readFileSync`로 읽어 전달.
 - `update_resume` 호출 전 `get_resume`으로 전체 데이터 확인 후 deep-merge.

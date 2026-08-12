@@ -3,18 +3,8 @@
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
-import {
-    getPortfolioValidationMessage,
-    getPortfolioJobFields,
-    validatePortfolioForPublish,
-} from "@/lib/portfolio";
+import { getPortfolioJobFields } from "@/lib/portfolio";
 import { normalizeUniqueJobFieldList } from "@/lib/job-field";
-import {
-    getPortfolioReview,
-    preparePortfolioDraftSave,
-    transitionPortfolioReview,
-    type PortfolioReviewStatus,
-} from "@/lib/portfolio-review";
 import type { PortfolioRawRow } from "@/types/portfolio";
 
 const PORTFOLIO_SELECT_FIELDS =
@@ -39,6 +29,13 @@ type PortfolioRow = {
 };
 
 type JobFieldItem = { id: string; name: string; emoji: string };
+
+const withoutReviewData = (
+    data: Record<string, unknown>
+): Record<string, unknown> => {
+    const { review: _review, ...publicData } = data;
+    return publicData;
+};
 
 type PortfolioPayload = {
     slug: string;
@@ -179,29 +176,11 @@ export async function savePortfolioItem(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    let current: PortfolioRawRow | null = null;
-    if (editTargetId) {
-        const { data, error } = await serverClient
-            .from("portfolio_items")
-            .select(PORTFOLIO_SELECT_FIELDS)
-            .eq("id", editTargetId)
-            .single();
-        if (error || !data) {
-            return {
-                success: false,
-                error: error?.message ?? "수정 대상을 찾을 수 없습니다.",
-            };
-        }
-        current = data as PortfolioRawRow;
-    }
-    const reviewedPayload = preparePortfolioDraftSave(
-        current,
-        payload as PortfolioRawRow,
-        new Date().toISOString()
-    );
     const persistedPayload = {
-        ...reviewedPayload,
+        ...payload,
+        published: true,
         job_field: normalizeUniqueJobFieldList(payload.job_field),
+        data: withoutReviewData(payload.data),
     };
 
     if (editTargetId) {
@@ -232,66 +211,6 @@ export async function savePortfolioItem(
 
     await revalidatePortfolioItem(payload.slug);
     return { success: true, item: data as PortfolioRow };
-}
-
-// Draft → Ready for Review → Approved → Published 상태를 서버에서만 전환한다.
-export async function transitionPortfolioReviewStatus(
-    id: string,
-    slug: string,
-    nextStatus: Exclude<PortfolioReviewStatus, "draft">
-): Promise<{ success: boolean; error?: string }> {
-    await requireAdminSession();
-    if (!serverClient) return { success: false, error: "serverClient 없음" };
-
-    const { data: target, error: targetError } = await serverClient
-        .from("portfolio_items")
-        .select(PORTFOLIO_SELECT_FIELDS)
-        .eq("id", id)
-        .single();
-    if (targetError || !target) {
-        return {
-            success: false,
-            error: targetError?.message ?? "검토 대상을 찾을 수 없습니다.",
-        };
-    }
-
-    const row = target as PortfolioRawRow;
-    const currentStatus = getPortfolioReview(row.data).status;
-    const allowed =
-        (nextStatus === "ready" && currentStatus === "draft") ||
-        (nextStatus === "approved" && currentStatus === "ready") ||
-        (nextStatus === "published" && currentStatus === "approved");
-    if (!allowed) {
-        return {
-            success: false,
-            error: "현재 검토 상태에서는 이 전환을 실행할 수 없습니다.",
-        };
-    }
-    if (nextStatus === "published") {
-        const validation = validatePortfolioForPublish({
-            ...row,
-            published: true,
-        });
-        if (!validation.valid) {
-            return {
-                success: false,
-                error: getPortfolioValidationMessage(validation),
-            };
-        }
-    }
-
-    const reviewed = transitionPortfolioReview(
-        row,
-        nextStatus,
-        new Date().toISOString()
-    );
-    const { error } = await serverClient
-        .from("portfolio_items")
-        .update({ published: reviewed.published, data: reviewed.data })
-        .eq("id", id);
-    if (error) return { success: false, error: error.message };
-    await revalidatePortfolioItem(slug);
-    return { success: true };
 }
 
 // 포트폴리오 삭제
@@ -325,32 +244,9 @@ export async function setPortfolioPublished(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    if (published) {
-        return {
-            success: false,
-            error: "발행은 Ready for Review와 Approved 단계를 거쳐야 합니다.",
-        };
-    }
-
-    const { data: target, error: targetError } = await serverClient
-        .from("portfolio_items")
-        .select(PORTFOLIO_SELECT_FIELDS)
-        .eq("id", id)
-        .single();
-    if (targetError || !target) {
-        return {
-            success: false,
-            error: targetError?.message ?? "비공개 대상을 찾을 수 없습니다.",
-        };
-    }
-    const reviewed = transitionPortfolioReview(
-        target as PortfolioRawRow,
-        "draft",
-        new Date().toISOString()
-    );
     const { error } = await serverClient
         .from("portfolio_items")
-        .update({ published: false, data: reviewed.data })
+        .update({ published })
         .eq("id", id);
     if (error) return { success: false, error: error.message };
 
@@ -508,13 +404,6 @@ export async function batchSetPortfolioPublished(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
     if (ids.length === 0) return { success: true };
-
-    if (publish) {
-        return {
-            success: false,
-            error: "일괄 발행은 지원하지 않습니다. 항목별 검토·승인을 완료하세요.",
-        };
-    }
 
     const { error } = await serverClient
         .from("portfolio_items")

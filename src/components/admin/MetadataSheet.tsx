@@ -247,7 +247,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 />
                                             ) : (
                                                 <span className="text-xs font-semibold text-(--color-muted)">
-                                                    검토 흐름에서 관리
+                                                    저장 시 자동 공개
                                                 </span>
                                             )}
                                         </div>

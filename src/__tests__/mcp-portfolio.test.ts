@@ -66,7 +66,7 @@ const current: PortfolioRawRow = {
 };
 
 describe("MCP portfolio contract", () => {
-    it("create는 기본 Draft이며 row key와 data를 분리", () => {
+    it("create는 즉시 Published이며 row key와 data를 분리", () => {
         const prepared = prepareMcpPortfolioCreate({
             slug: "draft",
             title: "Draft",
@@ -84,7 +84,7 @@ describe("MCP portfolio contract", () => {
             },
         });
 
-        expect(prepared.published).toBe(false);
+        expect(prepared.published).toBe(true);
         expect(prepared.featured).toBe(true);
         expect(prepared.order_idx).toBe(2);
         expect(prepared.job_field).toEqual(["game"]);
@@ -92,7 +92,6 @@ describe("MCP portfolio contract", () => {
             caseStudyVersion: 2,
             oneLinePitch: "Draft pitch",
             futureKey: "keep",
-            review: { status: "draft" },
         });
     });
 
@@ -102,8 +101,7 @@ describe("MCP portfolio contract", () => {
         });
         expect(prepared.updateFields).toMatchObject({
             title: "Renamed",
-            published: false,
-            data: { review: { status: "draft" } },
+            published: true,
         });
         expect(prepared.finalRow.data).toMatchObject(current.data ?? {});
     });
@@ -132,33 +130,15 @@ describe("MCP portfolio contract", () => {
         expect(data.futureKey).toEqual({ nested: { keep: true } });
         expect(data.anotherFutureKey).toEqual({ enabled: true });
         expect(data).not.toHaveProperty("published");
-        expect(prepared.finalRow.published).toBe(false);
+        expect(prepared.finalRow.published).toBe(true);
     });
 
-    it("MCP의 직접 Published create와 update를 차단", () => {
-        expect(() =>
-            prepareMcpPortfolioCreate({
-                slug: "invalid",
-                title: "Invalid",
-                published: true,
-                data: { caseStudyVersion: 2 },
-            })
-        ).toThrow(/MCP에서는 Portfolio를 발행할 수 없습니다/);
-
-        expect(() =>
-            prepareMcpPortfolioUpdate(current, {
-                published: true,
-                data: { engine: null },
-            })
-        ).toThrow(/MCP에서는 Portfolio를 발행할 수 없습니다/);
-    });
-
-    it("MCP update는 Release link를 유지하며 Draft로 되돌린다", () => {
+    it("MCP update는 Release link를 유지하며 즉시 공개한다", () => {
         const prepared = prepareMcpPortfolioUpdate(current, {
             title: "Renamed",
         });
-        expect(prepared.updateFields.published).toBe(false);
-        expect(prepared.finalRow.published).toBe(false);
+        expect(prepared.updateFields.published).toBe(true);
+        expect(prepared.finalRow.published).toBe(true);
         expect(
             (prepared.finalRow.data?.links as Array<{ kind: string }>)[0]?.kind
         ).toBe("release");

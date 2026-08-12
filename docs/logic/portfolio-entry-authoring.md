@@ -305,13 +305,12 @@ Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달�
 4. **설정**에서 기본 정보, project 상세, v2 case study field, SEO, category를 작성한다.
 5. Rich Markdown Editor의 template에 2~3개의 Deep Dive를 작성한다.
 6. Editor에 image를 upload하고 필요한 URL을 thumbnail, 대표 이미지 gallery, OG image에 연결한다. 같은 URL을 본문의 관련 주장 바로 뒤에도 Markdown image로 삽입한다.
-7. `published: false` 상태로 **저장**한다. 새 entry는 첫 수동 저장 전까지 auto-save되지 않으며 첫 저장 이후 auto-save가 동작한다.
+7. **저장**하면 즉시 Published된다. 새 entry는 첫 수동 저장 전까지 auto-save되지 않으며 첫 저장 이후 auto-save가 동작한다.
 8. 저장된 field와 문구를 다시 fact-check한다. 특히 ownership, outcome, credit, 외부 URL을 확인한다.
-9. Published toggle을 켠다. Server가 v2 publication contract를 검사하며 실패하면 누락 field와 Deep Dive 오류를 반환한다.
-10. Published 이후 **미리보기**를 열어 desktop과 mobile에서 card, hero, action, gallery, content, credits를 확인한다.
-11. Selected Work에 둘 entry만 `featured: true`로 지정한다. Featured 최대 5개와 순서는 `job_field`별로 독립 관리하므로, 관리 화면에서 먼저 해당 직무 분야를 선택한 뒤 순서를 조정한다.
+9. **미리보기**를 열어 desktop과 mobile에서 card, hero, action, gallery, content, credits를 확인한다.
+10. Selected Work에 둘 entry만 `featured: true`로 지정한다. Featured 최대 5개와 순서는 `job_field`별로 독립 관리하므로, 관리 화면에서 먼저 해당 직무 분야를 선택한 뒤 순서를 조정한다.
 
-현재 public query는 `published: true`만 허용하므로 Draft URL은 404가 되고 Admin 미리보기 button도 Draft에서는 비활성화된다. Public 공개 없이 Draft를 보여주는 별도 preview route는 없다. Published 전 visual 확인이 필요하면 local/refuge data 또는 별도 preview 기능을 구현해야 한다.
+Portfolio 저장은 곧바로 Published되며, 관리자 미리보기는 현재 저장본을 확인하는 보조 경로다. 비공개가 필요하면 목록에서 Unpublished로 전환할 수 있다.
 
 ## 7. MCP authoring workflow
 
@@ -319,12 +318,11 @@ Endpoint는 `/api/mcp`이며 Bearer token이 필요하다. Token을 문서, sour
 
 1. `tools/list`로 현재 tool과 schema를 확인한다.
 2. 기존 entry를 수정한다면 `get_portfolio_item`으로 현재 row를 먼저 읽는다.
-3. `create_portfolio_item`으로 `published: false` Draft를 만든다.
-4. `update_portfolio_item`으로 content와 data를 단계적으로 보강한다.
+3. `create_portfolio_item`으로 즉시 Published되는 entry를 만든다.
+4. `update_portfolio_item`으로 content와 data를 단계적으로 보강한다. 모든 저장은 즉시 Published된다.
 5. 다시 `get_portfolio_item`으로 저장 결과를 확인한다.
-6. 모든 Published 조건을 점검한 뒤 마지막 별도 호출에서 `published: true`로 변경한다.
 
-Draft 생성 호출 예시:
+생성 호출 예시:
 
 ```json
 {

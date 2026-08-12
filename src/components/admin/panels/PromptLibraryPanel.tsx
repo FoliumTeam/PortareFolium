@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 const GET_PORTFOLIO_PROMPT = (
     origin: string
 ) => `넌 내 개인 포트폴리오 웹사이트의 사례 연구 작성 전문가야.
-MCP 엔드포인트를 사용하여 포트폴리오 v2 Draft를 생성해줘.
+MCP 엔드포인트를 사용하여 포트폴리오 v2 항목을 생성해줘.
 
 Endpoint: ${origin}/api/mcp
 Auth: Bearer <YOUR_AGENT_TOKEN_HERE>
@@ -17,8 +17,8 @@ Rules:
 1. 툴 요청은 method: "tools/call", params: { name: "<tool_name>", arguments: { ... } } 형식의 JSON-RPC 2.0을 사용할 것.
 2. 먼저 \`tools/list\`와 \`get_schema\`를 호출해 최신 계약을 확인할 것.
 3. README, source, release page에서 확인된 근거만 사용하고 수치를 추측하지 말 것.
-4. job_field는 "web" 또는 "game" 문자열을 사용하고 featured, order_idx, published는 data 밖에 둘 것.
-5. caseStudyVersion은 숫자 2, published는 항상 false로 생성할 것. 자동 Published 금지.
+4. job_field는 "web" 또는 "game" 문자열을 사용하고 featured, order_idx는 data 밖에 둘 것.
+5. caseStudyVersion은 숫자 2로 생성할 것. 저장된 Portfolio는 자동 Published됨.
 6. oneLinePitch 180자, ownership 5개, outcomes 3개, gallery 8개 제한을 지킬 것.
 7. metric이 없으면 중립적인 완료 상태와 검증 방법을 작성하고 수치를 만들지 말 것.
 8. gallery는 "대표 이미지" 요약이다. image는 non-empty alt가 필요하고 poster는 금지. video는 direct R2/relative src와 poster가 모두 필요함. YouTube는 demo link로만 사용할 것.
@@ -70,7 +70,6 @@ Target payload template:
   "job_field": "game",
   "featured": false,
   "order_idx": 0,
-  "published": false,
   "thumbnail": "/portfolio/<project-slug>/cover.webp",
   "content": "<two or three Deep Dives>",
   "data": {
@@ -95,7 +94,7 @@ Target payload template:
 \`\`\`
 
 Task:
-제공되는 README, CHANGELOG, source, media를 검토하고 개인 기여와 검증 근거를 먼저 추출해. 위 v2 계약으로 concise case study Draft를 만든 뒤 \`create_portfolio_item\`으로 저장하고, 다시 조회해 published: false와 field round-trip을 확인해줘.`;
+제공되는 README, CHANGELOG, source, media를 검토하고 개인 기여와 검증 근거를 먼저 추출해. 위 v2 계약으로 concise case study를 만든 뒤 \`create_portfolio_item\`으로 저장하고, 다시 조회해 published: true와 field round-trip을 확인해줘.`;
 
 const GET_DEFAULT_PROMPT = (
     origin: string
@@ -248,7 +247,7 @@ export default function PromptLibraryPanel() {
                     </div>
                     <p className="text-sm text-(--color-muted)">
                         프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가 개인
-                        기여와 검증 근거 중심의 v2 사례 연구 Draft를 작성하여
+                        기여와 검증 근거 중심의 v2 사례 연구를 작성하여
                         데이터베이스에 저장합니다. 토큰은 보안을 위해 직접
                         발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
                         위치에 붙여넣어주세요.

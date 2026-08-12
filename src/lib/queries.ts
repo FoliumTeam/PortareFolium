@@ -1,8 +1,6 @@
 import { cache } from "react";
 import { serverClient } from "@/lib/supabase";
 import { readPostContentById } from "@/lib/post-content-chunks";
-import { getPublicPortfolioRow } from "@/lib/portfolio-review";
-import type { PortfolioRawRow } from "@/types/portfolio";
 
 // request 단위 포스트 조회 캐싱 (generateMetadata + page 컴포넌트 중복 DB 호출 제거)
 export const getPost = cache(async (slug: string) => {
@@ -29,7 +27,7 @@ export const getPortfolioItem = cache(async (slug: string) => {
         .eq("slug", slug)
         .eq("published", true)
         .single();
-    return data ? getPublicPortfolioRow(data as PortfolioRawRow) : null;
+    return data;
 });
 
 // 전체 site_config 조회 캐싱 (root layout, frontend layout, 페이지 간 중복 제거)
@@ -63,7 +61,7 @@ export const getPortfolioItemMeta = cache(async (slug: string) => {
         .eq("slug", slug)
         .eq("published", true)
         .single();
-    return data ? getPublicPortfolioRow(data as PortfolioRawRow) : null;
+    return data;
 });
 
 // 빌드 타임 generateStaticParams 전용 (cache 불필요)
