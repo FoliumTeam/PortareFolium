@@ -1,11 +1,11 @@
 import type { Resume } from "@/types/resume";
-import { defaultSectionLabels } from "@/types/resume";
 import type { CoreValue } from "@/types/about";
 import { renderMarkdown } from "@/lib/markdown";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
 import {
+    getResumeSectionLabel,
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
@@ -39,16 +39,11 @@ export default async function ResumeClassic({
     // layout 기반 right-side 섹션 순서 결정
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
 
-    const getLabel = (key: string) => {
+    const getLabel = (key: string, qualifier?: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
             | { emoji?: string; showEmoji?: boolean }
             | undefined;
-        const emoji = sec?.emoji || "➕";
-        const label =
-            defaultSectionLabels[key] ||
-            key.charAt(0).toUpperCase() + key.slice(1);
-        const showEmoji = sec?.showEmoji === true;
-        return showEmoji ? `${emoji} ${label}` : label;
+        return getResumeSectionLabel(key, sec, qualifier);
     };
 
     const workEntries = resume.work?.entries ?? [];
@@ -269,7 +264,10 @@ export default async function ResumeClassic({
         <ProjectsSection
             key="projects"
             projects={resume.projects?.entries ?? []}
-            label={getLabel("projects")}
+            label={getLabel(
+                "projects",
+                activeJobField === "web" ? "대표" : undefined
+            )}
             portfolioBasePath={portfolioBasePath}
             compact={activeJobField === "web"}
             activeJobField={activeJobField}

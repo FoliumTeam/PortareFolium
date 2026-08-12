@@ -1,4 +1,4 @@
-import type { Resume } from "@/types/resume";
+import { defaultSectionLabels, type Resume } from "@/types/resume";
 
 // Resume 섹션 layout 정의 — 순서 + 비활성화 섹션 집합
 export type ResumeSectionLayout = {
@@ -37,6 +37,24 @@ export const DEFAULT_RESUME_LAYOUT: ResumeSectionLayout = {
     order: ALL_RESUME_SECTION_KEYS,
     disabled: DEFAULT_DISABLED,
 };
+
+type ResumeSectionLabelSource = {
+    emoji?: string;
+    showEmoji?: boolean;
+};
+
+// qualifier가 있어도 emoji를 label 맨 앞에 유지
+export function getResumeSectionLabel(
+    key: string,
+    section?: ResumeSectionLabelSource,
+    qualifier?: string
+): string {
+    const baseLabel =
+        defaultSectionLabels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+    const label = qualifier ? `${qualifier} ${baseLabel}` : baseLabel;
+    if (section?.showEmoji !== true) return label;
+    return `${section.emoji || "➕"} ${label}`;
+}
 
 // layout 정규화 — 누락 키를 뒤에 append, 알 수 없는 키는 제거
 export function normalizeLayout(

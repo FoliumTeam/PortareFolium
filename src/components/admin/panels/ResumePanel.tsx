@@ -305,15 +305,16 @@ export default function ResumePanel() {
     // beforeunload + route navigation 가드
     useUnsavedWarning(isDirty || isLayoutDirty);
 
-    // 섹션 wrapper style — layout edit mode + disabled + order 반영
+    // 공개 화면의 disabled 상태와 관리자 편집 가능 여부 분리
     const sectionWrapperStyle = (key: string): React.CSSProperties => {
         if (layoutEditMode) return { display: "none" };
-        return {
-            order: resumeSectionLayout.order.indexOf(key),
-            display: resumeSectionLayout.disabled.includes(key)
-                ? "none"
-                : undefined,
-        };
+        return { order: resumeSectionLayout.order.indexOf(key) };
+    };
+
+    const scrollToProjectsEditor = () => {
+        document
+            .querySelector('[data-resume-section="projects"]')
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
     // 자동 저장 (기존 row가 있을 때만)
@@ -443,6 +444,14 @@ export default function ResumePanel() {
                             <span className="text-sm text-green-600">
                                 자동 저장 완료 {fmtTime(savedAt)}
                             </span>
+                        )}
+                        {!layoutEditMode && (
+                            <button
+                                onClick={scrollToProjectsEditor}
+                                className="rounded-lg bg-blue-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                            >
+                                대표 프로젝트 편집
+                            </button>
                         )}
                         <button
                             onClick={async () => {
@@ -1875,7 +1884,7 @@ export default function ResumePanel() {
                     </section>
                 </div>
 
-                {/* 프로젝트 (Projects) */}
+                {/* 대표 프로젝트 / 프로젝트 (Projects) */}
                 <div
                     data-resume-section="projects"
                     style={sectionWrapperStyle("projects")}
@@ -1900,7 +1909,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    프로젝트 (Projects)
+                                    대표 프로젝트 / 프로젝트 (Projects)
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -1964,6 +1973,12 @@ export default function ResumePanel() {
                                 + 프로젝트 추가
                             </button>
                         </div>
+                        <p className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3 text-sm leading-relaxed text-(--color-muted)">
+                            Web 이력서는 Web Portfolio Featured 순서에서 최대
+                            3건을 대표 프로젝트로 표시합니다. 여기서는 이력서의
+                            프로젝트 연결과 설명을 편집하며, Featured 선정과
+                            순서는 Portfolio 관리자에서 관리합니다.
+                        </p>
 
                         {/* 직무 분야 필터 */}
                         {jobFields.length > 0 && (

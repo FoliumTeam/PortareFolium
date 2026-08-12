@@ -5,7 +5,39 @@ import {
     ALL_RESUME_SECTION_KEYS,
     normalizeLayout,
     resolveSectionOrder,
+    getResumeSectionLabel,
 } from "@/lib/resume-layout";
+
+describe("getResumeSectionLabel", () => {
+    it("qualifier보다 emoji를 항상 앞에 둔다", () => {
+        expect(
+            getResumeSectionLabel(
+                "projects",
+                { emoji: "🚀", showEmoji: true },
+                "대표"
+            )
+        ).toBe("🚀 대표 프로젝트");
+    });
+
+    it("emoji가 비활성이면 qualifier와 label만 표시한다", () => {
+        expect(
+            getResumeSectionLabel(
+                "projects",
+                { emoji: "🚀", showEmoji: false },
+                "대표"
+            )
+        ).toBe("대표 프로젝트");
+    });
+
+    it("일반 section도 emoji prefix 계약을 유지한다", () => {
+        expect(
+            getResumeSectionLabel("skills", {
+                emoji: "💻",
+                showEmoji: true,
+            })
+        ).toBe("💻 기술");
+    });
+});
 
 // 테스트용 resume 팩토리 (모든 섹션 entries 1개씩)
 function makeFullResume(): Resume {

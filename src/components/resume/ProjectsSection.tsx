@@ -90,7 +90,7 @@ export default async function ProjectsSection({
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-(--color-border) pb-2">
                     <div>
                         <h2 className="text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                            대표 {label}
+                            {label}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
                             직무 연관도가 높은 작업 3건을 요약했습니다.

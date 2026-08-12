@@ -1,9 +1,9 @@
 "use client";
 
 import type { Resume } from "@/types/resume";
-import { defaultSectionLabels } from "@/types/resume";
 import type { CoreValue } from "@/types/about";
 import {
+    getResumeSectionLabel,
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
@@ -37,12 +37,7 @@ export default function ResumeModernPreview({
         const sec = (resume as Record<string, unknown>)[key] as
             | { emoji?: string; showEmoji?: boolean }
             | undefined;
-        const emoji = sec?.emoji || "➕";
-        const label =
-            defaultSectionLabels[key] ||
-            key.charAt(0).toUpperCase() + key.slice(1);
-        const showEmoji = sec?.showEmoji === true;
-        return showEmoji ? `${emoji} ${label}` : label;
+        return getResumeSectionLabel(key, sec);
     };
 
     const sectionH2 = (title: string) => (

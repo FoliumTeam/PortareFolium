@@ -35,6 +35,14 @@
 - **Admin 저장 바**: `AdminSaveBar.tsx` — `createPortal`로 `#admin-save-bar-slot`에 렌더링.
 - **페이지 레벨 ISR**: 모든 콘텐츠 페이지 `export const revalidate = false`. On-Demand `revalidatePath`로만 갱신.
 
+## Admin editability contract
+
+- 공개 화면에 표시되는 콘텐츠 데이터는 Admin Dashboard에서 생성·수정·삭제할 수 있어야 한다. Frontend component에 콘텐츠 문구, media, 항목 순서, 공개 범위 또는 직무별 내용을 hardcode하지 않는다.
+- 필수 범위는 Resume의 모든 section, 모든 Portfolio entry, About Me 정보, Blog post다. Landing page와 새 public content surface도 별도 합의가 없으면 같은 계약을 적용한다.
+- section이 public layout에서 disabled이거나 content가 Draft·Unpublished 상태여도 관리자 편집 경로는 숨기지 않는다. 공개 여부와 편집 가능 여부를 분리한다.
+- 공개 화면과 관리자 editor는 같은 DB schema와 source of truth를 사용한다. 관리자 누락을 우회하기 위한 중복 data source를 만들지 않는다.
+- layout shell, 접근성 attribute, 공통 navigation처럼 content가 아닌 presentation code는 codebase에서 관리할 수 있다. 실제 공개 content를 임시 hardcode해야 하면 구현 전에 사용자 승인과 Admin 편집 경로 후속 계획이 필요하다.
+
 ## PDF Export (`data-pdf-block`) Convention
 
 - `PdfPreviewModal.tsx`의 `paginateBlocks()`가 `data-pdf-block` / `data-pdf-block-item` attribute를 기준으로 페이지 분할 처리.
