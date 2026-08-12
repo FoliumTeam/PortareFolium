@@ -213,6 +213,8 @@ export default async function ResumeModern({
             projects={resume.projects?.entries ?? []}
             label={getLabel("projects")}
             portfolioBasePath={portfolioBasePath}
+            compact={activeJobField === "web"}
+            activeJobField={activeJobField}
         />
     );
 
@@ -220,17 +222,7 @@ export default async function ResumeModern({
         <SkillsSection
             key="skills"
             skills={resume.skills?.entries ?? []}
-            works={resume.work?.entries ?? []}
-            projects={resume.projects?.entries ?? []}
-            activeJobField={activeJobField}
             label={getLabel("skills")}
-            defaultView={
-                (resume.skills?.defaultView ?? "by-job-field") as
-                    | "by-job-field"
-                    | "by-experience"
-                    | "by-category"
-                    | "by-project"
-            }
         />
     );
 

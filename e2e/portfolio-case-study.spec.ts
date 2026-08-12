@@ -36,26 +36,18 @@ test("Portfolio 카드 전체 클릭으로 프로젝트 기록에 이동하고 k
     expect(runtimeErrors).toEqual([]);
 });
 
-test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 legacy 기록을 접음", async ({
+test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 이전 기록도 바로 표시", async ({
     page,
 }) => {
     const runtimeErrors = trackRuntimeErrors(page);
-    await page.goto("/web/portfolio", { waitUntil: "networkidle" });
-    const href = await page
-        .getByRole("link", { name: /프로젝트 기록 보기$/ })
-        .first()
-        .getAttribute("href");
-    await page.goto(href!, { waitUntil: "domcontentloaded" });
-
-    const legacyDisclosure = page.getByText("전체 기술 기록 펼치기", {
-        exact: true,
+    await page.goto("/web/portfolio/ai-model-files", {
+        waitUntil: "domcontentloaded",
     });
-    if ((await legacyDisclosure.count()) > 0) {
-        const details = legacyDisclosure.locator("..");
-        await expect(details).not.toHaveAttribute("open", "");
-        await legacyDisclosure.click();
-        await expect(details).toHaveAttribute("open", "");
-    }
+
+    await expect(page.locator(".portfolio-legacy-content")).toBeVisible();
+    await expect(
+        page.getByText("전체 기술 기록 펼치기", { exact: true })
+    ).toHaveCount(0);
 
     expect(
         await page.getByRole("navigation", { name: "목차" }).count()
@@ -70,4 +62,21 @@ test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 legacy �
         await page.keyboard.press("Escape");
     }
     expect(runtimeErrors).toEqual([]);
+});
+
+test("tablet 이상 Portfolio 목차는 우측 중앙에 고정", async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.goto("/web/portfolio/portare-folium", {
+        waitUntil: "domcontentloaded",
+    });
+    await page
+        .getByRole("heading", { name: "정적 페이지가 아닌 콘텐츠 운영 플랫폼" })
+        .scrollIntoViewIfNeeded();
+
+    const toc = page.getByRole("navigation", { name: "목차" });
+    await expect(toc).toBeVisible();
+    await expect(toc).toHaveCSS("position", "sticky");
+    const tocBox = await toc.boundingBox();
+    expect(tocBox).not.toBeNull();
+    expect(Math.abs(tocBox!.y + tocBox!.height / 2 - 400)).toBeLessThan(8);
 });

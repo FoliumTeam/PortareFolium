@@ -26,9 +26,10 @@ describe("PortfolioGallery", () => {
         );
         expect(video).not.toHaveAttribute("autoplay");
         expect(screen.getByText("입력과 feedback 확인")).toBeInTheDocument();
-        expect(
-            screen.getByRole("link", { name: /Video 원본/ })
-        ).toHaveAttribute("href", "/portfolio/project/demo.mp4");
+        expect(screen.getByRole("link", { name: /영상 원본/ })).toHaveAttribute(
+            "href",
+            "/portfolio/project/demo.mp4"
+        );
         expect(screen.getByRole("img", { name: "Gameplay demo" })).toHaveClass(
             "print:block"
         );

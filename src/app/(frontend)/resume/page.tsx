@@ -147,6 +147,7 @@ export async function ResumePageContent({
                     coreCompetencies={coreCompetencies}
                     sectionLayout={sectionLayout}
                     portfolioBasePath={portfolioBasePath}
+                    activeJobField={jobField}
                 />
             )}
             {resumeLayout === "modern" && (

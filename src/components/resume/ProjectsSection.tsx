@@ -3,7 +3,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { getPortfolioItem } from "@/lib/queries";
 import { normalizePortfolioProject } from "@/lib/portfolio";
 import type { PortfolioRawRow } from "@/types/portfolio";
-import { ExternalLinkIcon } from "lucide-react";
+import { ArrowUpRight, ExternalLinkIcon } from "lucide-react";
 
 // 날짜 포맷
 const formatDateRange = (startDate?: string, endDate?: string): string =>
@@ -14,6 +14,8 @@ interface Props {
     label?: string;
     badge?: string;
     portfolioBasePath?: string;
+    compact?: boolean;
+    activeJobField?: string;
 }
 
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
@@ -22,6 +24,8 @@ export default async function ProjectsSection({
     label = "프로젝트",
     badge,
     portfolioBasePath = "/portfolio",
+    compact = false,
+    activeJobField = "web",
 }: Props) {
     if (projects.length === 0) return null;
 
@@ -52,6 +56,97 @@ export default async function ProjectsSection({
                 : [];
         })
     );
+
+    if (compact) {
+        const compactProjects = projects
+            .map((project) => ({
+                project,
+                portfolio: project.portfolioSlug
+                    ? portfolioItemMap[project.portfolioSlug]
+                    : undefined,
+            }))
+            .filter((entry) => entry.project.portfolioSlug && entry.portfolio)
+            .sort((left, right) => {
+                const leftFeatured =
+                    left.portfolio?.featuredByJobField[activeJobField] === true;
+                const rightFeatured =
+                    right.portfolio?.featuredByJobField[activeJobField] ===
+                    true;
+                if (leftFeatured !== rightFeatured) {
+                    return Number(rightFeatured) - Number(leftFeatured);
+                }
+                const leftOrder =
+                    left.portfolio?.featuredOrderByJobField[activeJobField] ??
+                    Number.MAX_SAFE_INTEGER;
+                const rightOrder =
+                    right.portfolio?.featuredOrderByJobField[activeJobField] ??
+                    Number.MAX_SAFE_INTEGER;
+                return leftOrder - rightOrder;
+            })
+            .slice(0, 3);
+
+        return (
+            <section className="mb-10" data-pdf-block>
+                <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-(--color-border) pb-2">
+                    <div>
+                        <h2 className="text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                            대표 {label}
+                        </h2>
+                        <p className="mt-1 text-sm text-(--color-muted)">
+                            직무 연관도가 높은 작업 3건을 요약했습니다.
+                        </p>
+                    </div>
+                    <a
+                        href={portfolioBasePath}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3.5 py-2 text-sm font-bold text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                    >
+                        웹 포트폴리오 전체 보기
+                        <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                </div>
+                <div className="space-y-3">
+                    {compactProjects.map(({ project, portfolio }) => {
+                        const summary =
+                            portfolio?.outcomes[0]?.result ||
+                            project.highlights?.[0] ||
+                            project.description;
+                        return (
+                            <article
+                                key={project.portfolioSlug}
+                                className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 transition-colors hover:border-(--color-accent)"
+                                data-pdf-block-item
+                            >
+                                <a
+                                    href={`${portfolioBasePath}/${project.portfolioSlug}`}
+                                    className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
+                                    aria-label={`${project.name ?? "프로젝트"} 프로젝트 기록 보기`}
+                                />
+                                <div className="tablet:flex-row tablet:items-start tablet:justify-between flex flex-col gap-2">
+                                    <div className="min-w-0">
+                                        <h3 className="text-base font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                            {project.name}
+                                        </h3>
+                                        {summary ? (
+                                            <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
+                                                {summary}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-(--color-accent)">
+                                        상세 보기
+                                        <ArrowUpRight
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className="mb-10" data-pdf-block>

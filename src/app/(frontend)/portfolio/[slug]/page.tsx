@@ -24,7 +24,6 @@ import {
 } from "@/lib/portfolio";
 import type { PortfolioMedia, PortfolioRawRow } from "@/types/portfolio";
 import TableOfContents from "@/components/TableOfContents";
-import GithubToc from "@/components/GithubToc";
 import MermaidRenderer from "@/components/MermaidRenderer";
 import ImageLightbox from "@/components/ImageLightbox";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
@@ -179,12 +178,12 @@ export async function PortfolioDetailContent({
                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Portfolio
+                포트폴리오
             </Link>
 
             <header className="mt-8 max-w-4xl" data-pdf-block>
                 <p className="mb-3 text-xs font-bold tracking-[0.2em] text-(--color-accent) uppercase">
-                    {isV2 ? "Case Study" : "Legacy Project"}
+                    {isV2 ? "프로젝트 기록" : "이전 프로젝트 기록"}
                 </p>
                 <h1 className="tablet:text-5xl text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     {project.title}
@@ -220,7 +219,7 @@ export async function PortfolioDetailContent({
                 {(project.ownership[0] || project.role) && (
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
-                            Role
+                            역할
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {project.ownership[0] || project.role}
@@ -231,7 +230,7 @@ export async function PortfolioDetailContent({
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
                             <Users className="h-3.5 w-3.5" aria-hidden="true" />
-                            Team
+                            인원
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {project.teamSize}명
@@ -245,7 +244,7 @@ export async function PortfolioDetailContent({
                                 className="h-3.5 w-3.5"
                                 aria-hidden="true"
                             />
-                            Duration
+                            기간
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {dateRange}
@@ -256,7 +255,7 @@ export async function PortfolioDetailContent({
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
                             <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
-                            Stack
+                            기술 환경
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {[project.engine, ...project.platforms]
@@ -274,7 +273,7 @@ export async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Ownership
+                        담당 범위
                     </p>
                     <h2
                         id="ownership-heading"
@@ -309,7 +308,7 @@ export async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Impact
+                        결과
                     </p>
                     <h2
                         id="outcomes-heading"
@@ -375,44 +374,27 @@ export async function PortfolioDetailContent({
                 </div>
             )}
 
-            {isV2 ? (
+            {contentHtml ? (
                 <div className="mt-16 flex min-w-0 gap-12">
                     <article className="min-w-0 flex-1" data-pdf-block>
                         <div
-                            className="portfolio-case-study-content prose max-w-none text-(--color-foreground)"
+                            className={`${
+                                isV2
+                                    ? "portfolio-case-study-content"
+                                    : "portfolio-legacy-content"
+                            } prose max-w-none text-(--color-foreground)`}
                             data-content="true"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
                     </article>
                     <TableOfContents
                         entries={tocEntries}
-                        contentSelector=".portfolio-case-study-content"
+                        contentSelector={contentSelector}
+                        verticalAlign="center"
+                        showFrom="tablet"
                     />
                 </div>
-            ) : (
-                contentHtml && (
-                    <details
-                        className="mt-16 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
-                        data-pdf-block
-                    >
-                        <summary className="tablet:px-6 cursor-pointer px-5 py-4 font-bold text-(--color-foreground) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none">
-                            전체 기술 기록 펼치기
-                        </summary>
-                        <div className="tablet:px-6 border-t border-(--color-border) px-5 py-6">
-                            {tocEntries.length > 0 && (
-                                <GithubToc entries={tocEntries} />
-                            )}
-                            <div
-                                className="portfolio-legacy-content prose max-w-none text-(--color-foreground)"
-                                data-content="true"
-                                dangerouslySetInnerHTML={{
-                                    __html: contentHtml,
-                                }}
-                            />
-                        </div>
-                    </details>
-                )
-            )}
+            ) : null}
 
             {isV2 && project.devlogs.length > 0 && (
                 <section
@@ -421,7 +403,7 @@ export async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Further Reading
+                        더 읽을거리
                     </p>
                     <h2
                         id="devlogs-heading"
@@ -455,7 +437,7 @@ export async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Credits
+                        함께한 사람
                     </p>
                     <h2
                         id="credits-heading"
@@ -498,7 +480,7 @@ export async function PortfolioDetailContent({
             >
                 <div>
                     <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Next
+                        다음 프로젝트
                     </p>
                     <h2
                         id="next-project-heading"
@@ -512,7 +494,7 @@ export async function PortfolioDetailContent({
                         href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        Selected Work
+                        포트폴리오 목록
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                     {!jobField && (
@@ -520,7 +502,7 @@ export async function PortfolioDetailContent({
                             href="/about"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
                         >
-                            Contact
+                            연락하기
                         </Link>
                     )}
                 </div>

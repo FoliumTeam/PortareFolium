@@ -40,6 +40,7 @@ interface SkillBadgeProps {
     name: string;
     overrideSlug?: string;
     overrideColor?: string;
+    level?: string;
 }
 
 // 스킬 뱃지 컴포넌트
@@ -47,28 +48,28 @@ export function SkillBadge({
     name,
     overrideSlug,
     overrideColor,
+    level,
 }: SkillBadgeProps) {
     const slug = overrideSlug || name;
     const icon = getSimpleIcon(slug);
 
-    const bgColor =
-        overrideColor ||
-        (icon ? `#${icon.hex}` : "var(--color-surface-subtle)");
+    const bgColor = overrideColor || (icon ? `#${icon.hex}` : undefined);
     const hasBgColor = !!(overrideColor || icon);
     const textColor =
-        hasBgColor && getLuminance(bgColor) > 0.5
+        bgColor && getLuminance(bgColor) > 0.5
             ? "#000000"
-            : hasBgColor
+            : bgColor
               ? "#ffffff"
-              : "var(--color-foreground)";
+              : "var(--color-on-accent)";
 
     return (
         <span
-            className="inline-flex items-center gap-1.5 rounded px-2 py-1.5 text-[0.7rem] font-bold tracking-wider uppercase"
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.7rem] font-bold tracking-wider uppercase ${
+                hasBgColor ? "" : "bg-(--color-accent)"
+            }`}
             style={{
                 backgroundColor: bgColor,
                 color: textColor,
-                border: hasBgColor ? "none" : "1px solid var(--color-border)",
             }}
         >
             {icon && (
@@ -84,6 +85,14 @@ export function SkillBadge({
                 </svg>
             )}
             {name}
+            {level ? (
+                <span
+                    className="border-l border-current/30 pl-1.5 text-[0.65rem] font-semibold tracking-normal"
+                    aria-label={`숙련도 ${level}`}
+                >
+                    {level}
+                </span>
+            ) : null}
         </span>
     );
 }
