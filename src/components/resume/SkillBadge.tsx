@@ -1,4 +1,5 @@
 import * as simpleIcons from "simple-icons";
+import Image from "next/image";
 import React from "react";
 
 // 커스텀 뱃지 및 색상 조회
@@ -36,18 +37,64 @@ export function getLuminance(hexcode: string) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-interface SkillBadgeProps {
+type SkillIconProps = {
+    name: string;
+    slug?: string;
+    iconUrl?: string;
+    color?: string;
+    className?: string;
+};
+
+export const SkillIcon = ({
+    name,
+    slug,
+    iconUrl,
+    color,
+    className = "h-3 w-3",
+}: SkillIconProps) => {
+    if (iconUrl) {
+        return (
+            <Image
+                src={iconUrl}
+                alt={`${name} 로고`}
+                width={16}
+                height={16}
+                className={`${className} shrink-0 object-contain`}
+            />
+        );
+    }
+
+    const icon = getSimpleIcon(slug || name);
+    if (!icon) return null;
+
+    return (
+        <svg
+            role="img"
+            aria-label={`${name} 로고`}
+            viewBox="0 0 24 24"
+            fill={color || `#${icon.hex}`}
+            className={`${className} shrink-0`}
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path d={icon.path} />
+        </svg>
+    );
+};
+
+type SkillBadgeProps = {
     name: string;
     overrideSlug?: string;
     overrideColor?: string;
+    iconUrl?: string;
     level?: string;
-}
+};
 
 // 스킬 뱃지 컴포넌트
 export function SkillBadge({
     name,
     overrideSlug,
     overrideColor,
+    iconUrl,
     level,
 }: SkillBadgeProps) {
     const slug = overrideSlug || name;
@@ -72,18 +119,12 @@ export function SkillBadge({
                 color: textColor,
             }}
         >
-            {icon && (
-                <svg
-                    role="img"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-3 w-3"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <title>{icon.title}</title>
-                    <path d={icon.path} />
-                </svg>
-            )}
+            <SkillIcon
+                name={name}
+                slug={slug}
+                iconUrl={iconUrl}
+                color="currentColor"
+            />
             {name}
             {level ? (
                 <span

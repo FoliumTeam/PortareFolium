@@ -52,6 +52,7 @@ interface FormState {
     projectRefs: string[];
     iconSlug: string;
     iconColor: string;
+    iconUrl: string;
 }
 
 function buildInitialForm(
@@ -73,6 +74,7 @@ function buildInitialForm(
         projectRefs,
         iconSlug: skill?.iconSlug ?? "",
         iconColor: skill?.iconColor ?? "",
+        iconUrl: skill?.iconUrl ?? "",
     };
 }
 
@@ -85,7 +87,8 @@ function formsEqual(a: FormState, b: FormState): boolean {
         JSON.stringify(a.workRefs) === JSON.stringify(b.workRefs) &&
         JSON.stringify(a.projectRefs) === JSON.stringify(b.projectRefs) &&
         a.iconSlug === b.iconSlug &&
-        a.iconColor === b.iconColor
+        a.iconColor === b.iconColor &&
+        a.iconUrl === b.iconUrl
     );
 }
 
@@ -206,6 +209,7 @@ export default function SkillEditorModal({
                         f.projectRefs.length > 0 ? f.projectRefs : undefined,
                     iconSlug: f.iconSlug || undefined,
                     iconColor: f.iconColor || undefined,
+                    iconUrl: f.iconUrl || undefined,
                 },
                 categoryName: f.categoryName,
                 originalCategoryIdx,
@@ -268,6 +272,7 @@ export default function SkillEditorModal({
                 form.projectRefs.length > 0 ? form.projectRefs : undefined,
             iconSlug: form.iconSlug || undefined,
             iconColor: form.iconColor || undefined,
+            iconUrl: form.iconUrl || undefined,
         };
         try {
             localStorage.removeItem(DRAFT_KEY);
@@ -558,13 +563,27 @@ export default function SkillEditorModal({
                                     />
                                 </div>
                             </div>
-                            <div className="shrink-0">
-                                <SkillBadge
-                                    name={form.name || "미리보기"}
-                                    overrideSlug={form.iconSlug || undefined}
-                                    overrideColor={form.iconColor || undefined}
-                                />
-                            </div>
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                            <label className="text-xs text-(--color-muted)">
+                                이미지 URL
+                            </label>
+                            <input
+                                value={form.iconUrl}
+                                onChange={(e) =>
+                                    updateForm({ iconUrl: e.target.value })
+                                }
+                                placeholder="https://.../logo.png"
+                                className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                            />
+                        </div>
+                        <div className="shrink-0">
+                            <SkillBadge
+                                name={form.name || "미리보기"}
+                                overrideSlug={form.iconSlug || undefined}
+                                overrideColor={form.iconColor || undefined}
+                                iconUrl={form.iconUrl || undefined}
+                            />
                         </div>
                     </div>
                 </div>

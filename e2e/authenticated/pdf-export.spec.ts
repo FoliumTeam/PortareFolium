@@ -69,6 +69,52 @@ test.describe("PDF Export — Resume", () => {
         expect(runtimeErrors).toEqual([]);
     });
 
+    test("DB 브랜드 이미지가 포함된 PDF 생성", async ({ page }) => {
+        const runtimeErrors = trackRuntimeErrors(page);
+        await page.goto("/web/resume", { waitUntil: "load" });
+
+        const brandImages = page.getByRole("img", {
+            name: /^(Amazon S3|Zustand|NextAuth) 로고$/,
+        });
+        await expect(brandImages).toHaveCount(3);
+        await expect
+            .poll(() =>
+                brandImages.evaluateAll((images) =>
+                    images.every(
+                        (image) =>
+                            image instanceof HTMLImageElement &&
+                            image.complete &&
+                            image.naturalWidth > 0
+                    )
+                )
+            )
+            .toBe(true);
+
+        await openPdfModal(page);
+        await expect(brandImages).toHaveCount(6);
+        await expect
+            .poll(() =>
+                brandImages.evaluateAll((images) =>
+                    images.every(
+                        (image) =>
+                            image instanceof HTMLImageElement &&
+                            image.complete &&
+                            image.naturalWidth > 0
+                    )
+                )
+            )
+            .toBe(true);
+
+        const download = page.waitForEvent("download", { timeout: 30_000 });
+        await page.getByRole("button", { name: /pdf 다운로드/i }).click();
+        expect((await download).suggestedFilename()).toBe("resume.pdf");
+        expect(
+            runtimeErrors.filter((error) =>
+                error.includes("/resume/skill-icons/")
+            )
+        ).toEqual([]);
+    });
+
     test("페이지 구분선 존재", async ({ page }) => {
         const runtimeErrors = trackRuntimeErrors(page);
         await page.goto("/web/resume", { waitUntil: "load" });

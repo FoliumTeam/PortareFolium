@@ -52,6 +52,7 @@ export default function SkillsSection({ skills, label = "기술" }: Props) {
                                             name={keyword.name}
                                             overrideSlug={keyword.iconSlug}
                                             overrideColor={keyword.iconColor}
+                                            iconUrl={keyword.iconUrl}
                                             level={keyword.level}
                                         />
                                     )

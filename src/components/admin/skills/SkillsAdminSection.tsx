@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getSimpleIcon } from "@/components/resume/SkillBadge";
+import { SkillIcon } from "@/components/resume/SkillBadge";
 import { Switch } from "@/components/ui/switch";
 import {
     JobFieldBadges,
@@ -475,7 +475,6 @@ export default function SkillsAdminSection({
     // 스킬 행 렌더링
     const renderSkillRow = (s: FlatSkill) => {
         const key = `${s.categoryIdx}-${s.kwIdx}`;
-        const icon = s.iconSlug ? getSimpleIcon(s.iconSlug) : null;
         const isSelected = selectedKeys.has(key);
         const workRefs = s.workRefs ?? (s.workRef ? [s.workRef] : []);
         const projectRefs =
@@ -540,20 +539,13 @@ export default function SkillsAdminSection({
                     <div className="flex-1 space-y-1.5">
                         {/* 이름 */}
                         <div className="flex items-center gap-2">
-                            {icon ? (
-                                <svg
-                                    role="img"
-                                    viewBox="0 0 24 24"
-                                    className="h-4 w-4 shrink-0"
-                                    style={{
-                                        fill: s.iconColor || `#${icon.hex}`,
-                                    }}
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <title>{icon.title}</title>
-                                    <path d={icon.path} />
-                                </svg>
-                            ) : null}
+                            <SkillIcon
+                                name={s.name}
+                                slug={s.iconSlug}
+                                iconUrl={s.iconUrl}
+                                color={s.iconColor}
+                                className="h-4 w-4"
+                            />
                             <span className="font-semibold text-(--color-foreground)">
                                 {s.name}
                             </span>

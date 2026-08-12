@@ -117,6 +117,7 @@ export interface ResumeSkillKeyword {
     name: string;
     iconSlug?: string;
     iconColor?: string;
+    iconUrl?: string;
     // 키워드 단위 직무 분야
     jobField?: string | string[];
     level?: string;
