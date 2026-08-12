@@ -382,7 +382,7 @@ export async function PortfolioDetailContent({
                                 isV2
                                     ? "portfolio-case-study-content"
                                     : "portfolio-legacy-content"
-                            } prose max-w-none text-(--color-foreground)`}
+                            } portfolio-markdoc-body prose max-w-none text-(--color-foreground)`}
                             data-content="true"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />

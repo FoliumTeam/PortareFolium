@@ -8,7 +8,7 @@ type PortfolioGalleryProps = {
 
 export default function PortfolioGallery({
     media,
-    heading = "화면과 근거",
+    heading = "대표 이미지",
 }: PortfolioGalleryProps) {
     if (media.length === 0) return null;
 
@@ -18,9 +18,6 @@ export default function PortfolioGallery({
             aria-labelledby="portfolio-gallery-heading"
             data-pdf-block
         >
-            <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                시각 자료
-            </p>
             <h2
                 id="portfolio-gallery-heading"
                 className="mb-5 text-2xl font-(--font-display) font-black text-(--color-foreground)"
