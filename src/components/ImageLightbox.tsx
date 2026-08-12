@@ -105,7 +105,7 @@ type LightboxTooltipButtonProps = {
 
 // filmstrip candidate 목록 계산
 function getImageFilmstripCandidates(src: string): string[] {
-    return [replaceWithSidecar(src, "thumb")];
+    return [replaceWithSidecar(src, "thumb"), src];
 }
 
 // filmstrip thumbnail 렌더
@@ -909,7 +909,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                     <div className="w-full max-w-full overflow-hidden px-2 py-2">
                                         <div
                                             data-lightbox-filmstrip
-                                            className="flex max-w-full justify-center gap-2 overflow-x-auto px-2 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                            className="flex max-w-full [scrollbar-width:none] justify-center gap-2 overflow-x-auto px-2 py-2 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             {filmstrip.map((item, i) => {

@@ -21,9 +21,10 @@ Rules:
 5. caseStudyVersion은 숫자 2, published는 항상 false로 생성할 것. 자동 Published 금지.
 6. oneLinePitch 180자, ownership 5개, outcomes 3개, gallery 8개 제한을 지킬 것.
 7. metric이 없으면 중립적인 완료 상태와 검증 방법을 작성하고 수치를 만들지 말 것.
-8. gallery image는 non-empty alt가 필요하고 poster는 금지. video는 direct R2/relative src와 poster가 모두 필요함. YouTube는 demo link로만 사용할 것.
+8. gallery는 "대표 이미지" 요약이다. image는 non-empty alt가 필요하고 poster는 금지. video는 direct R2/relative src와 poster가 모두 필요함. YouTube는 demo link로만 사용할 것.
 9. links kind는 demo | play | release | source만 사용하고 store URL은 release로 구분할 것.
 10. content에는 ## 섹션을 정확히 두 개 또는 세 개만 작성할 것. game은 목표와 제약 → 내 역할 → 핵심 구현 → 게임 효과, web은 배경과 목표 → 담당 범위 → 실행 → 결과와 근거 순서를 사용할 것. 긴 연대기와 전체 code dump는 devlogs로 분리할 것.
+11. content는 실제 article처럼 작성할 것. 확인 가능한 image가 있으면 관련 주장 바로 뒤에 Markdown image를 삽입하고, gallery image와 중복되어도 됨. heading, 강조, blockquote, list, table, 짧은 code block을 내용에 맞게 사용하되 장식용 요소는 금지함.
 
 content MDX template:
 \`\`\`

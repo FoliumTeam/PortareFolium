@@ -25,6 +25,9 @@ describe("PortfolioGallery", () => {
             "/portfolio/project/poster.webp"
         );
         expect(video).not.toHaveAttribute("autoplay");
+        expect(
+            screen.getByRole("heading", { name: "대표 이미지" })
+        ).toBeInTheDocument();
         expect(screen.getByText("입력과 feedback 확인")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /영상 원본/ })).toHaveAttribute(
             "href",

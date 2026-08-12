@@ -23,3 +23,10 @@ Tailwind v4 uses `@theme` or `@theme inline` blocks. When adding a new shadcn pr
 1. You MUST ensure its required color tokens (`--color-*`) are registered in `src/styles/global.css` `@theme inline` block. Missing tokens will cause the component to render invisibly.
 2. If it uses animations (`animate-in`, `fade-in-0`, `zoom-in-95`), ensure `tw-animate-css` is in `package.json` and `@import "tw-animate-css"` is in `global.css`.
 3. When using Radix primitives (e.g., `TooltipTrigger asChild`), do NOT wrap the child in a `<span>` unless absolutely necessary (like disabled states). Pass the interactive element directly.
+
+## Portfolio article media
+
+- Portfolio detail의 gallery 제목은 `대표 이미지`로 사용하며, project article의 핵심 장면을 빠르게 훑는 요약 영역으로 취급한다.
+- 대표 이미지와 article body image는 중복될 수 있다. 본문에는 관련 주장을 읽는 위치에 Markdown image를 직접 배치해 gallery로 되돌아가는 탐색을 요구하지 않는다.
+- Article body는 heading, 강조, blockquote, list, table, 짧은 code block을 내용에 맞게 사용한다. 장식 목적의 media나 긴 code dump는 추가하지 않는다.
+- Tablet 이상 우측 TOC는 article body layout 안에서 시작해야 하며 hero, facts, 대표 이미지 영역으로 시각적으로 침범하면 안 된다. 중앙 정렬형 sticky TOC는 본문 진입 후에만 viewport 중앙에 유지한다.

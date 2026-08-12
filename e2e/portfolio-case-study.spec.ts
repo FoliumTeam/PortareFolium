@@ -69,13 +69,60 @@ test("tablet 이상 Portfolio 목차는 우측 중앙에 고정", async ({ page 
     await page.goto("/web/portfolio/portare-folium", {
         waitUntil: "domcontentloaded",
     });
-    await page
-        .getByRole("heading", { name: "정적 페이지가 아닌 콘텐츠 운영 플랫폼" })
-        .scrollIntoViewIfNeeded();
 
     const toc = page.getByRole("navigation", { name: "목차" });
+    const article = page.locator(".portfolio-case-study-content");
     await expect(toc).toBeVisible();
-    await expect(toc).toHaveCSS("position", "sticky");
+    await expect(article).toBeVisible();
+    const initialTocBox = await toc.boundingBox();
+    const articleBox = await article.boundingBox();
+    expect(initialTocBox).not.toBeNull();
+    expect(articleBox).not.toBeNull();
+    expect(initialTocBox!.y).toBeGreaterThanOrEqual(articleBox!.y - 1);
+
+    const galleryImages = page.locator(".portfolio-gallery img");
+    await expect(galleryImages).toHaveCount(4);
+    await galleryImages.first().scrollIntoViewIfNeeded();
+    await expect
+        .poll(() =>
+            galleryImages.evaluateAll((images) =>
+                images.every(
+                    (image) =>
+                        (image as HTMLImageElement).complete &&
+                        (image as HTMLImageElement).naturalWidth > 0
+                )
+            )
+        )
+        .toBe(true);
+
+    await galleryImages.first().click();
+    const filmstripImages = page.locator(
+        'button[aria-label="filmstrip 이미지로 이동"] img'
+    );
+    await expect(filmstripImages.first()).toBeVisible();
+    await expect
+        .poll(() =>
+            filmstripImages.evaluateAll((images) =>
+                images.every(
+                    (image) =>
+                        (image as HTMLImageElement).complete &&
+                        (image as HTMLImageElement).naturalWidth > 0
+                )
+            )
+        )
+        .toBe(true);
+    await page.keyboard.press("Escape");
+
+    await page
+        .getByRole("heading", {
+            name: "관리자 화면으로 운영하는 콘텐츠 플랫폼",
+        })
+        .scrollIntoViewIfNeeded();
+
+    await expect(page.locator("[data-toc-sticky]")).toHaveCSS(
+        "position",
+        "sticky"
+    );
     const tocBox = await toc.boundingBox();
     expect(tocBox).not.toBeNull();
     expect(Math.abs(tocBox!.y + tocBox!.height / 2 - 400)).toBeLessThan(8);

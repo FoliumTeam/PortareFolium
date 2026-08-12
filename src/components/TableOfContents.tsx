@@ -72,65 +72,82 @@ export default function TableOfContents({
 
     if (entries.length === 0) return null;
 
+    const responsiveDisplay =
+        showFrom === "tablet"
+            ? verticalAlign === "center"
+                ? "tablet:flex"
+                : "tablet:block"
+            : verticalAlign === "center"
+              ? "laptop:flex"
+              : "laptop:block";
+
     return (
-        <nav
-            className={`${showFrom === "tablet" ? "tablet:block" : "laptop:block"} sticky hidden max-h-[calc(100vh-8rem)] w-52 shrink-0 self-start overflow-y-auto overscroll-contain ${
+        <aside
+            data-toc-sticky
+            className={`${responsiveDisplay} sticky hidden w-52 shrink-0 self-start ${
                 verticalAlign === "center"
-                    ? "top-1/2 -translate-y-1/2"
+                    ? "top-0 h-screen items-center"
                     : "top-24"
             } ${className}`}
-            aria-label="목차"
         >
-            <p className="mb-4 text-xs font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                목차
-            </p>
-            <ul className="space-y-0.5 text-sm">
-                {entries.map((entry, i) => {
-                    const isActive = activeSection === `#${entry.slug}`;
-                    return (
-                        <li key={i}>
-                            <a
-                                href={`#${entry.slug}`}
-                                className={`-ml-px block border-l-2 py-1.5 pl-3 text-sm transition-colors duration-150 ${
-                                    isActive
-                                        ? "border-(--color-accent) font-semibold text-(--color-accent)"
-                                        : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
-                                }`}
-                                aria-current={isActive ? "location" : undefined}
-                            >
-                                {entry.text}
-                            </a>
-                            {entry.children.length > 0 && (
-                                <ul className="space-y-0.5">
-                                    {entry.children.map((child, j) => {
-                                        const isChildActive =
-                                            activeSection === `#${child.slug}`;
-                                        return (
-                                            <li key={j}>
-                                                <a
-                                                    href={`#${child.slug}`}
-                                                    className={`-ml-px block border-l-2 py-1 pl-6 text-sm transition-colors duration-150 ${
-                                                        isChildActive
-                                                            ? "border-(--color-accent) font-semibold text-(--color-accent)"
-                                                            : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
-                                                    }`}
-                                                    aria-current={
-                                                        isChildActive
-                                                            ? "location"
-                                                            : undefined
-                                                    }
-                                                >
-                                                    {child.text}
-                                                </a>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                        </li>
-                    );
-                })}
-            </ul>
-        </nav>
+            <nav
+                className="max-h-[calc(100vh-8rem)] w-full overflow-y-auto overscroll-contain"
+                aria-label="목차"
+            >
+                <p className="mb-4 text-xs font-bold tracking-[0.15em] text-(--color-muted) uppercase">
+                    목차
+                </p>
+                <ul className="space-y-0.5 text-sm">
+                    {entries.map((entry, i) => {
+                        const isActive = activeSection === `#${entry.slug}`;
+                        return (
+                            <li key={i}>
+                                <a
+                                    href={`#${entry.slug}`}
+                                    className={`-ml-px block border-l-2 py-1.5 pl-3 text-sm transition-colors duration-150 ${
+                                        isActive
+                                            ? "border-(--color-accent) font-semibold text-(--color-accent)"
+                                            : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
+                                    }`}
+                                    aria-current={
+                                        isActive ? "location" : undefined
+                                    }
+                                >
+                                    {entry.text}
+                                </a>
+                                {entry.children.length > 0 && (
+                                    <ul className="space-y-0.5">
+                                        {entry.children.map((child, j) => {
+                                            const isChildActive =
+                                                activeSection ===
+                                                `#${child.slug}`;
+                                            return (
+                                                <li key={j}>
+                                                    <a
+                                                        href={`#${child.slug}`}
+                                                        className={`-ml-px block border-l-2 py-1 pl-6 text-sm transition-colors duration-150 ${
+                                                            isChildActive
+                                                                ? "border-(--color-accent) font-semibold text-(--color-accent)"
+                                                                : "border-transparent text-(--color-muted) hover:border-(--color-border) hover:text-(--color-foreground)"
+                                                        }`}
+                                                        aria-current={
+                                                            isChildActive
+                                                                ? "location"
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {child.text}
+                                                    </a>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            </nav>
+        </aside>
     );
 }

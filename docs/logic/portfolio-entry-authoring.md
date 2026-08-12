@@ -16,7 +16,7 @@ Recruiter가 다음 내용을 순서대로 빠르게 확인할 수 있어야 한
 6. 중요한 문제를 어떻게 해결했는지: 2~3개의 Deep Dive
 7. 협업 프로젝트라면 누구와 함께했는지: credits
 
-Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → evidence gallery → case study → devlogs → credits다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
+Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → 대표 이미지 → article body → devlogs → credits다. 대표 이미지는 article의 핵심 장면을 빠르게 훑는 요약 gallery이며, 본문 속 이미지를 대신하지 않는다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
 
 ## 2. 작성 전에 준비할 context packet
 
@@ -72,7 +72,7 @@ Public page의 주요 section 순서는 hero → project facts → ownership →
 
 긴 개발 일지를 요약하는 것이 아니라, 내가 만든 변화와 배운 점을 보여주는 것이 목적이다.
 
-### Media manifest
+### 대표 이미지와 본문 media manifest
 
 각 media가 어떤 주장을 증명하는지 먼저 정리한다.
 
@@ -89,6 +89,11 @@ Public page의 주요 section 순서는 hero → project facts → ownership →
 - caption은 화면 설명보다 해당 화면이 증명하는 결과를 명시
 - alt는 image 안의 핵심 장면과 의미를 설명
 - 같은 장면의 미세한 변형을 여러 장 넣지 않기
+- gallery는 대표 장면 요약에 사용하고, article body에는 관련 주장을 읽는 바로 그 위치에 Markdown image를 다시 배치
+- gallery와 본문 image의 중복은 허용하며, 독자가 근거를 찾으러 위로 돌아가지 않아도 되는지가 우선
+- 가능한 Deep Dive마다 최소 한 개의 screenshot, diagram, table, code hierarchy 등 문맥형 시각 자료를 사용
+- 본문 image는 `![무엇을 확인해야 하는지 설명하는 alt](URL)` 형식으로 작성하고, 직전·직후 문단에서 해당 image가 증명하는 내용을 설명
+- heading, 강조, blockquote, ordered/unordered list, table, 짧은 code block을 정보 성격에 맞게 사용하되 장식만을 위한 요소는 추가하지 않기
 - 얼굴, 계정명, token, 사내 dashboard 등 민감 정보 제거
 - 자신이 제작하지 않은 asset은 credit과 사용 권한 확인
 
@@ -219,9 +224,7 @@ Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달�
 
 `결과와 근거`에는 배포물, 운영 기록, 측정값, 승인 또는 재현 방법처럼 사실을 확인할 수 있는 근거만 쓴다. 확인되지 않은 수치, 팀 전체 성과의 개인화, 장황한 개발 일지는 넣지 않는다.
 
-공통 규칙: code는 구현량을 보여주기 위해 길게 붙이지 않는다. 책임과 결과를 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
-
-Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
+공통 규칙: article body는 gallery 설명을 반복하는 긴 기술 요약서가 아니라 주장과 근거가 함께 흐르는 글로 작성한다. 관련 screenshot은 해당 문단 바로 뒤에 배치하고, Markdown heading·강조·blockquote·list·table·짧은 code block으로 읽는 리듬을 만든다. Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
 ## 5. Complete v2 example
 
@@ -301,7 +304,7 @@ Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결�
 3. title을 입력하고 자동 생성된 slug를 확인한다. Slug는 asset folder `portfolio/<slug>/`에도 사용되므로 첫 저장 전에 확정하는 것이 좋다.
 4. **설정**에서 기본 정보, project 상세, v2 case study field, SEO, category를 작성한다.
 5. Rich Markdown Editor의 template에 2~3개의 Deep Dive를 작성한다.
-6. Editor에 image를 upload하고 필요한 URL을 thumbnail, gallery, OG image에 연결한다.
+6. Editor에 image를 upload하고 필요한 URL을 thumbnail, 대표 이미지 gallery, OG image에 연결한다. 같은 URL을 본문의 관련 주장 바로 뒤에도 Markdown image로 삽입한다.
 7. `published: false` 상태로 **저장**한다. 새 entry는 첫 수동 저장 전까지 auto-save되지 않으며 첫 저장 이후 auto-save가 동작한다.
 8. 저장된 field와 문구를 다시 fact-check한다. 특히 ownership, outcome, credit, 외부 URL을 확인한다.
 9. Published toggle을 켠다. Server가 v2 publication contract를 검사하며 실패하면 누락 field와 Deep Dive 오류를 반환한다.
@@ -391,6 +394,9 @@ MCP patch 규칙:
 - [ ] 외부 link가 HTTPS이고 실제로 열림
 - [ ] ownership과 outcome을 제3자가 읽어도 본인의 기여 범위가 명확함
 - [ ] screenshot와 video에 secret·개인정보·권한 없는 asset이 없음
+- [ ] 대표 이미지가 핵심 장면 요약으로 동작하고, 본문에도 문맥에 맞는 image가 직접 배치됨
+- [ ] 본문 image의 alt와 주변 문장이 무엇을 확인할지 설명하며 모든 원본·thumbnail URL이 실제로 열림
+- [ ] Markdown heading·강조·blockquote·list·table·code block을 내용에 맞게 사용하고 불필요한 장식은 없음
 - [ ] desktop/mobile에서 horizontal overflow, broken media, console error 없음
 
 ## 9. Common validation failures
@@ -442,7 +448,8 @@ Portfolio entry는 다음 상태일 때 완료다.
 - 사실 context와 collaborator credit이 검토됨
 - card만 읽어도 역할과 가장 중요한 outcome을 이해할 수 있음
 - 각 프로젝트 이야기가 내가 만든 변화와 개인 기여를 중심으로 작성됨
-- gallery의 모든 media가 하나 이상의 claim을 증명함
+- 대표 이미지의 모든 media가 하나 이상의 claim을 증명함
+- article body의 관련 주장 옆에 image·diagram·table·code hierarchy가 배치되어 gallery로 돌아갈 필요가 없음
 - 모든 link와 media가 실제로 열림
 - Published validation 통과
 - Selected/Other 위치와 order 확인
