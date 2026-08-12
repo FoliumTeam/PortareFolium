@@ -1,8 +1,8 @@
-import type { Resume, ResumeSkillKeyword } from "@/types/resume";
+import type { Resume } from "@/types/resume";
 import { defaultSectionLabels } from "@/types/resume";
 import type { CoreValue } from "@/types/about";
 import { renderMarkdown } from "@/lib/markdown";
-import { SkillBadge, getSimpleIcon } from "@/components/resume/SkillBadge";
+import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
 import {
@@ -15,6 +15,7 @@ interface Props {
     coreCompetencies?: CoreValue[];
     sectionLayout?: ResumeSectionLayout;
     portfolioBasePath?: string;
+    activeJobField?: string;
 }
 
 const formatDateRange = (
@@ -31,6 +32,7 @@ export default async function ResumeClassic({
     coreCompetencies = [],
     sectionLayout,
     portfolioBasePath,
+    activeJobField,
 }: Props) {
     const basics = resume.basics ?? {};
 
@@ -104,67 +106,11 @@ export default async function ResumeClassic({
     );
 
     const renderSkills = () => (
-        <section key="skills" className="mb-10" data-pdf-block>
-            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("skills")}
-            </h2>
-            <div className="flex flex-col gap-3">
-                {(resume.skills?.entries ?? []).map((skill, idx) => (
-                    <div
-                        key={idx}
-                        className="flex flex-col gap-0.5"
-                        data-pdf-block-item
-                    >
-                        {skill.name ? (
-                            <strong className="flex items-center gap-2 text-base font-bold text-(--color-foreground)">
-                                {skill.iconSlug &&
-                                getSimpleIcon(skill.iconSlug) ? (
-                                    <svg
-                                        role="img"
-                                        viewBox="0 0 24 24"
-                                        className="h-4 w-4"
-                                        style={{
-                                            fill:
-                                                skill.iconColor ||
-                                                `#${getSimpleIcon(skill.iconSlug)!.hex}`,
-                                        }}
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <title>
-                                            {
-                                                getSimpleIcon(skill.iconSlug)!
-                                                    .title
-                                            }
-                                        </title>
-                                        <path
-                                            d={
-                                                getSimpleIcon(skill.iconSlug)!
-                                                    .path
-                                            }
-                                        />
-                                    </svg>
-                                ) : null}
-                                {skill.name}
-                            </strong>
-                        ) : null}
-                        {skill.keywords && skill.keywords.length > 0 ? (
-                            <div className="mt-1 flex flex-wrap gap-1.5">
-                                {skill.keywords.map(
-                                    (kw: ResumeSkillKeyword, kIdx: number) => (
-                                        <SkillBadge
-                                            key={kIdx}
-                                            name={kw.name}
-                                            overrideSlug={kw.iconSlug}
-                                            overrideColor={kw.iconColor}
-                                        />
-                                    )
-                                )}
-                            </div>
-                        ) : null}
-                    </div>
-                ))}
-            </div>
-        </section>
+        <SkillsSection
+            key="skills"
+            skills={resume.skills?.entries ?? []}
+            label={getLabel("skills")}
+        />
     );
 
     const renderWork = () => (
@@ -325,6 +271,8 @@ export default async function ResumeClassic({
             projects={resume.projects?.entries ?? []}
             label={getLabel("projects")}
             portfolioBasePath={portfolioBasePath}
+            compact={activeJobField === "web"}
+            activeJobField={activeJobField}
         />
     );
 

@@ -8,7 +8,7 @@ type PortfolioGalleryProps = {
 
 export default function PortfolioGallery({
     media,
-    heading = "Evidence Gallery",
+    heading = "화면과 근거",
 }: PortfolioGalleryProps) {
     if (media.length === 0) return null;
 
@@ -19,7 +19,7 @@ export default function PortfolioGallery({
             data-pdf-block
         >
             <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                Visual Proof
+                시각 자료
             </p>
             <h2
                 id="portfolio-gallery-heading"
@@ -73,7 +73,7 @@ export default function PortfolioGallery({
                                     href={item.src}
                                     className="mt-2 flex w-fit items-center gap-1 font-semibold text-(--color-accent) underline-offset-4 hover:underline"
                                 >
-                                    Video 원본
+                                    영상 원본
                                     <ExternalLink
                                         className="h-3.5 w-3.5"
                                         aria-hidden="true"

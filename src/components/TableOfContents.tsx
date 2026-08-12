@@ -13,6 +13,8 @@ interface TableOfContentsProps {
     entries: TocEntry[];
     contentSelector?: string;
     className?: string;
+    verticalAlign?: "top" | "center";
+    showFrom?: "tablet" | "laptop";
 }
 
 // TOC 항목에서 문서 순서대로 slug id 목록 추출
@@ -31,6 +33,8 @@ export default function TableOfContents({
     entries,
     contentSelector = ".post-content",
     className = "",
+    verticalAlign = "top",
+    showFrom = "laptop",
 }: TableOfContentsProps) {
     const [activeSection, setActiveSection] = useState<string | null>(null);
 
@@ -70,11 +74,15 @@ export default function TableOfContents({
 
     return (
         <nav
-            className={`laptop:block sticky top-24 hidden max-h-[calc(100vh-8rem)] w-52 shrink-0 self-start overflow-y-auto overscroll-contain ${className}`}
+            className={`${showFrom === "tablet" ? "tablet:block" : "laptop:block"} sticky hidden max-h-[calc(100vh-8rem)] w-52 shrink-0 self-start overflow-y-auto overscroll-contain ${
+                verticalAlign === "center"
+                    ? "top-1/2 -translate-y-1/2"
+                    : "top-24"
+            } ${className}`}
             aria-label="목차"
         >
             <p className="mb-4 text-xs font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                On this page
+                목차
             </p>
             <ul className="space-y-0.5 text-sm">
                 {entries.map((entry, i) => {
