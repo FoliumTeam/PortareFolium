@@ -245,6 +245,7 @@ export default function ResumePanel() {
     const [editingCareerPhaseKeywords, setEditingCareerPhaseKeywords] =
         useState<string>("");
     const [backupData, setBackupData] = useState<Resume | null>(null);
+    const editorScrollRef = useRef<HTMLDivElement>(null);
     // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
@@ -312,9 +313,16 @@ export default function ResumePanel() {
     };
 
     const scrollToProjectsEditor = () => {
-        document
-            .querySelector('[data-resume-section="projects"]')
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const section = document.querySelector<HTMLElement>(
+            '[data-resume-section="projects"]'
+        );
+        const container = editorScrollRef.current;
+        if (!section || !container) return;
+        const top =
+            section.getBoundingClientRect().top -
+            container.getBoundingClientRect().top +
+            container.scrollTop;
+        container.scrollTop = top;
     };
 
     // 자동 저장 (기존 row가 있을 때만)
@@ -490,6 +498,7 @@ export default function ResumePanel() {
             </div>
 
             <div
+                ref={editorScrollRef}
                 className={`flex min-h-0 flex-1 flex-col gap-8 ${
                     layoutEditMode ? "overflow-hidden" : "overflow-y-auto"
                 }`}
