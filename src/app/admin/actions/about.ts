@@ -2,7 +2,7 @@
 
 import { requireAdminSession } from "@/lib/server-admin";
 import {
-    revalidateHome,
+    revalidateAbout,
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
@@ -171,7 +171,7 @@ export async function saveAboutPanel(
             return { success: false, error: githubError.message };
         }
 
-        await revalidateHome();
+        await revalidateAbout();
         await revalidateResume();
 
         return { success: true, aboutRowId: nextAboutRowId };

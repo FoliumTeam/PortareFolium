@@ -365,7 +365,12 @@ export default function PortfolioPanel({
             setForm(persistedForm);
             setEditTarget(result.item);
             onEditPathChange?.(`edit/${result.item.slug}`);
-            setSuccess("저장 완료");
+            const review = getPortfolioReview(result.item.data);
+            setSuccess(
+                review.status === "draft" && review.lastPublishedSnapshot
+                    ? "Draft 저장 완료 · 공개 반영은 검토 요청 → 승인 → 발행 후 완료됩니다."
+                    : "저장 완료"
+            );
             void loadItems();
         }
     }, [form, editTarget]);
@@ -520,6 +525,9 @@ export default function PortfolioPanel({
 
     // ── 편집 화면 (Ghost 에디터 레이아웃) ──
     if (editTarget !== null) {
+        const editingReview =
+            editTarget === "new" ? null : getPortfolioReview(editTarget.data);
+
         return (
             <div className="tablet:h-full tablet:overflow-hidden tablet:pb-0 flex w-full flex-col pb-20">
                 {/* 헤더 */}
@@ -554,6 +562,18 @@ export default function PortfolioPanel({
                     Draft는 관리자 전용 미리보기에서 확인하고, 검토·승인 후에만
                     공개됩니다.
                 </p>
+                {editingReview?.status === "draft" &&
+                    editingReview.lastPublishedSnapshot && (
+                        <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p>
+                                현재 편집본은 Draft입니다. 공개 화면에는 이전
+                                Published 버전이 유지됩니다. 저장 후 목록에서
+                                검토 요청 → 승인 → 발행을 완료해야 새 내용이
+                                공개됩니다.
+                            </p>
+                        </div>
+                    )}
 
                 {/* 제목 입력 */}
                 <div className="px-1">
@@ -664,7 +684,8 @@ export default function PortfolioPanel({
                         </span>
                     ) : (
                         <span className="text-base text-(--color-muted)">
-                            저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                            저장은 Draft를 갱신하며, 공개 반영은 발행 단계에서
+                            처리됩니다.
                         </span>
                     )}
                     <div className="flex items-center gap-3">
