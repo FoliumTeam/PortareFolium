@@ -32,6 +32,12 @@ test.describe("Admin editor viewport fit", () => {
     test("Portfolio 편집 화면도 main 영역에 외곽 세로 스크롤이 없어야 함", async ({
         page,
     }) => {
+        const runtimeErrors: string[] = [];
+        page.on("console", (message) => {
+            if (message.type() === "error") runtimeErrors.push(message.text());
+        });
+        page.on("pageerror", (error) => runtimeErrors.push(error.message));
+
         await page.setViewportSize({ width: 1280, height: 720 });
         await page.goto("/admin#portfolio", { waitUntil: "domcontentloaded" });
 
@@ -51,5 +57,11 @@ test.describe("Admin editor viewport fit", () => {
             return document.body.scrollHeight - window.innerHeight;
         });
         expect(overflowDelta).toBeLessThanOrEqual(2);
+        await expect(
+            page.getByText(
+                "저장은 Draft를 갱신하며, 공개 반영은 발행 단계에서 처리됩니다."
+            )
+        ).toBeVisible();
+        expect(runtimeErrors).toEqual([]);
     });
 });
