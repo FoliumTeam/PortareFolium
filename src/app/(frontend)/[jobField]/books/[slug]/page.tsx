@@ -3,10 +3,15 @@ import { notFound } from "next/navigation";
 import BookDetailContent from "../../../books/[slug]/book-detail-content";
 import { resolvePublicJobField } from "@/lib/public-job-field";
 import { getSeoMetadata } from "@/lib/seo-metadata";
+import { getPublicBookRouteParams } from "@/lib/public-route-params";
 
 type PageProps = {
     params: Promise<{ jobField: string; slug: string }>;
 };
+
+export async function generateStaticParams() {
+    return getPublicBookRouteParams();
+}
 
 export async function generateMetadata({
     params,

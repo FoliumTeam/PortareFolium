@@ -9,20 +9,17 @@ interface Props {
     children: React.ReactNode;
     fileName?: string;
     sections?: PdfSection[];
-    initialAuthed?: boolean;
 }
 
 export default function PdfExportButton({
     children,
     fileName,
     sections,
-    initialAuthed = false,
 }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const { data: session, status } = useSession();
-    const authed =
-        initialAuthed || (status === "authenticated" && session?.user?.isAdmin);
+    const authed = status === "authenticated" && session?.user?.isAdmin;
 
     return (
         <>

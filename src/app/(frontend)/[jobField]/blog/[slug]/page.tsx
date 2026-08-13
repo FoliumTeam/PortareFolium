@@ -3,10 +3,15 @@ import { notFound } from "next/navigation";
 import BlogPostContent from "../../../blog/[slug]/blog-post-content";
 import { resolvePublicJobField } from "@/lib/public-job-field";
 import { getSeoMetadata } from "@/lib/seo-metadata";
+import { getPublicPostRouteParams } from "@/lib/public-route-params";
 
 type PageProps = {
     params: Promise<{ jobField: string; slug: string }>;
 };
+
+export async function generateStaticParams() {
+    return getPublicPostRouteParams();
+}
 
 export async function generateMetadata({
     params,

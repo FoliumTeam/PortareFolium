@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { isAdminSession } from "@/lib/admin-auth";
-import { getEffectiveAdminSession } from "@/lib/server-admin";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
 import { serverClient } from "@/lib/supabase";
@@ -22,9 +20,6 @@ interface BookItem {
     rating: number | null;
 }
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
     title: "Portfolio",
     description: "프로젝트 포트폴리오",
@@ -37,8 +32,6 @@ type PortfolioPageContentProps = {
 export default async function PortfolioPageContent({
     jobField,
 }: PortfolioPageContentProps) {
-    const session = await getEffectiveAdminSession();
-    const initialAuthed = isAdminSession(session);
     const configRows = await getSiteConfig();
     const githubConfig = configRows.find((row) => row.key === "github_url");
     const githubUrl =
@@ -86,7 +79,6 @@ export default async function PortfolioPageContent({
     return (
         <PdfExportButton
             fileName="portfolio"
-            initialAuthed={initialAuthed}
             sections={[
                 {
                     key: "books",
