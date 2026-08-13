@@ -324,22 +324,24 @@ export default async function PortfolioDetailContent({
                     >
                         제가 맡은 일
                     </h2>
-                    <div className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-3">
-                        {project.ownership.map((ownership) => (
-                            <div
-                                key={ownership}
-                                className="flex items-start gap-3 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 text-(--color-foreground)"
-                                data-pdf-block-item
-                            >
-                                <span
-                                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
-                                    aria-hidden="true"
-                                />
-                                <span className="leading-relaxed">
-                                    {ownership}
-                                </span>
-                            </div>
-                        ))}
+                    <div className="mt-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
+                        <ul className="space-y-3">
+                            {project.ownership.map((ownership) => (
+                                <li
+                                    key={ownership}
+                                    className="flex items-start gap-3 leading-relaxed text-(--color-foreground)"
+                                    data-pdf-block-item
+                                >
+                                    <span
+                                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="leading-relaxed">
+                                        {ownership}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </section>
             )}

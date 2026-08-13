@@ -33,3 +33,8 @@ Tailwind v4 uses `@theme` or `@theme inline` blocks. When adding a new shadcn pr
 - Portfolio·Blog Markdown blockquote는 `> 문장`처럼 작성한다. blockquote 내부에 인용 부호(`"`, `'`, `“”`, `‘’`)를 덧붙여 중복 인용 표기를 만들지 않는다.
 - Web Portfolio의 Technical stack은 `Frontend → Backend → 프로그래밍 언어 → DevOps → UI 도구` 순서로 분야별 별도 줄에 표시한다. 기술 분류가 아닌 프로젝트 주제·성과 태그는 Technical stack에 섞지 않는다.
 - Tablet 이상 우측 TOC는 article body layout 안에서 시작해야 하며 hero, facts, 대표 이미지 영역으로 시각적으로 침범하면 안 된다. 중앙 정렬형 sticky TOC는 본문 진입 후에만 viewport 중앙에 유지한다.
+
+## Portfolio detail information density
+
+- 여러 항목이 같은 성격의 설명을 나열하는 경우, 개별 카드를 반복하지 말고 단일 카드 안의 다중 목록으로 표시한다. `프로젝트 목표`, `제가 맡은 일`이 이 원칙의 기본 적용 대상이다.
+- 독립 카드 사용은 굵은 결과 제목과 별도 근거처럼 항목별 시각적 강조가 읽기 이해에 직접 필요한 경우로 한정한다. `결과와 근거`는 이 예외에 해당한다.
