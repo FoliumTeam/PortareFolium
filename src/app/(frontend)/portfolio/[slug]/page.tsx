@@ -1,13 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-    ArrowLeft,
-    ArrowUpRight,
-    CalendarDays,
-    Cpu,
-    Users,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Users } from "lucide-react";
 import {
     getAllPortfolioSlugs,
     getPortfolioItem,
@@ -28,6 +22,7 @@ import MermaidRenderer from "@/components/MermaidRenderer";
 import ImageLightbox from "@/components/ImageLightbox";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import PortfolioGallery from "@/components/portfolio/PortfolioGallery";
+import { SkillBadge } from "@/components/resume/SkillBadge";
 
 export const revalidate = false;
 export const dynamicParams = true;
@@ -193,24 +188,31 @@ export async function PortfolioDetailContent({
                         {project.oneLinePitch || project.description}
                     </p>
                 )}
-                {project.keywords.length > 0 && (
-                    <div
-                        className="mt-5 flex flex-wrap gap-1.5"
-                        aria-label="사용 기술"
-                    >
-                        {project.keywords.slice(0, 4).map((keyword) => (
-                            <span
-                                key={keyword}
-                                className="rounded-md bg-(--color-tag-bg) px-2.5 py-1 text-xs font-medium text-(--color-tag-fg)"
-                            >
-                                {keyword}
-                            </span>
-                        ))}
-                    </div>
-                )}
             </header>
 
             <ProjectHeroMedia media={project.primaryMedia} />
+
+            {project.keywords.length > 0 && (
+                <section className="mt-10" aria-labelledby="technology-heading">
+                    <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                        Technical stack
+                    </p>
+                    <h2
+                        id="technology-heading"
+                        className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
+                    >
+                        사용 기술
+                    </h2>
+                    <div
+                        className="mt-5 flex flex-wrap gap-2"
+                        aria-label="사용 기술"
+                    >
+                        {project.keywords.map((keyword) => (
+                            <SkillBadge key={keyword} name={keyword} />
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <div
                 className="tablet:grid-cols-2 laptop:grid-cols-4 mt-10 grid min-w-0 grid-cols-1 gap-4"
@@ -256,20 +258,28 @@ export async function PortfolioDetailContent({
                         </p>
                     </div>
                 )}
-                {(project.engine || project.platforms.length > 0) && (
-                    <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                        <p className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
-                            <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
-                            기술 환경
-                        </p>
-                        <p className="font-semibold text-(--color-foreground)">
-                            {[project.engine, ...project.platforms]
-                                .filter(Boolean)
-                                .join(" · ")}
-                        </p>
-                    </div>
-                )}
             </div>
+
+            {project.goal && (
+                <section
+                    className="tablet:p-6 mt-14 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
+                    aria-labelledby="project-goal-heading"
+                    data-pdf-block
+                >
+                    <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                        목표
+                    </p>
+                    <h2
+                        id="project-goal-heading"
+                        className="text-xl font-(--font-display) font-black text-(--color-foreground)"
+                    >
+                        프로젝트 목표
+                    </h2>
+                    <p className="mt-3 leading-relaxed text-(--color-muted)">
+                        {project.goal}
+                    </p>
+                </section>
+            )}
 
             {project.ownership.length > 0 && (
                 <section
@@ -302,19 +312,6 @@ export async function PortfolioDetailContent({
                                 </span>
                             </div>
                         ))}
-                        {project.goal && (
-                            <div
-                                className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
-                                data-pdf-block-item
-                            >
-                                <p className="text-xs font-bold tracking-wider text-(--color-muted) uppercase">
-                                    프로젝트 목표
-                                </p>
-                                <p className="mt-2 leading-relaxed text-(--color-foreground)">
-                                    {project.goal}
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </section>
             )}
@@ -362,27 +359,6 @@ export async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <PortfolioActions links={project.links} />
-                </section>
-            )}
-
-            {project.goal && !isV2 && project.ownership.length === 0 && (
-                <section
-                    className="tablet:p-6 mt-14 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
-                    aria-labelledby="project-context-heading"
-                    data-pdf-block
-                >
-                    <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Context
-                    </p>
-                    <h2
-                        id="project-context-heading"
-                        className="text-xl font-(--font-display) font-black text-(--color-foreground)"
-                    >
-                        프로젝트 목표
-                    </h2>
-                    <p className="mt-3 leading-relaxed text-(--color-muted)">
-                        {project.goal}
-                    </p>
                 </section>
             )}
 

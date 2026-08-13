@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImageIcon } from "lucide-react";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
+import { SkillBadge } from "@/components/resume/SkillBadge";
 import type { PortfolioProject } from "@/types/portfolio";
 
 type PortfolioProjectCardProps = {
@@ -58,15 +59,6 @@ export default function PortfolioProjectCard({
             </div>
 
             <div className="tablet:p-6 flex min-w-0 flex-1 flex-col p-5">
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                    {project.engine && <span>{project.engine}</span>}
-                    {project.platforms.length > 0 && (
-                        <>
-                            <span aria-hidden="true">·</span>
-                            <span>{project.platforms.join(" / ")}</span>
-                        </>
-                    )}
-                </div>
                 <h3 className="text-xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     {project.title}
                 </h3>
@@ -102,12 +94,7 @@ export default function PortfolioProjectCard({
                         aria-label="사용 기술"
                     >
                         {project.keywords.slice(0, 4).map((keyword) => (
-                            <span
-                                key={keyword}
-                                className="rounded-md bg-(--color-tag-bg) px-2.5 py-1 text-xs font-medium text-(--color-tag-fg)"
-                            >
-                                {keyword}
-                            </span>
+                            <SkillBadge key={keyword} name={keyword} />
                         ))}
                     </div>
                 )}

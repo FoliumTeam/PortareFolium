@@ -164,7 +164,11 @@ export async function renderMarkdown(content: string): Promise<string> {
 
         const { default: MDXContent } = await evaluate(mdx, {
             ...(runtime as any),
-            remarkPlugins: [remarkGfm, remarkMath, remarkMermaid],
+            remarkPlugins: [
+                [remarkGfm, { singleTilde: false }],
+                remarkMath,
+                remarkMermaid,
+            ],
             rehypePlugins: [
                 rehypeKatex,
                 [
