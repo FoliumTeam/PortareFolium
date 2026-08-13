@@ -29,6 +29,7 @@
 - **Automatic Task Commit**: After completing and verifying each task, invoke the project `ship` Skill automatically to create focused commits for that task's changes. Never push automatically; push requires the user's explicit authorization. Preserve pre-existing or unrelated worktree changes outside the completed task's scope.
 - **Self-Correction Loop**: Define strong success criteria. If you encounter build errors, lint errors, or failing tests, do NOT immediately stop and ask the user. Read the error logs and attempt to fix the issue autonomously at least 3 times before requesting help.
 - **Validation Blocker Recovery**: Treat a validation failure as an active task blocker. Continue diagnosis, apply the narrowest safe correction, and re-run the failed validation until it passes. Do not leave a task incomplete merely because the defect predates the current change or lies outside the original file scope. Escalate only when the correction has unclear ownership, risks data loss, changes a user decision, or requires credentials or external authority.
+- **Development Server Lifecycle**: When stale source, cache, or build artifacts prevent local verification, automatically restart only PortareFolium's development server. After verification, keep one healthy server running unless the user asks for termination.
 - **State Assumptions**: State your assumptions explicitly. If multiple interpretations exist, present them. If a simpler approach exists, say so and push back when warranted.
 
 ## Behavioral Guidelines

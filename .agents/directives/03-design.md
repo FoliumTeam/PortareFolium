@@ -28,7 +28,7 @@ Tailwind v4 uses `@theme` or `@theme inline` blocks. When adding a new shadcn pr
 ## Portfolio article media
 
 - Portfolio detail의 gallery 제목은 `대표 이미지`로 사용하며, project article의 핵심 장면을 빠르게 훑는 요약 영역으로 취급한다.
-- 대표 이미지와 article body image는 중복될 수 있다. 본문에는 관련 주장을 읽는 위치에 Markdown image를 직접 배치해 gallery로 되돌아가는 탐색을 요구하지 않는다.
+- 대표 이미지는 article 핵심 장면을 빠르게 훑는 요약 보조 영역이다. 관련 이미지가 있으면 대표 이미지 영역에만 두지 말고, 해당 주장·설명을 읽는 본문 위치에 Markdown image를 먼저 배치한다. 대표 이미지와 본문 이미지는 중복 가능하며 gallery로 되돌아가는 탐색 요구 금지.
 - Article body는 heading, 강조, blockquote, list, table, 짧은 code block을 내용에 맞게 사용한다. 장식 목적의 media나 긴 code dump는 추가하지 않는다.
 - Portfolio·Blog Markdown blockquote는 `> 문장`처럼 작성한다. blockquote 내부에 인용 부호(`"`, `'`, `“”`, `‘’`)를 덧붙여 중복 인용 표기를 만들지 않는다.
 - Web Portfolio의 Technical stack은 `Frontend → Backend → 프로그래밍 언어 → DevOps → UI 도구` 순서로 분야별 별도 줄에 표시한다. 기술 분류가 아닌 프로젝트 주제·성과 태그는 Technical stack에 섞지 않는다.
