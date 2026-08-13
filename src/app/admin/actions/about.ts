@@ -21,6 +21,11 @@ type SaveAboutResult =
     | { success: true; aboutRowId: string | null }
     | { success: false; error: string };
 
+type SaveAboutIntroductionInput = {
+    aboutData: AboutData;
+    aboutRowId: string | null;
+};
+
 type AboutBootstrap = {
     aboutRowId: string | null;
     aboutData: AboutData | null;
@@ -175,6 +180,43 @@ export async function saveAboutPanel(
         await revalidateResume();
 
         return { success: true, aboutRowId: nextAboutRowId };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "저장 실패",
+        };
+    }
+}
+
+// Resume 공유 소개 저장
+export async function saveAboutIntroductions(
+    input: SaveAboutIntroductionInput
+): Promise<SaveAboutResult> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    try {
+        if (input.aboutRowId) {
+            const { error } = await serverClient
+                .from("about_data")
+                .update({ data: input.aboutData })
+                .eq("id", input.aboutRowId);
+            if (error) return { success: false, error: error.message };
+        } else {
+            const { data, error } = await serverClient
+                .from("about_data")
+                .insert({ data: input.aboutData })
+                .select("id")
+                .single();
+            if (error) return { success: false, error: error.message };
+            await revalidateAbout();
+            await revalidateResume();
+            return { success: true, aboutRowId: data?.id ?? null };
+        }
+
+        await revalidateAbout();
+        await revalidateResume();
+        return { success: true, aboutRowId: input.aboutRowId };
     } catch (error) {
         return {
             success: false,

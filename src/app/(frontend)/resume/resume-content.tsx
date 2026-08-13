@@ -85,6 +85,13 @@ export default async function ResumePageContent({
     }
 
     const rawCC = resumeDataRaw.coreCompetencies;
+    const fallbackIntroduction =
+        aboutData.description || aboutData.descriptionSub
+            ? {
+                  description: aboutData.description ?? "",
+                  descriptionSub: aboutData.descriptionSub ?? "",
+              }
+            : undefined;
     const normalizedResumeData: Resume = {
         ...resumeDataRaw,
         coreCompetencies: Array.isArray(rawCC) ? { entries: rawCC } : rawCC,
@@ -92,7 +99,8 @@ export default async function ResumePageContent({
     const filteredResumeData = createJobFieldResumeView(
         normalizedResumeData,
         jobField,
-        aboutData.introductions?.[jobField]
+        aboutData.introductions?.[jobField],
+        fallbackIntroduction
     );
     const coreCompetencies = filteredResumeData.coreCompetencies?.entries ?? [];
     const portfolioBasePath = `/${jobField}/portfolio`;

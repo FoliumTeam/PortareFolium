@@ -341,4 +341,26 @@ describe("createJobFieldResumeView", () => {
             "Game phase",
         ]);
     });
+
+    it("직무 분야 소개가 없으면 About 공통 소개를 Resume에 사용", () => {
+        const result = createJobFieldResumeView(
+            {
+                basics: {
+                    label: "기존 직함",
+                    summary: "기존 Resume 소개",
+                },
+            },
+            "new-field",
+            undefined,
+            {
+                description: "About 공통 소개",
+                descriptionSub: "About 공통 보조 소개",
+            }
+        );
+
+        expect(result.basics).toEqual({
+            label: undefined,
+            summary: "About 공통 소개\nAbout 공통 보조 소개",
+        });
+    });
 });

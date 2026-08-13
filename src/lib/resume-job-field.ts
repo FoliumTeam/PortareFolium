@@ -115,13 +115,21 @@ function filterCoreCompetencies(
 export function createJobFieldResumeView(
     resume: Resume,
     jobField: string,
-    introduction?: FieldIntroduction
+    introduction?: FieldIntroduction,
+    fallbackIntroduction?: Pick<
+        FieldIntroduction,
+        "description" | "descriptionSub"
+    >
 ): Resume {
-    const basics = introduction
+    const profileIntroduction = introduction ?? fallbackIntroduction;
+    const basics = profileIntroduction
         ? {
               ...resume.basics,
               label: undefined,
-              summary: [introduction.description, introduction.descriptionSub]
+              summary: [
+                  profileIntroduction.description,
+                  profileIntroduction.descriptionSub,
+              ]
                   .filter(Boolean)
                   .join("\n"),
           }

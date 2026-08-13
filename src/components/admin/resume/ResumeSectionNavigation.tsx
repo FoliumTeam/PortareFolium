@@ -9,7 +9,7 @@ type EditorSection = {
 };
 
 const editorSections: EditorSection[] = [
-    { key: "basics", label: "기본 정보" },
+    { key: "basics", label: "자기소개" },
     { key: "careerPhases", label: "커리어 타임라인" },
     { key: "coreCompetencies", label: "핵심역량" },
     { key: "work", label: "경력" },

@@ -12,7 +12,10 @@ import {
     reorderFeaturedPortfolioItems,
     setPortfolioFeatured,
 } from "@/app/admin/actions/portfolio";
-import { uploadImage } from "@/lib/image-upload";
+import {
+    getAboutBootstrap,
+    saveAboutIntroductions,
+} from "@/app/admin/actions/about";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField, normalizeUniqueJobFieldList } from "@/lib/job-field";
 import {
@@ -25,7 +28,7 @@ import {
     SectionEmojiSelector,
     TextAreaField,
 } from "@/components/admin/resume/ResumeEditorFields";
-import { ResumeBasicsSection } from "@/components/admin/resume/ResumeBasicsSection";
+import { ResumeAboutIntroductionSection } from "@/components/admin/resume/ResumeAboutIntroductionSection";
 import { ResumeSectionNavigation } from "@/components/admin/resume/ResumeSectionNavigation";
 import { GripVertical, Trash2 } from "lucide-react";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
@@ -50,10 +53,10 @@ import type {
     ResumeAward,
     ResumeSkillKeyword,
     ResumeLanguage,
-    ResumeBasics,
     ResumeCareerPhase,
 } from "@/types/resume";
 import type { PortfolioAdminItem } from "@/lib/portfolio-admin";
+import type { AboutData } from "@/types/about";
 
 // string[] 하위 호환: 로드된 keyword가 string이면 객체로 정규화
 function normalizeKeywords(keywords: unknown[]): ResumeSkillKeyword[] {
@@ -167,7 +170,6 @@ export default function ResumePanel() {
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
     const [status, setStatus] = useState<{
         type: "error" | "success";
         msg: string;
@@ -193,6 +195,9 @@ export default function ResumePanel() {
         useState<string>("");
     const [featuredProjectsLoading, setFeaturedProjectsLoading] =
         useState(true);
+    const [aboutData, setAboutData] = useState<AboutData | null>(null);
+    const [aboutRowId, setAboutRowId] = useState<string | null>(null);
+    const [aboutSaving, setAboutSaving] = useState(false);
     // 직무 분야 필터 (null = 전체)
     const [filterJobField, setFilterJobField] = useState<string | null>(null);
     const [activeEditorSection, setActiveEditorSection] = useState("basics");
@@ -256,6 +261,13 @@ export default function ResumePanel() {
             initialSectionLayoutRef.current = result.resumeSectionLayout;
             setJobFields(result.jobFields);
             setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+        });
+    }, []);
+
+    useEffect(() => {
+        getAboutBootstrap().then((result) => {
+            setAboutData(result.aboutData ?? {});
+            setAboutRowId(result.aboutRowId);
         });
     }, []);
 
@@ -419,44 +431,23 @@ export default function ResumePanel() {
         }
     };
 
-    const handleImageUpload = async (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const file = e.target.files?.[0];
-        if (!file || !resumeData) return;
-        if (!file.type.startsWith("image/")) {
-            setStatus({
-                type: "error",
-                msg: "이미지 파일만 업로드 가능합니다.",
-            });
+    const saveSharedIntroduction = async () => {
+        if (!aboutData) return;
+        setAboutSaving(true);
+        setStatus(null);
+        const result = await saveAboutIntroductions({
+            aboutData,
+            aboutRowId,
+        });
+        setAboutSaving(false);
+        if (!result.success) {
+            setStatus({ type: "error", msg: result.error });
             return;
         }
-
-        setUploadingImage(true);
-        setStatus(null);
-        try {
-            const url = await uploadImage(file, "resume");
-            setResumeData({
-                ...resumeData,
-                basics: { ...resumeData.basics, image: url },
-            });
-            setStatus({ type: "success", msg: "이미지가 업로드되었습니다." });
-        } catch (err) {
-            setStatus({
-                type: "error",
-                msg: `이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`,
-            });
-        } finally {
-            setUploadingImage(false);
-            e.target.value = "";
-        }
-    };
-
-    const updateBasics = (field: keyof ResumeBasics, value: string) => {
-        if (!resumeData) return;
-        setResumeData({
-            ...resumeData,
-            basics: { ...resumeData.basics, [field]: value },
+        if (result.aboutRowId) setAboutRowId(result.aboutRowId);
+        setStatus({
+            type: "success",
+            msg: "자기소개가 About과 공개 이력서에 반영됐습니다.",
         });
     };
 
@@ -663,15 +654,15 @@ export default function ResumePanel() {
                     </section>
                 )}
 
-                {/* 기본 정보 — layout edit mode에서 숨김 */}
-                {!layoutEditMode && (
-                    <ResumeBasicsSection
-                        basics={resumeData.basics}
-                        uploadingImage={uploadingImage}
-                        onImageChange={handleImageUpload}
-                        onChange={updateBasics}
+                {!layoutEditMode && aboutData ? (
+                    <ResumeAboutIntroductionSection
+                        aboutData={aboutData}
+                        jobFields={jobFields}
+                        saving={aboutSaving}
+                        onChange={setAboutData}
+                        onSave={() => void saveSharedIntroduction()}
                     />
-                )}
+                ) : null}
 
                 {/* 커리어 타임라인 */}
                 <div
