@@ -1,0 +1,4 @@
+interface:
+  display_name: "Restart Dev Server"
+  short_description: "Restart PortareFolium dev server on port 3000"
+  default_prompt: "Use $restart-dev-server to restart the PortareFolium development server on port 3000 and verify a route."
