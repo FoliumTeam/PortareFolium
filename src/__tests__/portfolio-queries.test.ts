@@ -31,6 +31,9 @@ vi.mock("@/lib/supabase", () => ({ serverClient: queryMock.client }));
 vi.mock("@/lib/post-content-chunks", () => ({
     readPostContentById: vi.fn(),
 }));
+vi.mock("next/cache", () => ({
+    unstable_cache: <T>(callback: T) => callback,
+}));
 
 import {
     getAllPortfolioSlugs,

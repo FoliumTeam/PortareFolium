@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     revalidatePath: vi.fn(),
+    revalidateTag: vi.fn(),
     requireAdminSession: vi.fn().mockResolvedValue(undefined),
     getPublicJobFields: vi.fn().mockResolvedValue([
         { id: "frontend", name: "Frontend", emoji: "🖥️" },
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/cache", () => ({
     revalidatePath: mocks.revalidatePath,
+    revalidateTag: mocks.revalidateTag,
 }));
 
 vi.mock("@/lib/server-admin", () => ({
@@ -19,6 +21,10 @@ vi.mock("@/lib/server-admin", () => ({
 
 vi.mock("@/lib/public-job-field", () => ({
     getPublicJobFields: mocks.getPublicJobFields,
+}));
+
+vi.mock("@/lib/queries", () => ({
+    PUBLIC_CONTENT_CACHE_TAG: "public-content",
 }));
 
 import {
@@ -31,6 +37,7 @@ import {
 describe("직무별 공개 경로 cache revalidation", () => {
     beforeEach(() => {
         mocks.revalidatePath.mockClear();
+        mocks.revalidateTag.mockClear();
         mocks.requireAdminSession.mockClear();
     });
 
@@ -48,6 +55,10 @@ describe("직무별 공개 경로 cache revalidation", () => {
             "/game-design",
             "/",
         ]);
+        expect(mocks.revalidateTag).toHaveBeenCalledWith(
+            "public-content",
+            "max"
+        );
     });
 
     it("Blog 상세와 목록의 등록 직무 분야 경로를 갱신한다", async () => {
@@ -64,6 +75,10 @@ describe("직무별 공개 경로 cache revalidation", () => {
             "/game-design",
             "/",
         ]);
+        expect(mocks.revalidateTag).toHaveBeenCalledWith(
+            "public-content",
+            "max"
+        );
     });
 
     it("Resume의 등록 직무 분야 경로를 갱신한다", async () => {
@@ -76,6 +91,10 @@ describe("직무별 공개 경로 cache revalidation", () => {
             "/game-design/resume",
             "/game-design",
         ]);
+        expect(mocks.revalidateTag).toHaveBeenCalledWith(
+            "public-content",
+            "max"
+        );
     });
 
     it("About Me와 등록 직무 분야 landing 경로를 갱신한다", async () => {
@@ -89,5 +108,9 @@ describe("직무별 공개 경로 cache revalidation", () => {
             "/game-design",
             "/",
         ]);
+        expect(mocks.revalidateTag).toHaveBeenCalledWith(
+            "public-content",
+            "max"
+        );
     });
 });

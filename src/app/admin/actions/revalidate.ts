@@ -1,7 +1,12 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdminSession } from "@/lib/server-admin";
 import { getPublicJobFields } from "@/lib/public-job-field";
+import { PUBLIC_CONTENT_CACHE_TAG } from "@/lib/queries";
+
+function revalidatePublicContent() {
+    revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
+}
 
 async function revalidateJobFieldPaths(
     callback: (jobField: string) => void
@@ -13,6 +18,7 @@ async function revalidateJobFieldPaths(
 // 포스트 저장/수정 후 해당 슬러그 페이지 및 목록 재생성 트리거
 export async function revalidatePost(slug: string) {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath(`/blog/${slug}`);
     revalidatePath("/blog");
     await revalidateJobFieldPaths((jobField) => {
@@ -26,6 +32,7 @@ export async function revalidatePost(slug: string) {
 // 포트폴리오 아이템 저장/수정 후 해당 슬러그 페이지 및 목록 재생성 트리거
 export async function revalidatePortfolioItem(slug: string) {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
     await revalidateJobFieldPaths((jobField) => {
@@ -39,6 +46,7 @@ export async function revalidatePortfolioItem(slug: string) {
 // About Me 저장 후 직무별 공개 페이지 재생성 트리거
 export async function revalidateAbout() {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath("/about");
     await revalidateJobFieldPaths((jobField) => {
         revalidatePath(`/${jobField}/about`);
@@ -50,6 +58,7 @@ export async function revalidateAbout() {
 // 도서 저장/수정 후 해당 슬러그 페이지 재생성 트리거
 export async function revalidateBook(slug: string) {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath(`/books/${slug}`);
     await revalidateJobFieldPaths((jobField) => {
         revalidatePath(`/${jobField}/books/${slug}`);
@@ -60,18 +69,21 @@ export async function revalidateBook(slug: string) {
 // 홈 페이지 재생성 트리거
 export async function revalidateHome() {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath("/");
 }
 
 // 루트 레이아웃 재생성 트리거 (컬러 스킴 등 전역 설정 변경 시)
 export async function revalidateLayout() {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath("/", "layout");
 }
 
 // 이력서 페이지 재생성 트리거
 export async function revalidateResume() {
     await requireAdminSession();
+    revalidatePublicContent();
     revalidatePath("/resume");
     await revalidateJobFieldPaths((jobField) => {
         revalidatePath(`/${jobField}/resume`);
