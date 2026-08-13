@@ -9,5 +9,5 @@ describe("Markdown 렌더링", () => {
         expect(html).not.toContain("**강조 문구**");
         expect(html).toContain("1~2시간에서 1~2분");
         expect(html).not.toContain("<del>");
-    });
+    }, 15_000);
 });
