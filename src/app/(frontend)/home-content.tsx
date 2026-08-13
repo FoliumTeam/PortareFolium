@@ -9,7 +9,9 @@ import {
     matchesPortfolioJobField,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
+import { matchesJobField } from "@/lib/job-field";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
+import type { FieldIntroduction, ValuePillar } from "@/types/about";
 
 export const revalidate = false;
 
@@ -35,27 +37,12 @@ const PLACEHOLDER_VALUE_PILLARS = [
     },
 ];
 
-const PLACEHOLDER_CORE_VALUES = [
-    {
-        title: "Value 1",
-        description: "Admin에서 Core Compentency를 입력하세요",
-    },
-    {
-        title: "Value 2",
-        description: "Admin에서 Core Compentency를 입력하세요",
-    },
-    {
-        title: "Value 3",
-        description: "Admin에서 Core Compentency를 입력하세요",
-    },
-];
-
 interface AboutData {
     name?: string;
     description?: string;
     descriptionSub?: string;
-    valuePillars?: { label: string; sub: string; description: string }[];
-    coreCompetencies?: { title: string; description: string }[];
+    introductions?: Record<string, FieldIntroduction>;
+    valuePillars?: ValuePillar[];
 }
 interface WorkItem {
     name?: string;
@@ -102,6 +89,7 @@ export default async function HomePageContent({
     let siteName = "";
     let profileImage: string | undefined;
     let workItems: WorkItem[] = [];
+    let coreCompetencies: { title: string; description: string }[] = [];
 
     if (serverClient) {
         const [aboutRes, siteRes, resumeRes] = await Promise.all([
@@ -127,6 +115,19 @@ export default async function HomePageContent({
             const resumeFull = resumeRes.data.data as {
                 basics?: { image?: string };
                 work?: { entries?: WorkItem[] };
+                coreCompetencies?:
+                    | {
+                          entries?: {
+                              title?: string;
+                              description?: string;
+                              jobField?: string | string[];
+                          }[];
+                      }
+                    | {
+                          title?: string;
+                          description?: string;
+                          jobField?: string | string[];
+                      }[];
             };
             const img = resumeFull.basics?.image?.trim();
             if (img) profileImage = img;
@@ -143,6 +144,23 @@ export default async function HomePageContent({
                     (b.startDate ?? "").localeCompare(a.startDate ?? "")
                 )
                 .slice(0, 4);
+
+            const rawCoreCompetencies = resumeFull.coreCompetencies;
+            const coreEntries = Array.isArray(rawCoreCompetencies)
+                ? rawCoreCompetencies
+                : (rawCoreCompetencies?.entries ?? []);
+            coreCompetencies = coreEntries.flatMap((entry) =>
+                matchesJobField(entry.jobField, jobField) &&
+                entry.title?.trim() &&
+                entry.description?.trim()
+                    ? [
+                          {
+                              title: entry.title.trim(),
+                              description: entry.description.trim(),
+                          },
+                      ]
+                    : []
+            );
         }
     }
 
@@ -200,17 +218,19 @@ export default async function HomePageContent({
         }
     }
 
+    const fieldIntroduction = about.introductions?.[jobField];
     const heroName = about.name ?? siteName;
     const heroDesc =
-        about.description ?? "포트폴리오와 기술 블로그가 함께하는 공간입니다.";
+        fieldIntroduction?.description ??
+        about.description ??
+        "포트폴리오와 기술 블로그가 함께하는 공간입니다.";
     const valuePillars =
-        about.valuePillars && about.valuePillars.length > 0
-            ? about.valuePillars
-            : PLACEHOLDER_VALUE_PILLARS;
-    const coreCompetencies =
-        about.coreCompetencies && about.coreCompetencies.length > 0
-            ? about.coreCompetencies
-            : PLACEHOLDER_CORE_VALUES;
+        fieldIntroduction?.valuePillars &&
+        fieldIntroduction.valuePillars.length > 0
+            ? fieldIntroduction.valuePillars
+            : about.valuePillars && about.valuePillars.length > 0
+              ? about.valuePillars
+              : PLACEHOLDER_VALUE_PILLARS;
 
     return (
         <>
@@ -218,7 +238,9 @@ export default async function HomePageContent({
             <LandingHero
                 heroName={heroName}
                 heroDesc={heroDesc}
-                descriptionSub={about.descriptionSub}
+                descriptionSub={
+                    fieldIntroduction?.descriptionSub ?? about.descriptionSub
+                }
                 profileImage={profileImage}
                 valuePillars={valuePillars}
                 jobField={jobField}
@@ -265,36 +287,38 @@ export default async function HomePageContent({
             )}
 
             {/* 핵심 역량 */}
-            <section className="border-t border-(--color-border) py-16">
-                <div className="mb-10">
-                    <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        Core Competencies
-                    </p>
-                    <h2 className="text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                        핵심 역량
-                    </h2>
-                </div>
-                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
-                    {coreCompetencies.map((comp, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
-                        >
-                            <div className="mb-3 flex items-center gap-3">
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--color-accent)/10 text-sm font-(--font-display) font-bold text-(--color-accent)">
-                                    {String(idx + 1).padStart(2, "0")}
-                                </span>
-                                <h3 className="text-lg font-(--font-display) font-bold text-(--color-foreground)">
-                                    {comp.title}
-                                </h3>
+            {coreCompetencies.length > 0 && (
+                <section className="border-t border-(--color-border) py-16">
+                    <div className="mb-10">
+                        <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                            Core Competencies
+                        </p>
+                        <h2 className="text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
+                            핵심 역량
+                        </h2>
+                    </div>
+                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
+                        {coreCompetencies.map((comp, idx) => (
+                            <div
+                                key={idx}
+                                className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                            >
+                                <div className="mb-3 flex items-center gap-3">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--color-accent)/10 text-sm font-(--font-display) font-bold text-(--color-accent)">
+                                        {String(idx + 1).padStart(2, "0")}
+                                    </span>
+                                    <h3 className="text-lg font-(--font-display) font-bold text-(--color-foreground)">
+                                        {comp.title}
+                                    </h3>
+                                </div>
+                                <p className="text-sm leading-relaxed text-(--color-muted)">
+                                    {comp.description}
+                                </p>
                             </div>
-                            <p className="text-sm leading-relaxed text-(--color-muted)">
-                                {comp.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Work Experience */}
             {workItems.length > 0 && (

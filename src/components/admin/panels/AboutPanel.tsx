@@ -139,6 +139,21 @@ export default function AboutPanel() {
             [newIntroFieldId]: {
                 description: descriptionRef.current?.value ?? "",
                 descriptionSub: descriptionSubRef.current?.value ?? "",
+                valuePillars: valuePillars.map((pillar) => ({ ...pillar })),
+                sections: Object.fromEntries(
+                    ABOUT_SECTION_KEYS.map((key) => [
+                        key,
+                        parseSectionText(sectionRefs.current[key]?.value ?? ""),
+                    ])
+                ),
+                competencySections: Object.fromEntries(
+                    COMPETENCY_SECTION_KEYS.map((key) => [
+                        key,
+                        parseSectionText(
+                            competencyRefs.current[key]?.value ?? ""
+                        ),
+                    ])
+                ),
             },
         }));
         setNewIntroFieldId("");
@@ -163,15 +178,46 @@ export default function AboutPanel() {
     };
 
     // Job Field별 소개 필드 업데이트
-    const handleIntroChange = (
+    const updateIntroduction = (
         fieldId: string,
-        key: keyof FieldIntroduction,
-        value: string
+        patch: Partial<FieldIntroduction>
     ) => {
         setIntroductions((prev) => ({
             ...prev,
-            [fieldId]: { ...prev[fieldId], [key]: value },
+            [fieldId]: { ...prev[fieldId], ...patch },
         }));
+    };
+
+    const handleIntroChange = (
+        fieldId: string,
+        key: "description" | "descriptionSub",
+        value: string
+    ) => updateIntroduction(fieldId, { [key]: value });
+
+    const updateFieldPillar = (
+        fieldId: string,
+        index: number,
+        key: keyof ValuePillar,
+        value: string
+    ) => {
+        const pillars = [...(introductions[fieldId]?.valuePillars ?? [])];
+        pillars[index] = { ...pillars[index], [key]: value };
+        updateIntroduction(fieldId, { valuePillars: pillars });
+    };
+
+    const updateFieldList = (
+        fieldId: string,
+        group: "sections" | "competencySections",
+        key: AboutSectionKey | CompetencySectionKey,
+        value: string
+    ) => {
+        const introduction = introductions[fieldId];
+        updateIntroduction(fieldId, {
+            [group]: {
+                ...introduction?.[group],
+                [key]: parseSectionText(value),
+            },
+        });
     };
 
     const handleSave = async () => {
@@ -407,6 +453,137 @@ export default function AboutPanel() {
                                     className={textareaCls}
                                 />
                             </div>
+                            <div className="space-y-3 border-t border-(--color-border) pt-4">
+                                <div>
+                                    <h4 className="text-base font-semibold text-(--color-foreground)">
+                                        Landing Page 핵심 가치
+                                    </h4>
+                                    <p className="mt-1 text-xs text-(--color-muted)">
+                                        이 Job Field Landing Page에만 표시되는
+                                        3개 항목입니다.
+                                    </p>
+                                </div>
+                                {[0, 1, 2].map((index) => {
+                                    const pillar = intro.valuePillars?.[
+                                        index
+                                    ] ?? {
+                                        label: "",
+                                        sub: "",
+                                        description: "",
+                                    };
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="space-y-3 rounded-lg border border-(--color-border) p-3"
+                                        >
+                                            <p className="text-sm font-bold text-(--color-accent)">
+                                                핵심 가치 {index + 1}
+                                            </p>
+                                            <input
+                                                value={pillar.label}
+                                                onChange={(e) =>
+                                                    updateFieldPillar(
+                                                        fieldId,
+                                                        index,
+                                                        "label",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="키워드"
+                                                className={inputCls}
+                                            />
+                                            <input
+                                                value={pillar.sub}
+                                                onChange={(e) =>
+                                                    updateFieldPillar(
+                                                        fieldId,
+                                                        index,
+                                                        "sub",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="보조 문구"
+                                                className={inputCls}
+                                            />
+                                            <input
+                                                value={pillar.description}
+                                                onChange={(e) =>
+                                                    updateFieldPillar(
+                                                        fieldId,
+                                                        index,
+                                                        "description",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="설명"
+                                                className={inputCls}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <details className="rounded-lg border border-(--color-border) p-3">
+                                <summary className="cursor-pointer font-semibold text-(--color-foreground)">
+                                    About me 경험과 역량
+                                </summary>
+                                <p className="mt-2 text-xs text-(--color-muted)">
+                                    한 줄 = 한 항목. 이 Job Field의 About me에만
+                                    표시됩니다.
+                                </p>
+                                <div className="mt-4 space-y-4">
+                                    {ABOUT_SECTION_KEYS.map((key) => (
+                                        <div key={key}>
+                                            <label className="mb-1 block text-xs font-medium text-(--color-muted)">
+                                                {key}
+                                            </label>
+                                            <textarea
+                                                rows={3}
+                                                value={(
+                                                    intro.sections?.[key] ?? []
+                                                ).join("\n")}
+                                                onChange={(e) =>
+                                                    updateFieldList(
+                                                        fieldId,
+                                                        "sections",
+                                                        key,
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className={`${textareaCls} min-h-[80px]`}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-5 space-y-4 border-t border-(--color-border) pt-4">
+                                    <h5 className="text-sm font-semibold text-(--color-foreground)">
+                                        역량 키워드
+                                    </h5>
+                                    {COMPETENCY_SECTION_KEYS.map((key) => (
+                                        <div key={key}>
+                                            <label className="mb-1 block text-xs font-medium text-(--color-muted)">
+                                                {key}
+                                            </label>
+                                            <textarea
+                                                rows={3}
+                                                value={(
+                                                    intro.competencySections?.[
+                                                        key
+                                                    ] ?? []
+                                                ).join("\n")}
+                                                onChange={(e) =>
+                                                    updateFieldList(
+                                                        fieldId,
+                                                        "competencySections",
+                                                        key,
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className={`${textareaCls} min-h-[80px]`}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </details>
                         </div>
                     );
                 })}

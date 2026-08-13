@@ -1,8 +1,13 @@
 import type { ResumeProject } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPortfolioItem } from "@/lib/queries";
-import { normalizePortfolioProject } from "@/lib/portfolio";
-import type { PortfolioRawRow } from "@/types/portfolio";
+import {
+    groupPortfolioProjects,
+    matchesPortfolioJobField,
+    normalizePortfolioProject,
+} from "@/lib/portfolio";
+import { serverClient } from "@/lib/supabase";
+import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 import { ArrowUpRight, ExternalLinkIcon } from "lucide-react";
 
 // 날짜 포맷
@@ -18,19 +23,36 @@ interface Props {
     activeJobField?: string;
 }
 
-export const getCompactProjects = <T,>(
-    projects: ResumeProject[],
-    portfolioItemMap: Record<string, T>
-) =>
-    projects
-        .map((project) => ({
-            project,
-            portfolio: project.portfolioSlug
-                ? portfolioItemMap[project.portfolioSlug]
-                : undefined,
-        }))
-        .filter((entry) => entry.project.portfolioSlug && entry.portfolio)
-        .slice(0, 5);
+// 직무 분야별 대표 Portfolio 선택
+export const getCompactPortfolioProjects = (
+    projects: PortfolioProject[],
+    jobField: string
+): PortfolioProject[] =>
+    groupPortfolioProjects(
+        projects.filter((project) =>
+            matchesPortfolioJobField(project, jobField)
+        ),
+        jobField
+    ).selected.slice(0, 5);
+
+// 공개된 대표 Portfolio 조회
+const getFeaturedPortfolioProjects = async (
+    jobField: string
+): Promise<PortfolioProject[]> => {
+    if (!serverClient || !jobField) return [];
+    const { data } = await serverClient
+        .from("portfolio_items")
+        .select(
+            "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, job_field"
+        )
+        .eq("published", true);
+    return getCompactPortfolioProjects(
+        (data ?? []).map((item) =>
+            normalizePortfolioProject(item as PortfolioRawRow)
+        ),
+        jobField
+    );
+};
 
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
 export default async function ProjectsSection({
@@ -41,38 +63,10 @@ export default async function ProjectsSection({
     compact = false,
     activeJobField = "web",
 }: Props) {
-    if (projects.length === 0) return null;
-
-    // sections markdown 렌더링
-    const projectsMarkdown = await Promise.all(
-        projects.map(async (proj) => {
-            if (!proj.sections) return [] as (string | null)[];
-            return Promise.all(
-                proj.sections.map((sec) =>
-                    sec.markdown ? renderMarkdown(sec.content) : null
-                )
-            );
-        })
-    );
-
-    // portfolioSlug 연결 항목 fetch
-    const portfolioSlugs = projects
-        .map((p) => p.portfolioSlug)
-        .filter((s): s is string => Boolean(s));
-    const portfolioRows = await Promise.all(
-        portfolioSlugs.map((slug) => getPortfolioItem(slug))
-    );
-    const portfolioItemMap = Object.fromEntries(
-        portfolioSlugs.flatMap((slug, index) => {
-            const row = portfolioRows[index];
-            return row
-                ? [[slug, normalizePortfolioProject(row as PortfolioRawRow)]]
-                : [];
-        })
-    );
-
     if (compact) {
-        const compactProjects = getCompactProjects(projects, portfolioItemMap);
+        const compactProjects =
+            await getFeaturedPortfolioProjects(activeJobField);
+        if (compactProjects.length === 0) return null;
 
         return (
             <section className="mb-10" data-pdf-block>
@@ -82,40 +76,40 @@ export default async function ProjectsSection({
                             {label}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            관리자에서 지정한 순서대로 대표 프로젝트 5건을
-                            요약했습니다.
+                            포트폴리오에서 지정한 순서대로 대표 프로젝트 최대
+                            5건을 요약했습니다.
                         </p>
                     </div>
                     <a
                         href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3.5 py-2 text-sm font-bold text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        웹 포트폴리오 전체 보기
+                        포트폴리오 전체 보기
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </a>
                 </div>
                 <div className="space-y-3">
-                    {compactProjects.map(({ project, portfolio }) => {
+                    {compactProjects.map((project) => {
                         const summary =
                             project.description ||
-                            portfolio?.outcomes[0]?.result ||
-                            project.highlights?.[0] ||
+                            project.outcomes[0]?.result ||
+                            project.accomplishments[0] ||
                             "";
                         return (
                             <article
-                                key={project.portfolioSlug}
+                                key={project.slug}
                                 className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 transition-colors hover:border-(--color-accent)"
                                 data-pdf-block-item
                             >
                                 <a
-                                    href={`${portfolioBasePath}/${project.portfolioSlug}`}
+                                    href={`${portfolioBasePath}/${project.slug}`}
                                     className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
-                                    aria-label={`${project.name ?? "프로젝트"} 프로젝트 기록 보기`}
+                                    aria-label={`${project.title} 프로젝트 기록 보기`}
                                 />
                                 <div className="tablet:flex-row tablet:items-start tablet:justify-between flex flex-col gap-2">
                                     <div className="min-w-0">
                                         <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                            {project.name}
+                                            {project.title}
                                         </h3>
                                         {summary ? (
                                             <p className="mt-1.5 text-base leading-relaxed text-(--color-muted)">
@@ -147,6 +141,36 @@ export default async function ProjectsSection({
             </section>
         );
     }
+
+    if (projects.length === 0) return null;
+
+    // sections markdown 렌더링
+    const projectsMarkdown = await Promise.all(
+        projects.map(async (proj) => {
+            if (!proj.sections) return [] as (string | null)[];
+            return Promise.all(
+                proj.sections.map((sec) =>
+                    sec.markdown ? renderMarkdown(sec.content) : null
+                )
+            );
+        })
+    );
+
+    // portfolioSlug 연결 항목 fetch
+    const portfolioSlugs = projects
+        .map((p) => p.portfolioSlug)
+        .filter((s): s is string => Boolean(s));
+    const portfolioRows = await Promise.all(
+        portfolioSlugs.map((slug) => getPortfolioItem(slug))
+    );
+    const portfolioItemMap = Object.fromEntries(
+        portfolioSlugs.flatMap((slug, index) => {
+            const row = portfolioRows[index];
+            return row
+                ? [[slug, normalizePortfolioProject(row as PortfolioRawRow)]]
+                : [];
+        })
+    );
 
     return (
         <section className="mb-10" data-pdf-block>

@@ -187,4 +187,17 @@ describe("portfolio admin projection", () => {
         expect(payload.data.keywords).toEqual(item.data.keywords);
         expect(new Set(EDITABLE_PORTFOLIO_DATA_KEYS).has("badges")).toBe(false);
     });
+
+    it("Legacy 항목도 프로젝트 구분을 저장", () => {
+        const form = {
+            ...itemToPortfolioForm(item),
+            caseStudyVersion: 1 as const,
+            projectType: "work" as const,
+        };
+
+        const payload = buildPortfolioSavePayload(form, item.data);
+
+        expect(payload.data.projectType).toBe("work");
+        expect(payload.data).not.toHaveProperty("caseStudyVersion");
+    });
 });

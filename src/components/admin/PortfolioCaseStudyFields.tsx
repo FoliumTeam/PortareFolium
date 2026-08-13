@@ -166,6 +166,29 @@ export default function PortfolioCaseStudyFields({
                 </p>
             </div>
 
+            <div className="space-y-1.5">
+                <label className={labelClass} htmlFor="portfolio-project-type">
+                    프로젝트 구분
+                </label>
+                <select
+                    id="portfolio-project-type"
+                    value={form.projectType}
+                    onChange={(event) =>
+                        onChange(
+                            "projectType",
+                            event.target.value === "work" ? "work" : "personal"
+                        )
+                    }
+                    className={inputClass}
+                >
+                    <option value="work">기업 프로젝트</option>
+                    <option value="personal">개인 프로젝트</option>
+                </select>
+                <p className={helperClass}>
+                    공개 Portfolio의 기업·개인 프로젝트 그룹 기준입니다.
+                </p>
+            </div>
+
             {form.caseStudyVersion === 2 && (
                 <>
                     <div className="space-y-1.5">
@@ -190,31 +213,7 @@ export default function PortfolioCaseStudyFields({
                         </p>
                     </div>
 
-                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
-                        <div className="space-y-1.5">
-                            <label
-                                className={labelClass}
-                                htmlFor="portfolio-project-type"
-                            >
-                                프로젝트 구분
-                            </label>
-                            <select
-                                id="portfolio-project-type"
-                                value={form.projectType}
-                                onChange={(event) =>
-                                    onChange(
-                                        "projectType",
-                                        event.target.value === "work"
-                                            ? "work"
-                                            : "personal"
-                                    )
-                                }
-                                className={inputClass}
-                            >
-                                <option value="work">실무 프로젝트</option>
-                                <option value="personal">개인 프로젝트</option>
-                            </select>
-                        </div>
+                    <div className="space-y-1.5">
                         <div className="space-y-1.5">
                             <label
                                 className={labelClass}

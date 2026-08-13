@@ -1,26 +1,69 @@
 import { describe, expect, it } from "vitest";
-import { getCompactProjects } from "@/components/resume/ProjectsSection";
-import type { ResumeProject } from "@/types/resume";
+import { getCompactPortfolioProjects } from "@/components/resume/ProjectsSection";
+import type { PortfolioProject } from "@/types/portfolio";
 
-describe("getCompactProjects", () => {
-    it("관리자 Resume 배열 순서를 유지하고 연결된 프로젝트만 최대 5건 선택", () => {
-        const projects: ResumeProject[] = [
-            { name: "첫 번째", portfolioSlug: "first", endDate: "2020-01" },
-            { name: "연결 없음", endDate: "2030-01" },
-            { name: "두 번째", portfolioSlug: "second", endDate: "2025-01" },
-            { name: "세 번째", portfolioSlug: "third", endDate: "2024-01" },
+const createProject = (
+    slug: string,
+    jobField: string,
+    featured: boolean,
+    featuredOrder: number
+): PortfolioProject => ({
+    slug,
+    title: slug,
+    description: "",
+    content: "",
+    startDate: "",
+    endDate: "",
+    goal: "",
+    role: "",
+    teamSize: 1,
+    accomplishments: [],
+    keywords: [],
+    github: "",
+    public: true,
+    published: true,
+    featured,
+    featuredByJobField: { [jobField]: featured },
+    featuredOrderByJobField: { [jobField]: featuredOrder },
+    orderIdx: featuredOrder,
+    jobField,
+    badges: [],
+    caseStudyVersion: 1,
+    caseStudyStyle: "game",
+    oneLinePitch: "",
+    engine: "",
+    platforms: [],
+    ownership: [],
+    outcomes: [],
+    gallery: [],
+    links: [],
+    devlogs: [],
+    credits: [],
+    projectType: "personal",
+    teamComposition: "",
+});
+
+describe("getCompactPortfolioProjects", () => {
+    it("직무 분야별 Portfolio Featured 순서대로 최대 5건을 선택", () => {
+        const projects = [
+            createProject("web", "web", true, 1),
+            createProject("game-second", "game", true, 2),
+            createProject("game-first", "game", true, 1),
+            createProject("game-other", "game", false, 3),
+            createProject("game-third", "game", true, 3),
+            createProject("game-fourth", "game", true, 4),
+            createProject("game-fifth", "game", true, 5),
+            createProject("game-sixth", "game", true, 6),
         ];
 
-        const result = getCompactProjects(projects, {
-            first: { slug: "first" },
-            second: { slug: "second" },
-            third: { slug: "third" },
-        });
+        const result = getCompactPortfolioProjects(projects, "game");
 
-        expect(result.map((entry) => entry.project.name)).toEqual([
-            "첫 번째",
-            "두 번째",
-            "세 번째",
+        expect(result.map((project) => project.slug)).toEqual([
+            "game-first",
+            "game-second",
+            "game-third",
+            "game-fourth",
+            "game-fifth",
         ]);
     });
 });

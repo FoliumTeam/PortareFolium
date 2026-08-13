@@ -237,12 +237,9 @@ export default async function ResumeModern({
         <ProjectsSection
             key="projects"
             projects={resume.projects?.entries ?? []}
-            label={getLabel(
-                "projects",
-                activeJobField === "web" ? "대표" : undefined
-            )}
+            label={getLabel("projects", activeJobField ? "대표" : undefined)}
             portfolioBasePath={portfolioBasePath}
-            compact={activeJobField === "web"}
+            compact={Boolean(activeJobField)}
             activeJobField={activeJobField}
         />
     );

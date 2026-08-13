@@ -40,12 +40,6 @@ export interface AboutContacts {
 export type AboutSections = Record<AboutSectionKey, string[]>;
 export type AboutCompetencySections = Record<CompetencySectionKey, string[]>;
 
-// Job Field별 소개 오버라이드 항목
-export interface FieldIntroduction {
-    description: string;
-    descriptionSub: string;
-}
-
 // 랜딩 페이지 히어로 섹션 데이터
 export interface ValuePillar {
     label: string;
@@ -56,6 +50,15 @@ export interface ValuePillar {
 export interface CoreValue {
     title: string;
     description: string;
+}
+
+// Job Field별 Landing·About me 오버라이드 항목
+export interface FieldIntroduction {
+    description: string;
+    descriptionSub: string;
+    valuePillars?: ValuePillar[];
+    sections?: Partial<AboutSections>;
+    competencySections?: Partial<AboutCompetencySections>;
 }
 
 export interface AboutData {

@@ -1160,6 +1160,14 @@ export default function PortfolioPanel({
                                         item,
                                         featuredJobField
                                     );
+                                const startDate =
+                                    typeof item.data?.startDate === "string"
+                                        ? item.data.startDate
+                                        : "";
+                                const endDate =
+                                    typeof item.data?.endDate === "string"
+                                        ? item.data.endDate
+                                        : "";
                                 const tags = item.tags ?? [];
                                 const stateCount = stateCounts[item.slug] ?? 0;
                                 return (
@@ -1239,6 +1247,14 @@ export default function PortfolioPanel({
                                                 <span className="font-mono text-xs text-(--color-muted)">
                                                     {item.slug}
                                                 </span>
+                                                {(startDate || endDate) && (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-(--color-muted)">
+                                                        <Clock3 size={12} />
+                                                        {startDate ||
+                                                            "시작일 미입력"}{" "}
+                                                        ~ {endDate || "진행 중"}
+                                                    </span>
+                                                )}
                                                 <JobFieldBadges
                                                     value={
                                                         jf as

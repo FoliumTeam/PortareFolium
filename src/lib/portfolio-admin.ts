@@ -347,6 +347,7 @@ export const buildPortfolioSavePayload = (
     if (accomplishments.length) data.accomplishments = accomplishments;
     const jobField = normalizeUniqueJobFieldList(form.jobField);
     if (jobField.length) data.jobField = jobField;
+    data.projectType = form.projectType;
 
     if (form.caseStudyVersion === 2) {
         data.caseStudyVersion = 2;
@@ -357,7 +358,6 @@ export const buildPortfolioSavePayload = (
                     : "web";
         }
         assignString(data, "oneLinePitch", form.oneLinePitch);
-        data.projectType = form.projectType;
         data.teamComposition = form.teamComposition.trim();
         assignString(data, "engine", form.engine);
         data.platforms = [...form.platforms];

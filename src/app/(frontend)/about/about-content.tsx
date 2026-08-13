@@ -59,8 +59,11 @@ export default async function AboutPageContent({
         description: introduction?.description ?? aboutData.description,
         descriptionSub:
             introduction?.descriptionSub ?? aboutData.descriptionSub,
-        sections: aboutData.sections,
-        competencySections: aboutData.competencySections,
+        sections: { ...aboutData.sections, ...introduction?.sections },
+        competencySections: {
+            ...aboutData.competencySections,
+            ...introduction?.competencySections,
+        },
     };
 
     return <AboutView data={profileAboutData} profileImage={profileImage} />;
