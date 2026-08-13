@@ -16,6 +16,7 @@ export type PublicJobField = {
     id: string;
     name: string;
     emoji: string;
+    headerTitle?: string;
 };
 
 // 공개 검색 jobField 정규화
@@ -56,7 +57,17 @@ function isPublicJobField(value: unknown): value is PublicJobField {
 export function normalizePublicJobFields(value: unknown): PublicJobField[] {
     const parsed = parseSiteConfigValue(value);
     if (!Array.isArray(parsed)) return [];
-    return dedupeJobFieldsById(parsed.filter(isPublicJobField));
+    return dedupeJobFieldsById(parsed.filter(isPublicJobField)).map(
+        (field) => ({
+            ...field,
+            name: field.name.trim(),
+            headerTitle:
+                typeof field.headerTitle === "string" &&
+                field.headerTitle.trim()
+                    ? field.headerTitle.trim().slice(0, 80)
+                    : field.name.trim(),
+        })
+    );
 }
 
 export function findPublicJobField(

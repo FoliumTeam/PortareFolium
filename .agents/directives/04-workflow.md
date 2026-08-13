@@ -91,7 +91,7 @@
 ## Documentation Requirements
 
 - Add brief docstrings in Korean for newly created functions.
-- Concisely document what changes you have done in `docs/changelogs/<YYYY-MM-DD>.md` (today's date). Create the file with `# Changelog: YYYY-MM-DD` header if it doesn't exist, and add a row to the `docs/CHANGES.md` index. Never write version entries directly into `docs/CHANGES.md` — it is the index only.
+- `docs/changelogs/<YYYY-MM-DD>.md`에는 추적 가능한 code·configuration·schema·test·공개 기술 문서 변경만 간결히 기록한다. 이력서·Portfolio·About·Blog의 개별 내용, 지원·채용 맥락, 개인 경력·성과·프로젝트 사실, DB 콘텐츠 변경은 개인 정보로 취급하며 `docs/private/`와 Hive local confidential 지식에만 기록한다. Create the file with `# Changelog: YYYY-MM-DD` header if it doesn't exist, and add a row to the `docs/CHANGES.md` index. Never write version entries directly into `docs/CHANGES.md` — it is the index only.
 - `package.json` version은 명시적인 릴리스 또는 사용자 요청이 있을 때만 변경한다. 일반 문서, plan, directive, test, formatting, 내부 workflow 변경은 version을 올리지 않는다. Only update 1st/2nd if explicitly requested.
 - Planning-only 문서 작업(`docs/plans/**/*.md`, 조사 메모 등)에서는 `package.json` version과 changelog를 변경하지 않는다.
 - Plan 파일은 `docs/plans/active/<slug>.md` (진행 중) 또는 `docs/plans/archive/<slug>.md` (완료/보류) 위치에만 생성한다. `PLAN_` prefix 사용 금지 — 폴더가 의미를 담당.

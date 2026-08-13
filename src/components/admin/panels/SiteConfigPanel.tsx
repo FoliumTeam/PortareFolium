@@ -35,6 +35,7 @@ type JobFieldItem = {
     id: string;
     name: string;
     emoji: string;
+    headerTitle?: string;
 };
 
 const THEME_MODE_OPTIONS: {
@@ -107,6 +108,7 @@ export default function SiteConfigPanel() {
     const [schemeDropdownOpen, setSchemeDropdownOpen] = useState(false);
     const schemeDropdownRef = useRef<HTMLDivElement>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
+    const [headerName, setHeaderName] = useState("");
     const [seoConfig, setSeoConfig] = useState({
         defaultTitle: "",
         defaultDescription: "포트폴리오 & 기술 블로그",
@@ -121,6 +123,7 @@ export default function SiteConfigPanel() {
 
     // 새 job field 추가 폼 상태
     const [newName, setNewName] = useState("");
+    const [newHeaderTitle, setNewHeaderTitle] = useState("");
     const [newEmoji, setNewEmoji] = useState("✨");
     const [inheritFrom, setInheritFrom] = useState("");
     const [showPicker, setShowPicker] = useState(false);
@@ -129,6 +132,7 @@ export default function SiteConfigPanel() {
         null
     );
     const [editingName, setEditingName] = useState("");
+    const [editingHeaderTitle, setEditingHeaderTitle] = useState("");
     const [editingEmoji, setEditingEmoji] = useState("");
 
     // Supabase에서 현재 설정 로드
@@ -170,6 +174,9 @@ export default function SiteConfigPanel() {
                     }
                     if (row.key === "job_fields")
                         setJobFields(normalizeJobFields(v));
+                    if (row.key === "header_name" && typeof v === "string") {
+                        setHeaderName(v);
+                    }
                     if (row.key === "site_name" && typeof v === "string") {
                         setSeoConfig((prev) => ({ ...prev, defaultTitle: v }));
                     }
@@ -233,6 +240,7 @@ export default function SiteConfigPanel() {
         const result = await addSiteJobField({
             name: trimmed,
             emoji: newEmoji,
+            headerTitle: newHeaderTitle.trim(),
             inheritFrom,
         });
 
@@ -245,6 +253,7 @@ export default function SiteConfigPanel() {
 
         setJobFields(dedupeJobFieldsById(result.jobFields));
         setNewName("");
+        setNewHeaderTitle("");
         setNewEmoji("✨");
         setInheritFrom("");
         setStatus({ type: "success", msg: "직무 분야가 추가됐습니다" });
@@ -278,6 +287,7 @@ export default function SiteConfigPanel() {
             id,
             name,
             emoji: editingEmoji,
+            headerTitle: editingHeaderTitle,
         });
 
         setSaving(false);
@@ -298,6 +308,7 @@ export default function SiteConfigPanel() {
         setStatus(null);
 
         const result = await saveSiteConfig({
+            headerName,
             colorScheme,
             plainMode,
             themeMode,
@@ -507,6 +518,30 @@ export default function SiteConfigPanel() {
 
                     <Separator />
 
+                    <section className="space-y-4">
+                        <h3 className="text-lg font-semibold text-(--color-foreground)">
+                            헤더 브랜드
+                        </h3>
+                        <p className="text-sm text-(--color-muted)">
+                            공개 헤더 홈 링크의 앞부분에 표시됩니다.
+                        </p>
+                        <div>
+                            <Label className="text-sm font-medium text-(--color-muted)">
+                                헤더 이름
+                            </Label>
+                            <Input
+                                value={headerName}
+                                onChange={(event) =>
+                                    setHeaderName(event.target.value)
+                                }
+                                placeholder="정호진"
+                                className="mt-1 border-(--color-border)"
+                            />
+                        </div>
+                    </section>
+
+                    <Separator />
+
                     {/* 직무 분야 관리 */}
                     <section className="space-y-5">
                         <h3 className="text-lg font-semibold text-(--color-foreground)">
@@ -550,6 +585,11 @@ export default function SiteConfigPanel() {
                                                                 /{field.id}에서
                                                                 독립 공개 프로필
                                                             </p>
+                                                            <p className="mt-1 text-sm text-(--color-muted)">
+                                                                헤더 제목:{" "}
+                                                                {field.headerTitle ??
+                                                                    field.name}
+                                                            </p>
                                                         </div>
                                                     </div>
 
@@ -563,6 +603,10 @@ export default function SiteConfigPanel() {
                                                                 );
                                                                 setEditingName(
                                                                     field.name
+                                                                );
+                                                                setEditingHeaderTitle(
+                                                                    field.headerTitle ??
+                                                                        field.name
                                                                 );
                                                                 setEditingEmoji(
                                                                     field.emoji
@@ -603,7 +647,7 @@ export default function SiteConfigPanel() {
                                                         </Button>
                                                     </div>
                                                     {isEditing && (
-                                                        <div className="mt-3 grid grid-cols-[3rem_1fr_auto] gap-2 border-t border-(--color-border) pt-3">
+                                                        <div className="tablet:grid-cols-[3rem_1fr_1fr_auto] mt-3 grid gap-2 border-t border-(--color-border) pt-3">
                                                             <Input
                                                                 value={
                                                                     editingEmoji
@@ -634,6 +678,22 @@ export default function SiteConfigPanel() {
                                                                 }
                                                                 aria-label="직무 분야 이름"
                                                             />
+                                                            <Input
+                                                                value={
+                                                                    editingHeaderTitle
+                                                                }
+                                                                onChange={(
+                                                                    event
+                                                                ) =>
+                                                                    setEditingHeaderTitle(
+                                                                        event
+                                                                            .target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                aria-label="헤더 직무 제목"
+                                                                placeholder="게임 개발자"
+                                                            />
                                                             <Button
                                                                 size="sm"
                                                                 onClick={() =>
@@ -643,7 +703,8 @@ export default function SiteConfigPanel() {
                                                                 }
                                                                 disabled={
                                                                     saving ||
-                                                                    !editingName.trim()
+                                                                    !editingName.trim() ||
+                                                                    !editingHeaderTitle.trim()
                                                                 }
                                                             >
                                                                 저장
@@ -717,6 +778,21 @@ export default function SiteConfigPanel() {
                                             className="flex-1 border-(--color-border)"
                                         />
                                     </div>
+                                    <Input
+                                        value={newHeaderTitle}
+                                        onChange={(event) =>
+                                            setNewHeaderTitle(
+                                                event.target.value
+                                            )
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (event.key === "Enter")
+                                                handleAddJobField();
+                                        }}
+                                        aria-label="새 직무 분야 헤더 제목"
+                                        placeholder="헤더 직무 제목 (예: 게임 개발자)"
+                                        className="border-(--color-border)"
+                                    />
 
                                     {jobFields.length > 0 && (
                                         <div className="space-y-2">
@@ -753,7 +829,11 @@ export default function SiteConfigPanel() {
 
                                     <Button
                                         onClick={handleAddJobField}
-                                        disabled={saving || !newName.trim()}
+                                        disabled={
+                                            saving ||
+                                            !newName.trim() ||
+                                            !newHeaderTitle.trim()
+                                        }
                                         className="w-full bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
                                         <Plus className="mr-2 h-4 w-4" />

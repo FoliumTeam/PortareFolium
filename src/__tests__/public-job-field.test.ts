@@ -29,16 +29,31 @@ describe("public job field registry", () => {
                 { id: "about", name: "Reserved", emoji: "⚠️" },
                 { id: "invalid.dot", name: "Invalid", emoji: "⚠️" },
             ])
-        ).toEqual([{ id: "frontend", name: "Frontend", emoji: "🖥️" }]);
+        ).toEqual([
+            {
+                id: "frontend",
+                name: "Frontend",
+                emoji: "🖥️",
+                headerTitle: "Frontend",
+            },
+        ]);
     });
 
     it("등록 목록에 있는 직무 분야만 공개 경로로 해석", () => {
         const fields = normalizePublicJobFields([
-            { id: "frontend", name: "Frontend", emoji: "🖥️" },
+            {
+                id: "frontend",
+                name: "Frontend",
+                emoji: "🖥️",
+                headerTitle: "Frontend Developer",
+            },
             { id: "game", name: "Game", emoji: "🎮" },
         ]);
 
         expect(findPublicJobField(fields, "frontend")?.name).toBe("Frontend");
+        expect(findPublicJobField(fields, "frontend")?.headerTitle).toBe(
+            "Frontend Developer"
+        );
         expect(findPublicJobField(fields, "web")).toBeNull();
         expect(isPublicJobFieldId("about")).toBe(false);
     });

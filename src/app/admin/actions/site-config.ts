@@ -22,11 +22,13 @@ type JobFieldItem = {
     id: string;
     name: string;
     emoji: string;
+    headerTitle?: string;
 };
 
 type JobFieldValue = string | string[] | null | undefined;
 
 type SaveSiteConfigInput = {
+    headerName: string;
     colorScheme: string;
     plainMode: boolean;
     themeMode: ThemeMode;
@@ -144,6 +146,7 @@ export async function getSiteConfigBootstrap(): Promise<{
             "plain_mode",
             "theme_mode",
             "job_fields",
+            "header_name",
             "site_name",
             "seo_config",
             "github_url",
@@ -342,7 +345,12 @@ export async function saveSiteConfig(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     try {
+        const headerName = input.headerName.trim();
+        if (!headerName) {
+            return { success: false, error: "헤더 이름 필요" };
+        }
         const rows: { key: string; value: unknown }[] = [
+            { key: "header_name", value: JSON.stringify(headerName) },
             { key: "color_scheme", value: JSON.stringify(input.colorScheme) },
             {
                 key: "theme_mode",
@@ -391,6 +399,7 @@ export async function saveSiteConfig(
 export async function addSiteJobField(input: {
     name: string;
     emoji: string;
+    headerTitle: string;
     inheritFrom: string;
 }): Promise<SiteJobFieldActionResult> {
     await requireAdminSession();
@@ -398,8 +407,12 @@ export async function addSiteJobField(input: {
 
     try {
         const trimmedName = input.name.trim();
+        const headerTitle = input.headerTitle.trim();
         if (!trimmedName) {
             return { success: false, error: "직무 분야 이름 필요" };
+        }
+        if (!headerTitle) {
+            return { success: false, error: "헤더 직무 제목 필요" };
         }
 
         const newId = toSlug(trimmedName).slice(0, 64);
@@ -424,6 +437,7 @@ export async function addSiteJobField(input: {
                 id: newId,
                 name: trimmedName,
                 emoji: input.emoji || "✨",
+                headerTitle: headerTitle.slice(0, 80),
             },
         ];
 
@@ -508,13 +522,17 @@ export async function updateSiteJobField(input: {
     id: string;
     name: string;
     emoji: string;
+    headerTitle: string;
 }): Promise<SiteJobFieldActionResult> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     try {
         const name = input.name.trim();
+        const headerTitle = input.headerTitle.trim();
         if (!name) return { success: false, error: "직무 분야 이름 필요" };
+        if (!headerTitle)
+            return { success: false, error: "헤더 직무 제목 필요" };
         const { jobFields } = await getJobFieldConfig();
         if (!jobFields.some((field) => field.id === input.id)) {
             return {
@@ -524,7 +542,12 @@ export async function updateSiteJobField(input: {
         }
         const nextJobFields = jobFields.map((field) =>
             field.id === input.id
-                ? { ...field, name, emoji: input.emoji || "✨" }
+                ? {
+                      ...field,
+                      name,
+                      emoji: input.emoji || "✨",
+                      headerTitle: headerTitle.slice(0, 80),
+                  }
                 : field
         );
         const saveResult = await saveJobFieldConfig(nextJobFields);

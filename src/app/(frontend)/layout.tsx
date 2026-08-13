@@ -11,6 +11,7 @@ export default async function FrontendLayout({
     children: React.ReactNode;
 }) {
     let siteName = "";
+    let headerName = "";
     let themeMode: ThemeMode = "system";
 
     const configRows = await getSiteConfig();
@@ -40,6 +41,19 @@ export default async function FrontendLayout({
         themeMode = normalizeThemeMode(value);
     }
 
+    const headerNameRow = configRows.find((r) => r.key === "header_name");
+    if (headerNameRow?.value) {
+        let value = headerNameRow.value;
+        if (typeof value === "string" && value.startsWith('"')) {
+            try {
+                value = JSON.parse(value);
+            } catch {
+                // invalid JSON
+            }
+        }
+        if (typeof value === "string") headerName = value;
+    }
+
     let githubUrl = "";
     const ghRow = configRows.find((r) => r.key === "github_url");
     if (ghRow?.value) {
@@ -59,9 +73,9 @@ export default async function FrontendLayout({
     return (
         <div className="flex min-h-screen flex-col">
             <Header
-                siteName={siteName}
+                headerName={headerName}
                 githubUrl={githubUrl}
-                jobFieldIds={jobFields.map((field) => field.id)}
+                jobFields={jobFields}
                 themeMode={themeMode}
             />
             <ContentWrapper as="main" className="flex-1 px-4 py-8">

@@ -8,25 +8,32 @@ import GlobalSearch from "@/components/GlobalSearch";
 import { contentVariants } from "@/components/ContentWrapper";
 import Link from "next/link";
 import type { ThemeMode } from "@/lib/theme-mode";
+import type { PublicJobField } from "@/lib/public-job-field";
+import { getHeaderBrandLabel } from "@/lib/header-brand";
 
 export default function Header({
-    siteName,
+    headerName,
     githubUrl,
-    jobFieldIds = [],
+    jobFields = [],
     themeMode = "system",
 }: {
-    siteName: string;
+    headerName: string;
     githubUrl: string;
-    jobFieldIds?: readonly string[];
+    jobFields?: readonly PublicJobField[];
     themeMode?: ThemeMode;
 }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
     const firstPathSegment = pathname.split("/")[1] ?? "";
-    const profileJobField = jobFieldIds.includes(firstPathSegment)
-        ? firstPathSegment
-        : "";
+    const currentJobField = jobFields.find(
+        (field) => field.id === firstPathSegment
+    );
+    const profileJobField = currentJobField?.id ?? "";
     const profilePrefix = profileJobField ? `/${profileJobField}` : "";
+    const brandLabel = getHeaderBrandLabel(
+        headerName,
+        currentJobField?.headerTitle
+    );
     const navigationItems = profileJobField
         ? [
               [`${profilePrefix}/about`, "About me"],
@@ -49,26 +56,13 @@ export default function Header({
             <nav
                 className={`${contentVariants()} flex items-center justify-between gap-4 px-6 py-4`}
             >
-                {/* 사이트 로고 */}
+                {/* 헤더 브랜드 */}
                 <Link
                     href={profileJobField ? `/${profileJobField}` : "/"}
                     className="flex items-center gap-2 text-(--color-foreground) transition-opacity hover:opacity-80"
                 >
-                    {/* 액센트 색상 각괄호 */}
-                    <span
-                        className="text-base leading-none font-bold text-(--color-accent)"
-                        aria-hidden="true"
-                    >
-                        {"["}
-                    </span>
                     <span className="text-lg font-(--font-display) font-bold tracking-tight">
-                        {siteName}
-                    </span>
-                    <span
-                        className="text-base leading-none font-bold text-(--color-accent)"
-                        aria-hidden="true"
-                    >
-                        {"]"}
+                        {brandLabel}
                     </span>
                 </Link>
 
