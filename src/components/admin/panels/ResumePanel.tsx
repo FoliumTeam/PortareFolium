@@ -937,7 +937,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    Core Competencies (핵심역량)
+                                    핵심 역량
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -962,7 +962,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-coreCompetencies"
                                         className="text-xs text-(--color-muted)"
                                     >
-                                        Emoji 표시
+                                        이모지 표시
                                     </label>
                                 </div>
                             </div>
@@ -973,12 +973,12 @@ export default function ResumePanel() {
                                         []
                                     ).length
                                 }{" "}
-                                / 4
+                                / 8
                             </span>
                         </div>
                         <p className="text-sm text-(--color-muted)">
-                            이력서의 핵심역량 섹션에 표시됩니다. 아래 저장
-                            버튼으로 함께 저장됩니다.
+                            직무별 이력서에 맞춰 노출됩니다. 최근 경험의 범위와
+                            확인 가능한 결과를 짧게 작성하세요.
                         </p>
                         {(resumeData?.coreCompetencies?.entries ?? []).map(
                             (comp, idx) => (
@@ -1034,7 +1034,7 @@ export default function ResumePanel() {
                                     <div className="flex flex-col gap-3">
                                         <div>
                                             <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                Title
+                                                제목
                                             </label>
                                             <input
                                                 value={comp.title}
@@ -1078,9 +1078,9 @@ export default function ResumePanel() {
                                         </div>
                                         <div>
                                             <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                Description
+                                                설명
                                             </label>
-                                            <input
+                                            <textarea
                                                 value={comp.description}
                                                 onChange={(e) =>
                                                     setResumeData((prev) =>
@@ -1117,8 +1117,9 @@ export default function ResumePanel() {
                                                             : prev
                                                     )
                                                 }
-                                                placeholder="설명"
-                                                className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
+                                                placeholder="역할, 범위, 결과를 한두 문장으로 작성"
+                                                rows={3}
+                                                className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm leading-relaxed text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                             />
                                         </div>
                                         <JobFieldSelector
@@ -1162,7 +1163,7 @@ export default function ResumePanel() {
                             )
                         )}
                         {(resumeData?.coreCompetencies?.entries ?? []).length <
-                            4 && (
+                            8 && (
                             <button
                                 type="button"
                                 onClick={() =>

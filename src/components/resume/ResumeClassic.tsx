@@ -66,26 +66,28 @@ export default async function ResumeClassic({
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                 {getLabel("coreCompetencies")}
             </h2>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
                 {coreCompetencies.map((comp, idx) => (
                     <div
                         key={idx}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
+                        className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                         data-pdf-block-item
                     >
-                        <div className="mb-1.5 flex items-center gap-2.5">
-                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                {idx + 1}
+                        <div className="flex items-start gap-3">
+                            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--color-accent)/12 text-sm font-black text-(--color-accent)">
+                                {String(idx + 1).padStart(2, "0")}
                             </span>
-                            <h3 className="m-0 text-base font-bold text-(--color-foreground)">
-                                {comp.title}
-                            </h3>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="m-0 text-base leading-snug font-bold text-(--color-foreground)">
+                                    {comp.title}
+                                </h3>
+                                {comp.description && (
+                                    <p className="mt-2 border-l-2 border-(--color-accent)/45 pl-3 text-sm leading-relaxed text-(--color-muted)">
+                                        {comp.description}
+                                    </p>
+                                )}
+                            </div>
                         </div>
-                        {comp.description && (
-                            <p className="m-0 text-sm text-(--color-muted)">
-                                {comp.description}
-                            </p>
-                        )}
                     </div>
                 ))}
             </div>
