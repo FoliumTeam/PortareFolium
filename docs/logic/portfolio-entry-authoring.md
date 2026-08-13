@@ -229,7 +229,7 @@ Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달�
 
 `결과와 근거`에는 배포물, 운영 기록, 측정값, 승인 또는 재현 방법처럼 사실을 확인할 수 있는 근거만 쓴다. 확인되지 않은 수치, 팀 전체 성과의 개인화, 장황한 개발 일지는 넣지 않는다.
 
-공통 규칙: article body는 gallery 설명을 반복하는 긴 기술 요약서가 아니라 주장과 근거가 함께 흐르는 글로 작성한다. 관련 screenshot은 해당 문단 바로 뒤에 배치하고, Markdown heading·강조·blockquote·list·table·짧은 code block으로 읽는 리듬을 만든다. blockquote는 `> 문장`만 사용하며 그 안에 인용 부호(`"`, `'`, `“”`, `‘’`)를 덧붙이지 않는다. `**강조**`처럼 작성한 Markdown 문법은 저장 뒤 공개 화면에서 실제 서식으로 렌더링되는지 확인한다. 시간 범위는 `1~2시간`처럼 단일 물결표로 적고, 취소선 문법인 `~~텍스트~~`를 의도하지 않게 만들지 않는다. Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
+공통 규칙: article body는 gallery 설명을 반복하는 긴 기술 요약서가 아니라 주장과 근거가 함께 흐르는 글로 작성한다. 관련 screenshot은 해당 문단 바로 뒤에 배치하고, Markdown heading·강조·blockquote·list·table·짧은 code block으로 읽는 리듬을 만든다. 이미지 설명·출처는 `<Image src="..." alt="..." caption="..." sourceUrl="..." sourceLabel="..." />`로 이미지 아래에 표시한다. `caption`은 화면 설명, `sourceUrl`·`sourceLabel`은 출처 링크, `alt`는 화면을 읽지 못하는 사용자를 위한 대체 텍스트로만 사용한다. blockquote는 `> 문장`만 사용하며 그 안에 인용 부호(`"`, `'`, `“”`, `‘’`)를 덧붙이지 않는다. `**강조**`처럼 작성한 Markdown 문법은 저장 뒤 공개 화면에서 실제 서식으로 렌더링되는지 확인한다. 시간 범위는 `1~2시간`처럼 단일 물결표로 적고, 취소선 문법인 `~~텍스트~~`를 의도하지 않게 만들지 않는다. Code는 구현량을 보여주기 위해 길게 붙이지 않는다. 의사결정과 ownership을 증명하는 최소 부분만 사용하고 secret, private repository path, 내부 endpoint, 사용자 data를 제거한다. MDX는 trusted admin/MCP content로 실행되므로 외부 제공 JSX, `import`, `<script>` 또는 검증하지 않은 component를 삽입하지 않는다.
 
 기술 정보는 `tags`에 관리하고, 상세 페이지의 프로젝트 소개 뒤 `사용 기술` 스킬 배지로 모두 표시한다. `프로젝트 기록` eyebrow 아래나 카드 제목 위에는 engine·platform 같은 기술명을 별도로 표시하지 않는다. 프로젝트 목표는 담당 업무와 섞지 않고 독립 섹션으로 두며, 2인 이상 프로젝트는 상단 인원 카드의 팀 구성에 본인과 협업자의 책임을 명시한다.
 

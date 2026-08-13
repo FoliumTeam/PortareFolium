@@ -3,13 +3,19 @@
 export default function MarkdownImage({
     src,
     alt,
+    caption,
+    sourceUrl,
+    sourceLabel,
 }: {
     src?: string;
     alt?: string;
+    caption?: string;
+    sourceUrl?: string;
+    sourceLabel?: string;
 }) {
     if (!src) return null;
     return (
-        <span className="my-4 block">
+        <figure className="my-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src={src}
@@ -18,6 +24,19 @@ export default function MarkdownImage({
                 decoding="async"
                 className="h-auto max-w-full rounded"
             />
-        </span>
+            {(caption || sourceUrl) && (
+                <figcaption className="mt-2 text-center text-sm leading-relaxed text-(--color-muted)">
+                    {caption}
+                    {sourceUrl && (
+                        <a
+                            href={sourceUrl}
+                            className="ml-1 underline-offset-4 hover:underline"
+                        >
+                            {sourceLabel ?? "출처"}
+                        </a>
+                    )}
+                </figcaption>
+            )}
+        </figure>
     );
 }
