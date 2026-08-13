@@ -34,4 +34,21 @@ describe("MarkdownImage", () => {
             screen.getByRole("link", { name: "출처: 예시" })
         ).toHaveAttribute("href", "https://example.com/source");
     });
+
+    it("이미지와 캡션을 같은 가운데 정렬 figure 안에 표시", () => {
+        const { container } = render(
+            <MarkdownImage
+                src="/portfolio/example.webp"
+                alt="예시 화면"
+                caption="예시 화면 설명"
+                align="center"
+            />
+        );
+
+        const figure = container.querySelector("figure");
+        expect(figure).toHaveClass("w-fit", "max-w-full", "mx-auto");
+        expect(figure?.querySelector("figcaption")).toHaveTextContent(
+            "예시 화면 설명"
+        );
+    });
 });

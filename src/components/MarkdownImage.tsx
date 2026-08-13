@@ -1,3 +1,5 @@
+type ImageAlign = "left" | "center" | "right";
+
 // 마크다운 본문 img 요소 대체 — 서버 renderToString 호환, 지연 로딩 적용
 // next/image는 "use client" 경계로 인해 renderToString 컨텍스트에서 사용 불가
 export default function MarkdownImage({
@@ -6,16 +8,25 @@ export default function MarkdownImage({
     caption,
     sourceUrl,
     sourceLabel,
+    align,
 }: {
     src?: string;
     alt?: string;
     caption?: string;
     sourceUrl?: string;
     sourceLabel?: string;
+    align?: ImageAlign;
 }) {
     if (!src) return null;
+    const normalizedAlign = align ?? "left";
+    const alignmentClass = {
+        left: "mr-auto",
+        center: "mx-auto",
+        right: "ml-auto",
+    }[normalizedAlign];
+
     return (
-        <figure className="my-4">
+        <figure className={`my-4 w-fit max-w-full ${alignmentClass}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src={src}
