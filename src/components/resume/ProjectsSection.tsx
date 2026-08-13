@@ -95,6 +95,9 @@ export default async function ProjectsSection({
                             project.outcomes[0]?.result ||
                             project.accomplishments[0] ||
                             "";
+                        const media = project.primaryMedia;
+                        const thumbnailSource =
+                            media?.type === "video" ? media.poster : media?.src;
                         return (
                             <article
                                 key={project.slug}
@@ -106,8 +109,21 @@ export default async function ProjectsSection({
                                     className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                                     aria-label={`${project.title} 프로젝트 기록 보기`}
                                 />
-                                <div className="tablet:flex-row tablet:items-start tablet:justify-between flex flex-col gap-2">
-                                    <div className="min-w-0">
+                                <div className="flex items-start gap-4">
+                                    {thumbnailSource ? (
+                                        <div className="tablet:h-24 tablet:w-36 relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-(--color-border)">
+                                            <img
+                                                src={thumbnailSource}
+                                                alt={
+                                                    media?.alt ||
+                                                    `${project.title} 대표 이미지`
+                                                }
+                                                className="h-full w-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    ) : null}
+                                    <div className="min-w-0 flex-1">
                                         <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                             {project.title}
                                         </h3>
@@ -125,8 +141,15 @@ export default async function ProjectsSection({
                                                 )}
                                             </p>
                                         )}
+                                        <span className="tablet:hidden mt-2 inline-flex items-center gap-1 text-sm font-bold text-(--color-accent)">
+                                            상세 보기
+                                            <ArrowUpRight
+                                                className="h-3.5 w-3.5"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
                                     </div>
-                                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-(--color-accent)">
+                                    <span className="tablet:inline-flex hidden shrink-0 items-center gap-1 text-sm font-bold text-(--color-accent)">
                                         상세 보기
                                         <ArrowUpRight
                                             className="h-3.5 w-3.5"

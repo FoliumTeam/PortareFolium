@@ -48,22 +48,22 @@ export default function ResumeClassicPreview({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10">
             {sectionH2(getLabel("coreCompetencies"))}
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
                     <div
                         key={idx}
-                        className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
+                        className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
                     >
-                        <div className="flex items-start gap-3">
-                            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--color-accent)/12 text-sm font-black text-(--color-accent)">
+                        <div className="flex items-start gap-4">
+                            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-accent)/12 text-base font-black text-(--color-accent)">
                                 {String(idx + 1).padStart(2, "0")}
                             </span>
                             <div className="min-w-0 flex-1">
-                                <h3 className="m-0 text-base leading-snug font-bold text-(--color-foreground)">
+                                <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
                                     {comp.title}
                                 </h3>
                                 {comp.description && (
-                                    <p className="mt-2 border-l-2 border-(--color-accent)/45 pl-3 text-sm leading-relaxed text-(--color-muted)">
+                                    <p className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
                                         {comp.description}
                                     </p>
                                 )}
