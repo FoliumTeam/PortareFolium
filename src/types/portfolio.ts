@@ -39,6 +39,7 @@ export type PortfolioCredit = {
 };
 
 export type PortfolioCaseStudyStyle = "game" | "web";
+export type PortfolioProjectType = "work" | "personal";
 export type PortfolioFeaturedByJobField = Record<string, boolean>;
 export type PortfolioFeaturedOrderByJobField = Record<string, number>;
 
@@ -53,6 +54,8 @@ export type PortfolioDataV2 = {
     links: PortfolioLink[];
     devlogs: PortfolioDevlog[];
     credits: PortfolioCredit[];
+    projectType?: PortfolioProjectType;
+    teamComposition?: string;
     caseStudyStyle?: PortfolioCaseStudyStyle;
     featuredByJobField?: PortfolioFeaturedByJobField;
     featuredOrderByJobField?: PortfolioFeaturedOrderByJobField;
@@ -80,6 +83,8 @@ export const KNOWN_PORTFOLIO_DATA_KEYS = [
     "engine",
     "platforms",
     "credits",
+    "projectType",
+    "teamComposition",
     "caseStudyStyle",
     "featuredByJobField",
     "featuredOrderByJobField",
@@ -154,6 +159,8 @@ export type PortfolioProject = {
     links: PortfolioLink[];
     devlogs: PortfolioDevlog[];
     credits: PortfolioCredit[];
+    projectType: PortfolioProjectType;
+    teamComposition: string;
     primaryMedia?: PortfolioMedia;
 };
 

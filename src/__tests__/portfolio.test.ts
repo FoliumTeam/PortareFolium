@@ -57,6 +57,7 @@ const validV2Data = {
     caseStudyVersion: 2,
     oneLinePitch: "플레이 가능한 시스템을 구현했습니다",
     engine: "Custom C++ Engine",
+    teamSize: 2,
     platforms: ["Windows"],
     ownership: ["Renderer와 gameplay loop 구현"],
     outcomes: [{ result: "Playable build 완성", evidence: "Demo 영상" }],
@@ -71,6 +72,7 @@ const validV2Data = {
     links: [{ kind: "demo", url: "https://example.com/demo", label: "Demo" }],
     devlogs: [{ title: "개발 기록", url: "/blog/project" }],
     credits: [{ name: "홍길동", role: "Programmer" }],
+    teamComposition: "Programmer 1명(본인), Artist 1명",
 };
 
 describe("portfolio domain", () => {
@@ -195,6 +197,20 @@ describe("portfolio domain", () => {
             expect(invalid.errors.join(" ")).toContain("Gallery");
             expect(invalid.errors.join(" ")).toContain("Deep Dive");
         }
+    });
+
+    it("두 명 이상 프로젝트에는 팀 구성이 필요", () => {
+        const result = validatePortfolioForPublish(
+            createRow({
+                content: validContent,
+                data: { ...validV2Data, teamComposition: "", credits: [] },
+            }),
+            { r2PublicUrl: R2_URL }
+        );
+
+        expect(result.errors).toContain(
+            "두 명 이상인 프로젝트에는 팀 구성이 필요합니다."
+        );
     });
 
     it("legacy HTML에서 alt가 있는 R2 image만 bounded gallery로 추출", () => {

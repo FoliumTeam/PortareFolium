@@ -194,6 +194,54 @@ export default function PortfolioCaseStudyFields({
                         <div className="space-y-1.5">
                             <label
                                 className={labelClass}
+                                htmlFor="portfolio-project-type"
+                            >
+                                프로젝트 구분
+                            </label>
+                            <select
+                                id="portfolio-project-type"
+                                value={form.projectType}
+                                onChange={(event) =>
+                                    onChange(
+                                        "projectType",
+                                        event.target.value === "work"
+                                            ? "work"
+                                            : "personal"
+                                    )
+                                }
+                                className={inputClass}
+                            >
+                                <option value="work">실무 프로젝트</option>
+                                <option value="personal">개인 프로젝트</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label
+                                className={labelClass}
+                                htmlFor="portfolio-team-composition"
+                            >
+                                팀 구성
+                            </label>
+                            <input
+                                id="portfolio-team-composition"
+                                value={form.teamComposition}
+                                maxLength={180}
+                                placeholder="예: BE/FE 1명(본인), FE 1명"
+                                onChange={(event) =>
+                                    onChange(
+                                        "teamComposition",
+                                        event.target.value
+                                    )
+                                }
+                                className={inputClass}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
+                        <div className="space-y-1.5">
+                            <label
+                                className={labelClass}
                                 htmlFor="portfolio-engine"
                             >
                                 Engine

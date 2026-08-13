@@ -53,6 +53,8 @@ const item: PortfolioAdminItem = {
         engine: "Custom Engine",
         platforms: ["Windows"],
         credits: [{ name: "Member", role: "Artist", url: "/about" }],
+        projectType: "personal",
+        teamComposition: "Programmer 1명(본인), Artist 1명",
         futureKey: { nested: ["keep", { order: 2 }] },
     },
     featured: true,

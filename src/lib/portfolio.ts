@@ -39,6 +39,7 @@ export const PORTFOLIO_LIMITS = {
     platform: 80,
     creditName: 120,
     creditRole: 160,
+    teamComposition: 180,
     linkLabel: 80,
     devlogTitle: 180,
 } as const;
@@ -319,6 +320,9 @@ const normalizeJobField = (value: unknown): string | string[] | null => {
     return values.length ? values : null;
 };
 
+const normalizeProjectType = (value: unknown): "work" | "personal" =>
+    value === "work" ? "work" : "personal";
+
 export const getPortfolioJobFields = (row: PortfolioRawRow): string[] => {
     const rowJobField = normalizeJobField(row.job_field);
     const dataJobField = normalizeJobField(row.data?.jobField);
@@ -494,6 +498,11 @@ export const normalizePortfolioProject = (
         links: links.slice(0, PORTFOLIO_LIMITS.links),
         devlogs: isV2 ? normalizeDevlogs(data.devlogs) : [],
         credits: isV2 ? normalizeCredits(data.credits) : [],
+        projectType: normalizeProjectType(data.projectType),
+        teamComposition: cleanString(
+            data.teamComposition,
+            PORTFOLIO_LIMITS.teamComposition
+        ),
         primaryMedia,
     };
 };
@@ -656,8 +665,8 @@ export const validatePortfolioForPublish = (
         errors.push("검증 가능한 결과를 한 개 이상 입력해야 합니다.");
     if (!normalized.primaryMedia)
         errors.push("Gallery 대표 media 또는 thumbnail이 필요합니다.");
-    if (normalized.teamSize > 1 && normalized.credits.length < 1) {
-        errors.push("두 명 이상인 프로젝트에는 Credit이 필요합니다.");
+    if (normalized.teamSize > 1 && !normalized.teamComposition) {
+        errors.push("두 명 이상인 프로젝트에는 팀 구성이 필요합니다.");
     }
     const rawGallery = Array.isArray(data.gallery) ? data.gallery : [];
     if (rawGallery.length !== normalized.gallery.length) {
@@ -670,7 +679,7 @@ export const validatePortfolioForPublish = (
         [data.links, "links", "Link"],
         [data.devlogs, "devlogs", "Devlog"],
         [data.platforms, "platforms", "Platform"],
-        [data.credits, "credits", "Credit"],
+        [data.credits, "credits", "협업자 정보"],
     ] as const) {
         const error = collectionLengthError(value, key, label);
         if (error) errors.push(error);

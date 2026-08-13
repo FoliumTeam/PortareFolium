@@ -192,6 +192,8 @@ export async function handleGetSchema(): Promise<unknown> {
                 goal: "string",
                 role: "string",
                 teamSize: "number",
+                teamComposition: "string, max 180",
+                projectType: "'work' | 'personal'",
                 accomplishments: "string[]",
                 keywords: "string[]",
                 github: "URL string",
@@ -705,6 +707,11 @@ const PORTFOLIO_DATA_INPUT_SCHEMA = {
         goal: { type: ["string", "null"] },
         role: { type: ["string", "null"] },
         teamSize: { type: ["number", "null"] },
+        teamComposition: { type: ["string", "null"], maxLength: 180 },
+        projectType: {
+            type: ["string", "null"],
+            enum: ["work", "personal", null],
+        },
         github: { type: ["string", "null"] },
         liveUrl: { type: ["string", "null"] },
         accomplishments: {

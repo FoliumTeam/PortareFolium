@@ -1,5 +1,4 @@
 import PortfolioProjectGrid from "@/components/portfolio/PortfolioProjectGrid";
-import { groupPortfolioProjects } from "@/lib/portfolio";
 import type { PortfolioProject } from "@/types/portfolio";
 
 type PortfolioViewProps = {
@@ -8,15 +7,34 @@ type PortfolioViewProps = {
     jobField?: string;
 };
 
+const sortByRecentDate = (left: PortfolioProject, right: PortfolioProject) =>
+    (right.endDate || right.startDate).localeCompare(
+        left.endDate || left.startDate
+    );
+
 export default function PortfolioView({
     projects,
     portfolioBasePath,
     jobField,
 }: PortfolioViewProps) {
-    const { selected, other } = groupPortfolioProjects(projects, jobField);
-    const isWebPortfolio = jobField === "web";
+    const groupedProjects = [
+        {
+            eyebrow: "경력 및 협업",
+            heading: "기업 프로젝트",
+            projects: projects
+                .filter((project) => project.projectType === "work")
+                .sort(sortByRecentDate),
+        },
+        {
+            eyebrow: "개인 제작",
+            heading: "개인 프로젝트",
+            projects: projects
+                .filter((project) => project.projectType === "personal")
+                .sort(sortByRecentDate),
+        },
+    ];
 
-    if (selected.length === 0 && other.length === 0) {
+    if (projects.length === 0) {
         return (
             <p className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) px-5 py-10 text-center text-(--color-muted)">
                 공개된 프로젝트가 없습니다.
@@ -26,49 +44,31 @@ export default function PortfolioView({
 
     return (
         <div className="space-y-14">
-            {selected.length > 0 && (
-                <section aria-labelledby="selected-work-heading" data-pdf-block>
-                    <div className="mb-6 max-w-2xl">
-                        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                            Selected Work
-                        </p>
-                        <h2
-                            id="selected-work-heading"
-                            className="text-2xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
+            {groupedProjects.map(
+                (group) =>
+                    group.projects.length > 0 && (
+                        <section
+                            key={group.heading}
+                            aria-labelledby={`${group.eyebrow}-heading`}
+                            data-pdf-block
                         >
-                            {isWebPortfolio
-                                ? "성과와 책임이 분명한 프로젝트"
-                                : "가장 강한 결과와 기여"}
-                        </h2>
-                    </div>
-                    <PortfolioProjectGrid
-                        projects={selected}
-                        featuredLayout
-                        portfolioBasePath={portfolioBasePath}
-                    />
-                </section>
-            )}
-
-            {other.length > 0 && (
-                <section aria-labelledby="other-work-heading" data-pdf-block>
-                    <div className="mb-6 max-w-2xl">
-                        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-muted) uppercase">
-                            Other Work
-                        </p>
-                        <h2
-                            id="other-work-heading"
-                            className="text-2xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
-                        >
-                            {isWebPortfolio
-                                ? "추가 실무·개인 프로젝트"
-                                : "추가 프로젝트와 실험"}
-                        </h2>
-                    </div>
-                    <PortfolioProjectGrid
-                        projects={other}
-                        portfolioBasePath={portfolioBasePath}
-                    />
-                </section>
+                            <div className="mb-6 max-w-2xl">
+                                <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                                    {group.eyebrow}
+                                </p>
+                                <h2
+                                    id={`${group.eyebrow}-heading`}
+                                    className="text-2xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
+                                >
+                                    {group.heading}
+                                </h2>
+                            </div>
+                            <PortfolioProjectGrid
+                                projects={group.projects}
+                                portfolioBasePath={portfolioBasePath}
+                            />
+                        </section>
+                    )
             )}
         </div>
     );

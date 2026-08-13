@@ -6,6 +6,7 @@ import type {
     PortfolioLink,
     PortfolioMedia,
     PortfolioOutcome,
+    PortfolioProjectType,
 } from "@/types/portfolio";
 
 export type PortfolioAdminItem = {
@@ -55,6 +56,8 @@ export type PortfolioEditorForm = {
     links: PortfolioLink[];
     devlogs: PortfolioDevlog[];
     credits: PortfolioCredit[];
+    projectType: PortfolioProjectType;
+    teamComposition: string;
     meta_title: string;
     meta_description: string;
     og_image: string;
@@ -169,6 +172,8 @@ export const EMPTY_PORTFOLIO_FORM: PortfolioEditorForm = {
     links: [],
     devlogs: [],
     credits: [],
+    projectType: "personal",
+    teamComposition: "",
     meta_title: "",
     meta_description: "",
     og_image: "",
@@ -279,6 +284,11 @@ export const itemToPortfolioForm = (
             role: typeof credit.role === "string" ? credit.role : "",
             ...(typeof credit.url === "string" ? { url: credit.url } : {}),
         })),
+        projectType: data.projectType === "work" ? "work" : "personal",
+        teamComposition:
+            typeof data.teamComposition === "string"
+                ? data.teamComposition
+                : "",
         meta_title: item.meta_title ?? "",
         meta_description: item.meta_description ?? "",
         og_image: item.og_image ?? "",
@@ -302,6 +312,8 @@ export const createPortfolioTemplateForm = (
     links: [],
     devlogs: [],
     credits: [],
+    projectType: "personal",
+    teamComposition: "",
 });
 
 const assignString = (
@@ -345,6 +357,8 @@ export const buildPortfolioSavePayload = (
                     : "web";
         }
         assignString(data, "oneLinePitch", form.oneLinePitch);
+        data.projectType = form.projectType;
+        data.teamComposition = form.teamComposition.trim();
         assignString(data, "engine", form.engine);
         data.platforms = [...form.platforms];
         data.ownership = [...form.ownership];

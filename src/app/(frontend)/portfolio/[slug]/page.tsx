@@ -216,13 +216,13 @@ export async function PortfolioDetailContent({
                 className="tablet:grid-cols-2 laptop:grid-cols-4 mt-10 grid min-w-0 grid-cols-1 gap-4"
                 data-pdf-block
             >
-                {(project.ownership[0] || project.role) && (
+                {project.role && (
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
                             역할
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
-                            {project.ownership[0] || project.role}
+                            {project.role}
                         </p>
                     </div>
                 )}
@@ -235,6 +235,11 @@ export async function PortfolioDetailContent({
                         <p className="font-semibold text-(--color-foreground)">
                             {project.teamSize}명
                         </p>
+                        {project.teamComposition && (
+                            <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
+                                {project.teamComposition}
+                            </p>
+                        )}
                     </div>
                 )}
                 {dateRange && (
@@ -281,9 +286,9 @@ export async function PortfolioDetailContent({
                     >
                         제가 맡은 일
                     </h2>
-                    <ul className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-3">
+                    <div className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-3">
                         {project.ownership.map((ownership) => (
-                            <li
+                            <div
                                 key={ownership}
                                 className="flex items-start gap-3 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 text-(--color-foreground)"
                                 data-pdf-block-item
@@ -295,9 +300,22 @@ export async function PortfolioDetailContent({
                                 <span className="leading-relaxed">
                                     {ownership}
                                 </span>
-                            </li>
+                            </div>
                         ))}
-                    </ul>
+                        {project.goal && (
+                            <div
+                                className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                                data-pdf-block-item
+                            >
+                                <p className="text-xs font-bold tracking-wider text-(--color-muted) uppercase">
+                                    프로젝트 목표
+                                </p>
+                                <p className="mt-2 leading-relaxed text-(--color-foreground)">
+                                    {project.goal}
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </section>
             )}
 
@@ -347,7 +365,7 @@ export async function PortfolioDetailContent({
                 </section>
             )}
 
-            {project.goal && !isV2 && (
+            {project.goal && !isV2 && project.ownership.length === 0 && (
                 <section
                     className="tablet:p-6 mt-14 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                     aria-labelledby="project-context-heading"
@@ -424,49 +442,6 @@ export async function PortfolioDetailContent({
                                         aria-hidden="true"
                                     />
                                 </a>
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            )}
-
-            {isV2 && project.credits.length > 0 && (
-                <section
-                    className="mt-14"
-                    aria-labelledby="credits-heading"
-                    data-pdf-block
-                >
-                    <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        함께한 사람
-                    </p>
-                    <h2
-                        id="credits-heading"
-                        className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
-                    >
-                        함께 만든 사람들
-                    </h2>
-                    <ul className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-3">
-                        {project.credits.map((credit) => (
-                            <li
-                                key={`${credit.name}-${credit.role}`}
-                                className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4"
-                                data-pdf-block-item
-                            >
-                                {credit.url ? (
-                                    <a
-                                        href={credit.url}
-                                        className="font-bold text-(--color-foreground) underline-offset-4 hover:text-(--color-accent) hover:underline"
-                                    >
-                                        {credit.name}
-                                    </a>
-                                ) : (
-                                    <p className="font-bold text-(--color-foreground)">
-                                        {credit.name}
-                                    </p>
-                                )}
-                                <p className="mt-1 text-sm text-(--color-muted)">
-                                    {credit.role}
-                                </p>
                             </li>
                         ))}
                     </ul>

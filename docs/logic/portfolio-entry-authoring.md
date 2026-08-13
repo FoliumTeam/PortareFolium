@@ -9,14 +9,14 @@
 Recruiter가 다음 내용을 순서대로 빠르게 확인할 수 있어야 한다.
 
 1. 어떤 프로젝트인지: title, one-line pitch, engine, platform
-2. 어떤 조건에서 진행했는지: 기간, team size, 역할
+2. 어떤 조건에서 진행했는지: 실무/개인 구분, 기간, team size·구성, 역할
 3. 본인이 실제로 맡은 것은 무엇인지: ownership
 4. 어떤 결과를 만들었는지: outcomes와 evidence
 5. 결과를 확인할 수 있는지: gallery, play/release/source link
 6. 중요한 문제를 어떻게 해결했는지: 2~3개의 Deep Dive
-7. 협업 프로젝트라면 누구와 함께했는지: credits
+7. 협업 프로젝트라면 상단 인원 카드에 역할별 팀 구성과 본인 위치를 명시
 
-Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → 대표 이미지 → article body → devlogs → credits다. 대표 이미지는 article의 핵심 장면을 빠르게 훑는 요약 gallery이며, 본문 속 이미지를 대신하지 않는다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
+Public page의 주요 section 순서는 hero → project facts → ownership → outcomes → actions → 대표 이미지 → article body → devlogs다. 협업자 역할과 본인 위치는 project facts의 인원 카드에서 한 번만 보여 준다. 대표 이미지는 article의 핵심 장면을 빠르게 훑는 요약 gallery이며, 본문 속 이미지를 대신하지 않는다. Featured는 `data.featuredByJobField.<job_field>`에서 직무 분야별로 독립 관리하며, 해당 분야의 순서는 `data.featuredOrderByJobField.<job_field>`가 결정한다. 기존 `featured`와 `order_idx`는 호환용 fallback으로만 사용한다.
 
 ## 2. 작성 전에 준비할 context packet
 
@@ -24,14 +24,14 @@ Public page의 주요 section 순서는 hero → project facts → ownership →
 
 ### 프로젝트 기본 정보
 
-| 항목            | 준비할 내용                                               |
-| --------------- | --------------------------------------------------------- |
-| Identity        | 정식 프로젝트명, 영문 또는 kebab-case slug, 한 문장 설명  |
-| Classification  | `game` 또는 `web`, tags, engine, target platforms         |
-| Timeline        | 시작일, 종료일 또는 ongoing 여부                          |
-| Team            | team size, 본인의 공식 역할, collaborator 이름과 역할     |
-| Availability    | play, demo, release, source URL의 공개 가능 여부          |
-| Confidentiality | NDA, 비공개 source, 사용자 정보, 회사 내부 지표 포함 여부 |
+| 항목            | 준비할 내용                                                    |
+| --------------- | -------------------------------------------------------------- |
+| Identity        | 정식 프로젝트명, 영문 또는 kebab-case slug, 한 문장 설명       |
+| Classification  | `game` 또는 `web`, tags, engine, target platforms              |
+| Timeline        | 시작일, 종료일 또는 ongoing 여부                               |
+| Team            | team size, 팀 구성, 본인의 공식 역할, collaborator 이름과 역할 |
+| Availability    | play, demo, release, source URL의 공개 가능 여부               |
+| Confidentiality | NDA, 비공개 source, 사용자 정보, 회사 내부 지표 포함 여부      |
 
 ### 개인 기여 자료
 
@@ -128,6 +128,8 @@ Admin image uploader는 `portfolio/<slug>/` 아래에 image를 저장하며 현�
 | `goal`            | string                        | 프로젝트 또는 제품 목표                                          |
 | `role`            | string                        | 공식 역할명                                                      |
 | `teamSize`        | number                        | 본인을 포함한 전체 인원                                          |
+| `teamComposition` | string                        | 역할별 인원과 본인 위치. 예: `BE/FE 1명(본인), FE 1명`           |
+| `projectType`     | `work` 또는 `personal`        | 모든 Portfolio의 기업/개인 프로젝트 구분                         |
 | `github`          | URL                           | legacy-compatible source URL. v2에서는 `links`도 작성            |
 | `liveUrl`         | URL                           | legacy-compatible live URL. v2에서는 `links` 사용 권장           |
 | `accomplishments` | `string[]`                    | legacy-compatible 성과. v2에서는 `outcomes` 사용                 |
@@ -135,18 +137,20 @@ Admin image uploader는 `portfolio/<slug>/` 아래에 image를 저장하며 현�
 
 ### Required v2 fields inside `data`
 
-| Field              | 형식과 제한                          | Published 조건                              |
-| ------------------ | ------------------------------------ | ------------------------------------------- |
-| `caseStudyVersion` | 정확히 number `2`                    | 필수                                        |
-| `oneLinePitch`     | string, 최대 180자                   | non-empty                                   |
-| `engine`           | string, 최대 80자                    | non-empty                                   |
-| `platforms`        | string array, 최대 5개, 항목당 80자  | 최소 1개                                    |
-| `ownership`        | string array, 최대 5개, 항목당 160자 | 최소 1개                                    |
-| `outcomes`         | object array, 최대 3개               | 유효한 result 최소 1개                      |
-| `gallery`          | image/video array, 최대 8개          | gallery 또는 thumbnail로 primary media 필요 |
-| `links`            | object array, 최대 4개               | 선택                                        |
-| `devlogs`          | object array, 최대 5개               | 선택                                        |
-| `credits`          | object array, 최대 20개              | `teamSize > 1`이면 최소 1개                 |
+| Field              | 형식과 제한                          | Published 조건                                        |
+| ------------------ | ------------------------------------ | ----------------------------------------------------- |
+| `caseStudyVersion` | 정확히 number `2`                    | 필수                                                  |
+| `oneLinePitch`     | string, 최대 180자                   | non-empty                                             |
+| `engine`           | string, 최대 80자                    | non-empty                                             |
+| `platforms`        | string array, 최대 5개, 항목당 80자  | 최소 1개                                              |
+| `ownership`        | string array, 최대 5개, 항목당 160자 | 최소 1개                                              |
+| `outcomes`         | object array, 최대 3개               | 유효한 result 최소 1개                                |
+| `gallery`          | image/video array, 최대 8개          | gallery 또는 thumbnail로 primary media 필요           |
+| `links`            | object array, 최대 4개               | 선택                                                  |
+| `devlogs`          | object array, 최대 5개               | 선택                                                  |
+| `credits`          | object array, 최대 20개              | 기존 데이터 호환용. 공개 화면에는 표시하지 않음       |
+| `projectType`      | `work` 또는 `personal`               | 기업·개인 프로젝트 섹션을 나누는 기준                 |
+| `teamComposition`  | string, 최대 180자                   | `teamSize > 1`이면 필수. 상단 인원 카드의 역할별 구성 |
 
 ### Nested object formats
 
@@ -252,6 +256,8 @@ Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달�
         "goal": "반응성이 높고 확장 가능한 arena combat vertical slice 제작",
         "role": "Gameplay Programmer",
         "teamSize": 4,
+        "teamComposition": "Gameplay 2명, Art 2명",
+        "projectType": "personal",
         "jobField": ["game"],
         "oneLinePitch": "측정 가능한 전투 반응성과 안정적인 animation state를 만든 Unreal Engine 5 vertical slice",
         "engine": "Unreal Engine 5",
@@ -306,8 +312,8 @@ Web 항목은 실제 업무 책임과 검증 가능한 결과를 먼저 전달�
 5. Rich Markdown Editor의 template에 2~3개의 Deep Dive를 작성한다.
 6. Editor에 image를 upload하고 필요한 URL을 thumbnail, 대표 이미지 gallery, OG image에 연결한다. 같은 URL을 본문의 관련 주장 바로 뒤에도 Markdown image로 삽입한다.
 7. **저장**하면 즉시 Published된다. 새 entry는 첫 수동 저장 전까지 auto-save되지 않으며 첫 저장 이후 auto-save가 동작한다.
-8. 저장된 field와 문구를 다시 fact-check한다. 특히 ownership, outcome, credit, 외부 URL을 확인한다.
-9. **미리보기**를 열어 desktop과 mobile에서 card, hero, action, gallery, content, credits를 확인한다.
+8. 저장된 field와 문구를 다시 fact-check한다. 특히 ownership, outcome, 팀 구성, 외부 URL을 확인한다.
+9. **미리보기**를 열어 desktop과 mobile에서 card, hero, 상단 인원 카드, action, gallery, content를 확인한다.
 10. Selected Work에 둘 entry만 `featured: true`로 지정한다. Featured 최대 5개와 순서는 `job_field`별로 독립 관리하므로, 관리 화면에서 먼저 해당 직무 분야를 선택한 뒤 순서를 조정한다.
 
 Portfolio 저장은 곧바로 Published되며, 관리자 미리보기는 현재 저장본을 확인하는 보조 경로다. 비공개가 필요하면 목록에서 Unpublished로 전환할 수 있다.
@@ -385,7 +391,7 @@ MCP patch 규칙:
 - [ ] outcome 1~3개, 각 result non-empty
 - [ ] 첫 valid gallery media 또는 thumbnail 존재
 - [ ] gallery의 모든 entry가 URL·type·poster·alt 규칙 통과
-- [ ] `teamSize > 1`이면 credit 최소 1개
+- [ ] `teamSize > 1`이면 상단 인원 카드에 팀 구성과 본인 위치를 입력
 - [ ] content에 `##` Deep Dive가 정확히 2개 또는 3개
 - [ ] 각 Deep Dive에 필수 `###` heading이 정확한 순서로 존재
 - [ ] collection별 최대 개수와 text 길이 제한 준수
@@ -407,7 +413,7 @@ MCP patch 규칙:
 | 개인 기여 필요        | `data.ownership`에 구체적 책임 최소 1개 추가                                                                      |
 | 검증 가능한 결과 필요 | `data.outcomes[].result`가 비어 있지 않은지 확인                                                                  |
 | 대표 media 필요       | valid gallery 첫 항목 또는 thumbnail 추가                                                                         |
-| Credit 필요           | team size를 정확히 입력하거나 collaborator credit 추가                                                            |
+| 팀 구성 필요          | team size를 정확히 입력하고 teamComposition에 역할별 구성과 본인 위치 입력                                        |
 | Gallery invalid       | media URL host, video poster, image poster 금지, alt 확인                                                         |
 | Deep Dive 개수 오류   | content의 모든 `##` heading을 확인. 정확히 2~3개만 유지                                                           |
 | 사례 순서 오류        | game은 `목표와 제약 → 내 역할 → 핵심 구현 → 게임 효과`, web은 `배경과 목표 → 담당 범위 → 실행 → 결과와 근거` 확인 |
@@ -443,7 +449,7 @@ Public query의 `published: true` guard, unknown data key 보존, incomplete Dra
 
 Portfolio entry는 다음 상태일 때 완료다.
 
-- 사실 context와 collaborator credit이 검토됨
+- 사실 context와 상단 인원 카드의 팀 구성이 검토됨
 - card만 읽어도 역할과 가장 중요한 outcome을 이해할 수 있음
 - 각 프로젝트 이야기가 내가 만든 변화와 개인 기여를 중심으로 작성됨
 - 대표 이미지의 모든 media가 하나 이상의 claim을 증명함
