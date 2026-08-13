@@ -267,7 +267,7 @@ export default async function PortfolioDetailContent({
 
             {project.goal && (
                 <section
-                    className="tablet:p-6 mt-14 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
+                    className="mt-14"
                     aria-labelledby="project-goal-heading"
                     data-pdf-block
                 >
@@ -276,13 +276,15 @@ export default async function PortfolioDetailContent({
                     </p>
                     <h2
                         id="project-goal-heading"
-                        className="text-xl font-(--font-display) font-black text-(--color-foreground)"
+                        className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
                         프로젝트 목표
                     </h2>
-                    <p className="mt-3 leading-relaxed text-(--color-muted)">
-                        {project.goal}
-                    </p>
+                    <div className="mt-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
+                        <p className="leading-relaxed text-(--color-foreground)">
+                            {project.goal}
+                        </p>
+                    </div>
                 </section>
             )}
 
