@@ -15,10 +15,21 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     const shortcut = page.getByRole("button", {
         name: "대표 프로젝트 편집",
     });
+    const sectionNavigation = page.getByRole("navigation", {
+        name: "이력서 편집 섹션",
+    });
+    const projectNavigation = sectionNavigation.getByRole("button", {
+        name: /프로젝트 (공개|비공개)/,
+    });
     const projectsSection = page.locator('[data-resume-section="projects"]');
 
     await expect(shortcut).toBeVisible();
+    await expect(sectionNavigation).toBeVisible();
+    await expect(projectNavigation).toBeVisible();
     await expect(projectsSection).toBeVisible();
+
+    await projectNavigation.click();
+    await expect(projectNavigation).toHaveAttribute("aria-current", "location");
     await shortcut.click();
 
     await expect(

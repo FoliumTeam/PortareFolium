@@ -7,7 +7,7 @@ import { ArrowUpRight, ExternalLinkIcon } from "lucide-react";
 
 // 날짜 포맷
 const formatDateRange = (startDate?: string, endDate?: string): string =>
-    `${startDate || ""} ~ ${endDate || "Present"}`;
+    `${startDate || ""} ~ ${endDate || "진행 중"}`;
 
 interface Props {
     projects: ResumeProject[];
@@ -66,24 +66,16 @@ export default async function ProjectsSection({
                     : undefined,
             }))
             .filter((entry) => entry.project.portfolioSlug && entry.portfolio)
-            .sort((left, right) => {
-                const leftFeatured =
-                    left.portfolio?.featuredByJobField[activeJobField] === true;
-                const rightFeatured =
-                    right.portfolio?.featuredByJobField[activeJobField] ===
-                    true;
-                if (leftFeatured !== rightFeatured) {
-                    return Number(rightFeatured) - Number(leftFeatured);
-                }
-                const leftOrder =
-                    left.portfolio?.featuredOrderByJobField[activeJobField] ??
-                    Number.MAX_SAFE_INTEGER;
-                const rightOrder =
-                    right.portfolio?.featuredOrderByJobField[activeJobField] ??
-                    Number.MAX_SAFE_INTEGER;
-                return leftOrder - rightOrder;
-            })
-            .slice(0, 3);
+            .sort((left, right) =>
+                (
+                    right.project.endDate ||
+                    right.project.startDate ||
+                    ""
+                ).localeCompare(
+                    left.project.endDate || left.project.startDate || ""
+                )
+            )
+            .slice(0, 5);
 
         return (
             <section className="mb-10" data-pdf-block>
@@ -93,7 +85,7 @@ export default async function ProjectsSection({
                             {label}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            직무 연관도가 높은 작업 3건을 요약했습니다.
+                            최신 대표 프로젝트 5건을 요약했습니다.
                         </p>
                     </div>
                     <a
@@ -107,13 +99,14 @@ export default async function ProjectsSection({
                 <div className="space-y-3">
                     {compactProjects.map(({ project, portfolio }) => {
                         const summary =
+                            project.description ||
                             portfolio?.outcomes[0]?.result ||
                             project.highlights?.[0] ||
-                            project.description;
+                            "";
                         return (
                             <article
                                 key={project.portfolioSlug}
-                                className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4 transition-colors hover:border-(--color-accent)"
+                                className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 transition-colors hover:border-(--color-accent)"
                                 data-pdf-block-item
                             >
                                 <a
@@ -123,16 +116,25 @@ export default async function ProjectsSection({
                                 />
                                 <div className="tablet:flex-row tablet:items-start tablet:justify-between flex flex-col gap-2">
                                     <div className="min-w-0">
-                                        <h3 className="text-base font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                        <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                             {project.name}
                                         </h3>
                                         {summary ? (
-                                            <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
+                                            <p className="mt-1.5 text-base leading-relaxed text-(--color-muted)">
                                                 {summary}
                                             </p>
                                         ) : null}
+                                        {(project.startDate ||
+                                            project.endDate) && (
+                                            <p className="mt-3 text-sm font-medium text-(--color-muted)">
+                                                {formatDateRange(
+                                                    project.startDate,
+                                                    project.endDate
+                                                )}
+                                            </p>
+                                        )}
                                     </div>
-                                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-(--color-accent)">
+                                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-(--color-accent)">
                                         상세 보기
                                         <ArrowUpRight
                                             className="h-3.5 w-3.5"

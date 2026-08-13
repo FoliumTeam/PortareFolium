@@ -21,7 +21,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "Present"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
 };
 
 // Layout editor 전용 sync preview — markdown 렌더링, portfolio fetch 스킵

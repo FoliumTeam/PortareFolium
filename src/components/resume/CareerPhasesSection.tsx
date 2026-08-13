@@ -56,7 +56,7 @@ export default function CareerPhasesSection({
                                 }}
                             >
                                 {phase.startDate?.slice(0, 7)} ~{" "}
-                                {phase.endDate?.slice(0, 7) || "Present"}
+                                {phase.endDate?.slice(0, 7) || "진행 중"}
                             </p>
                         ) : null}
                         {phase.name ? (

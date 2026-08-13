@@ -15,6 +15,13 @@ import {
     JobFieldBadges,
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
+import {
+    InputField,
+    SectionEmojiSelector,
+    TextAreaField,
+} from "@/components/admin/resume/ResumeEditorFields";
+import { ResumeBasicsSection } from "@/components/admin/resume/ResumeBasicsSection";
+import { ResumeSectionNavigation } from "@/components/admin/resume/ResumeSectionNavigation";
 import { Trash2 } from "lucide-react";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
 import ResumeLayoutEditor from "@/components/admin/panels/ResumeLayoutEditor";
@@ -76,67 +83,7 @@ function normalizeSkills(resume: Resume): Resume {
         },
     };
 }
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
 import { Switch } from "@/components/ui/switch";
-
-function InputField({
-    label,
-    value,
-    onChange,
-    placeholder = "",
-    type = "text",
-}: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder?: string;
-    type?: string;
-}) {
-    return (
-        <div className="flex flex-col space-y-1">
-            <label className="text-sm font-medium text-(--color-muted)">
-                {label}
-            </label>
-            <input
-                type={type}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                className="w-full rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-            />
-        </div>
-    );
-}
-
-function TextAreaField({
-    label,
-    value,
-    onChange,
-    placeholder = "",
-    rows = 3,
-}: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder?: string;
-    rows?: number;
-}) {
-    return (
-        <div className="flex flex-col space-y-1">
-            <label className="text-sm font-medium text-(--color-muted)">
-                {label}
-            </label>
-            <textarea
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                rows={rows}
-                className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
-            />
-        </div>
-    );
-}
 
 type ResumeLayout = "classic" | "modern";
 
@@ -157,51 +104,6 @@ function reorderArray<T>(arr: T[], from: number, to: number): T[] {
     const [item] = result.splice(from, 1);
     result.splice(to, 0, item);
     return result;
-}
-
-function SectionEmojiSelector({
-    value,
-    onChange,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-}) {
-    const [showPicker, setShowPicker] = useState(false);
-    return (
-        <div className="relative mr-3 inline-block">
-            <button
-                onClick={() => setShowPicker(!showPicker)}
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-(--color-border) bg-(--color-surface-subtle) text-base transition-colors hover:bg-(--color-border)"
-                title="이모지 선택"
-            >
-                {value || "➕"}
-            </button>
-            {showPicker && (
-                <>
-                    <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowPicker(false)}
-                    />
-                    <div className="absolute top-10 left-0 z-50 shadow-xl">
-                        <Picker
-                            data={data}
-                            onEmojiSelect={(e: { native: string }) => {
-                                onChange(e.native);
-                                setShowPicker(false);
-                            }}
-                            theme={
-                                document.documentElement.classList.contains(
-                                    "dark"
-                                )
-                                    ? "dark"
-                                    : "light"
-                            }
-                        />
-                    </div>
-                </>
-            )}
-        </div>
-    );
 }
 
 export default function ResumePanel() {
@@ -230,6 +132,7 @@ export default function ResumePanel() {
     const [activeJobField, setActiveJobField] = useState<string>("");
     // 직무 분야 필터 (null = 전체)
     const [filterJobField, setFilterJobField] = useState<string | null>(null);
+    const [activeEditorSection, setActiveEditorSection] = useState("basics");
 
     // Edit states for arrays
     const [editingWork, setEditingWork] = useState<number | null>(null);
@@ -312,9 +215,9 @@ export default function ResumePanel() {
         return { order: resumeSectionLayout.order.indexOf(key) };
     };
 
-    const scrollToProjectsEditor = () => {
+    const scrollToEditorSection = (sectionKey: string) => {
         const section = document.querySelector<HTMLElement>(
-            '[data-resume-section="projects"]'
+            `[data-resume-section="${sectionKey}"]`
         );
         const container = editorScrollRef.current;
         if (!section || !container) return;
@@ -323,7 +226,41 @@ export default function ResumePanel() {
             container.getBoundingClientRect().top +
             container.scrollTop;
         container.scrollTop = top;
+        setActiveEditorSection(sectionKey);
     };
+
+    useEffect(() => {
+        const container = editorScrollRef.current;
+        if (!container || layoutEditMode) return;
+
+        const updateActiveSection = () => {
+            const nextSection = Array.from(
+                container.querySelectorAll<HTMLElement>("[data-resume-section]")
+            ).reduce<{ key: string; distance: number } | null>(
+                (nearest, section) => {
+                    const key = section.dataset.resumeSection;
+                    if (!key) return nearest;
+                    const distance = Math.abs(
+                        section.getBoundingClientRect().top -
+                            container.getBoundingClientRect().top
+                    );
+                    if (!nearest || distance < nearest.distance) {
+                        return { key, distance };
+                    }
+                    return nearest;
+                },
+                null
+            );
+            if (nextSection) setActiveEditorSection(nextSection.key);
+        };
+
+        updateActiveSection();
+        container.addEventListener("scroll", updateActiveSection, {
+            passive: true,
+        });
+        return () =>
+            container.removeEventListener("scroll", updateActiveSection);
+    }, [layoutEditMode]);
 
     // 자동 저장 (기존 row가 있을 때만)
     const autoSave = async () => {
@@ -455,7 +392,9 @@ export default function ResumePanel() {
                         )}
                         {!layoutEditMode && (
                             <button
-                                onClick={scrollToProjectsEditor}
+                                onClick={() =>
+                                    scrollToEditorSection("projects")
+                                }
                                 className="rounded-lg bg-blue-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
                                 대표 프로젝트 편집
@@ -496,6 +435,16 @@ export default function ResumePanel() {
                     </div>
                 </div>
             </div>
+
+            {!layoutEditMode ? (
+                <ResumeSectionNavigation
+                    activeSection={activeEditorSection}
+                    activeJobField={activeJobField}
+                    jobFields={jobFields}
+                    layout={resumeSectionLayout}
+                    onSelect={scrollToEditorSection}
+                />
+            ) : null}
 
             <div
                 ref={editorScrollRef}
@@ -542,67 +491,12 @@ export default function ResumePanel() {
 
                 {/* 기본 정보 — layout edit mode에서 숨김 */}
                 {!layoutEditMode && (
-                    <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                        <h3 className="text-xl font-bold text-(--color-foreground)">
-                            기본 정보
-                        </h3>
-                        <div className="tablet:flex-row tablet:gap-6 mb-4 flex flex-col items-start gap-4">
-                            {resumeData.basics?.image && (
-                                <img
-                                    src={resumeData.basics.image}
-                                    alt="Profile"
-                                    className="tablet:h-48 tablet:w-48 h-32 w-32 shrink-0 rounded-full border border-(--color-border) object-cover"
-                                />
-                            )}
-                            <div className="max-w-full min-w-0 flex-1">
-                                <label className="text-sm font-medium text-(--color-muted)">
-                                    프로필 사진 (자동 업로드)
-                                </label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    disabled={uploadingImage}
-                                    className={`mt-4 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                            <InputField
-                                label="이름 (Name)"
-                                value={resumeData.basics?.name || ""}
-                                onChange={(v) => updateBasics("name", v)}
-                            />
-                            <InputField
-                                label="직함 (Label)"
-                                value={resumeData.basics?.label || ""}
-                                onChange={(v) => updateBasics("label", v)}
-                                placeholder="예: Frontend Developer"
-                            />
-                            <InputField
-                                label="이메일"
-                                value={resumeData.basics?.email || ""}
-                                onChange={(v) => updateBasics("email", v)}
-                            />
-                            <InputField
-                                label="전화번호"
-                                value={resumeData.basics?.phone || ""}
-                                onChange={(v) => updateBasics("phone", v)}
-                            />
-                            <InputField
-                                label="웹사이트 URL"
-                                value={resumeData.basics?.url || ""}
-                                onChange={(v) => updateBasics("url", v)}
-                            />
-                        </div>
-                        <TextAreaField
-                            label="자기소개 (Summary)"
-                            value={resumeData.basics?.summary || ""}
-                            onChange={(v) => updateBasics("summary", v)}
-                            rows={4}
-                        />
-                    </section>
+                    <ResumeBasicsSection
+                        basics={resumeData.basics}
+                        uploadingImage={uploadingImage}
+                        onImageChange={handleImageUpload}
+                        onChange={updateBasics}
+                    />
                 )}
 
                 {/* 커리어 타임라인 */}
@@ -946,7 +840,7 @@ export default function ResumePanel() {
                                                     <p className="text-xs text-(--color-muted)">
                                                         {cp.startDate} ~{" "}
                                                         {cp.endDate ||
-                                                            "Present"}
+                                                            "진행 중"}
                                                     </p>
                                                 ) : null}
                                                 {cp.description ? (
@@ -1501,6 +1395,62 @@ export default function ResumePanel() {
                                                                     .entries,
                                                             ];
                                                             w[idx].position = v;
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                work: {
+                                                                    ...(resumeData.work || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: w,
+                                                                },
+                                                            });
+                                                        }}
+                                                    />
+                                                    <InputField
+                                                        label="고용 형태"
+                                                        value={
+                                                            work.employmentType ||
+                                                            ""
+                                                        }
+                                                        onChange={(v) => {
+                                                            const w = [
+                                                                ...resumeData
+                                                                    .work!
+                                                                    .entries,
+                                                            ];
+                                                            w[
+                                                                idx
+                                                            ].employmentType =
+                                                                v;
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                work: {
+                                                                    ...(resumeData.work || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: w,
+                                                                },
+                                                            });
+                                                        }}
+                                                    />
+                                                    <InputField
+                                                        label="근무 지역"
+                                                        value={
+                                                            work.location || ""
+                                                        }
+                                                        onChange={(v) => {
+                                                            const w = [
+                                                                ...resumeData
+                                                                    .work!
+                                                                    .entries,
+                                                            ];
+                                                            w[idx].location = v;
                                                             setResumeData({
                                                                 ...resumeData,
                                                                 work: {
@@ -2936,6 +2886,29 @@ export default function ResumePanel() {
                                                                 .entries,
                                                         ];
                                                         e[idx].area = v;
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            education: {
+                                                                ...(resumeData.education || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: e,
+                                                            },
+                                                        });
+                                                    }}
+                                                />
+                                                <InputField
+                                                    label="학교 지역"
+                                                    value={ed.location || ""}
+                                                    onChange={(v) => {
+                                                        const e = [
+                                                            ...resumeData
+                                                                .education!
+                                                                .entries,
+                                                        ];
+                                                        e[idx].location = v;
                                                         setResumeData({
                                                             ...resumeData,
                                                             education: {

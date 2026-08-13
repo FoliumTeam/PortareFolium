@@ -50,6 +50,7 @@ export interface ResumeBasics {
 export interface ResumeWork {
     name?: string;
     position?: string;
+    employmentType?: string;
     url?: string;
     startDate?: string;
     endDate?: string;
@@ -77,6 +78,7 @@ export interface ResumeVolunteer {
 
 export interface ResumeEducation {
     institution?: string;
+    location?: string;
     url?: string;
     area?: string;
     studyType?: string;

@@ -25,7 +25,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "Present"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
 };
 
 export default async function ResumeModern({
@@ -150,9 +150,38 @@ export default async function ResumeModern({
                                     )}
                                 </h3>
                             ) : null}
-                            {workItem.position ? (
-                                <p className="m-0 mb-2 text-base text-(--color-muted)">
-                                    {workItem.position}
+                            {[
+                                workItem.position,
+                                workItem.employmentType,
+                                workItem.location,
+                            ].filter(Boolean).length > 0 ? (
+                                <p className="m-0 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-(--color-muted)">
+                                    {[
+                                        workItem.position,
+                                        workItem.employmentType,
+                                        workItem.location,
+                                    ]
+                                        .filter(Boolean)
+                                        .map((detail, detailIndex) => (
+                                            <span
+                                                key={`${detail}-${detailIndex}`}
+                                            >
+                                                {detailIndex > 0 ? (
+                                                    <span className="mr-2 text-(--color-border)">
+                                                        |
+                                                    </span>
+                                                ) : null}
+                                                <span
+                                                    className={
+                                                        detailIndex === 0
+                                                            ? "font-semibold text-(--color-accent)"
+                                                            : "font-medium"
+                                                    }
+                                                >
+                                                    {detail}
+                                                </span>
+                                            </span>
+                                        ))}
                                 </p>
                             ) : null}
                             {workItem.summary ? (
@@ -237,7 +266,7 @@ export default async function ResumeModern({
                         data-pdf-block-item
                     >
                         {education.institution ? (
-                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                            <h3 className="m-0 text-lg font-bold text-(--color-foreground)">
                                 {education.url ? (
                                     <a
                                         href={education.url}
@@ -250,46 +279,35 @@ export default async function ResumeModern({
                                 ) : (
                                     education.institution
                                 )}
+                                {education.location ? (
+                                    <span className="ml-2 text-sm font-medium text-(--color-muted)">
+                                        {education.location}
+                                    </span>
+                                ) : null}
                             </h3>
                         ) : null}
-                        {(education.studyType || education.area) && (
-                            <div className="mb-0.5 text-base text-(--color-foreground)">
-                                {`${education.studyType || ""}${education.area ? " " + education.area : ""}`}
-                            </div>
-                        )}
-                        {(education.startDate || education.endDate) && (
-                            <div
-                                className="mb-1 text-sm text-(--color-muted)"
-                                style={{
-                                    fontVariantNumeric: "tabular-nums",
-                                }}
-                            >
-                                {formatDateRange(
-                                    education.startDate,
-                                    education.endDate
-                                )}
-                            </div>
-                        )}
-                        {education.gpa != null ? (
-                            <div className="mb-1 text-sm text-(--color-muted)">
-                                GPA: {education.gpa.toFixed(2)} /{" "}
-                                {(education.gpaMax ?? 4.5).toFixed(2)}
-                            </div>
-                        ) : education.score ? (
-                            <div className="mb-1 text-sm text-(--color-muted)">
-                                GPA: {education.score}
-                            </div>
-                        ) : null}
+                        <p className="mt-1 text-sm font-medium text-(--color-muted)">
+                            {[
+                                education.studyType,
+                                education.area,
+                                education.startDate || education.endDate
+                                    ? formatDateRange(
+                                          education.startDate,
+                                          education.endDate
+                                      )
+                                    : null,
+                                education.gpa != null
+                                    ? `GPA ${education.gpa.toFixed(2)} / ${(education.gpaMax ?? 4.5).toFixed(2)}`
+                                    : education.score
+                                      ? `GPA ${education.score}`
+                                      : null,
+                            ]
+                                .filter(Boolean)
+                                .join(" | ")}
+                        </p>
                         {education.courses && education.courses.length > 0 ? (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                                {education.courses.map((course, cIdx) => (
-                                    <span
-                                        key={cIdx}
-                                        className="inline-block rounded bg-(--color-tag-bg) px-[0.55em] py-[0.15em] text-sm leading-normal font-medium text-(--color-tag-fg)"
-                                    >
-                                        {course}
-                                    </span>
-                                ))}
+                            <div className="mt-2 text-sm leading-relaxed text-(--color-muted)">
+                                주요 과목: {education.courses.join(" · ")}
                             </div>
                         ) : null}
                     </div>

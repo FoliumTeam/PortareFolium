@@ -24,7 +24,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "Present"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
 };
 
 export default async function ResumeClassic({
