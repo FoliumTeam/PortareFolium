@@ -12,6 +12,7 @@ import {
     inheritResumeJobField,
     removeResumeJobField,
 } from "@/lib/resume-job-field";
+import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
 
 type JobFieldItem = {
     id: string;
@@ -24,6 +25,7 @@ type JobFieldValue = string | string[] | null | undefined;
 type SaveSiteConfigInput = {
     colorScheme: string;
     plainMode: boolean;
+    themeMode: ThemeMode;
     seoConfig: {
         defaultTitle: string;
         defaultDescription: string;
@@ -165,6 +167,7 @@ export async function getSiteConfigBootstrap(): Promise<{
         .in("key", [
             "color_scheme",
             "plain_mode",
+            "theme_mode",
             "job_field",
             "job_fields",
             "site_name",
@@ -372,6 +375,10 @@ export async function saveSiteConfig(
     try {
         const rows: { key: string; value: unknown }[] = [
             { key: "color_scheme", value: JSON.stringify(input.colorScheme) },
+            {
+                key: "theme_mode",
+                value: JSON.stringify(normalizeThemeMode(input.themeMode)),
+            },
             {
                 key: "site_name",
                 value: JSON.stringify(input.seoConfig.defaultTitle),

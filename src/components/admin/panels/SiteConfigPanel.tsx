@@ -17,15 +17,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Check, ChevronDown, Plus, Trash2 } from "lucide-react";
+import {
+    Check,
+    ChevronDown,
+    Monitor,
+    Moon,
+    Plus,
+    Sun,
+    Trash2,
+} from "lucide-react";
 import { COLOR_SCHEMES, type ColorScheme } from "@/lib/color-schemes";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
 
 type JobFieldItem = {
     id: string;
     name: string;
     emoji: string;
 };
+
+const THEME_MODE_OPTIONS: {
+    value: ThemeMode;
+    title: string;
+    description: string;
+    Icon: typeof Sun;
+}[] = [
+    {
+        value: "light",
+        title: "라이트 고정",
+        description: "모든 방문자에게 라이트 화면 표시",
+        Icon: Sun,
+    },
+    {
+        value: "dark",
+        title: "다크 고정",
+        description: "모든 방문자에게 다크 화면 표시",
+        Icon: Moon,
+    },
+    {
+        value: "system",
+        title: "시스템 따름",
+        description: "방문자의 기기 화면 모드에 맞춰 표시",
+        Icon: Monitor,
+    },
+];
 
 function parseSiteConfigValue(value: unknown): unknown {
     if (typeof value !== "string") return value;
@@ -67,6 +102,7 @@ export default function SiteConfigPanel() {
         }
         return false;
     });
+    const [themeMode, setThemeMode] = useState<ThemeMode>("system");
     const [schemeDropdownOpen, setSchemeDropdownOpen] = useState(false);
     const schemeDropdownRef = useRef<HTMLDivElement>(null);
     const [activeJobField, setActiveJobField] = useState<string>("");
@@ -125,6 +161,9 @@ export default function SiteConfigPanel() {
                                 "data-plain"
                             );
                         }
+                    }
+                    if (row.key === "theme_mode") {
+                        setThemeMode(normalizeThemeMode(v));
                     }
                     if (row.key === "job_field")
                         setActiveJobField(normalizeJobFieldValue(v as string));
@@ -256,6 +295,7 @@ export default function SiteConfigPanel() {
         const result = await saveSiteConfig({
             colorScheme,
             plainMode,
+            themeMode,
             seoConfig,
             githubUrl,
         });
@@ -385,6 +425,78 @@ export default function SiteConfigPanel() {
                                     }}
                                 />
                             </div>
+                        </div>
+                    </section>
+
+                    <Separator />
+
+                    <section className="space-y-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-(--color-foreground)">
+                                화면 모드
+                            </h3>
+                            <p className="mt-1 text-sm text-(--color-muted)">
+                                공개 사이트 방문자에게 적용할 화면 모드
+                                정책입니다.
+                            </p>
+                        </div>
+                        <div className="laptop:grid-cols-3 grid gap-3">
+                            {THEME_MODE_OPTIONS.map(
+                                ({ value, title, description, Icon }) => {
+                                    const selected = themeMode === value;
+                                    const darkPreview = value === "dark";
+                                    return (
+                                        <label
+                                            key={value}
+                                            className={`group relative cursor-pointer rounded-2xl border p-4 transition-colors ${selected ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30" : "border-(--color-border) bg-(--color-surface) hover:border-(--color-accent)/50"}`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="theme-mode"
+                                                value={value}
+                                                checked={selected}
+                                                onChange={() =>
+                                                    setThemeMode(value)
+                                                }
+                                                className="sr-only"
+                                            />
+                                            <span
+                                                className={`mb-4 flex h-20 items-center justify-center rounded-[1.25rem] border p-3 shadow-inner ${darkPreview ? "border-white/10 bg-[#1c1c1e]" : "border-zinc-200 bg-[#f2f2f7]"}`}
+                                                aria-hidden="true"
+                                            >
+                                                <span
+                                                    className={`flex h-11 w-11 items-center justify-center rounded-[14px] shadow-sm ${darkPreview ? "bg-[#2c2c2e] text-[#ff9f0a]" : "bg-white text-[#007aff]"}`}
+                                                >
+                                                    <Icon
+                                                        className="h-6 w-6"
+                                                        strokeWidth={1.8}
+                                                    />
+                                                </span>
+                                            </span>
+                                            <span className="flex items-start gap-2">
+                                                <span
+                                                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? "border-(--color-accent) bg-(--color-accent)" : "border-(--color-muted)"}`}
+                                                >
+                                                    {selected && (
+                                                        <Check
+                                                            className="h-3 w-3 text-white"
+                                                            strokeWidth={3}
+                                                        />
+                                                    )}
+                                                </span>
+                                                <span>
+                                                    <span className="block text-sm font-semibold text-(--color-foreground)">
+                                                        {title}
+                                                    </span>
+                                                    <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                                        {description}
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </label>
+                                    );
+                                }
+                            )}
                         </div>
                     </section>
 

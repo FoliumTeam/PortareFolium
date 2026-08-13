@@ -612,6 +612,7 @@ USING (bucket_id = 'images');
 -- ── 초기 site_config 데이터 ──────────────────────────────────
 
 INSERT INTO site_config (key, value) VALUES
+    ('theme_mode',         '"light"'),
     ('color_scheme',       '"blue"'),
     ('site_name',          '"PortareFolium"'),
     ('job_field',          '"game"'),

@@ -7,15 +7,18 @@ import UserMenu from "@/components/UserMenu";
 import GlobalSearch from "@/components/GlobalSearch";
 import { contentVariants } from "@/components/ContentWrapper";
 import Link from "next/link";
+import type { ThemeMode } from "@/lib/theme-mode";
 
 export default function Header({
     siteName,
     githubUrl,
     jobField = "",
+    themeMode = "system",
 }: {
     siteName: string;
     githubUrl: string;
     jobField?: string;
+    themeMode?: ThemeMode;
 }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
@@ -160,7 +163,7 @@ export default function Header({
                             />
                         </svg>
                     </a>
-                    <ThemeToggle />
+                    {themeMode === "system" && <ThemeToggle />}
                     <UserMenu />
                 </div>
             </nav>

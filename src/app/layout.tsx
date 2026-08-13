@@ -7,6 +7,7 @@ import AuthSessionProvider from "@/components/AuthSessionProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
 
 export const revalidate = 3600;
 
@@ -34,6 +35,7 @@ export default async function RootLayout({
 }) {
     let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "blue";
     let plainMode = false;
+    let themeMode: ThemeMode = "system";
 
     const configRows = await getSiteConfig();
     for (const row of configRows) {
@@ -42,6 +44,7 @@ export default async function RootLayout({
         if (row.key === "color_scheme" && typeof v === "string")
             colorScheme = v;
         if (row.key === "plain_mode") plainMode = v === true || v === "true";
+        if (row.key === "theme_mode") themeMode = normalizeThemeMode(v);
     }
 
     const validScheme = VALID_SCHEMES.includes(colorScheme)
@@ -59,7 +62,7 @@ export default async function RootLayout({
             <head>
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){var t=localStorage.getItem("theme")||"system";var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var p=localStorage.getItem("folium_plain_mode");if(p==="true"){document.documentElement.setAttribute("data-plain","")}else if(p==="false"){document.documentElement.removeAttribute("data-plain")}})();`,
+                        __html: `(function(){var m=${JSON.stringify(themeMode)};var a=location.pathname.startsWith("/admin");var t=a?(localStorage.getItem("theme")||"system"):m;var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var p=localStorage.getItem("folium_plain_mode");if(p==="true"){document.documentElement.setAttribute("data-plain","")}else if(p==="false"){document.documentElement.removeAttribute("data-plain")}})();`,
                     }}
                 />
             </head>
