@@ -9,6 +9,7 @@
 ## Chat
 
 - **Language**: Answer everything in Korean.
+- **Project Skill Language**: Write all new and modified files under `.agents/skills/` in English. This scope overrides the project-document language default only for skill files.
 - **Token Efficiency**:
     - **No Full Scan**: Do not scan the entire project. If context is missing, ask the user for specific file paths.
     - **Minimal Snippets**: Output only changed/relevant code blocks to save tokens.

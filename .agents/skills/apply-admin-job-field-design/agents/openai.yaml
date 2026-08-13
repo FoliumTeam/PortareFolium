@@ -1,0 +1,4 @@
+interface:
+    display_name: "Job-Field Admin Design"
+    short_description: "Apply card-based job-field editing and inheritance rules."
+    default_prompt: "Use $apply-admin-job-field-design to apply the project's job-field admin design."
