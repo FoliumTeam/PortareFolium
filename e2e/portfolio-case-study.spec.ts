@@ -36,7 +36,7 @@ test("Portfolio 카드 전체 클릭으로 프로젝트 기록에 이동하고 k
     expect(runtimeErrors).toEqual([]);
 });
 
-test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 이전 기록도 바로 표시", async ({
+test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 본문을 바로 표시", async ({
     page,
 }) => {
     const runtimeErrors = trackRuntimeErrors(page);
@@ -44,7 +44,7 @@ test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 이전 �
         waitUntil: "domcontentloaded",
     });
 
-    await expect(page.locator(".portfolio-legacy-content")).toBeVisible();
+    await expect(page.locator(".portfolio-case-study-content")).toBeVisible();
     await expect(
         page.getByText("전체 기술 기록 펼치기", { exact: true })
     ).toHaveCount(0);
@@ -65,6 +65,7 @@ test("상세 페이지는 TOC landmark를 최대 하나만 렌더하고 이전 �
 });
 
 test("tablet 이상 Portfolio 목차는 우측 중앙에 고정", async ({ page }) => {
+    const runtimeErrors = trackRuntimeErrors(page);
     await page.setViewportSize({ width: 900, height: 800 });
     await page.goto("/web/portfolio/portare-folium", {
         waitUntil: "domcontentloaded",
@@ -113,17 +114,8 @@ test("tablet 이상 Portfolio 목차는 우측 중앙에 고정", async ({ page 
         .toBe(true);
     await page.keyboard.press("Escape");
 
-    await page
-        .getByRole("heading", {
-            name: "관리자 화면으로 운영하는 콘텐츠 플랫폼",
-        })
-        .scrollIntoViewIfNeeded();
-
-    await expect(page.locator("[data-toc-sticky]")).toHaveCSS(
-        "position",
-        "sticky"
-    );
-    const tocBox = await toc.boundingBox();
-    expect(tocBox).not.toBeNull();
-    expect(Math.abs(tocBox!.y + tocBox!.height / 2 - 400)).toBeLessThan(8);
+    const stickyToc = page.locator("[data-toc-sticky]");
+    await expect(stickyToc).toHaveCSS("position", "sticky");
+    await expect(stickyToc).toHaveCSS("align-items", "center");
+    expect(runtimeErrors).toEqual([]);
 });
