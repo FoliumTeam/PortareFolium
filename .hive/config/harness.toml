@@ -1,0 +1,31 @@
+schema_version = 1
+harness_version = "0.9.2"
+source_release_version = "0.9.2"
+project_name = "portare-folium"
+project_kind = "general"
+primary_host = "codex"
+external_capability_detection = "unknown"
+resolved_owner = "host-native"
+resolution_evidence_digest = "sha256:5aa340049036a103b4b23f5b91795921baffc724d74db120edd7c9259850e41d"
+usage_stop_remaining_percent = 5
+elevated_judge_quorum = "2/3"
+critical_judge_quorum = "3/3+human"
+
+# Optional Skills are inert until each entry is explicitly approved.
+approved_optional_skills_file = ".hive/config/approved-skills.yml"
+capability_resolution_file = ".hive/config/capability-resolution.yml"
+setup_mode = "expedited"
+preference_provenance = "global-inherited"
+interface_language = "ko"
+wiki_enabled = true
+wiki_backend = "markdown"
+wiki_language = "both"
+persona_id = "strict"
+usage_guard_enabled = true
+codexbar_fallback_enabled = false
+discord_guard_enabled = true
+discord_message_fields = ["remaining-usage", "project", "request", "progress", "host", "resume"]
+selected_project_skills = ["amend-directive", "code-polish", "knowledge-capture", "knowledge-import", "knowledge-maintain", "knowledge-promote", "knowledge-recall", "package-review", "product-update", "project-refresh", "project-setup", "project-transition", "prompt-refine", "quick-answer", "ralph-loop", "research-best-practices", "run-checkpoint", "run-handoff", "run-resume", "ship", "usage-guard"]
+discord_webhook_url_env = "AIGENT_HIVE_DISCORD_WEBHOOK_URL"
+role_seed_file = ".hive/config/role-seeds.yml"
+knowledge_scope_file = ".hive/config/knowledge-scope.yml"

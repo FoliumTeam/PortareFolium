@@ -1,0 +1,6 @@
+interface:
+    display_name: "Ship changes"
+    short_description: "Create focused verified commits using this repository's rules."
+    default_prompt: "Use $aigent-hive:ship to prepare focused, verified commits for these changes."
+policy:
+    allow_implicit_invocation: false

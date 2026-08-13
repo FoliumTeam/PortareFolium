@@ -1,0 +1,6 @@
+interface:
+    display_name: "Manage usage"
+    short_description: "Inspect or adjust usage safeguards for the current session."
+    default_prompt: "Use $aigent-hive:usage-guard to show or change this installed Hive usage safeguard."
+policy:
+    allow_implicit_invocation: false

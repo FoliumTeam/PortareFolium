@@ -1,0 +1,6 @@
+interface:
+    display_name: "Record knowledge"
+    short_description: "Automatically review every Wiki-enabled turn and record one safe durable claim in every project after installation without requiring project setup."
+    default_prompt: "Automatically review this Wiki-enabled turn and remember one safe durable claim when present."
+policy:
+    allow_implicit_invocation: false

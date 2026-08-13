@@ -1,0 +1,6 @@
+interface:
+    display_name: "Maintain knowledge"
+    short_description: "Check, maintain, and rebuild the derived knowledge index."
+    default_prompt: "Use $aigent-hive:knowledge-maintain to run this explicit knowledge maintenance action."
+policy:
+    allow_implicit_invocation: false

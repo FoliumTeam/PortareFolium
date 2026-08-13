@@ -1,0 +1,6 @@
+interface:
+    display_name: "Resume work"
+    short_description: "Validate a work handoff and read safe resume context."
+    default_prompt: "Use $aigent-hive:run-resume to load and validate this durable Hive run."
+policy:
+    allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+    display_name: "Verify package"
+    short_description: "Verify a work package and its signed attestations."
+    default_prompt: "Use $aigent-hive:package-review to validate this clean-context judge package and provenance chain."
+policy:
+    allow_implicit_invocation: false

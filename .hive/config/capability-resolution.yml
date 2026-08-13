@@ -1,0 +1,23 @@
+# Generated from a read-only active-host capability probe.
+# evidence_digest binds this normalized object except the evidence_digest field itself.
+schema_version: 1
+host: "codex"
+host_version: "0.147.0"
+surface: "in-session"
+detection: "unknown"
+external_runtime: null
+resolved_owner: "host-native"
+capabilities:
+    continuous-loop: supported
+    independent-judge: supported
+    instructions: supported
+    persistent-role-binding: supported
+    simple-question-isolation: supported
+    subagents: supported
+    usage-sensor: supported
+evidence_digest: "sha256:5aa340049036a103b4b23f5b91795921baffc724d74db120edd7c9259850e41d"
+evidence:
+    - digest: sha256:04133ce23e83eb1ae871aeca359af87747f3041923596f3579bf49192e715e50
+      locator: codex:in-session-capabilities
+      outcome: unavailable
+      source: host-catalog

@@ -5,3 +5,9 @@
 → `AGENTS.md` 참조
 → `.agents/directives/` (사용자 directive)
 → `.agents/directives/omc/` (OMC sync snapshot)
+
+<!-- AIGENT-HIVE:START -->
+
+@AGENTS.md
+
+<!-- AIGENT-HIVE:END -->

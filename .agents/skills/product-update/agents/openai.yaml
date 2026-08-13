@@ -1,0 +1,6 @@
+interface:
+    display_name: "Update Hive"
+    short_description: "Preview, verify, and safely apply a signed Hive update."
+    default_prompt: "Use $aigent-hive:product-update to dry-run and apply this signed offline Hive release."
+policy:
+    allow_implicit_invocation: false

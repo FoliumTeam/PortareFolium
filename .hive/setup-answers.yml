@@ -1,0 +1,71 @@
+# Generated from setup answers. Change values through a validated Hive reconfigure action.
+schema_version: 1
+project_name: "portare-folium"
+project_identity: "portare-folium"
+setup_mode: "expedited"
+project_kind: "general"
+primary_host: "codex"
+usage_stop_remaining_percent: 30
+elevated_judge_quorum: "2/3"
+critical_judge_quorum: "3/3+human"
+persistent_roles:
+    - role_id: implementer
+      display_name: Implementer
+      responsibilities:
+          - Resume 관리자 refactor 구현
+          - 승인된 test와 build 실행
+      non_responsibilities:
+          - 자체 구현 결과의 독립 검증
+      context_paths:
+          - src/
+          - e2e/
+          - docs/plans/
+      allowed_capabilities:
+          - filesystem-read
+          - filesystem-write
+          - shell
+      write_scope:
+          - src/**
+          - e2e/**
+          - docs/**
+          - .hive/runs/**
+      verification_duties:
+          - 구현 범위와 실행한 검증 근거 제공
+    - role_id: verifier
+      display_name: Verifier
+      responsibilities:
+          - acceptance criteria 독립 검증
+          - test와 browser evidence 확인
+      non_responsibilities:
+          - 검증 대상 기능 구현
+      context_paths:
+          - src/
+          - e2e/
+          - docs/plans/
+      allowed_capabilities:
+          - filesystem-read
+          - filesystem-write
+          - shell
+      write_scope:
+          - .hive/runs/**
+      verification_duties:
+          - 재현 가능한 evidence와 criterion 결과 기록
+knowledge_include_paths:
+    - AGENTS.md
+    - .agents/directives/**
+    - docs/plans/**
+knowledge_exclude_paths:
+    - .env*
+    - docs/private/**
+    - .auth/**
+    - .local/**
+    - backup/**
+    - vendor/**
+root_knowledge_promotion_categories:
+    - fact
+    - preference
+    - workflow
+confidential_knowledge_categories: []
+user_store_binding: "sha256:92b2c99e27d1020262812259f5f13697e9c8ed7eaac5bad6f2e4f53db65e6ecf"
+approved_optional_skills: []
+approved_fallback_hooks: []

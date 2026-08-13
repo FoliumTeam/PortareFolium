@@ -1,0 +1,6 @@
+interface:
+    display_name: "Research practices"
+    short_description: "Research implementation practices from reliable current sources."
+    default_prompt: "Use $aigent-hive:research-best-practices to research current guidance and return a cited handoff."
+policy:
+    allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+    display_name: "Engineer run"
+    short_description: "Prepare a Hive work run with planning, verification, and handoff."
+    default_prompt: "Use $aigent-hive:ralph-loop to prepare and validate this bounded run graph."
+policy:
+    allow_implicit_invocation: false

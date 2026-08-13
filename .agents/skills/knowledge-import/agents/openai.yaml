@@ -1,0 +1,6 @@
+interface:
+    display_name: "Import repository knowledge"
+    short_description: "Import reviewed repository content as Hive knowledge."
+    default_prompt: "Use $aigent-hive:knowledge-import to inventory this directory and prepare reviewed facts."
+policy:
+    allow_implicit_invocation: false

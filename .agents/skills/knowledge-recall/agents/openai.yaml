@@ -1,0 +1,6 @@
+interface:
+    display_name: "Search knowledge"
+    short_description: "Retrieve only the Hive knowledge needed for the current work, with user-root and shared fallback for unregistered projects."
+    default_prompt: "Use $aigent-hive:knowledge-recall to run the single bounded knowledge lookup for this turn."
+policy:
+    allow_implicit_invocation: false

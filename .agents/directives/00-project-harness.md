@@ -1,0 +1,12 @@
+# Aigent Hive project harness
+
+- Treat this repository as an independent consumer project.
+- Read `AGENTS.md` first, then load only the narrow `.agents/directives/` file needed by the task.
+- Treat `.hive/config/` and canonical Markdown as authority.
+- When Wiki is enabled, run at most one bounded `hive knowledge retrieve` before question, research, design, plan, debug, or implementation work. Skip retrieval during usage-guard or setup control, when Wiki is disabled, for acknowledgment-only or context-free requests, or after the current turn already performed the lookup.
+- Before the final response on every Wiki-enabled turn, perform agent-reviewed classification of current authorized user statements and outcomes as a reusable task fact, preference, or workflow. Record the bounded outcome, tool or project, criteria, and originating request summary. When reusable, run `hive knowledge remember`, require its canonical-write receipt, and only then finish. After a successful write, use `hive source-wiki lint` only for a valid source workspace; otherwise use `hive knowledge lint` against the enabled registered project, or against `user-root` when the current project is unregistered. Missing project setup, a project marker, or an attached collection never skips lint. Never write raw transcripts, secrets, ambiguous or ephemeral content, or confidential content without its exact authorized scope.
+- For “all todos”, “until completion”, “do not stop”, or an equivalent terminal request, continue while any in-scope agent-owned inspection, fix, verification, commit, permitted push, CI observation, or authorized publication remains. A progress report naming such work must not end the task. Before a final response, classify every remaining item as `agent-owned`, `awaiting-user-authority`, `awaiting-external-evidence`, or `blocked`; only no `agent-owned` work permits completion.
+- Treat `.agents/directives/` and `.agents/skills/` as release projections, not user data authority.
+- Preserve every user-authored and third-party byte outside an exact Hive-owned marker or manifest path.
+- Never request provider API credentials or call model-provider APIs on Hive's behalf.
+- Use verified host-native capabilities by default for new v0.9 runs. Use OMX or OMC only after explicit user selection, and preserve any owner already pinned by an existing run, including a 0.8.x external owner.

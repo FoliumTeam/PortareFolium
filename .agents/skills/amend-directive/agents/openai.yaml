@@ -1,0 +1,6 @@
+interface:
+    display_name: "Amend directives"
+    short_description: "Change Hive behavior directives while preserving safety boundaries."
+    default_prompt: "Use $aigent-hive:amend-directive to preview and apply this Hive behavior change."
+policy:
+    allow_implicit_invocation: false

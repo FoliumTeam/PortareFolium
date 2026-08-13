@@ -1,0 +1,6 @@
+interface:
+    display_name: "Save progress"
+    short_description: "Save durable, resumable work progress in canonical Markdown."
+    default_prompt: "Use $aigent-hive:run-checkpoint to record the current durable run state."
+policy:
+    allow_implicit_invocation: false

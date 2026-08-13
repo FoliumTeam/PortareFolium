@@ -1,0 +1,6 @@
+interface:
+    display_name: "Hand off role"
+    short_description: "Update canonical role assignment and handoff records safely."
+    default_prompt: "Use $aigent-hive:run-handoff to record this role handoff explicitly."
+policy:
+    allow_implicit_invocation: false

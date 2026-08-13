@@ -1,0 +1,6 @@
+interface:
+    display_name: "Clean AI slop"
+    short_description: "Review and clean unnecessary AI-generated wording and structure."
+    default_prompt: "Use $aigent-hive:code-polish to clean these changed files while preserving behavior."
+policy:
+    allow_implicit_invocation: false

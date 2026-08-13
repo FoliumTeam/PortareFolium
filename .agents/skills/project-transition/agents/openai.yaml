@@ -1,0 +1,6 @@
+interface:
+    display_name: "Migrate project"
+    short_description: "Migrate a supported Hive project format with backup and validation."
+    default_prompt: "Use $aigent-hive:project-transition to validate and apply this explicitly authorized Hive migration."
+policy:
+    allow_implicit_invocation: false

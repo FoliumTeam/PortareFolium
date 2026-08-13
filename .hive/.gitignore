@@ -1,0 +1,18 @@
+# Rebuildable local search indexes
+/index/*.sqlite
+/index/*.sqlite3
+/index/*.sqlite-wal
+/index/*.sqlite-shm
+/index/*.sqlite3-wal
+/index/*.sqlite3-shm
+/index/*.sqlite-journal
+/index/*.sqlite3-journal
+/index/.stale
+/index/.knowledge.lock
+/index/.tmp*
+
+# Short-lived local safety backups
+/backups/
+
+# Per-invocation host capability evidence
+/runtime/

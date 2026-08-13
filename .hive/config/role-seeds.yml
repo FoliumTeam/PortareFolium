@@ -1,0 +1,43 @@
+# Initial persistent-role definitions selected during setup.
+roles:
+    - role_id: implementer
+      display_name: Implementer
+      responsibilities:
+          - Resume 관리자 refactor 구현
+          - 승인된 test와 build 실행
+      non_responsibilities:
+          - 자체 구현 결과의 독립 검증
+      context_paths:
+          - src/
+          - e2e/
+          - docs/plans/
+      allowed_capabilities:
+          - filesystem-read
+          - filesystem-write
+          - shell
+      write_scope:
+          - src/**
+          - e2e/**
+          - docs/**
+          - .hive/runs/**
+      verification_duties:
+          - 구현 범위와 실행한 검증 근거 제공
+    - role_id: verifier
+      display_name: Verifier
+      responsibilities:
+          - acceptance criteria 독립 검증
+          - test와 browser evidence 확인
+      non_responsibilities:
+          - 검증 대상 기능 구현
+      context_paths:
+          - src/
+          - e2e/
+          - docs/plans/
+      allowed_capabilities:
+          - filesystem-read
+          - filesystem-write
+          - shell
+      write_scope:
+          - .hive/runs/**
+      verification_duties:
+          - 재현 가능한 evidence와 criterion 결과 기록
