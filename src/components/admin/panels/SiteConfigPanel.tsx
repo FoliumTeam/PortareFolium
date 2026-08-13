@@ -436,7 +436,7 @@ export default function SiteConfigPanel() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto pt-5">
-                <div className="mx-auto max-w-6xl space-y-5 pb-8">
+                <div className="space-y-5 pb-8">
                     <ConfigSection
                         Icon={Palette}
                         title="대시보드 표현"

@@ -43,17 +43,22 @@ const SECTIONS = [
         label: "Content",
         items: [
             { id: "posts", label: "포스트", icon: FileText },
-            { id: "portfolio", label: "포트폴리오", icon: Briefcase },
-            { id: "video-gif", label: "Video → GIF", icon: Film },
             { id: "tags", label: "태그", icon: Tag },
-            { id: "gantt-chart", label: "Gantt Chart", icon: ChartNoAxesGantt },
+            { id: "portfolio", label: "포트폴리오", icon: Briefcase },
+            { id: "about", label: "About", icon: User },
+            { id: "resume", label: "이력서", icon: ScrollText },
         ],
     },
     {
-        label: "Profile",
+        label: "Tools",
         items: [
-            { id: "about", label: "About", icon: User },
-            { id: "resume", label: "이력서", icon: ScrollText },
+            { id: "video-gif", label: "Video → GIF", icon: Film },
+            { id: "gantt-chart", label: "Gantt Chart", icon: ChartNoAxesGantt },
+            {
+                id: "prompts",
+                label: "프롬프트 라이브러리",
+                icon: MessageSquare,
+            },
         ],
     },
     {
@@ -61,11 +66,6 @@ const SECTIONS = [
         items: [
             { id: "snapshots", label: "DB 스냅샷", icon: Archive },
             { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
-            {
-                id: "prompts",
-                label: "프롬프트 라이브러리",
-                icon: MessageSquare,
-            },
             { id: "debug", label: "Debug", icon: Bug },
             { id: "config", label: "사이트 설정", icon: Settings },
         ],
