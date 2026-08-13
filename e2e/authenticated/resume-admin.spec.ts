@@ -12,9 +12,6 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
 
     await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
 
-    const shortcut = page.getByRole("button", {
-        name: "대표 프로젝트 편집",
-    });
     const sectionNavigation = page.getByRole("navigation", {
         name: "이력서 편집 섹션",
     });
@@ -23,14 +20,12 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     });
     const projectsSection = page.locator('[data-resume-section="projects"]');
 
-    await expect(shortcut).toBeVisible();
     await expect(sectionNavigation).toBeVisible();
     await expect(projectNavigation).toBeVisible();
     await expect(projectsSection).toBeVisible();
 
     await projectNavigation.click();
     await expect(projectNavigation).toHaveAttribute("aria-current", "location");
-    await shortcut.click();
 
     await expect(
         projectsSection.getByRole("heading", {
