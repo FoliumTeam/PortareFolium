@@ -15,15 +15,18 @@ import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
     Check,
     ChevronDown,
+    Globe2,
     Monitor,
     Moon,
+    Palette,
     Pencil,
     Plus,
+    Search,
+    SlidersHorizontal,
     Sun,
     Trash2,
 } from "lucide-react";
@@ -86,6 +89,37 @@ function isJobFieldItem(value: unknown): value is JobFieldItem {
 function normalizeJobFields(value: unknown): JobFieldItem[] {
     if (!Array.isArray(value)) return [];
     return dedupeJobFieldsById(value.filter(isJobFieldItem));
+}
+
+function ConfigSection({
+    Icon,
+    title,
+    description,
+    children,
+}: {
+    Icon: typeof Sun;
+    title: string;
+    description: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="tablet:p-6 space-y-5 rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
+            <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface-subtle) text-(--color-accent)">
+                    <Icon className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-(--color-foreground)">
+                        {title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-(--color-muted)">
+                        {description}
+                    </p>
+                </div>
+            </div>
+            {children}
+        </section>
+    );
 }
 
 export default function SiteConfigPanel() {
@@ -332,36 +366,40 @@ export default function SiteConfigPanel() {
 
     return (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="shrink-0 pb-3">
-                <h2 className="text-3xl font-bold text-(--color-foreground)">
+            <div className="shrink-0 border-b border-(--color-border) pb-5">
+                <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
+                    Configuration
+                </p>
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-(--color-foreground)">
                     사이트 설정
                 </h2>
+                <p className="mt-2 text-sm text-(--color-muted)">
+                    공개 사이트의 표현 방식과 프로필 기준을 한곳에서 관리합니다.
+                </p>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
-                <div className="space-y-8">
-                    {/* Color Scheme */}
-                    <section className="space-y-3">
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            Color Scheme
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            새로운 테마를 선택하면 대시보드 화면에 즉시
-                            반영되며, '설정 저장' 버튼을 누르면 다른
-                            사용자들에게도 배포됩니다.
-                        </p>
-                        <div className="flex flex-wrap items-center gap-4">
+            <div className="min-h-0 flex-1 overflow-y-auto pt-5">
+                <div className="mx-auto max-w-6xl space-y-5 pb-8">
+                    <ConfigSection
+                        Icon={Palette}
+                        title="대시보드 표현"
+                        description="관리자 화면에서 사용할 색상과 단순 표시 방식을 선택합니다. 저장 전에도 현재 화면에서 바로 확인할 수 있습니다."
+                    >
+                        <div className="tablet:grid-cols-[minmax(0,1fr)_auto] grid gap-3">
                             {/* 스킴 드롭다운 */}
                             <div
-                                className="relative flex-1"
+                                className="relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-3"
                                 ref={schemeDropdownRef}
                             >
+                                <Label className="mb-2 block text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                    Color Scheme
+                                </Label>
                                 <button
                                     type="button"
                                     onClick={() =>
                                         setSchemeDropdownOpen((v) => !v)
                                     }
-                                    className="flex w-full items-center gap-2 rounded-lg border border-(--color-border) px-3 py-2.5 text-left transition-colors hover:border-(--color-accent)/50"
+                                    className="flex w-full items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5 text-left transition-colors hover:border-(--color-accent)/50"
                                 >
                                     <span
                                         className="h-4 w-4 shrink-0 rounded"
@@ -416,13 +454,18 @@ export default function SiteConfigPanel() {
                                 )}
                             </div>
                             {/* plain 모드 토글 */}
-                            <div className="flex shrink-0 items-center gap-2">
-                                <Label
-                                    htmlFor="plain-toggle"
-                                    className="text-sm text-(--color-muted)"
-                                >
-                                    Plain
-                                </Label>
+                            <div className="tablet:min-w-64 flex min-h-24 items-center justify-between gap-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 px-4 py-3">
+                                <span>
+                                    <Label
+                                        htmlFor="plain-toggle"
+                                        className="text-sm font-semibold text-(--color-foreground)"
+                                    >
+                                        Plain
+                                    </Label>
+                                    <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                        장식 요소를 줄인 간결한 화면
+                                    </span>
+                                </span>
                                 <Switch
                                     id="plain-toggle"
                                     checked={plainMode}
@@ -442,20 +485,13 @@ export default function SiteConfigPanel() {
                                 />
                             </div>
                         </div>
-                    </section>
+                    </ConfigSection>
 
-                    <Separator />
-
-                    <section className="space-y-4">
-                        <div>
-                            <h3 className="text-lg font-semibold text-(--color-foreground)">
-                                화면 모드
-                            </h3>
-                            <p className="mt-1 text-sm text-(--color-muted)">
-                                공개 사이트 방문자에게 적용할 화면 모드
-                                정책입니다.
-                            </p>
-                        </div>
+                    <ConfigSection
+                        Icon={Monitor}
+                        title="화면 모드"
+                        description="공개 사이트 방문자에게 적용할 화면 모드 정책입니다."
+                    >
                         <div className="laptop:grid-cols-3 grid gap-3">
                             {THEME_MODE_OPTIONS.map(
                                 ({ value, title, description, Icon }) => {
@@ -464,7 +500,7 @@ export default function SiteConfigPanel() {
                                     return (
                                         <label
                                             key={value}
-                                            className={`group relative cursor-pointer rounded-2xl border p-4 transition-colors ${selected ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30" : "border-(--color-border) bg-(--color-surface) hover:border-(--color-accent)/50"}`}
+                                            className={`group relative cursor-pointer rounded-2xl border p-4 transition-colors ${selected ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30" : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"}`}
                                         >
                                             <input
                                                 type="radio"
@@ -514,19 +550,15 @@ export default function SiteConfigPanel() {
                                 }
                             )}
                         </div>
-                    </section>
+                    </ConfigSection>
 
-                    <Separator />
-
-                    <section className="space-y-4">
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            헤더 브랜드
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            공개 헤더 홈 링크의 앞부분에 표시됩니다.
-                        </p>
-                        <div>
-                            <Label className="text-sm font-medium text-(--color-muted)">
+                    <ConfigSection
+                        Icon={SlidersHorizontal}
+                        title="헤더 브랜드"
+                        description="공개 Header 홈 링크의 앞부분에 표시되는 전역 이름입니다. 직무 분야별 제목은 아래 프로필 관리에서 설정합니다."
+                    >
+                        <div className="max-w-xl rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                            <Label className="text-sm font-semibold text-(--color-foreground)">
                                 헤더 이름
                             </Label>
                             <Input
@@ -535,24 +567,16 @@ export default function SiteConfigPanel() {
                                     setHeaderName(event.target.value)
                                 }
                                 placeholder="정호진"
-                                className="mt-1 border-(--color-border)"
+                                className="mt-2 border-(--color-border) bg-(--color-surface)"
                             />
                         </div>
-                    </section>
+                    </ConfigSection>
 
-                    <Separator />
-
-                    {/* 직무 분야 관리 */}
-                    <section className="space-y-5">
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            직무 분야 관리
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            공개 URL과 Resume, Portfolio, Blog, About me의 필터
-                            기준입니다. 등록된 분야마다 독립된 공개 프로필을
-                            제공합니다.
-                        </p>
-
+                    <ConfigSection
+                        Icon={Globe2}
+                        title="직무 분야 프로필"
+                        description="각 분야는 독립된 공개 URL과 Resume, Portfolio, Blog, About me 기준을 가집니다."
+                    >
                         <div className="laptop:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] grid gap-4">
                             <div className="space-y-4">
                                 {jobFields.length === 0 ? (
@@ -568,7 +592,7 @@ export default function SiteConfigPanel() {
                                             return (
                                                 <div
                                                     key={field.id}
-                                                    className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-4"
+                                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                                 >
                                                     <div className="flex items-start gap-3">
                                                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] bg-(--color-surface-subtle) text-2xl shadow-sm">
@@ -718,7 +742,7 @@ export default function SiteConfigPanel() {
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
+                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-5">
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
                                         새 직무 분야 추가
@@ -842,22 +866,16 @@ export default function SiteConfigPanel() {
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </ConfigSection>
 
-                    <Separator />
-
-                    {/* 글로벌 SEO 설정 */}
-                    <section className="space-y-4">
-                        <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            글로벌 SEO 기본값
-                        </h3>
-                        <p className="text-sm text-(--color-muted)">
-                            개별 포스트나 포트폴리오에 SEO 설정이 없을 때
-                            사용되는 기본값입니다.
-                        </p>
-                        <div className="space-y-3">
-                            <div>
-                                <Label className="text-sm font-medium text-(--color-muted)">
+                    <ConfigSection
+                        Icon={Search}
+                        title="검색·공유 기본값"
+                        description="개별 포스트나 Portfolio에 별도 값이 없을 때 사용할 검색·공유 정보입니다."
+                    >
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                                <Label className="text-sm font-semibold text-(--color-foreground)">
                                     기본 사이트 제목 (Title)
                                 </Label>
                                 <Input
@@ -868,11 +886,11 @@ export default function SiteConfigPanel() {
                                             defaultTitle: e.target.value,
                                         })
                                     }
-                                    className="border-(--color-border)"
+                                    className="mt-2 border-(--color-border) bg-(--color-surface)"
                                 />
                             </div>
-                            <div>
-                                <Label className="text-sm font-medium text-(--color-muted)">
+                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                                <Label className="text-sm font-semibold text-(--color-foreground)">
                                     기본 사이트 설명 (Description)
                                 </Label>
                                 <textarea
@@ -884,11 +902,11 @@ export default function SiteConfigPanel() {
                                         })
                                     }
                                     rows={3}
-                                    className="w-full rounded-md border border-(--color-border) bg-transparent px-3 py-2 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                                    className="mt-2 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                                 />
                             </div>
-                            <div>
-                                <Label className="text-sm font-medium text-(--color-muted)">
+                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                                <Label className="text-sm font-semibold text-(--color-foreground)">
                                     기본 OG 이미지 URL
                                 </Label>
                                 <Input
@@ -900,11 +918,11 @@ export default function SiteConfigPanel() {
                                         })
                                     }
                                     placeholder="https://..."
-                                    className="border-(--color-border)"
+                                    className="mt-2 border-(--color-border) bg-(--color-surface)"
                                 />
                             </div>
-                            <div>
-                                <Label className="text-sm font-medium text-(--color-muted)">
+                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                                <Label className="text-sm font-semibold text-(--color-foreground)">
                                     GitHub URL
                                 </Label>
                                 <Input
@@ -913,13 +931,11 @@ export default function SiteConfigPanel() {
                                         setGithubUrl(e.target.value)
                                     }
                                     placeholder="https://github.com/username"
-                                    className="border-(--color-border)"
+                                    className="mt-2 border-(--color-border) bg-(--color-surface)"
                                 />
                             </div>
                         </div>
-                    </section>
-
-                    <Separator />
+                    </ConfigSection>
 
                     {/* Sticky 저장 바 */}
                     <AdminSaveBar>
