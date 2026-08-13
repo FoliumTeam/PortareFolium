@@ -52,7 +52,6 @@ export async function getResumeBootstrap(): Promise<{
         { data: layoutRow },
         { data: sectionLayoutRow },
         { data: jfRow },
-        { data: activeJfRow },
     ] = await Promise.all([
         serverClient
             .from("resume_data")
@@ -75,11 +74,6 @@ export async function getResumeBootstrap(): Promise<{
             .select("value")
             .eq("key", "job_fields")
             .single(),
-        serverClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "job_field")
-            .single(),
     ]);
 
     return {
@@ -91,8 +85,7 @@ export async function getResumeBootstrap(): Promise<{
                 DEFAULT_RESUME_LAYOUT
         ),
         jobFields: (jfRow?.value as JobFieldItem[] | undefined) ?? [],
-        activeJobField:
-            typeof activeJfRow?.value === "string" ? activeJfRow.value : "",
+        activeJobField: "",
     };
 }
 

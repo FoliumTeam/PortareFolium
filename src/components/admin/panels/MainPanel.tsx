@@ -94,26 +94,22 @@ export default function MainPanel({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                            활성 직무 분야
+                            등록 직무 분야
                         </p>
-                        <div className="mt-2 flex items-center gap-3">
-                            <span className="text-3xl" aria-hidden="true">
-                                {data.jobField.emoji}
-                            </span>
-                            <div>
-                                <h3 className="text-lg font-bold text-(--color-foreground)">
-                                    {data.jobField.label}
-                                </h3>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {data.jobFields.map((jobField) => (
+                                <Badge key={jobField.id} variant="outline">
+                                    {jobField.emoji} {jobField.name}
+                                </Badge>
+                            ))}
+                            {data.jobFields.length === 0 && (
                                 <p className="text-sm text-(--color-muted)">
-                                    현재 공개 화면과 admin 필터에서 사용하는
-                                    활성 직무 분야
+                                    Config에서 직무 분야 등록 필요
                                 </p>
-                            </div>
+                            )}
                         </div>
                     </div>
-                    <Badge variant="outline">
-                        {data.jobField.activeId || "all"}
-                    </Badge>
+                    <Badge variant="outline">{data.jobFields.length}개</Badge>
                 </div>
             </section>
 

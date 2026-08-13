@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PortfolioPageContent } from "../../portfolio/page";
-import { sanitizePublicJobField } from "@/lib/public-job-field";
+import PortfolioPageContent from "../../portfolio/portfolio-content";
+import { resolvePublicJobField } from "@/lib/public-job-field";
 
 type PageProps = {
     params: Promise<{ jobField: string }>;
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function JobFieldPortfolioPage({ params }: PageProps) {
-    const jobField = sanitizePublicJobField((await params).jobField);
-    if (jobField !== "web" && jobField !== "game") notFound();
-    return <PortfolioPageContent jobFieldOverride={jobField} />;
+    const jobField = await resolvePublicJobField((await params).jobField);
+    if (!jobField) notFound();
+    return <PortfolioPageContent jobField={jobField.id} />;
 }

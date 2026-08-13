@@ -6,11 +6,11 @@ import {
     deleteSiteJobField,
     getSiteConfigBootstrap,
     saveSiteConfig,
-    setActiveSiteJobField,
+    updateSiteJobField,
 } from "@/app/admin/actions/site-config";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
-import { dedupeJobFieldsById, normalizeJobFieldValue } from "@/lib/job-field";
+import { dedupeJobFieldsById } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
     ChevronDown,
     Monitor,
     Moon,
+    Pencil,
     Plus,
     Sun,
     Trash2,
@@ -105,7 +106,6 @@ export default function SiteConfigPanel() {
     const [themeMode, setThemeMode] = useState<ThemeMode>("system");
     const [schemeDropdownOpen, setSchemeDropdownOpen] = useState(false);
     const schemeDropdownRef = useRef<HTMLDivElement>(null);
-    const [activeJobField, setActiveJobField] = useState<string>("");
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [seoConfig, setSeoConfig] = useState({
         defaultTitle: "",
@@ -125,8 +125,11 @@ export default function SiteConfigPanel() {
     const [inheritFrom, setInheritFrom] = useState("");
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
-    const activeField =
-        jobFields.find((field) => field.id === activeJobField) ?? null;
+    const [editingJobFieldId, setEditingJobFieldId] = useState<string | null>(
+        null
+    );
+    const [editingName, setEditingName] = useState("");
+    const [editingEmoji, setEditingEmoji] = useState("");
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
@@ -165,8 +168,6 @@ export default function SiteConfigPanel() {
                     if (row.key === "theme_mode") {
                         setThemeMode(normalizeThemeMode(v));
                     }
-                    if (row.key === "job_field")
-                        setActiveJobField(normalizeJobFieldValue(v as string));
                     if (row.key === "job_fields")
                         setJobFields(normalizeJobFields(v));
                     if (row.key === "site_name" && typeof v === "string") {
@@ -243,7 +244,6 @@ export default function SiteConfigPanel() {
         }
 
         setJobFields(dedupeJobFieldsById(result.jobFields));
-        setActiveJobField(result.activeJobField);
         setNewName("");
         setNewEmoji("✨");
         setInheritFrom("");
@@ -265,16 +265,20 @@ export default function SiteConfigPanel() {
         }
 
         setJobFields(dedupeJobFieldsById(result.jobFields));
-        setActiveJobField(result.activeJobField);
         setStatus({ type: "success", msg: "직무 분야가 삭제됐습니다" });
     };
 
-    // active job field 변경
-    const handleSelectJobField = async (id: string) => {
+    const handleUpdateJobField = async (id: string) => {
+        const name = editingName.trim();
+        if (!name) return;
         setSaving(true);
         setStatus(null);
 
-        const result = await setActiveSiteJobField(id);
+        const result = await updateSiteJobField({
+            id,
+            name,
+            emoji: editingEmoji,
+        });
 
         setSaving(false);
 
@@ -283,8 +287,9 @@ export default function SiteConfigPanel() {
             return;
         }
 
-        setActiveJobField(result.activeJobField);
-        setStatus({ type: "success", msg: "기본 직무 분야가 변경됐습니다" });
+        setJobFields(dedupeJobFieldsById(result.jobFields));
+        setEditingJobFieldId(null);
+        setStatus({ type: "success", msg: "직무 분야가 수정됐습니다" });
     };
 
     // site_config 저장
@@ -505,52 +510,16 @@ export default function SiteConfigPanel() {
                     {/* 직무 분야 관리 */}
                     <section className="space-y-5">
                         <h3 className="text-lg font-semibold text-(--color-foreground)">
-                            이력서 직무 분야
+                            직무 분야 관리
                         </h3>
                         <p className="text-sm text-(--color-muted)">
-                            Resume / Portfolio 페이지에서 이 값으로 항목을
-                            필터링합니다. 기본으로 사용할 직무 분야를 먼저
-                            선택하고, 아래에서 새 분야를 추가하세요.
+                            공개 URL과 Resume, Portfolio, Blog, About me의 필터
+                            기준입니다. 등록된 분야마다 독립된 공개 프로필을
+                            제공합니다.
                         </p>
 
                         <div className="laptop:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] grid gap-4">
                             <div className="space-y-4">
-                                <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div className="space-y-4">
-                                            <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                                                현재 활성 직무 분야
-                                            </p>
-                                            {activeField ? (
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[28%] bg-(--color-surface) text-2xl shadow-sm">
-                                                        {activeField.emoji}
-                                                    </span>
-                                                    <div className="min-w-0">
-                                                        <p className="text-base font-semibold text-(--color-foreground)">
-                                                            {activeField.name}
-                                                        </p>
-                                                        <p className="text-sm text-(--color-muted)">
-                                                            {activeField.id}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-(--color-muted)">
-                                                    아직 기본 직무 분야가
-                                                    선택되지 않았습니다
-                                                </p>
-                                            )}
-                                        </div>
-                                        {activeField && (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white dark:bg-green-600">
-                                                <Check className="h-3.5 w-3.5" />
-                                                기본 선택
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
                                 {jobFields.length === 0 ? (
                                     <div className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-5 py-8 text-sm text-(--color-muted)">
                                         등록된 직무 분야가 없습니다
@@ -558,47 +527,28 @@ export default function SiteConfigPanel() {
                                 ) : (
                                     <div className="tablet:grid-cols-2 grid gap-3">
                                         {jobFields.map((field) => {
-                                            const isActive =
-                                                activeJobField === field.id;
+                                            const isEditing =
+                                                editingJobFieldId === field.id;
 
                                             return (
                                                 <div
                                                     key={field.id}
-                                                    className={`rounded-2xl border p-4 transition-colors ${
-                                                        isActive
-                                                            ? "border-(--color-accent) bg-(--color-accent)/8"
-                                                            : "border-(--color-border) bg-(--color-surface)"
-                                                    }`}
+                                                    className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-4"
                                                 >
                                                     <div className="flex items-start gap-3">
-                                                        <span
-                                                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] text-2xl shadow-sm ${
-                                                                isActive
-                                                                    ? "bg-(--color-accent) text-(--color-on-accent)"
-                                                                    : "bg-(--color-surface-subtle)"
-                                                            }`}
-                                                        >
+                                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] bg-(--color-surface-subtle) text-2xl shadow-sm">
                                                             {field.emoji}
                                                         </span>
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <p className="text-sm font-semibold text-(--color-foreground)">
-                                                                    {field.name}
-                                                                </p>
-                                                                {isActive && (
-                                                                    <span className="rounded-full bg-green-500 px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-green-600">
-                                                                        현재
-                                                                        사용 중
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                            <p className="text-sm font-semibold text-(--color-foreground)">
+                                                                {field.name}
+                                                            </p>
                                                             <p className="mt-1 font-mono text-xs text-(--color-muted)">
                                                                 {field.id}
                                                             </p>
                                                             <p className="mt-3 text-sm text-(--color-muted)">
-                                                                {isActive
-                                                                    ? "Resume / Portfolio 기본 필터로 사용 중"
-                                                                    : "이 분야를 기본 직무 분야로 전환"}
+                                                                /{field.id}에서
+                                                                독립 공개 프로필
                                                             </p>
                                                         </div>
                                                     </div>
@@ -606,20 +556,22 @@ export default function SiteConfigPanel() {
                                                     <div className="mt-4 flex items-center justify-between gap-3 border-t border-(--color-border) pt-3">
                                                         <Button
                                                             size="sm"
-                                                            onClick={() =>
-                                                                handleSelectJobField(
+                                                            variant="secondary"
+                                                            onClick={() => {
+                                                                setEditingJobFieldId(
                                                                     field.id
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                saving ||
-                                                                isActive
-                                                            }
-                                                            className="bg-green-500 text-white hover:bg-green-400 disabled:bg-green-500/60 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                                                                );
+                                                                setEditingName(
+                                                                    field.name
+                                                                );
+                                                                setEditingEmoji(
+                                                                    field.emoji
+                                                                );
+                                                            }}
+                                                            disabled={saving}
                                                         >
-                                                            {isActive
-                                                                ? "선택됨"
-                                                                : "기본으로 선택"}
+                                                            <Pencil size={13} />
+                                                            수정
                                                         </Button>
                                                         <Button
                                                             variant="default"
@@ -650,6 +602,54 @@ export default function SiteConfigPanel() {
                                                             삭제
                                                         </Button>
                                                     </div>
+                                                    {isEditing && (
+                                                        <div className="mt-3 grid grid-cols-[3rem_1fr_auto] gap-2 border-t border-(--color-border) pt-3">
+                                                            <Input
+                                                                value={
+                                                                    editingEmoji
+                                                                }
+                                                                onChange={(
+                                                                    event
+                                                                ) =>
+                                                                    setEditingEmoji(
+                                                                        event
+                                                                            .target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                aria-label="직무 분야 이모지"
+                                                            />
+                                                            <Input
+                                                                value={
+                                                                    editingName
+                                                                }
+                                                                onChange={(
+                                                                    event
+                                                                ) =>
+                                                                    setEditingName(
+                                                                        event
+                                                                            .target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                aria-label="직무 분야 이름"
+                                                            />
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handleUpdateJobField(
+                                                                        field.id
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    saving ||
+                                                                    !editingName.trim()
+                                                                }
+                                                            >
+                                                                저장
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}

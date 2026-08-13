@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BlogPostContent } from "../../../blog/[slug]/page";
-import { sanitizePublicJobField } from "@/lib/public-job-field";
+import BlogPostContent from "../../../blog/[slug]/blog-post-content";
+import { resolvePublicJobField } from "@/lib/public-job-field";
 
 type PageProps = {
     params: Promise<{ jobField: string; slug: string }>;
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
 
 export default async function JobFieldBlogPostPage({ params }: PageProps) {
     const { jobField: rawJobField, slug } = await params;
-    const jobField = sanitizePublicJobField(rawJobField);
-    if (jobField !== "web" && jobField !== "game") notFound();
+    const jobField = await resolvePublicJobField(rawJobField);
+    if (!jobField) notFound();
     return (
         <BlogPostContent
             slug={slug}
-            jobField={jobField}
-            blogBasePath={`/${jobField}/blog`}
+            jobField={jobField.id}
+            blogBasePath={`/${jobField.id}/blog`}
         />
     );
 }

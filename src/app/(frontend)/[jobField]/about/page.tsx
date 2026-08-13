@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { AboutPageContent } from "../../about/page";
-import { sanitizePublicJobField } from "@/lib/public-job-field";
+import AboutPageContent from "../../about/about-content";
+import { resolvePublicJobField } from "@/lib/public-job-field";
 
 type PageProps = {
     params: Promise<{ jobField: string }>;
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function JobFieldAboutPage({ params }: PageProps) {
-    const jobField = sanitizePublicJobField((await params).jobField);
-    if (jobField !== "web" && jobField !== "game") notFound();
-    return <AboutPageContent jobFieldOverride={jobField} />;
+    const jobField = await resolvePublicJobField((await params).jobField);
+    if (!jobField) notFound();
+    return <AboutPageContent jobField={jobField.id} />;
 }

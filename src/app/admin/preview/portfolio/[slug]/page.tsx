@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PortfolioDetailContent } from "@/app/(frontend)/portfolio/[slug]/page";
+import PortfolioDetailContent from "@/app/(frontend)/portfolio/[slug]/portfolio-detail-content";
 import ContentWrapper from "@/components/ContentWrapper";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";

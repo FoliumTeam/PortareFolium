@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     revalidatePath: vi.fn(),
     requireAdminSession: vi.fn().mockResolvedValue(undefined),
+    getPublicJobFields: vi.fn().mockResolvedValue([
+        { id: "frontend", name: "Frontend", emoji: "🖥️" },
+        { id: "game-design", name: "Game Design", emoji: "🎮" },
+    ]),
 }));
 
 vi.mock("next/cache", () => ({
@@ -11,6 +15,10 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/lib/server-admin", () => ({
     requireAdminSession: mocks.requireAdminSession,
+}));
+
+vi.mock("@/lib/public-job-field", () => ({
+    getPublicJobFields: mocks.getPublicJobFields,
 }));
 
 import {
@@ -26,55 +34,59 @@ describe("직무별 공개 경로 cache revalidation", () => {
         mocks.requireAdminSession.mockClear();
     });
 
-    it("Portfolio 상세와 목록의 legacy·web·game 경로를 갱신한다", async () => {
+    it("Portfolio 상세와 목록의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidatePortfolioItem("its-api");
 
         expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
             "/portfolio/its-api",
             "/portfolio",
-            "/web/portfolio/its-api",
-            "/web/portfolio",
-            "/web",
-            "/game/portfolio/its-api",
-            "/game/portfolio",
-            "/game",
+            "/frontend/portfolio/its-api",
+            "/frontend/portfolio",
+            "/frontend",
+            "/game-design/portfolio/its-api",
+            "/game-design/portfolio",
+            "/game-design",
             "/",
         ]);
     });
 
-    it("Blog 상세와 목록의 legacy·web·game 경로를 갱신한다", async () => {
+    it("Blog 상세와 목록의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidatePost("example-post");
 
         expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
             "/blog/example-post",
             "/blog",
-            "/web/blog/example-post",
-            "/web/blog",
-            "/game/blog/example-post",
-            "/game/blog",
+            "/frontend/blog/example-post",
+            "/frontend/blog",
+            "/frontend",
+            "/game-design/blog/example-post",
+            "/game-design/blog",
+            "/game-design",
             "/",
         ]);
     });
 
-    it("Resume의 legacy·web·game 경로를 갱신한다", async () => {
+    it("Resume의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidateResume();
 
         expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
             "/resume",
-            "/web/resume",
-            "/game/resume",
+            "/frontend/resume",
+            "/frontend",
+            "/game-design/resume",
+            "/game-design",
         ]);
     });
 
-    it("About Me와 직무별 landing 경로를 갱신한다", async () => {
+    it("About Me와 등록 직무 분야 landing 경로를 갱신한다", async () => {
         await revalidateAbout();
 
         expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
             "/about",
-            "/web/about",
-            "/web",
-            "/game/about",
-            "/game",
+            "/frontend/about",
+            "/frontend",
+            "/game-design/about",
+            "/game-design",
             "/",
         ]);
     });

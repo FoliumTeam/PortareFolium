@@ -109,7 +109,6 @@ export async function getPortfolioPanelBootstrap() {
         { data: itemsData, error: itemsError },
         { data: stateData, error: stateError },
         { data: jobFieldsRow, error: jobFieldsError },
-        { data: activeJobFieldRow, error: activeJobFieldError },
     ] = await Promise.all([
         serverClient
             .from("portfolio_items")
@@ -124,11 +123,6 @@ export async function getPortfolioPanelBootstrap() {
             .from("site_config")
             .select("value")
             .eq("key", "job_fields")
-            .single(),
-        serverClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "job_field")
             .single(),
     ]);
 
@@ -145,10 +139,6 @@ export async function getPortfolioPanelBootstrap() {
         console.error(
             `[portfolio.ts::getPortfolioPanelBootstrap] ${jobFieldsError.message}`
         );
-    if (activeJobFieldError)
-        console.error(
-            `[portfolio.ts::getPortfolioPanelBootstrap] ${activeJobFieldError.message}`
-        );
 
     const stateCounts: Record<string, number> = {};
     for (const row of stateData ?? []) {
@@ -159,10 +149,7 @@ export async function getPortfolioPanelBootstrap() {
         items: (itemsData as PortfolioRow[]) ?? [],
         stateCounts,
         jobFields: (jobFieldsRow?.value as JobFieldItem[]) ?? [],
-        activeJobField:
-            typeof activeJobFieldRow?.value === "string"
-                ? activeJobFieldRow.value
-                : "",
+        activeJobField: "",
     };
 }
 

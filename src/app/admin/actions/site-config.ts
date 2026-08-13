@@ -7,12 +7,16 @@ import {
 } from "@/app/admin/actions/revalidate";
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
-import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
     inheritResumeJobField,
     removeResumeJobField,
 } from "@/lib/resume-job-field";
 import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
+import { toSlug } from "@/lib/slug";
+import {
+    isPublicJobFieldId,
+    normalizePublicJobFields,
+} from "@/lib/public-job-field";
 
 type JobFieldItem = {
     id: string;
@@ -42,7 +46,6 @@ type SiteJobFieldActionResult =
     | {
           success: true;
           jobFields: JobFieldItem[];
-          activeJobField: string;
       }
     | { success: false; error: string };
 
@@ -65,16 +68,6 @@ type ResumeEntry = {
 type ResumeData = {
     [key: string]: unknown;
 };
-
-// site_config.value가 JSON 문자열 또는 원시 값으로 섞여 저장된 경우를 정규화한다.
-function parseSiteConfigValue(value: unknown): unknown {
-    if (typeof value !== "string") return value;
-    try {
-        return JSON.parse(value) as unknown;
-    } catch {
-        return value;
-    }
-}
 
 function toStringArray(value: JobFieldValue): string[] {
     if (Array.isArray(value)) {
@@ -122,35 +115,17 @@ async function getJobFieldConfig() {
     if (!serverClient) {
         return {
             jobFields: [] as JobFieldItem[],
-            activeJobField: "",
         };
     }
 
-    const [{ data: jobFieldsRow }, { data: activeJobFieldRow }] =
-        await Promise.all([
-            serverClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_fields")
-                .single(),
-            serverClient
-                .from("site_config")
-                .select("value")
-                .eq("key", "job_field")
-                .single(),
-        ]);
-
-    const parsedJobFields = parseSiteConfigValue(jobFieldsRow?.value);
-    const parsedActiveJobField = parseSiteConfigValue(activeJobFieldRow?.value);
+    const { data: jobFieldsRow } = await serverClient
+        .from("site_config")
+        .select("value")
+        .eq("key", "job_fields")
+        .single();
 
     return {
-        jobFields: Array.isArray(parsedJobFields)
-            ? (parsedJobFields as JobFieldItem[])
-            : [],
-        activeJobField:
-            typeof parsedActiveJobField === "string"
-                ? normalizeJobFieldValue(parsedActiveJobField)
-                : "",
+        jobFields: normalizePublicJobFields(jobFieldsRow?.value),
     };
 }
 
@@ -168,7 +143,6 @@ export async function getSiteConfigBootstrap(): Promise<{
             "color_scheme",
             "plain_mode",
             "theme_mode",
-            "job_field",
             "job_fields",
             "site_name",
             "seo_config",
@@ -180,19 +154,14 @@ export async function getSiteConfigBootstrap(): Promise<{
     };
 }
 
-async function saveJobFieldConfig(
-    jobFields: JobFieldItem[],
-    activeJobField: string
-) {
+async function saveJobFieldConfig(jobFields: JobFieldItem[]) {
     if (!serverClient) return { error: "serverClient 없음" };
 
-    const { error } = await serverClient.from("site_config").upsert(
-        [
-            { key: "job_fields", value: jobFields },
-            { key: "job_field", value: activeJobField },
-        ],
-        { onConflict: "key" }
-    );
+    const { error } = await serverClient
+        .from("site_config")
+        .upsert([{ key: "job_fields", value: jobFields }], {
+            onConflict: "key",
+        });
 
     if (error) {
         return { error: error.message };
@@ -419,41 +388,6 @@ export async function saveSiteConfig(
     }
 }
 
-export async function setActiveSiteJobField(
-    activeJobField: string
-): Promise<SiteJobFieldActionResult> {
-    await requireAdminSession();
-    if (!serverClient) return { success: false, error: "serverClient 없음" };
-
-    try {
-        const { jobFields } = await getJobFieldConfig();
-        const { error } = await serverClient
-            .from("site_config")
-            .upsert([{ key: "job_field", value: activeJobField }], {
-                onConflict: "key",
-            });
-
-        if (error) return { success: false, error: error.message };
-
-        await revalidateHome();
-        await revalidateResume();
-
-        return {
-            success: true,
-            jobFields,
-            activeJobField,
-        };
-    } catch (error) {
-        return {
-            success: false,
-            error:
-                error instanceof Error
-                    ? error.message
-                    : "기본 직무 분야 저장 실패",
-        };
-    }
-}
-
 export async function addSiteJobField(input: {
     name: string;
     emoji: string;
@@ -468,8 +402,14 @@ export async function addSiteJobField(input: {
             return { success: false, error: "직무 분야 이름 필요" };
         }
 
-        const newId = trimmedName.toLowerCase().replace(/\s+/g, "-");
-        const { jobFields, activeJobField } = await getJobFieldConfig();
+        const newId = toSlug(trimmedName).slice(0, 64);
+        if (!isPublicJobFieldId(newId)) {
+            return {
+                success: false,
+                error: "공개 URL에 사용할 수 없는 직무 분야 이름입니다",
+            };
+        }
+        const { jobFields } = await getJobFieldConfig();
 
         if (jobFields.some((field) => field.id === newId)) {
             return {
@@ -487,10 +427,7 @@ export async function addSiteJobField(input: {
             },
         ];
 
-        const saveResult = await saveJobFieldConfig(
-            nextJobFields,
-            activeJobField
-        );
+        const saveResult = await saveJobFieldConfig(nextJobFields);
         if (saveResult.error) {
             return { success: false, error: saveResult.error };
         }
@@ -507,11 +444,11 @@ export async function addSiteJobField(input: {
 
         await revalidateHome();
         await revalidateResume();
+        await revalidateLayout();
 
         return {
             success: true,
             jobFields: nextJobFields,
-            activeJobField,
         };
     } catch (error) {
         return {
@@ -529,7 +466,7 @@ export async function deleteSiteJobField(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     try {
-        const { jobFields, activeJobField } = await getJobFieldConfig();
+        const { jobFields } = await getJobFieldConfig();
         if (!jobFields.some((field) => field.id === targetId)) {
             return {
                 success: false,
@@ -545,32 +482,63 @@ export async function deleteSiteJobField(
         const nextJobFields = jobFields.filter(
             (field) => field.id !== targetId
         );
-        const nextActiveJobField =
-            activeJobField === targetId
-                ? (nextJobFields[0]?.id ?? "")
-                : activeJobField;
-
-        const saveResult = await saveJobFieldConfig(
-            nextJobFields,
-            nextActiveJobField
-        );
+        const saveResult = await saveJobFieldConfig(nextJobFields);
         if (saveResult.error) {
             return { success: false, error: saveResult.error };
         }
 
         await revalidateHome();
         await revalidateResume();
+        await revalidateLayout();
 
         return {
             success: true,
             jobFields: nextJobFields,
-            activeJobField: nextActiveJobField,
         };
     } catch (error) {
         return {
             success: false,
             error:
                 error instanceof Error ? error.message : "직무 분야 삭제 실패",
+        };
+    }
+}
+
+export async function updateSiteJobField(input: {
+    id: string;
+    name: string;
+    emoji: string;
+}): Promise<SiteJobFieldActionResult> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    try {
+        const name = input.name.trim();
+        if (!name) return { success: false, error: "직무 분야 이름 필요" };
+        const { jobFields } = await getJobFieldConfig();
+        if (!jobFields.some((field) => field.id === input.id)) {
+            return {
+                success: false,
+                error: "수정할 직무 분야를 찾지 못했습니다",
+            };
+        }
+        const nextJobFields = jobFields.map((field) =>
+            field.id === input.id
+                ? { ...field, name, emoji: input.emoji || "✨" }
+                : field
+        );
+        const saveResult = await saveJobFieldConfig(nextJobFields);
+        if (saveResult.error)
+            return { success: false, error: saveResult.error };
+        await revalidateHome();
+        await revalidateResume();
+        await revalidateLayout();
+        return { success: true, jobFields: nextJobFields };
+    } catch (error) {
+        return {
+            success: false,
+            error:
+                error instanceof Error ? error.message : "직무 분야 수정 실패",
         };
     }
 }

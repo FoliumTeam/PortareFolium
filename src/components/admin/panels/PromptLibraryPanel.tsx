@@ -17,7 +17,7 @@ Rules:
 1. 툴 요청은 method: "tools/call", params: { name: "<tool_name>", arguments: { ... } } 형식의 JSON-RPC 2.0을 사용할 것.
 2. 먼저 \`tools/list\`와 \`get_schema\`를 호출해 최신 계약을 확인할 것.
 3. README, source, release page에서 확인된 근거만 사용하고 수치를 추측하지 말 것.
-4. job_field는 "web" 또는 "game" 문자열을 사용하고 featured, order_idx는 data 밖에 둘 것.
+4. job_field에는 Config에 등록된 직무 분야 ID를 사용하고 featured, order_idx는 data 밖에 둘 것.
 5. caseStudyVersion은 숫자 2로 생성할 것. 저장된 Portfolio는 자동 Published됨.
 6. oneLinePitch 180자, ownership 5개, outcomes 3개, gallery 8개 제한을 지킬 것.
 7. metric이 없으면 중립적인 완료 상태와 검증 방법을 작성하고 수치를 만들지 말 것.
@@ -67,7 +67,7 @@ Target payload template:
   "slug": "<project-slug>",
   "title": "<project title>",
   "description": "<short fallback summary>",
-  "job_field": "game",
+  "job_field": "등록된-직무-분야-id",
   "featured": false,
   "order_idx": 0,
   "thumbnail": "/portfolio/<project-slug>/cover.webp",

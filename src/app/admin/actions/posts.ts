@@ -73,7 +73,6 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
         { data: postsData, error: postsError },
         { data: stateData, error: stateError },
         { data: jobFieldsRow, error: jobFieldsError },
-        { data: activeJobFieldRow, error: activeJobFieldError },
         { data: tocStylesRow, error: tocStylesError },
         { data: categoryRows, error: categoriesError },
     ] = await Promise.all([
@@ -90,11 +89,6 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
             .from("site_config")
             .select("value")
             .eq("key", "job_fields")
-            .single(),
-        serverClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "job_field")
             .single(),
         serverClient
             .from("site_config")
@@ -116,10 +110,6 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
     if (jobFieldsError)
         console.error(
             `[posts.ts::getPostsPanelBootstrap] ${jobFieldsError.message}`
-        );
-    if (activeJobFieldError)
-        console.error(
-            `[posts.ts::getPostsPanelBootstrap] ${activeJobFieldError.message}`
         );
     if (tocStylesError)
         console.error(
@@ -153,10 +143,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
         posts,
         stateCounts,
         jobFields: (jobFieldsRow?.value as JobFieldItem[]) ?? [],
-        activeJobField:
-            typeof activeJobFieldRow?.value === "string"
-                ? activeJobFieldRow.value
-                : "",
+        activeJobField: "",
         postTocStyles:
             tocStylesRow?.value && typeof tocStylesRow.value === "object"
                 ? (tocStylesRow.value as Record<string, string>)

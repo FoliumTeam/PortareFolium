@@ -12,6 +12,7 @@ interface Props {
     descriptionSub?: string;
     profileImage?: string;
     valuePillars: ValuePillar[];
+    jobField: string;
 }
 
 // 히어로 이름에서 첫 단어를 accent 색상으로 분리
@@ -27,6 +28,7 @@ export default function LandingHero({
     descriptionSub,
     profileImage,
     valuePillars,
+    jobField,
 }: Props) {
     const { first, rest } = splitFirstWord(heroName);
 
@@ -56,13 +58,13 @@ export default function LandingHero({
                     <div className="animate-fade-in-up stagger-3">
                         <div className="tablet:justify-start flex flex-wrap justify-center gap-4">
                             <Link
-                                href="/portfolio"
+                                href={`/${jobField}/portfolio`}
                                 className="rounded-2xl bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
                             >
                                 Portfolio 보기
                             </Link>
                             <Link
-                                href="/resume"
+                                href={`/${jobField}/resume`}
                                 className="rounded-2xl border-2 border-(--color-border) px-6 py-2.5 text-base font-semibold text-(--color-foreground) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--color-accent) hover:text-(--color-accent)"
                             >
                                 Resume 보기

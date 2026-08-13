@@ -12,22 +12,21 @@ import type { ThemeMode } from "@/lib/theme-mode";
 export default function Header({
     siteName,
     githubUrl,
-    jobField = "",
+    jobFieldIds = [],
     themeMode = "system",
 }: {
     siteName: string;
     githubUrl: string;
-    jobField?: string;
+    jobFieldIds?: readonly string[];
     themeMode?: ThemeMode;
 }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
-    const profileMatch = pathname.match(
-        /^\/(web|game)(?:\/(?:about|resume|portfolio|blog)(?:\/|$)|$)/
-    );
-    const profileJobField = profileMatch?.[1];
+    const firstPathSegment = pathname.split("/")[1] ?? "";
+    const profileJobField = jobFieldIds.includes(firstPathSegment)
+        ? firstPathSegment
+        : "";
     const profilePrefix = profileJobField ? `/${profileJobField}` : "";
-    const activeJobField = profileJobField ?? jobField;
     const navigationItems = profileJobField
         ? [
               [`${profilePrefix}/about`, "About me"],
@@ -52,7 +51,7 @@ export default function Header({
             >
                 {/* 사이트 로고 */}
                 <Link
-                    href={profileJobField ? `${profilePrefix}/portfolio` : "/"}
+                    href={profileJobField ? `/${profileJobField}` : "/"}
                     className="flex items-center gap-2 text-(--color-foreground) transition-opacity hover:opacity-80"
                 >
                     {/* 액센트 색상 각괄호 */}
@@ -142,7 +141,7 @@ export default function Header({
                         className="tablet:block tablet:h-5 tablet:w-px tablet:mx-2 hidden bg-(--color-border)"
                         aria-hidden="true"
                     />
-                    <GlobalSearch jobField={activeJobField} />
+                    <GlobalSearch jobField={profileJobField} />
                     <a
                         href={githubUrl || "https://github.com/"}
                         target="_blank"

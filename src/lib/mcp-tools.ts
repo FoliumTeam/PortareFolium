@@ -3,6 +3,7 @@ import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
 import { mergePortfolioDataPatch } from "@/lib/portfolio";
 import type { PortfolioRawRow } from "@/types/portfolio";
+import { getPublicJobFields } from "@/lib/public-job-field";
 
 const PORTFOLIO_MUTATION_KEYS = [
     "title",
@@ -58,10 +59,11 @@ const revalidateMcpPortfolio = async (slug: string) => {
     const { revalidatePath } = await import("next/cache");
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
-    for (const jobField of ["web", "game"]) {
-        revalidatePath(`/${jobField}/portfolio/${slug}`);
-        revalidatePath(`/${jobField}/portfolio`);
-        revalidatePath(`/${jobField}`);
+    const jobFields = await getPublicJobFields();
+    for (const jobField of jobFields) {
+        revalidatePath(`/${jobField.id}/portfolio/${slug}`);
+        revalidatePath(`/${jobField.id}/portfolio`);
+        revalidatePath(`/${jobField.id}`);
     }
     revalidatePath("/");
 };
@@ -166,7 +168,7 @@ export async function handleGetSchema(): Promise<unknown> {
             pub_date: "ISO-8601 string, defaults to now()",
             category: "string",
             tags: "string[]",
-            job_field: "'web' | 'game'",
+            job_field: "registered job field ID string",
             thumbnail: "URL string",
             content: "MDX string (Markdown + JSX components)",
             published: "boolean, default false",
@@ -179,7 +181,7 @@ export async function handleGetSchema(): Promise<unknown> {
             title: "required",
             description: "string",
             tags: "string[]",
-            job_field: "'web' | 'game'",
+            job_field: "registered job field ID string",
             thumbnail: "URL string",
             content: "MDX string (Markdown + JSX components)",
             featured: "boolean",
@@ -863,7 +865,7 @@ export const MCP_TOOLS = [
                 pub_date: { type: "string", description: "ISO-8601 string" },
                 category: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
-                job_field: { type: "string", enum: ["web", "game"] },
+                job_field: { type: "string" },
                 thumbnail: { type: "string" },
                 meta_title: { type: "string" },
                 meta_description: { type: "string" },
@@ -885,7 +887,7 @@ export const MCP_TOOLS = [
                 pub_date: { type: "string", description: "ISO-8601 string" },
                 category: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
-                job_field: { type: "string", enum: ["web", "game"] },
+                job_field: { type: "string" },
                 thumbnail: { type: "string" },
                 meta_title: { type: "string" },
                 meta_description: { type: "string" },
@@ -936,7 +938,7 @@ export const MCP_TOOLS = [
                 description: { type: "string" },
                 content: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
-                job_field: { type: "string", enum: ["web", "game"] },
+                job_field: { type: "string" },
                 thumbnail: { type: "string" },
                 featured: { type: "boolean" },
                 order_idx: { type: "integer" },
@@ -958,7 +960,7 @@ export const MCP_TOOLS = [
                 description: { type: "string" },
                 content: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
-                job_field: { type: "string", enum: ["web", "game"] },
+                job_field: { type: "string" },
                 thumbnail: { type: "string" },
                 featured: { type: "boolean" },
                 order_idx: { type: "integer" },
