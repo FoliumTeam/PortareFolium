@@ -26,6 +26,7 @@
 
 - **TODO.md Driven (Mandatory)**: Before starting ANY task, automatically analyze requirements and create/update a `docs/TODO.md` file with a checklist. Check off items as you complete them. Only report "Done" when the checklist is fully verified. This avoids massive single git commits and keeps the user informed without requiring them to micro-manage.
 - **Plan & Execute**: Present a brief implementation plan in `docs/TODO.md` and _proceed automatically_. Do not pause and wait for approval for routine coding tasks unless you are completely blocked.
+- **Automatic Task Commit**: After completing and verifying each task, invoke the project `ship` Skill automatically to create focused commits for that task's changes. Never push automatically; push requires the user's explicit authorization. Preserve pre-existing or unrelated worktree changes outside the completed task's scope.
 - **Self-Correction Loop**: Define strong success criteria. If you encounter build errors, lint errors, or failing tests, do NOT immediately stop and ask the user. Read the error logs and attempt to fix the issue autonomously at least 3 times before requesting help.
 - **State Assumptions**: State your assumptions explicitly. If multiple interpretations exist, present them. If a simpler approach exists, say so and push back when warranted.
 

@@ -5,7 +5,7 @@ description: Prepare one or more focused, verified commits using the current rep
 
 # Ship changes
 
-Use this Skill when the user asks to commit, ship, stage and commit, or split a change set.
+Use this Skill when the user asks to commit, ship, stage and commit, or split a change set. Also use it automatically after a completed and verified task when the project workflow explicitly requires task-completion commits.
 
 1. Read the repository's `AGENTS.md` and every referenced Git or commit guide.
 2. Inspect `git status`, the complete staged and unstaged diff, untracked files, and recent human-authored commit style before staging.
