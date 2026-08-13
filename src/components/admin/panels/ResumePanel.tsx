@@ -7,9 +7,14 @@ import {
     saveResumePanel,
     saveResumeTheme,
 } from "@/app/admin/actions/resume";
+import {
+    getPortfolioPanelBootstrap,
+    reorderFeaturedPortfolioItems,
+    setPortfolioFeatured,
+} from "@/app/admin/actions/portfolio";
 import { uploadImage } from "@/lib/image-upload";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
-import { matchesJobField } from "@/lib/job-field";
+import { matchesJobField, normalizeUniqueJobFieldList } from "@/lib/job-field";
 import {
     JobFieldSelector,
     JobFieldBadges,
@@ -22,7 +27,7 @@ import {
 } from "@/components/admin/resume/ResumeEditorFields";
 import { ResumeBasicsSection } from "@/components/admin/resume/ResumeBasicsSection";
 import { ResumeSectionNavigation } from "@/components/admin/resume/ResumeSectionNavigation";
-import { Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
 import ResumeLayoutEditor from "@/components/admin/panels/ResumeLayoutEditor";
 import {
@@ -48,6 +53,7 @@ import type {
     ResumeBasics,
     ResumeCareerPhase,
 } from "@/types/resume";
+import type { PortfolioAdminItem } from "@/lib/portfolio-admin";
 
 // string[] 하위 호환: 로드된 keyword가 string이면 객체로 정규화
 function normalizeKeywords(keywords: unknown[]): ResumeSkillKeyword[] {
@@ -110,6 +116,52 @@ function reorderArray<T>(arr: T[], from: number, to: number): T[] {
     return result;
 }
 
+const getPortfolioJobFieldIds = (item: PortfolioAdminItem): string[] =>
+    Array.from(
+        new Set(
+            [item.job_field, item.data?.jobField].flatMap((jobField) =>
+                normalizeUniqueJobFieldList(
+                    jobField as string | string[] | null | undefined
+                )
+            )
+        )
+    );
+
+const isPortfolioFeaturedForJobField = (
+    item: PortfolioAdminItem,
+    jobField: string
+): boolean => {
+    const featuredByJobField = item.data?.featuredByJobField as
+        | Record<string, unknown>
+        | undefined;
+    if (
+        !featuredByJobField ||
+        typeof featuredByJobField !== "object" ||
+        Array.isArray(featuredByJobField)
+    ) {
+        return item.featured;
+    }
+    return featuredByJobField[jobField] === true;
+};
+
+const getPortfolioFeaturedOrder = (
+    item: PortfolioAdminItem,
+    jobField: string
+): number => {
+    const featuredOrderByJobField = item.data?.featuredOrderByJobField as
+        | Record<string, unknown>
+        | undefined;
+    if (
+        featuredOrderByJobField &&
+        typeof featuredOrderByJobField === "object" &&
+        !Array.isArray(featuredOrderByJobField) &&
+        typeof featuredOrderByJobField[jobField] === "number"
+    ) {
+        return featuredOrderByJobField[jobField];
+    }
+    return item.order_idx;
+};
+
 export default function ResumePanel() {
     const { confirm } = useConfirmDialog();
     const [resumeData, setResumeData] = useState<Resume | null>(null);
@@ -134,6 +186,13 @@ export default function ResumePanel() {
     const [layoutEditMode, setLayoutEditMode] = useState(false);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [activeJobField, setActiveJobField] = useState<string>("");
+    const [portfolioItems, setPortfolioItems] = useState<PortfolioAdminItem[]>(
+        []
+    );
+    const [featuredProjectJobField, setFeaturedProjectJobField] =
+        useState<string>("");
+    const [featuredProjectsLoading, setFeaturedProjectsLoading] =
+        useState(true);
     // 직무 분야 필터 (null = 전체)
     const [filterJobField, setFilterJobField] = useState<string | null>(null);
     const [activeEditorSection, setActiveEditorSection] = useState("basics");
@@ -155,6 +214,7 @@ export default function ResumePanel() {
     const editorScrollRef = useRef<HTMLDivElement>(null);
     // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
+    const featuredProjectDragIndexRef = useRef<number | null>(null);
 
     useEffect(() => {
         getResumeBootstrap().then((result) => {
@@ -197,6 +257,29 @@ export default function ResumePanel() {
             setJobFields(result.jobFields);
             setActiveJobField(normalizeJobFieldValue(result.activeJobField));
         });
+    }, []);
+
+    const loadFeaturedProjects = async () => {
+        setFeaturedProjectsLoading(true);
+        try {
+            const result = await getPortfolioPanelBootstrap();
+            setPortfolioItems(result.items);
+            setFeaturedProjectJobField((current) => {
+                if (
+                    current &&
+                    result.jobFields.some((field) => field.id === current)
+                ) {
+                    return current;
+                }
+                return result.jobFields[0]?.id ?? "";
+            });
+        } finally {
+            setFeaturedProjectsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void loadFeaturedProjects();
     }, []);
 
     // dirty 상태 감지
@@ -377,8 +460,95 @@ export default function ResumePanel() {
         });
     };
 
+    const toggleFeaturedPortfolioProject = async (
+        item: PortfolioAdminItem,
+        featured: boolean
+    ) => {
+        if (!featuredProjectJobField) return;
+        const result = await setPortfolioFeatured(
+            item.id,
+            item.slug,
+            featuredProjectJobField,
+            featured
+        );
+        if (!result.success) {
+            setStatus({
+                type: "error",
+                msg: result.error ?? "대표 프로젝트 변경 실패",
+            });
+            return;
+        }
+        setStatus({
+            type: "success",
+            msg: "대표 프로젝트 변경이 공개 이력서에 반영됐습니다.",
+        });
+        await loadFeaturedProjects();
+    };
+
+    const reorderFeaturedPortfolioProjects = async (
+        from: number,
+        to: number
+    ) => {
+        if (from === to || !featuredProjectJobField) return;
+        const selected = portfolioItems
+            .filter(
+                (item) =>
+                    item.published &&
+                    getPortfolioJobFieldIds(item).includes(
+                        featuredProjectJobField
+                    ) &&
+                    isPortfolioFeaturedForJobField(
+                        item,
+                        featuredProjectJobField
+                    )
+            )
+            .sort(
+                (left, right) =>
+                    getPortfolioFeaturedOrder(left, featuredProjectJobField) -
+                    getPortfolioFeaturedOrder(right, featuredProjectJobField)
+            );
+        const reordered = reorderArray(selected, from, to);
+        const result = await reorderFeaturedPortfolioItems(
+            reordered.map((item, index) => ({
+                id: item.id,
+                order_idx: index,
+            })),
+            featuredProjectJobField
+        );
+        if (!result.success) {
+            setStatus({
+                type: "error",
+                msg: result.error ?? "대표 프로젝트 순서 변경 실패",
+            });
+            return;
+        }
+        setStatus({
+            type: "success",
+            msg: "대표 프로젝트 순서가 공개 이력서에 반영됐습니다.",
+        });
+        await loadFeaturedProjects();
+    };
+
     if (!resumeData)
         return <div className="p-4 text-(--color-muted)">Loading...</div>;
+
+    const availablePortfolioProjects = portfolioItems.filter(
+        (item) =>
+            item.published &&
+            getPortfolioJobFieldIds(item).includes(featuredProjectJobField)
+    );
+    const featuredPortfolioProjects = availablePortfolioProjects
+        .filter((item) =>
+            isPortfolioFeaturedForJobField(item, featuredProjectJobField)
+        )
+        .sort(
+            (left, right) =>
+                getPortfolioFeaturedOrder(left, featuredProjectJobField) -
+                getPortfolioFeaturedOrder(right, featuredProjectJobField)
+        );
+    const selectablePortfolioProjects = availablePortfolioProjects.filter(
+        (item) => !isPortfolioFeaturedForJobField(item, featuredProjectJobField)
+    );
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -1854,7 +2024,201 @@ export default function ResumePanel() {
                     data-resume-section="projects"
                     style={sectionWrapperStyle("projects")}
                 >
-                    <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                    <section className="space-y-5 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-(--color-foreground)">
+                                대표 프로젝트
+                            </h3>
+                            <p className="text-sm leading-relaxed text-(--color-muted)">
+                                Portfolio의 Published 프로젝트를 직무 분야별로
+                                최대 5건까지 선택합니다. 이 목록과 순서가 공개
+                                이력서에 그대로 표시됩니다.
+                            </p>
+                        </div>
+
+                        <div
+                            className="flex flex-wrap gap-2"
+                            aria-label="대표 프로젝트 직무 분야"
+                        >
+                            {jobFields.map((jobField) => {
+                                const selected =
+                                    featuredProjectJobField === jobField.id;
+                                return (
+                                    <button
+                                        key={jobField.id}
+                                        type="button"
+                                        aria-pressed={selected}
+                                        onClick={() =>
+                                            setFeaturedProjectJobField(
+                                                jobField.id
+                                            )
+                                        }
+                                        className={`rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
+                                            selected
+                                                ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                : "border border-(--color-border) text-(--color-muted) hover:border-(--color-accent)/50 hover:text-(--color-foreground)"
+                                        }`}
+                                    >
+                                        {jobField.emoji
+                                            ? `${jobField.emoji} `
+                                            : ""}
+                                        {jobField.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {featuredProjectsLoading ? (
+                            <p className="text-sm text-(--color-muted)">
+                                Portfolio 프로젝트를 불러오는 중...
+                            </p>
+                        ) : !featuredProjectJobField ? (
+                            <p className="rounded-lg border border-dashed border-(--color-border) px-4 py-6 text-sm text-(--color-muted)">
+                                대표 프로젝트를 관리할 직무 분야가 없습니다.
+                                Admin Config에서 직무 분야를 먼저 추가하세요.
+                            </p>
+                        ) : (
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <h4 className="font-semibold text-(--color-foreground)">
+                                            선택된 대표 프로젝트
+                                        </h4>
+                                        <p className="mt-1 text-sm text-(--color-muted)">
+                                            {featuredPortfolioProjects.length}/5
+                                            · 왼쪽 번호가 공개 이력서 표시
+                                            순서입니다.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {featuredPortfolioProjects.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {featuredPortfolioProjects.map(
+                                            (project, index) => (
+                                                <div
+                                                    key={project.id}
+                                                    draggable
+                                                    onDragStart={() => {
+                                                        featuredProjectDragIndexRef.current =
+                                                            index;
+                                                    }}
+                                                    onDragOver={(event) =>
+                                                        event.preventDefault()
+                                                    }
+                                                    onDrop={() => {
+                                                        const from =
+                                                            featuredProjectDragIndexRef.current;
+                                                        featuredProjectDragIndexRef.current =
+                                                            null;
+                                                        if (from === null)
+                                                            return;
+                                                        void reorderFeaturedPortfolioProjects(
+                                                            from,
+                                                            index
+                                                        );
+                                                    }}
+                                                    className="flex items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
+                                                >
+                                                    <span
+                                                        aria-label={`${index + 1}번째 대표 프로젝트`}
+                                                        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-(--color-accent) text-sm font-bold text-(--color-on-accent)"
+                                                    >
+                                                        {index + 1}
+                                                    </span>
+                                                    <GripVertical
+                                                        className="shrink-0 cursor-grab text-(--color-muted)"
+                                                        aria-label="드래그로 순서 변경"
+                                                    />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate font-semibold text-(--color-foreground)">
+                                                            {project.title}
+                                                        </p>
+                                                        {project.description ? (
+                                                            <p className="mt-0.5 line-clamp-1 text-sm text-(--color-muted)">
+                                                                {
+                                                                    project.description
+                                                                }
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            void toggleFeaturedPortfolioProject(
+                                                                project,
+                                                                false
+                                                            )
+                                                        }
+                                                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                                    >
+                                                        제외
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="rounded-lg border border-dashed border-(--color-border) px-4 py-5 text-sm text-(--color-muted)">
+                                        아직 선택된 대표 프로젝트가 없습니다.
+                                    </p>
+                                )}
+
+                                <div className="space-y-2 border-t border-(--color-border) pt-5">
+                                    <h4 className="font-semibold text-(--color-foreground)">
+                                        Portfolio에서 가져오기
+                                    </h4>
+                                    {selectablePortfolioProjects.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {selectablePortfolioProjects.map(
+                                                (project) => (
+                                                    <div
+                                                        key={project.id}
+                                                        className="flex items-center gap-3 rounded-lg border border-(--color-border) p-3"
+                                                    >
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate font-semibold text-(--color-foreground)">
+                                                                {project.title}
+                                                            </p>
+                                                            {project.description ? (
+                                                                <p className="mt-0.5 line-clamp-1 text-sm text-(--color-muted)">
+                                                                    {
+                                                                        project.description
+                                                                    }
+                                                                </p>
+                                                            ) : null}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            disabled={
+                                                                featuredPortfolioProjects.length >=
+                                                                5
+                                                            }
+                                                            onClick={() =>
+                                                                void toggleFeaturedPortfolioProject(
+                                                                    project,
+                                                                    true
+                                                                )
+                                                            }
+                                                            className="rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            대표 프로젝트에 추가
+                                                        </button>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-(--color-muted)">
+                                            이 직무 분야에 추가할 Published
+                                            Portfolio 프로젝트가 없습니다.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                    <section className="hidden space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
