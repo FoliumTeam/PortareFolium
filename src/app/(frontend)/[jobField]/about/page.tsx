@@ -18,5 +18,5 @@ export async function generateMetadata({
 export default async function JobFieldAboutPage({ params }: PageProps) {
     const jobField = await resolvePublicJobField((await params).jobField);
     if (!jobField) notFound();
-    return <AboutPageContent jobField={jobField.id} />;
+    return <AboutPageContent jobField={jobField} />;
 }

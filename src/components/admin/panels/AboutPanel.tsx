@@ -19,10 +19,51 @@ import {
 } from "@/types/about";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Trash2 } from "lucide-react";
+import {
+    BriefcaseBusiness,
+    Brain,
+    Globe2,
+    Layers3,
+    Mail,
+    RotateCcw,
+    Sparkles,
+    Trash2,
+    UserRound,
+} from "lucide-react";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 
 type JobFieldItem = { id: string; name: string; emoji: string };
+
+function AboutSection({
+    Icon,
+    title,
+    description,
+    children,
+}: {
+    Icon: typeof UserRound;
+    title: string;
+    description: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="tablet:p-6 space-y-5 rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
+            <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface-subtle) text-(--color-accent)">
+                    <Icon className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-(--color-foreground)">
+                        {title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-(--color-muted)">
+                        {description}
+                    </p>
+                </div>
+            </div>
+            {children}
+        </section>
+    );
+}
 
 // 한 줄당 한 항목으로 파싱
 function parseSectionText(text: string): string[] {
@@ -61,7 +102,9 @@ export default function AboutPanel() {
     const [introductions, setIntroductions] = useState<
         Record<string, FieldIntroduction>
     >({});
-    const [newIntroFieldId, setNewIntroFieldId] = useState("");
+    const [activeJobFieldId, setActiveJobFieldId] = useState<string | null>(
+        null
+    );
 
     // uncontrolled refs (textarea undo 동작 보장)
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,12 +174,12 @@ export default function AboutPanel() {
         }
     };
 
-    // Job Field별 소개 추가 (default 값 inherit)
-    const handleAddIntro = () => {
-        if (!newIntroFieldId) return;
+    // 직무 분야별 소개 기본값 상속
+    const handleCreateFieldIntroduction = (fieldId: string) => {
+        if (!fieldId || introductions[fieldId]) return;
         setIntroductions((prev) => ({
             ...prev,
-            [newIntroFieldId]: {
+            [fieldId]: {
                 description: descriptionRef.current?.value ?? "",
                 descriptionSub: descriptionSubRef.current?.value ?? "",
                 valuePillars: valuePillars.map((pillar) => ({ ...pillar })),
@@ -156,7 +199,7 @@ export default function AboutPanel() {
                 ),
             },
         }));
-        setNewIntroFieldId("");
+        setActiveJobFieldId(fieldId);
     };
 
     // Job Field별 소개 삭제
@@ -282,16 +325,33 @@ export default function AboutPanel() {
     // textarea 공통 클래스
     const textareaCls = `${inputCls} resize-y`;
 
-    // override가 없는 job fields만 선택 목록에 표시
-    const availableFields = jobFields.filter((f) => !introductions[f.id]);
+    const activeField = jobFields.find(
+        (field) => field.id === activeJobFieldId
+    );
+    const activeIntroduction = activeJobFieldId
+        ? introductions[activeJobFieldId]
+        : undefined;
 
     return (
-        <div className="tablet:h-full tablet:overflow-y-auto space-y-6">
-            {/* 프로필 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    프로필
-                </h3>
+        <div className="tablet:h-full tablet:overflow-y-auto space-y-5 pb-8">
+            <div className="border-b border-(--color-border) pb-5">
+                <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
+                    Profile Content
+                </p>
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-(--color-foreground)">
+                    About 관리
+                </h2>
+                <p className="mt-2 text-sm text-(--color-muted)">
+                    공통 프로필과 직무 분야별 소개·핵심 가치·경험을 분리해
+                    관리합니다.
+                </p>
+            </div>
+
+            <AboutSection
+                Icon={UserRound}
+                title="공통 프로필"
+                description="모든 직무 분야에서 공유하는 기본 인물 정보와 연락처입니다."
+            >
                 <div className="tablet:flex-row tablet:gap-6 flex flex-col items-start gap-4">
                     {/* 이미지 미리보기 */}
                     <div className="shrink-0">
@@ -312,6 +372,7 @@ export default function AboutPanel() {
                         <Button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={imageUploading}
+                            className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                         >
                             {imageUploading ? "업로드 중..." : "이미지 업로드"}
                         </Button>
@@ -345,8 +406,8 @@ export default function AboutPanel() {
                         className="hidden"
                     />
                 </div>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
+                <div className="max-w-xl rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                    <label className="mb-2 block text-sm font-semibold text-(--color-foreground)">
                         이름
                     </label>
                     <input
@@ -356,482 +417,475 @@ export default function AboutPanel() {
                         className={inputCls}
                     />
                 </div>
-            </section>
+            </AboutSection>
 
-            {/* 소개 - Default */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    소개 (Default)
-                </h3>
-                <p className="text-sm text-(--color-muted)">
-                    Job Field override가 없을 때 표시됩니다.
-                </p>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                        메인 소개
-                    </label>
-                    <textarea
-                        ref={descriptionRef}
-                        rows={3}
-                        className={textareaCls}
-                    />
-                </div>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                        보조 소개
-                    </label>
-                    <textarea
-                        ref={descriptionSubRef}
-                        rows={2}
-                        className={textareaCls}
-                    />
-                </div>
-            </section>
-
-            {/* Job Field별 소개 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    Job Field별 소개
-                </h3>
-                <p className="text-sm text-(--color-muted)">
-                    특정 Job Field 선택 시 Default 소개 대신 표시됩니다.
-                </p>
-                {Object.entries(introductions).map(([fieldId, intro]) => {
-                    const field = jobFields.find((f) => f.id === fieldId);
-                    return (
+            <AboutSection
+                Icon={Mail}
+                title="공통 연락처"
+                description="About과 Resume에서 함께 사용하는 기본 연락처입니다."
+            >
+                <div className="tablet:grid-cols-3 grid gap-3">
+                    {[
+                        ["Email", email, setEmail],
+                        ["GitHub URL", github, setGithub],
+                        ["LinkedIn URL", linkedin, setLinkedin],
+                    ].map(([label, value, setValue]) => (
                         <div
-                            key={fieldId}
-                            className="space-y-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
+                            key={label as string}
+                            className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                         >
-                            <div className="flex items-center justify-between">
-                                <span className="font-medium text-(--color-foreground)">
-                                    {field
-                                        ? `${field.emoji} ${field.name}`
-                                        : fieldId}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveIntro(fieldId)}
-                                    className="text-red-600 hover:text-red-700"
-                                >
-                                    <Trash2 size={13} />
-                                    삭제
-                                </Button>
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                    메인 소개
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={intro.description}
-                                    onChange={(e) =>
-                                        handleIntroChange(
-                                            fieldId,
-                                            "description",
-                                            e.target.value
-                                        )
-                                    }
-                                    className={textareaCls}
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                    보조 소개
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={intro.descriptionSub}
-                                    onChange={(e) =>
-                                        handleIntroChange(
-                                            fieldId,
-                                            "descriptionSub",
-                                            e.target.value
-                                        )
-                                    }
-                                    className={textareaCls}
-                                />
-                            </div>
-                            <div className="space-y-3 border-t border-(--color-border) pt-4">
-                                <div>
-                                    <h4 className="text-base font-semibold text-(--color-foreground)">
-                                        Landing Page 핵심 가치
-                                    </h4>
-                                    <p className="mt-1 text-xs text-(--color-muted)">
-                                        이 Job Field Landing Page에만 표시되는
-                                        3개 항목입니다.
-                                    </p>
-                                </div>
-                                {[0, 1, 2].map((index) => {
-                                    const pillar = intro.valuePillars?.[
-                                        index
-                                    ] ?? {
-                                        label: "",
-                                        sub: "",
-                                        description: "",
-                                    };
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="space-y-3 rounded-lg border border-(--color-border) p-3"
+                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                {label as string}
+                            </label>
+                            <input
+                                value={value as string}
+                                onChange={(event) =>
+                                    (
+                                        setValue as React.Dispatch<
+                                            React.SetStateAction<string>
                                         >
-                                            <p className="text-sm font-bold text-(--color-accent)">
-                                                핵심 가치 {index + 1}
-                                            </p>
-                                            <input
-                                                value={pillar.label}
-                                                onChange={(e) =>
-                                                    updateFieldPillar(
-                                                        fieldId,
-                                                        index,
-                                                        "label",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="키워드"
-                                                className={inputCls}
-                                            />
-                                            <input
-                                                value={pillar.sub}
-                                                onChange={(e) =>
-                                                    updateFieldPillar(
-                                                        fieldId,
-                                                        index,
-                                                        "sub",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="보조 문구"
-                                                className={inputCls}
-                                            />
-                                            <input
-                                                value={pillar.description}
-                                                onChange={(e) =>
-                                                    updateFieldPillar(
-                                                        fieldId,
-                                                        index,
-                                                        "description",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="설명"
-                                                className={inputCls}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <details className="rounded-lg border border-(--color-border) p-3">
-                                <summary className="cursor-pointer font-semibold text-(--color-foreground)">
-                                    About me 경험과 역량
-                                </summary>
-                                <p className="mt-2 text-xs text-(--color-muted)">
-                                    한 줄 = 한 항목. 이 Job Field의 About me에만
-                                    표시됩니다.
-                                </p>
-                                <div className="mt-4 space-y-4">
-                                    {ABOUT_SECTION_KEYS.map((key) => (
-                                        <div key={key}>
-                                            <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                {key}
-                                            </label>
-                                            <textarea
-                                                rows={3}
-                                                value={(
-                                                    intro.sections?.[key] ?? []
-                                                ).join("\n")}
-                                                onChange={(e) =>
-                                                    updateFieldList(
-                                                        fieldId,
-                                                        "sections",
-                                                        key,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className={`${textareaCls} min-h-[80px]`}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="mt-5 space-y-4 border-t border-(--color-border) pt-4">
-                                    <h5 className="text-sm font-semibold text-(--color-foreground)">
-                                        역량 키워드
-                                    </h5>
-                                    {COMPETENCY_SECTION_KEYS.map((key) => (
-                                        <div key={key}>
-                                            <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                {key}
-                                            </label>
-                                            <textarea
-                                                rows={3}
-                                                value={(
-                                                    intro.competencySections?.[
-                                                        key
-                                                    ] ?? []
-                                                ).join("\n")}
-                                                onChange={(e) =>
-                                                    updateFieldList(
-                                                        fieldId,
-                                                        "competencySections",
-                                                        key,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className={`${textareaCls} min-h-[80px]`}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </details>
-                        </div>
-                    );
-                })}
-                {availableFields.length > 0 && (
-                    <div className="flex gap-2">
-                        <select
-                            value={newIntroFieldId}
-                            onChange={(e) => setNewIntroFieldId(e.target.value)}
-                            className="h-9 flex-1 rounded-md border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
-                        >
-                            <option value="">추가할 Job Field 선택</option>
-                            {availableFields.map((f) => (
-                                <option key={f.id} value={f.id}>
-                                    {f.emoji} {f.name}
-                                </option>
-                            ))}
-                        </select>
-                        <Button
-                            onClick={handleAddIntro}
-                            disabled={!newIntroFieldId}
-                        >
-                            소개 추가
-                        </Button>
-                    </div>
-                )}
-            </section>
-
-            {/* 연락처 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    연락처
-                </h3>
-                <div>
-                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                        Email
-                    </label>
-                    <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputCls}
-                    />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                        GitHub URL
-                    </label>
-                    <input
-                        value={github}
-                        onChange={(e) => setGithub(e.target.value)}
-                        className={inputCls}
-                    />
-                </div>
-                <div>
-                    <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                        LinkedIn URL
-                    </label>
-                    <input
-                        value={linkedin}
-                        onChange={(e) => setLinkedin(e.target.value)}
-                        className={inputCls}
-                    />
-                </div>
-            </section>
-
-            {/* 랜딩 페이지 히어로 섹션 */}
-            <section className="space-y-4 rounded-xl border border-(--color-accent) bg-(--color-surface) p-6">
-                <div className="w-fit rounded-lg bg-(--color-accent) px-2 py-0.5 text-sm font-medium text-(--color-on-accent)">
-                    Landing Page
-                </div>
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    Hero Section
-                </h3>
-
-                {/* Value Pillars */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-base font-semibold text-(--color-foreground)">
-                            Value Pillars (3대 핵심 가치)
-                        </h4>
-                        <span className="text-sm text-(--color-muted)">
-                            {valuePillars.length} / 3
-                        </span>
-                    </div>
-                    {valuePillars.map((pillar, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
-                        >
-                            <div className="mb-2 flex items-center justify-between">
-                                <span className="text-sm font-bold text-(--color-accent)">
-                                    Pillar {idx + 1}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        const ok = await confirm({
-                                            title: "Value Pillar 삭제",
-                                            description: `Pillar ${idx + 1}을 삭제하시겠습니까?`,
-                                            confirmText: "삭제",
-                                            cancelText: "취소",
-                                            variant: "destructive",
-                                        });
-                                        if (!ok) return;
-                                        setValuePillars((prev) =>
-                                            prev.filter((_, i) => i !== idx)
-                                        );
-                                    }}
-                                    className="shrink-0 cursor-pointer rounded-lg bg-red-600 p-1.5 text-white"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                        Keyword
-                                    </label>
-                                    <input
-                                        value={pillar.label}
-                                        onChange={(e) =>
-                                            setValuePillars((prev) =>
-                                                prev.map((p, i) =>
-                                                    i === idx
-                                                        ? {
-                                                              ...p,
-                                                              label: e.target
-                                                                  .value,
-                                                          }
-                                                        : p
-                                                )
-                                            )
-                                        }
-                                        placeholder="짧은 키워드"
-                                        className={inputCls}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                        Sub
-                                    </label>
-                                    <input
-                                        value={pillar.sub}
-                                        onChange={(e) =>
-                                            setValuePillars((prev) =>
-                                                prev.map((p, i) =>
-                                                    i === idx
-                                                        ? {
-                                                              ...p,
-                                                              sub: e.target
-                                                                  .value,
-                                                          }
-                                                        : p
-                                                )
-                                            )
-                                        }
-                                        placeholder="부제"
-                                        className={inputCls}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                        Description
-                                    </label>
-                                    <input
-                                        value={pillar.description}
-                                        onChange={(e) =>
-                                            setValuePillars((prev) =>
-                                                prev.map((p, i) =>
-                                                    i === idx
-                                                        ? {
-                                                              ...p,
-                                                              description:
-                                                                  e.target
-                                                                      .value,
-                                                          }
-                                                        : p
-                                                )
-                                            )
-                                        }
-                                        placeholder="설명"
-                                        className={inputCls}
-                                    />
-                                </div>
-                            </div>
+                                    )(event.target.value)
+                                }
+                                className={`${inputCls} mt-2 bg-(--color-surface)`}
+                            />
                         </div>
                     ))}
-                    {valuePillars.length < 3 && (
-                        <Button
-                            onClick={() =>
-                                setValuePillars((prev) => [
-                                    ...prev,
-                                    { label: "", sub: "", description: "" },
-                                ])
-                            }
-                            className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"
-                        >
-                            추가
-                        </Button>
-                    )}
                 </div>
-            </section>
+            </AboutSection>
 
-            {/* 경험 유형별 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    경험 유형별 리스트
-                </h3>
-                <p className="text-sm text-(--color-muted)">
-                    한 줄 = 한 항목. 비워두면 표시 안 됨.
-                </p>
-                {ABOUT_SECTION_KEYS.map((key) => (
-                    <div key={key}>
-                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                            {key}
-                        </label>
-                        <textarea
-                            ref={(el) => {
-                                sectionRefs.current[key] = el;
-                            }}
-                            rows={4}
-                            placeholder={SECTION_PLACEHOLDERS[key]}
-                            className={`${textareaCls} min-h-[80px]`}
-                        />
-                    </div>
-                ))}
-            </section>
+            <AboutSection
+                Icon={Globe2}
+                title="직무 분야 콘텐츠"
+                description="선택한 직무 분야의 Landing과 About 콘텐츠만 편집합니다. 직무 분야별 값은 다른 공개 프로필에 섞이지 않습니다."
+            >
+                <div className="tablet:grid-cols-3 grid gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setActiveJobFieldId(null)}
+                        aria-label="공통 기본 콘텐츠 편집"
+                        aria-pressed={activeJobFieldId === null}
+                        className={`rounded-2xl border p-4 text-left transition-colors ${activeJobFieldId === null ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30" : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"}`}
+                    >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--color-surface) text-(--color-accent)">
+                            <Layers3 className="h-5 w-5" />
+                        </span>
+                        <span className="mt-4 block text-sm font-semibold text-(--color-foreground)">
+                            공통 기본값
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                            별도 콘텐츠가 없는 직무 분야의 fallback
+                        </span>
+                    </button>
+                    {jobFields.map((field) => {
+                        const isolated = Boolean(introductions[field.id]);
+                        const selected = activeJobFieldId === field.id;
+                        return (
+                            <button
+                                key={field.id}
+                                type="button"
+                                onClick={() => setActiveJobFieldId(field.id)}
+                                aria-label={`${field.name} 직무 분야 콘텐츠 편집`}
+                                aria-pressed={selected}
+                                className={`rounded-2xl border p-4 text-left transition-colors ${selected ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30" : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"}`}
+                            >
+                                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--color-surface) text-xl">
+                                    {field.emoji}
+                                </span>
+                                <span className="mt-4 flex items-center gap-2 text-sm font-semibold text-(--color-foreground)">
+                                    {field.name}
+                                    <span
+                                        className={`rounded-full px-2 py-0.5 text-xs ${isolated ? "bg-green-500/12 text-green-700 dark:text-green-400" : "bg-(--color-surface) text-(--color-muted)"}`}
+                                    >
+                                        {isolated
+                                            ? "독립 콘텐츠"
+                                            : "공통값 사용"}
+                                    </span>
+                                </span>
+                                <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                    /{field.id} 공개 프로필
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </AboutSection>
 
-            {/* 역량 키워드별 */}
-            <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                <h3 className="text-xl font-bold text-(--color-foreground)">
-                    역량 키워드별 리스트
-                </h3>
-                {COMPETENCY_SECTION_KEYS.map((key) => (
-                    <div key={key}>
-                        <label className="mb-1 block text-sm font-medium text-(--color-muted)">
-                            {key}
-                        </label>
-                        <textarea
-                            ref={(el) => {
-                                competencyRefs.current[key] = el;
-                            }}
-                            rows={4}
-                            placeholder={COMPETENCY_PLACEHOLDERS[key]}
-                            className={`${textareaCls} min-h-[80px]`}
-                        />
+            {activeJobFieldId === null ? (
+                <AboutSection
+                    Icon={Sparkles}
+                    title="공통 기본 콘텐츠"
+                    description="직무 분야의 독립 콘텐츠를 만들기 전까지 Landing과 About에 표시되는 기본 내용입니다."
+                >
+                    <div className="tablet:grid-cols-2 grid gap-3">
+                        <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                메인 소개
+                            </label>
+                            <textarea
+                                ref={descriptionRef}
+                                rows={4}
+                                className={`${textareaCls} mt-2 bg-(--color-surface)`}
+                            />
+                        </div>
+                        <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                보조 소개
+                            </label>
+                            <textarea
+                                ref={descriptionSubRef}
+                                rows={4}
+                                className={`${textareaCls} mt-2 bg-(--color-surface)`}
+                            />
+                        </div>
                     </div>
-                ))}
-            </section>
+                </AboutSection>
+            ) : activeField && activeIntroduction ? (
+                <AboutSection
+                    Icon={Sparkles}
+                    title={`${activeField.emoji} ${activeField.name} 독립 콘텐츠`}
+                    description={`/${activeField.id} Landing과 About에만 적용되는 소개입니다.`}
+                >
+                    <div className="flex justify-end border-b border-(--color-border) pb-4">
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleRemoveIntro(activeField.id)}
+                            className="bg-red-600 text-white hover:bg-red-500"
+                        >
+                            <RotateCcw size={13} />
+                            공통값으로 되돌리기
+                        </Button>
+                    </div>
+                    <div className="tablet:grid-cols-2 grid gap-3">
+                        <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                메인 소개
+                            </label>
+                            <textarea
+                                rows={4}
+                                value={activeIntroduction.description}
+                                onChange={(event) =>
+                                    handleIntroChange(
+                                        activeField.id,
+                                        "description",
+                                        event.target.value
+                                    )
+                                }
+                                className={`${textareaCls} mt-2 bg-(--color-surface)`}
+                            />
+                        </div>
+                        <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                보조 소개
+                            </label>
+                            <textarea
+                                rows={4}
+                                value={activeIntroduction.descriptionSub}
+                                onChange={(event) =>
+                                    handleIntroChange(
+                                        activeField.id,
+                                        "descriptionSub",
+                                        event.target.value
+                                    )
+                                }
+                                className={`${textareaCls} mt-2 bg-(--color-surface)`}
+                            />
+                        </div>
+                    </div>
+                </AboutSection>
+            ) : activeField ? (
+                <AboutSection
+                    Icon={Sparkles}
+                    title={`${activeField.emoji} ${activeField.name} 콘텐츠`}
+                    description="현재 공통 기본값을 사용 중입니다. 독립 콘텐츠를 만들면 이 직무 분야만 따로 편집할 수 있습니다."
+                >
+                    <Button
+                        onClick={() =>
+                            handleCreateFieldIntroduction(activeField.id)
+                        }
+                        className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
+                    >
+                        독립 콘텐츠 만들기
+                    </Button>
+                </AboutSection>
+            ) : null}
+
+            {activeJobFieldId === null ? (
+                <>
+                    <AboutSection
+                        Icon={Sparkles}
+                        title="공통 Landing 핵심 가치"
+                        description="직무 분야가 별도 핵심 가치를 갖지 않을 때 표시되는 기본 3개 항목입니다."
+                    >
+                        <div className="tablet:grid-cols-3 grid gap-3">
+                            {valuePillars.map((pillar, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                >
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <p className="text-sm font-semibold text-(--color-foreground)">
+                                            핵심 가치 {index + 1}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setValuePillars((current) =>
+                                                    current.filter(
+                                                        (_, itemIndex) =>
+                                                            itemIndex !== index
+                                                    )
+                                                )
+                                            }
+                                            className="rounded-lg bg-red-600 p-1.5 text-white hover:bg-red-500"
+                                            aria-label={`핵심 가치 ${index + 1} 삭제`}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(
+                                            [
+                                                ["키워드", "label"],
+                                                ["보조 문구", "sub"],
+                                                ["설명", "description"],
+                                            ] as const
+                                        ).map(([label, key]) => (
+                                            <div key={key}>
+                                                <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                    {label}
+                                                </label>
+                                                <input
+                                                    value={pillar[key]}
+                                                    onChange={(event) =>
+                                                        setValuePillars(
+                                                            (current) =>
+                                                                current.map(
+                                                                    (
+                                                                        item,
+                                                                        itemIndex
+                                                                    ) =>
+                                                                        itemIndex ===
+                                                                        index
+                                                                            ? {
+                                                                                  ...item,
+                                                                                  [key]: event
+                                                                                      .target
+                                                                                      .value,
+                                                                              }
+                                                                            : item
+                                                                )
+                                                        )
+                                                    }
+                                                    className={`${inputCls} mt-2 bg-(--color-surface)`}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {valuePillars.length < 3 && (
+                            <Button
+                                onClick={() =>
+                                    setValuePillars((current) => [
+                                        ...current,
+                                        {
+                                            label: "",
+                                            sub: "",
+                                            description: "",
+                                        },
+                                    ])
+                                }
+                                className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
+                            >
+                                핵심 가치 추가
+                            </Button>
+                        )}
+                    </AboutSection>
+                    <AboutSection
+                        Icon={BriefcaseBusiness}
+                        title="공통 경험"
+                        description="한 줄이 About의 한 항목입니다. 비어 있는 분야는 공개하지 않습니다."
+                    >
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            {ABOUT_SECTION_KEYS.map((key) => (
+                                <div
+                                    key={key}
+                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                >
+                                    <label className="text-sm font-semibold text-(--color-foreground)">
+                                        {key}
+                                    </label>
+                                    <textarea
+                                        ref={(element) => {
+                                            sectionRefs.current[key] = element;
+                                        }}
+                                        rows={4}
+                                        placeholder={SECTION_PLACEHOLDERS[key]}
+                                        className={`${textareaCls} mt-2 min-h-[96px] bg-(--color-surface)`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </AboutSection>
+                    <AboutSection
+                        Icon={Brain}
+                        title="공통 역량"
+                        description="한 줄이 About의 한 항목입니다. 직무 분야별 override가 없는 경우에 사용됩니다."
+                    >
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            {COMPETENCY_SECTION_KEYS.map((key) => (
+                                <div
+                                    key={key}
+                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                >
+                                    <label className="text-sm font-semibold text-(--color-foreground)">
+                                        {key}
+                                    </label>
+                                    <textarea
+                                        ref={(element) => {
+                                            competencyRefs.current[key] =
+                                                element;
+                                        }}
+                                        rows={4}
+                                        placeholder={
+                                            COMPETENCY_PLACEHOLDERS[key]
+                                        }
+                                        className={`${textareaCls} mt-2 min-h-[96px] bg-(--color-surface)`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </AboutSection>
+                </>
+            ) : activeField && activeIntroduction ? (
+                <>
+                    <AboutSection
+                        Icon={Sparkles}
+                        title={`${activeField.name} Landing 핵심 가치`}
+                        description="이 직무 분야 Landing에만 표시되는 3개 항목입니다."
+                    >
+                        <div className="tablet:grid-cols-3 grid gap-3">
+                            {[0, 1, 2].map((index) => {
+                                const pillar = activeIntroduction
+                                    .valuePillars?.[index] ?? {
+                                    label: "",
+                                    sub: "",
+                                    description: "",
+                                };
+                                return (
+                                    <div
+                                        key={index}
+                                        className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                    >
+                                        <p className="mb-3 text-sm font-semibold text-(--color-foreground)">
+                                            핵심 가치 {index + 1}
+                                        </p>
+                                        <div className="space-y-3">
+                                            {(
+                                                [
+                                                    ["키워드", "label"],
+                                                    ["보조 문구", "sub"],
+                                                    ["설명", "description"],
+                                                ] as const
+                                            ).map(([label, key]) => (
+                                                <div key={key}>
+                                                    <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                        {label}
+                                                    </label>
+                                                    <input
+                                                        value={pillar[key]}
+                                                        onChange={(event) =>
+                                                            updateFieldPillar(
+                                                                activeField.id,
+                                                                index,
+                                                                key,
+                                                                event.target
+                                                                    .value
+                                                            )
+                                                        }
+                                                        className={`${inputCls} mt-2 bg-(--color-surface)`}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </AboutSection>
+                    <AboutSection
+                        Icon={BriefcaseBusiness}
+                        title={`${activeField.name} 경험`}
+                        description="이 직무 분야의 About에만 표시되는 경험입니다."
+                    >
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            {ABOUT_SECTION_KEYS.map((key) => (
+                                <div
+                                    key={key}
+                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                >
+                                    <label className="text-sm font-semibold text-(--color-foreground)">
+                                        {key}
+                                    </label>
+                                    <textarea
+                                        rows={4}
+                                        value={(
+                                            activeIntroduction.sections?.[
+                                                key
+                                            ] ?? []
+                                        ).join("\n")}
+                                        onChange={(event) =>
+                                            updateFieldList(
+                                                activeField.id,
+                                                "sections",
+                                                key,
+                                                event.target.value
+                                            )
+                                        }
+                                        className={`${textareaCls} mt-2 min-h-[96px] bg-(--color-surface)`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </AboutSection>
+                    <AboutSection
+                        Icon={Brain}
+                        title={`${activeField.name} 역량`}
+                        description="이 직무 분야의 About에만 표시되는 역량입니다."
+                    >
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            {COMPETENCY_SECTION_KEYS.map((key) => (
+                                <div
+                                    key={key}
+                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                >
+                                    <label className="text-sm font-semibold text-(--color-foreground)">
+                                        {key}
+                                    </label>
+                                    <textarea
+                                        rows={4}
+                                        value={(
+                                            activeIntroduction
+                                                .competencySections?.[key] ?? []
+                                        ).join("\n")}
+                                        onChange={(event) =>
+                                            updateFieldList(
+                                                activeField.id,
+                                                "competencySections",
+                                                key,
+                                                event.target.value
+                                            )
+                                        }
+                                        className={`${textareaCls} mt-2 min-h-[96px] bg-(--color-surface)`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </AboutSection>
+                </>
+            ) : null}
 
             {/* Sticky 저장 바 */}
             <AdminSaveBar>

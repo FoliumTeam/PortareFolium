@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { serverClient } from "@/lib/supabase";
 import AboutView from "@/components/AboutView";
 import type { AboutData } from "@/types/about";
+import type { PublicJobField } from "@/lib/public-job-field";
 
 export const revalidate = false;
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 type AboutPageContentProps = {
-    jobField: string;
+    jobField: PublicJobField;
 };
 
 export default async function AboutPageContent({
@@ -53,18 +54,25 @@ export default async function AboutPageContent({
         );
     }
 
-    const introduction = aboutData.introductions?.[jobField];
+    const introduction = aboutData.introductions?.[jobField.id];
     const profileAboutData = {
         ...aboutData,
         description: introduction?.description ?? aboutData.description,
         descriptionSub:
             introduction?.descriptionSub ?? aboutData.descriptionSub,
-        sections: { ...aboutData.sections, ...introduction?.sections },
-        competencySections: {
-            ...aboutData.competencySections,
-            ...introduction?.competencySections,
-        },
+        sections: introduction?.sections ?? aboutData.sections,
+        competencySections:
+            introduction?.competencySections ?? aboutData.competencySections,
     };
 
-    return <AboutView data={profileAboutData} profileImage={profileImage} />;
+    return (
+        <AboutView
+            data={profileAboutData}
+            profileImage={profileImage}
+            jobField={jobField}
+            valuePillars={
+                introduction?.valuePillars ?? aboutData.valuePillars ?? []
+            }
+        />
+    );
 }

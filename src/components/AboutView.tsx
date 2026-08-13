@@ -1,5 +1,5 @@
-// AboutView — About 페이지 렌더러 (Server Component)
-// about_data + resume_data를 서버에서 받아 렌더링
+import type { ValuePillar } from "@/types/about";
+import type { PublicJobField } from "@/lib/public-job-field";
 
 export interface AboutData {
     name?: string;
@@ -16,16 +16,60 @@ export interface AboutData {
 
 const PLACEHOLDER_IMAGE = "/avatar-placeholder.svg";
 
-interface Props {
+const sectionPresentation: Record<string, { emoji: string; label: string }> = {
+    직무경험: { emoji: "💼", label: "현장에서 만든 변화" },
+    "학업/프로젝트": { emoji: "🛠️", label: "직접 구현한 프로젝트" },
+    "연구/개발": { emoji: "🔬", label: "탐구와 개발" },
+    개인사업: { emoji: "🚀", label: "운영 중인 개인 프로젝트" },
+    "동아리/대외활동": { emoji: "🤝", label: "함께 만든 경험" },
+    "공모전/대회": { emoji: "🏆", label: "도전과 결과" },
+    "인턴/알바": { emoji: "📚", label: "실무 경험" },
+    기타: { emoji: "✨", label: "그 밖의 기여" },
+};
+
+const competencyPresentation: Record<string, string> = {
+    문제해결: "🔎",
+    "협업/소통": "🤝",
+    "도전/혁신": "⚡",
+    "리더십/팔로우십": "🧭",
+    "성공/몰입": "🔥",
+    "실패/성장": "🌱",
+    의사결정: "💡",
+};
+
+type Props = {
     data: AboutData;
     profileImage: string | null;
+    jobField: PublicJobField;
+    valuePillars: ValuePillar[];
+};
+
+function HighlightText({ text }: { text: string }) {
+    const separatorIndex = text.indexOf(":");
+    if (separatorIndex < 1) return <>{text}</>;
+
+    return (
+        <>
+            <strong className="font-bold text-(--color-accent)">
+                {text.slice(0, separatorIndex)}
+            </strong>
+            {text.slice(separatorIndex)}
+        </>
+    );
 }
 
-export default function AboutView({ data, profileImage }: Props) {
+export default function AboutView({
+    data,
+    profileImage,
+    jobField,
+    valuePillars,
+}: Props) {
     const resolvedProfileImage = profileImage || PLACEHOLDER_IMAGE;
     const contacts = data.contacts ?? {};
     const sections = data.sections ?? {};
     const competencySections = data.competencySections ?? {};
+    const profileEmoji = jobField.emoji;
+    const profileLabel = `${jobField.name.toUpperCase()} PROFILE`;
 
     const contactEntries = [
         {
@@ -43,7 +87,7 @@ export default function AboutView({ data, profileImage }: Props) {
             value: contacts.linkedin?.trim(),
             href: contacts.linkedin || undefined,
         },
-    ].filter((e) => e.value);
+    ].filter((entry) => entry.value);
 
     const sectionEntries = Object.entries(sections).filter(
         ([, items]) => Array.isArray(items) && items.length > 0
@@ -53,164 +97,252 @@ export default function AboutView({ data, profileImage }: Props) {
     );
 
     return (
-        <article className="py-12">
-            {/* 프로필 섹션 */}
-            <div className="tablet:flex-row tablet:items-start tablet:gap-12 flex flex-col gap-8">
-                {/* 프로필 이미지 */}
-                <div className="shrink-0">
-                    <div className="relative h-36 w-36">
+        <article className="tablet:py-14 py-10">
+            <header className="tablet:p-10 relative overflow-hidden rounded-3xl border border-(--color-border) bg-(--color-surface-subtle) p-6">
+                <div
+                    className="absolute -top-24 -right-16 h-56 w-56 rounded-full bg-(--color-accent)/12 blur-3xl"
+                    aria-hidden="true"
+                />
+                <div className="tablet:flex-row tablet:items-center tablet:gap-10 relative flex flex-col gap-7">
+                    <div className="tablet:h-36 tablet:w-36 relative h-28 w-28 shrink-0">
                         <div
-                            className="absolute inset-0 rounded-full bg-(--color-accent) opacity-20 blur-xl"
+                            className="absolute inset-0 rounded-full bg-(--color-accent)/25 blur-xl"
                             aria-hidden="true"
                         />
                         <img
                             src={resolvedProfileImage}
-                            alt="프로필 사진"
+                            alt="정호진 프로필 사진"
                             width={144}
                             height={144}
-                            className="relative h-36 w-36 rounded-full object-cover ring-4 ring-(--color-accent)/30"
+                            className="tablet:h-36 tablet:w-36 relative h-28 w-28 rounded-full object-cover ring-4 ring-(--color-accent)/30"
                         />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-(--color-accent)/10 px-3 py-1 text-xs font-bold tracking-[0.16em] text-(--color-accent)">
+                            <span aria-hidden="true">{profileEmoji}</span>
+                            {profileLabel}
+                        </p>
+                        {data.name && (
+                            <h1 className="tablet:text-5xl text-4xl font-black tracking-tight text-(--color-foreground)">
+                                {data.name}
+                            </h1>
+                        )}
+                        {data.description && (
+                            <p className="tablet:text-2xl mt-4 max-w-3xl text-xl leading-relaxed font-semibold text-(--color-foreground)">
+                                {data.description}
+                            </p>
+                        )}
+                        {data.descriptionSub && (
+                            <p className="tablet:text-base mt-3 max-w-3xl text-sm leading-7 text-(--color-muted)">
+                                {data.descriptionSub}
+                            </p>
+                        )}
                     </div>
                 </div>
 
-                {/* 이름 + 소개 */}
-                <div className="min-w-0 flex-1">
-                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        About me
-                    </p>
-                    {data.name && (
-                        <h1 className="mb-4 text-4xl font-black tracking-tight text-(--color-foreground)">
-                            {data.name}
-                        </h1>
-                    )}
-                    {data.description && (
-                        <p className="mb-3 text-lg leading-relaxed text-(--color-foreground)">
-                            {data.description}
-                        </p>
-                    )}
-                    {data.descriptionSub && (
-                        <p className="text-sm leading-relaxed text-(--color-muted)">
-                            {data.descriptionSub}
-                        </p>
-                    )}
+                {contactEntries.length > 0 && (
+                    <div className="tablet:grid-cols-3 relative mt-8 grid overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-border)">
+                        {contactEntries.map(({ label, value, href }) => {
+                            const content = (
+                                <>
+                                    <span className="text-[11px] font-bold tracking-[0.14em] text-(--color-muted) uppercase">
+                                        {label}
+                                    </span>
+                                    <span className="mt-1 truncate text-sm font-semibold text-(--color-foreground)">
+                                        {value}
+                                    </span>
+                                </>
+                            );
 
-                    {/* 연락처 grid */}
-                    {contactEntries.length > 0 && (
-                        <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-(--color-border) bg-(--color-border)">
-                            {contactEntries.map(({ label, value, href }) =>
-                                href ? (
-                                    <a
-                                        key={label}
-                                        href={href}
-                                        className="flex flex-col bg-(--color-surface-subtle) px-4 py-3 transition-colors hover:bg-(--color-surface)"
-                                        target={
-                                            href.startsWith("http")
-                                                ? "_blank"
-                                                : undefined
-                                        }
-                                        rel={
-                                            href.startsWith("http")
-                                                ? "noopener noreferrer"
-                                                : undefined
-                                        }
-                                    >
-                                        <span className="mb-0.5 text-[10px] font-bold tracking-wider text-(--color-muted) uppercase">
-                                            {label}
-                                        </span>
-                                        <span className="text-sm font-medium text-(--color-foreground)">
-                                            {value}
-                                        </span>
-                                    </a>
-                                ) : (
-                                    <div
-                                        key={label}
-                                        className="flex flex-col bg-(--color-surface-subtle) px-4 py-3"
-                                    >
-                                        <span className="mb-0.5 text-[10px] font-bold tracking-wider text-(--color-muted) uppercase">
-                                            {label}
-                                        </span>
-                                        <span className="text-sm font-medium text-(--color-foreground)">
-                                            {value}
-                                        </span>
-                                    </div>
-                                )
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
+                            return href ? (
+                                <a
+                                    key={label}
+                                    href={href}
+                                    className="flex min-w-0 flex-col bg-(--color-surface) px-4 py-4 transition-colors hover:bg-(--color-accent)/8"
+                                    target={
+                                        href.startsWith("http")
+                                            ? "_blank"
+                                            : undefined
+                                    }
+                                    rel={
+                                        href.startsWith("http")
+                                            ? "noopener noreferrer"
+                                            : undefined
+                                    }
+                                >
+                                    {content}
+                                </a>
+                            ) : (
+                                <div
+                                    key={label}
+                                    className="flex min-w-0 flex-col bg-(--color-surface) px-4 py-4"
+                                >
+                                    {content}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </header>
 
-            {/* 경험 유형별 섹션 */}
-            {sectionEntries.length > 0 && (
-                <div className="mt-14 border-t border-(--color-border) pt-10">
-                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        Experience
-                    </p>
-                    <h2 className="mb-7 text-2xl font-black tracking-tight text-(--color-foreground)">
-                        경험 유형별 리스트
-                    </h2>
-                    <div className="space-y-4">
-                        {sectionEntries.map(([category, items]) => (
-                            <div
-                                key={category}
-                                className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+            {valuePillars.length > 0 && (
+                <section className="mt-14" aria-labelledby="about-values-title">
+                    <div className="mb-6">
+                        <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                            How I Work
+                        </p>
+                        <h2
+                            id="about-values-title"
+                            className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
+                        >
+                            일하는 방식
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-(--color-muted)">
+                            경험을 구현과 운영으로 연결할 때 지키는 기준
+                        </p>
+                    </div>
+                    <div className="tablet:grid-cols-3 grid gap-4">
+                        {valuePillars.map((pillar, index) => (
+                            <article
+                                key={`${pillar.label}-${index}`}
+                                className="card-lift rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
                             >
-                                <h3 className="mb-4 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                                    {category}
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-(--color-accent)/10 text-sm font-black text-(--color-accent)">
+                                    {String(index + 1).padStart(2, "0")}
+                                </span>
+                                <p className="mt-5 text-xs font-bold tracking-[0.14em] text-(--color-accent) uppercase">
+                                    {pillar.sub}
+                                </p>
+                                <h3 className="mt-2 text-xl font-black text-(--color-foreground)">
+                                    {pillar.label}
                                 </h3>
-                                <ul className="space-y-2">
-                                    {items.map((item, i) => (
-                                        <li
-                                            key={i}
-                                            className="flex items-start gap-2.5 text-sm text-(--color-foreground)"
+                                <p className="mt-3 text-sm leading-7 text-(--color-muted)">
+                                    {pillar.description}
+                                </p>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {sectionEntries.length > 0 && (
+                <section
+                    className="mt-16 border-t border-(--color-border) pt-12"
+                    aria-labelledby="about-experience-title"
+                >
+                    <div className="mb-7">
+                        <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                            Evidence
+                        </p>
+                        <h2
+                            id="about-experience-title"
+                            className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
+                        >
+                            경험으로 증명한 일
+                        </h2>
+                    </div>
+                    <div className="tablet:grid-cols-2 grid gap-5">
+                        {sectionEntries.map(([category, items]) => {
+                            const presentation = sectionPresentation[
+                                category
+                            ] ?? {
+                                emoji: "📌",
+                                label: category,
+                            };
+                            return (
+                                <article
+                                    key={category}
+                                    className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--color-accent)/10 text-lg"
+                                            aria-hidden="true"
                                         >
-                                            <span
-                                                className="mt-0.5 shrink-0 leading-relaxed font-bold text-(--color-accent)"
-                                                aria-hidden="true"
+                                            {presentation.emoji}
+                                        </span>
+                                        <div>
+                                            <p className="text-xs font-bold tracking-[0.14em] text-(--color-accent) uppercase">
+                                                {category}
+                                            </p>
+                                            <h3 className="mt-1 text-lg font-bold text-(--color-foreground)">
+                                                {presentation.label}
+                                            </h3>
+                                        </div>
+                                    </div>
+                                    <ul className="mt-5 space-y-4">
+                                        {items.map((item, index) => (
+                                            <li
+                                                key={index}
+                                                className="flex gap-3 text-sm leading-7 text-(--color-foreground)"
                                             >
-                                                ✓
-                                            </span>
-                                            <span className="leading-relaxed whitespace-pre-line">
-                                                {item}
-                                            </span>
+                                                <span
+                                                    className="mt-2 h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
+                                                    aria-hidden="true"
+                                                />
+                                                <span>
+                                                    <HighlightText
+                                                        text={item}
+                                                    />
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </article>
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
+
+            {competencyEntries.length > 0 && (
+                <section
+                    className="mt-16 border-t border-(--color-border) pt-12"
+                    aria-labelledby="about-competencies-title"
+                >
+                    <div className="mb-7">
+                        <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
+                            Strengths
+                        </p>
+                        <h2
+                            id="about-competencies-title"
+                            className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
+                        >
+                            문제를 푸는 방식
+                        </h2>
+                    </div>
+                    <div className="tablet:grid-cols-2 grid gap-5">
+                        {competencyEntries.map(([category, items]) => (
+                            <article
+                                key={category}
+                                className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-6"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span
+                                        className="text-2xl"
+                                        aria-hidden="true"
+                                    >
+                                        {competencyPresentation[category] ??
+                                            "✨"}
+                                    </span>
+                                    <h3 className="text-lg font-black text-(--color-foreground)">
+                                        {category}
+                                    </h3>
+                                </div>
+                                <ul className="mt-5 space-y-3">
+                                    {items.map((item, index) => (
+                                        <li
+                                            key={index}
+                                            className="rounded-xl bg-(--color-surface-subtle) px-4 py-3 text-sm leading-7 text-(--color-foreground)"
+                                        >
+                                            <HighlightText text={item} />
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </article>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {/* 역량 키워드별 섹션 */}
-            {competencyEntries.length > 0 && (
-                <div className="mt-14 border-t border-(--color-border) pt-10">
-                    <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        Competencies
-                    </p>
-                    <h2 className="mb-7 text-2xl font-black tracking-tight text-(--color-foreground)">
-                        역량 키워드별 리스트
-                    </h2>
-                    <div className="space-y-6">
-                        {competencyEntries.map(([category, items]) => (
-                            <div key={category}>
-                                <h3 className="mb-3 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                                    {category}
-                                </h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {items.map((item, i) => (
-                                        <span
-                                            key={i}
-                                            className="rounded-lg bg-(--color-tag-bg) px-4 py-1.5 text-sm font-medium text-(--color-tag-fg)"
-                                        >
-                                            {item}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                </section>
             )}
         </article>
     );
