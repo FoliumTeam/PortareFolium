@@ -14,6 +14,19 @@ type PortfolioProjectCardProps = {
 const focusClass =
     "focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-surface) focus-visible:outline-none";
 
+const getProjectTypeBadge = (projectType: PortfolioProject["projectType"]) =>
+    projectType === "work"
+        ? {
+              label: "기업 프로젝트",
+              className:
+                  "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+          }
+        : {
+              label: "개인 프로젝트",
+              className:
+                  "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+          };
+
 export default function PortfolioProjectCard({
     project,
     priority = false,
@@ -23,6 +36,7 @@ export default function PortfolioProjectCard({
     const media = project.primaryMedia;
     const imageSource = media?.type === "video" ? media.poster : media?.src;
     const pitch = project.oneLinePitch || project.description;
+    const projectTypeBadge = getProjectTypeBadge(project.projectType);
 
     return (
         <article
@@ -59,6 +73,11 @@ export default function PortfolioProjectCard({
             </div>
 
             <div className="tablet:p-6 flex min-w-0 flex-1 flex-col p-5">
+                <span
+                    className={`mb-3 inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold ${projectTypeBadge.className}`}
+                >
+                    {projectTypeBadge.label}
+                </span>
                 <h3 className="text-xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     {project.title}
                 </h3>

@@ -14,6 +14,19 @@ import { ArrowUpRight, ExternalLinkIcon } from "lucide-react";
 const formatDateRange = (startDate?: string, endDate?: string): string =>
     `${startDate || ""} ~ ${endDate || "진행 중"}`;
 
+const getProjectTypeBadge = (projectType: PortfolioProject["projectType"]) =>
+    projectType === "work"
+        ? {
+              label: "기업 프로젝트",
+              className:
+                  "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+          }
+        : {
+              label: "개인 프로젝트",
+              className:
+                  "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+          };
+
 interface Props {
     projects: ResumeProject[];
     label?: string;
@@ -98,6 +111,9 @@ export default async function ProjectsSection({
                         const media = project.primaryMedia;
                         const thumbnailSource =
                             media?.type === "video" ? media.poster : media?.src;
+                        const projectTypeBadge = getProjectTypeBadge(
+                            project.projectType
+                        );
                         return (
                             <article
                                 key={project.slug}
@@ -124,9 +140,16 @@ export default async function ProjectsSection({
                                         </div>
                                     ) : null}
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
-                                            {project.title}
-                                        </h3>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span
+                                                className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ${projectTypeBadge.className}`}
+                                            >
+                                                {projectTypeBadge.label}
+                                            </span>
+                                            <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                                {project.title}
+                                            </h3>
+                                        </div>
                                         {summary ? (
                                             <p className="mt-1.5 text-base leading-relaxed text-(--color-muted)">
                                                 {summary}
