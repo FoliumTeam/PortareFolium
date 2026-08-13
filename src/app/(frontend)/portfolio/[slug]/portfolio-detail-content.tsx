@@ -22,6 +22,7 @@ import MermaidRenderer from "@/components/MermaidRenderer";
 import ImageLightbox from "@/components/ImageLightbox";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import PortfolioGallery from "@/components/portfolio/PortfolioGallery";
+import TechnicalStack from "@/components/portfolio/TechnicalStack";
 import { SkillBadge } from "@/components/resume/SkillBadge";
 
 export const revalidate = false;
@@ -203,14 +204,18 @@ export default async function PortfolioDetailContent({
                     >
                         사용 기술
                     </h2>
-                    <div
-                        className="mt-5 flex flex-wrap gap-2"
-                        aria-label="사용 기술"
-                    >
-                        {project.keywords.map((keyword) => (
-                            <SkillBadge key={keyword} name={keyword} />
-                        ))}
-                    </div>
+                    {project.caseStudyStyle === "web" ? (
+                        <TechnicalStack keywords={project.keywords} />
+                    ) : (
+                        <div
+                            className="mt-5 flex flex-wrap gap-2"
+                            aria-label="사용 기술"
+                        >
+                            {project.keywords.map((keyword) => (
+                                <SkillBadge key={keyword} name={keyword} />
+                            ))}
+                        </div>
+                    )}
                 </section>
             )}
 
