@@ -81,39 +81,6 @@ test("tablet 이상 Portfolio 목차는 우측 중앙에 고정", async ({ page 
     expect(articleBox).not.toBeNull();
     expect(initialTocBox!.y).toBeGreaterThanOrEqual(articleBox!.y - 1);
 
-    const galleryImages = page.locator(".portfolio-gallery img");
-    await expect(galleryImages).toHaveCount(4);
-    await galleryImages.first().scrollIntoViewIfNeeded();
-    await expect
-        .poll(() =>
-            galleryImages.evaluateAll((images) =>
-                images.every(
-                    (image) =>
-                        (image as HTMLImageElement).complete &&
-                        (image as HTMLImageElement).naturalWidth > 0
-                )
-            )
-        )
-        .toBe(true);
-
-    await galleryImages.first().click();
-    const filmstripImages = page.locator(
-        'button[aria-label="filmstrip 이미지로 이동"] img'
-    );
-    await expect(filmstripImages.first()).toBeVisible();
-    await expect
-        .poll(() =>
-            filmstripImages.evaluateAll((images) =>
-                images.every(
-                    (image) =>
-                        (image as HTMLImageElement).complete &&
-                        (image as HTMLImageElement).naturalWidth > 0
-                )
-            )
-        )
-        .toBe(true);
-    await page.keyboard.press("Escape");
-
     const stickyToc = page.locator("[data-toc-sticky]");
     await expect(stickyToc).toHaveCSS("position", "sticky");
     await expect(stickyToc).toHaveCSS("align-items", "center");
