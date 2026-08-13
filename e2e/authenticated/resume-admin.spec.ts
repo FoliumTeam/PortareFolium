@@ -34,19 +34,19 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
 
     await expect(
         projectsSection.getByRole("heading", {
-            name: "대표 프로젝트 / 프로젝트 (Projects)",
+            name: "대표 프로젝트",
+            exact: true,
         })
     ).toBeVisible();
     await expect(
         projectsSection.getByText(
-            "Web 이력서는 이 목록의 순서대로 최대 5건을 대표 프로젝트로 표시합니다. 드래그로 순서를 바꾸고, 각 프로젝트의 연결과 설명은 여기서 편집하세요."
+            "Portfolio의 Published 프로젝트를 직무 분야별로 최대 5건까지 선택합니다. 이 목록과 순서가 공개 이력서에 그대로 표시됩니다."
         )
     ).toBeVisible();
     await expect(
-        projectsSection
-            .locator("p")
-            .filter({ hasText: /\d{4}-\d{2}/ })
-            .first()
+        projectsSection.getByRole("heading", {
+            name: "선택된 대표 프로젝트",
+        })
     ).toBeVisible();
 
     const sectionTop = await projectsSection.evaluate(
