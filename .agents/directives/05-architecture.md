@@ -33,7 +33,7 @@
 - **DB 마이그레이션**: `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리. 서버 시작 시 자동 실행.
 - **컬러 스킴**: 21개 런타임 전환 가능. `data-color-scheme` attribute 기반, DB 저장 (localStorage 미사용).
 - **Admin 저장 바**: `AdminSaveBar.tsx` — `createPortal`로 `#admin-save-bar-slot`에 렌더링.
-- **페이지 레벨 ISR**: 모든 콘텐츠 페이지 `export const revalidate = false`. On-Demand `revalidatePath`로만 갱신.
+- **공개 경로 ISR**: recruiter 공개 경로는 `revalidate = 3600` 기반 정적 ISR 우선. `revalidate = false`는 캐시 정책 기본값이 아니며, 명시적 무기한 cache·무효화 요구가 있는 독립 경로에만 제한.
 
 ## Admin editability contract
 
@@ -42,6 +42,20 @@
 - section이 public layout에서 disabled이거나 content가 Draft·Unpublished 상태여도 관리자 편집 경로는 숨기지 않는다. 공개 여부와 편집 가능 여부를 분리한다.
 - 공개 화면과 관리자 editor는 같은 DB schema와 source of truth를 사용한다. 관리자 누락을 우회하기 위한 중복 data source를 만들지 않는다.
 - layout shell, 접근성 attribute, 공통 navigation처럼 content가 아닌 presentation code는 codebase에서 관리할 수 있다. 실제 공개 content를 임시 hardcode해야 하면 구현 전에 사용자 승인과 Admin 편집 경로 후속 계획이 필요하다.
+
+## Public route performance contract
+
+- 대상: recruiter가 열람하는 `/`, `/{jobField}`, `/{jobField}/resume`, `/{jobField}/portfolio`, `/{jobField}/blog`와 Published 상세 경로. Admin·API·인증 경로는 별도 security·runtime 계약 적용.
+- 공개 route의 build 표시는 `○` 또는 `●` 필수. 공개 경로에 `ƒ`가 남으면 원인·사용자 승인·대체 성능 측정 없이는 배포 불가.
+- 알려진 dynamic param은 상위 layout 또는 해당 page의 `generateStaticParams`로 build 시 생성. `jobField`와 `slug` 조합은 공개 DB 상태에서 완전 생성.
+- 공개 dynamic segment는 `revalidate = 3600`과 `dynamic = "force-static"` 우선. `dynamicParams = false`는 새 Published content의 runtime 생성이 필요 없는 경우에만 사용.
+- 공개 Server Component에서 `auth()`, `cookies()`, `headers()` 또는 관리자 세션 조회 금지. 관리자 전용 표시·조작은 client session 확인 또는 `/admin` 경계로 이동.
+- 공개 Supabase query는 요청 간 Data Cache 적용. `unstable_cache`는 모듈 레벨 함수·명시 key·`public-content` tag·1시간 revalidate 조합 사용. `React.cache`만으로 요청 간 cache를 대체하지 않음.
+- 공개 content를 변경하는 Admin action·MCP mutation은 관련 `revalidatePath`와 `revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max")` 동시 호출. 새 mutation 추가 시 적용 route·tag 단위 테스트 추가.
+- 목록·landing query는 화면에 필요한 column만 select하고, 독립 query는 `Promise.all`로 병렬화. 공개 목록에서 article body·대형 JSON을 기본 조회하지 않음.
+- Vercel Function Region은 Supabase Region과 동일 또는 최인접 위치 유지. 현재 production pair: Northeast Asia (Tokyo).
+- fork 기반 Vercel deployment에서는 upstream `main` push 뒤 fork 갱신·deployment 완료 뒤에만 production 결과 판정.
+- 공개 route 변경의 필수 검증: `pnpm build`에서 대상 route `○`·`●` 확인, 공개 Chromium runtime error 0개 확인, production에서 첫 요청 `PRERENDER` 또는 `MISS` 뒤 반복 요청 `HIT`와 public `Cache-Control` 확인.
 
 ## PDF Export (`data-pdf-block`) Convention
 
