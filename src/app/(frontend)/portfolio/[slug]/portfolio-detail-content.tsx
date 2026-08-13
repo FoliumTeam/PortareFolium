@@ -220,7 +220,7 @@ export default async function PortfolioDetailContent({
             )}
 
             <div
-                className="tablet:grid-cols-2 laptop:grid-cols-4 mt-10 grid min-w-0 grid-cols-1 gap-4"
+                className="mt-10 flex flex-wrap gap-4 [&>*]:min-w-[min(100%,15rem)] [&>*]:flex-1"
                 data-pdf-block
             >
                 {project.role && (
@@ -301,7 +301,7 @@ export default async function PortfolioDetailContent({
                     >
                         제가 맡은 일
                     </h2>
-                    <div className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-3">
+                    <div className="mt-5 flex flex-wrap gap-3 [&>*]:min-w-[min(100%,15rem)] [&>*]:flex-1">
                         {project.ownership.map((ownership) => (
                             <div
                                 key={ownership}
@@ -336,7 +336,7 @@ export default async function PortfolioDetailContent({
                     >
                         결과와 근거
                     </h2>
-                    <div className="tablet:grid-cols-3 mt-5 grid grid-cols-1 gap-3">
+                    <div className="mt-5 flex flex-wrap gap-3 [&>*]:min-w-[min(100%,15rem)] [&>*]:flex-1">
                         {project.outcomes.map((outcome) => (
                             <div
                                 key={outcome.result}
