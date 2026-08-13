@@ -32,23 +32,29 @@ const getCachedPost = unstable_cache(
 
 export const getPost = cache(getCachedPost);
 
-// request 단위 포트폴리오 아이템 조회 캐싱
+const getPortfolioItemUncached = async (slug: string) => {
+    if (!serverClient) return null;
+    const { data } = await serverClient
+        .from("portfolio_items")
+        .select("*")
+        .eq("slug", slug)
+        .eq("published", true)
+        .single();
+    return data;
+};
+
+// 배포 환경의 공개 포트폴리오 아이템 조회 캐싱
 const getCachedPortfolioItem = unstable_cache(
-    async (slug: string) => {
-        if (!serverClient) return null;
-        const { data } = await serverClient
-            .from("portfolio_items")
-            .select("*")
-            .eq("slug", slug)
-            .eq("published", true)
-            .single();
-        return data;
-    },
+    getPortfolioItemUncached,
     ["portfolio-item"],
     PUBLIC_CONTENT_CACHE_OPTIONS
 );
 
-export const getPortfolioItem = cache(getCachedPortfolioItem);
+export const getPortfolioItem = cache(
+    process.env.NODE_ENV === "development"
+        ? getPortfolioItemUncached
+        : getCachedPortfolioItem
+);
 
 // 전체 site_config 조회 캐싱 (root layout, frontend layout, 페이지 간 중복 제거)
 const getCachedSiteConfig = unstable_cache(

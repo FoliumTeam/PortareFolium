@@ -157,6 +157,10 @@ export default async function PortfolioDetailContent({
         ? ".portfolio-case-study-content"
         : ".portfolio-legacy-content";
     const dateRange = formatDateRange(project.startDate, project.endDate);
+    const goalItems = project.goal
+        .split(/\n+/)
+        .map((goal) => goal.trim())
+        .filter(Boolean);
 
     return (
         <div className="portfolio-case-study min-w-0">
@@ -281,9 +285,26 @@ export default async function PortfolioDetailContent({
                         프로젝트 목표
                     </h2>
                     <div className="mt-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
-                        <p className="leading-relaxed text-(--color-foreground)">
-                            {project.goal}
-                        </p>
+                        {goalItems.length > 1 ? (
+                            <ul className="space-y-3">
+                                {goalItems.map((goal) => (
+                                    <li
+                                        key={goal}
+                                        className="flex items-start gap-3 leading-relaxed text-(--color-foreground)"
+                                    >
+                                        <span
+                                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                            aria-hidden="true"
+                                        />
+                                        <span>{goal}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="leading-relaxed text-(--color-foreground)">
+                                {project.goal}
+                            </p>
+                        )}
                     </div>
                 </section>
             )}
@@ -303,7 +324,7 @@ export default async function PortfolioDetailContent({
                     >
                         제가 맡은 일
                     </h2>
-                    <div className="mt-5 flex flex-wrap gap-3 [&>*]:min-w-[min(100%,15rem)] [&>*]:flex-1">
+                    <div className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-3">
                         {project.ownership.map((ownership) => (
                             <div
                                 key={ownership}
