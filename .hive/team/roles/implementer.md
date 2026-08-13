@@ -11,7 +11,7 @@
     "role_id": "implementer",
     "schema_version": 1,
     "verification_duties": ["구현 범위와 실행한 검증 근거 제공"],
-    "write_scope": ["src/**", "e2e/**", "docs/**", ".hive/runs/**"],
+    "write_scope": ["src/**", "e2e/**", "docs/**", ".hive/runs/**"]
 }
 ---
 

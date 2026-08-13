@@ -11,7 +11,7 @@
     "role_id": "verifier",
     "schema_version": 1,
     "verification_duties": ["재현 가능한 evidence와 criterion 결과 기록"],
-    "write_scope": [".hive/runs/**"],
+    "write_scope": [".hive/runs/**"]
 }
 ---
 
