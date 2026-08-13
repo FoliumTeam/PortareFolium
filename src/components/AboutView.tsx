@@ -133,7 +133,7 @@ export default function AboutView({
                             </p>
                         )}
                         {data.descriptionSub && (
-                            <p className="tablet:text-base mt-3 max-w-3xl text-sm leading-7 text-(--color-muted)">
+                            <p className="mt-3 max-w-3xl text-base leading-7 text-(--color-muted)">
                                 {data.descriptionSub}
                             </p>
                         )}
@@ -197,7 +197,7 @@ export default function AboutView({
                         >
                             일하는 방식
                         </h2>
-                        <p className="mt-2 text-sm leading-6 text-(--color-muted)">
+                        <p className="mt-2 text-base leading-7 text-(--color-muted)">
                             경험을 구현과 운영으로 연결할 때 지키는 기준
                         </p>
                     </div>
@@ -216,7 +216,7 @@ export default function AboutView({
                                 <h3 className="mt-2 text-xl font-black text-(--color-foreground)">
                                     {pillar.label}
                                 </h3>
-                                <p className="mt-3 text-sm leading-7 text-(--color-muted)">
+                                <p className="mt-3 text-base leading-7 text-(--color-muted)">
                                     {pillar.description}
                                 </p>
                             </article>
@@ -274,7 +274,7 @@ export default function AboutView({
                                         {items.map((item, index) => (
                                             <li
                                                 key={index}
-                                                className="flex gap-3 text-sm leading-7 text-(--color-foreground)"
+                                                className="flex gap-3 text-base leading-7 text-(--color-foreground)"
                                             >
                                                 <span
                                                     className="mt-2 h-2 w-2 shrink-0 rounded-full bg-(--color-accent)"
@@ -333,7 +333,7 @@ export default function AboutView({
                                     {items.map((item, index) => (
                                         <li
                                             key={index}
-                                            className="rounded-xl bg-(--color-surface-subtle) px-4 py-3 text-sm leading-7 text-(--color-foreground)"
+                                            className="rounded-xl bg-(--color-surface-subtle) px-4 py-3 text-base leading-7 text-(--color-foreground)"
                                         >
                                             <HighlightText text={item} />
                                         </li>

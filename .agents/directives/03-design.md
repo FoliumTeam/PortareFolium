@@ -15,6 +15,7 @@
 - **ScrollArea max-height pattern**: When implementing a `ScrollArea` or any custom scrollable region, apply the max-height/height constraint to the actual scroll viewport as well as the outer container. Verify the rendered viewport has `scrollHeight > clientHeight` and that `scrollTop` can change before considering the scroll area complete. Do not rely on an outer `max-h-*` alone.
 - **Animations**: Use existing global animation utilities (`.animate-fade-in-up`, `.animate-fade-in`, `.stagger-1~5`, `.card-lift`, `accordion-down/up` in `global.css`). Scroll-reveal is intentionally NOT used — do not hide content to induce scrolling.
 - **Global CSS Utilities**: Use existing utilities like `no-focus` (removes focus ring), Shiki code block line numbering (CSS counter), exclusive-range breakpoints (`--mobile-only`, `--tablet-only`, `--laptop-only`, `--not-desktop`).
+- **본문 글자 크기**: 데스크톱 공개 페이지의 일반 본문·목록·근거·설명은 최소 `text-base`로 표시한다. `text-sm` 이하는 버튼 보조 문구, 날짜·상태·분류 레이블처럼 짧은 보조 정보에만 사용한다.
 
 ## shadcn/ui + Tailwind v4 token registration
 
