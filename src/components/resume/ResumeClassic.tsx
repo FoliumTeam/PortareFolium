@@ -1,6 +1,7 @@
-import type { Resume } from "@/types/resume";
-import type { CoreValue } from "@/types/about";
+import type { Resume, ResumeCoreCompetency } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
+import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
+import LanguagesSection from "@/components/resume/LanguagesSection";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
@@ -12,7 +13,7 @@ import {
 
 interface Props {
     resume: Resume;
-    coreCompetencies?: CoreValue[];
+    coreCompetencies?: ResumeCoreCompetency[];
     sectionLayout?: ResumeSectionLayout;
     portfolioBasePath?: string;
     activeJobField?: string;
@@ -81,11 +82,17 @@ export default async function ResumeClassic({
                                 <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
                                     {comp.title}
                                 </h3>
-                                {comp.description && (
+                                {comp.description && comp.markdown ? (
+                                    <div className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
+                                        <CoreCompetencyMarkdown
+                                            description={comp.description}
+                                        />
+                                    </div>
+                                ) : comp.description ? (
                                     <p className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
                                         {comp.description}
                                     </p>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -99,6 +106,15 @@ export default async function ResumeClassic({
             key="careerPhases"
             phases={resume.careerPhases?.entries ?? []}
             label={getLabel("careerPhases")}
+        />
+    );
+
+    const renderLanguages = () => (
+        <LanguagesSection
+            key="languages"
+            languages={resume.languages?.entries ?? []}
+            label={getLabel("languages")}
+            dataPdfBlock
         />
     );
 
@@ -401,11 +417,7 @@ export default async function ResumeClassic({
                     unknown
                 >[]
             ),
-        languages: () =>
-            renderGeneric(
-                "languages",
-                (resume.languages?.entries ?? []) as Record<string, unknown>[]
-            ),
+        languages: renderLanguages,
         interests: () =>
             renderGeneric(
                 "interests",

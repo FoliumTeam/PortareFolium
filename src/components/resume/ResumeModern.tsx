@@ -1,6 +1,8 @@
-import type { Resume } from "@/types/resume";
-import type { CoreValue } from "@/types/about";
+import type { Resume, ResumeCoreCompetency } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
+import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
+import EducationMetadata from "@/components/resume/EducationMetadata";
+import LanguagesSection from "@/components/resume/LanguagesSection";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
@@ -12,7 +14,7 @@ import {
 
 interface Props {
     resume: Resume;
-    coreCompetencies?: CoreValue[];
+    coreCompetencies?: ResumeCoreCompetency[];
     sectionLayout?: ResumeSectionLayout;
     activeJobField?: string;
     portfolioBasePath?: string;
@@ -84,11 +86,17 @@ export default async function ResumeModern({
                                 <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
                                     {comp.title}
                                 </h3>
-                                {comp.description && (
+                                {comp.description && comp.markdown ? (
+                                    <div className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
+                                        <CoreCompetencyMarkdown
+                                            description={comp.description}
+                                        />
+                                    </div>
+                                ) : comp.description ? (
                                     <p className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
                                         {comp.description}
                                     </p>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -285,8 +293,8 @@ export default async function ResumeModern({
                                 ) : null}
                             </h3>
                         ) : null}
-                        <p className="mt-1 text-sm font-medium text-(--color-muted)">
-                            {[
+                        <EducationMetadata
+                            items={[
                                 education.studyType,
                                 education.area,
                                 education.startDate || education.endDate
@@ -300,10 +308,8 @@ export default async function ResumeModern({
                                     : education.score
                                       ? `GPA ${education.score}`
                                       : null,
-                            ]
-                                .filter(Boolean)
-                                .join(" | ")}
-                        </p>
+                            ]}
+                        />
                         {education.courses && education.courses.length > 0 ? (
                             <div className="mt-2 text-sm leading-relaxed text-(--color-muted)">
                                 주요 과목: {education.courses.join(" · ")}
@@ -527,31 +533,12 @@ export default async function ResumeModern({
     );
 
     const renderLanguages = () => (
-        <section key="languages" className="mb-10" data-pdf-block>
-            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("languages")}
-            </h2>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-                {(resume.languages?.entries ?? []).map((lang, idx) => (
-                    <div
-                        key={idx}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
-                        data-pdf-block-item
-                    >
-                        {lang.language ? (
-                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
-                                {lang.language}
-                            </h3>
-                        ) : null}
-                        {lang.fluency ? (
-                            <div className="mb-0.5 text-base text-(--color-muted)">
-                                {lang.fluency}
-                            </div>
-                        ) : null}
-                    </div>
-                ))}
-            </div>
-        </section>
+        <LanguagesSection
+            key="languages"
+            languages={resume.languages?.entries ?? []}
+            label={getLabel("languages")}
+            dataPdfBlock
+        />
     );
 
     const renderInterests = () => (

@@ -77,6 +77,7 @@
         "cm6-theme-basic-dark": "^0.2.0",
         "cm6-theme-basic-light": "^0.2.0",
         "cmdk": "^1.1.1",
+        "countries-list": "^3.4.1",
         "html2canvas-pro": "^2.0.2",
         "jspdf": "^4.2.1",
         "katex": "^0.16.38",

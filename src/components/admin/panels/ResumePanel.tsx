@@ -26,6 +26,10 @@ import { Trash2 } from "lucide-react";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
 import ResumeLayoutEditor from "@/components/admin/panels/ResumeLayoutEditor";
 import {
+    getLanguageCountryCode,
+    getLanguageFlagSrc,
+} from "@/components/resume/LanguagesSection";
+import {
     DEFAULT_RESUME_LAYOUT,
     normalizeLayout,
     type ResumeSectionLayout,
@@ -1078,7 +1082,7 @@ export default function ResumePanel() {
                                         </div>
                                         <div>
                                             <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                설명
+                                                설명 (Markdown)
                                             </label>
                                             <textarea
                                                 value={comp.description}
@@ -1117,7 +1121,7 @@ export default function ResumePanel() {
                                                             : prev
                                                     )
                                                 }
-                                                placeholder="역할, 범위, 결과를 한두 문장으로 작성"
+                                                placeholder="**핵심 결과**를 먼저 쓰고, 빈 줄로 근거를 나누어 작성"
                                                 rows={3}
                                                 className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm leading-relaxed text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                             />
@@ -1180,6 +1184,7 @@ export default function ResumePanel() {
                                                           {
                                                               title: "",
                                                               description: "",
+                                                              markdown: true,
                                                               jobField:
                                                                   activeJobField ||
                                                                   undefined,
@@ -3772,6 +3777,38 @@ export default function ResumePanel() {
                                                     }}
                                                     placeholder="예: Native, Fluent, Intermediate"
                                                 />
+                                                <div className="tablet:col-span-2 flex min-h-11 items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm">
+                                                    {getLanguageFlagSrc(
+                                                        lang.language
+                                                    ) ? (
+                                                        <>
+                                                            <img
+                                                                src={
+                                                                    getLanguageFlagSrc(
+                                                                        lang.language
+                                                                    )!
+                                                                }
+                                                                alt={`${lang.language || "언어"} 국기 미리보기`}
+                                                                width={32}
+                                                                height={24}
+                                                                className="h-6 w-8 rounded-sm object-cover shadow-sm"
+                                                            />
+                                                            <span className="font-medium text-(--color-muted)">
+                                                                국기 자동 적용:{" "}
+                                                                {getLanguageCountryCode(
+                                                                    lang.language
+                                                                )?.toUpperCase()}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-(--color-muted)">
+                                                            언어명 또는 BCP 47
+                                                            언어 코드를 입력하면
+                                                            대표 국가 국기 자동
+                                                            적용
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex justify-end gap-2 pt-2">
                                                 <button

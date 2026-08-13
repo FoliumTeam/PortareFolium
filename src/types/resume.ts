@@ -199,6 +199,8 @@ export interface ResumeCareerPhase {
 export interface ResumeCoreCompetency {
     title: string;
     description: string;
+    // 설명의 Markdown 강조·줄바꿈 사용 여부
+    markdown?: boolean;
     jobField?: string | string[];
 }
 
