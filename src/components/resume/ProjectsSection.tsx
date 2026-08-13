@@ -18,6 +18,20 @@ interface Props {
     activeJobField?: string;
 }
 
+export const getCompactProjects = <T,>(
+    projects: ResumeProject[],
+    portfolioItemMap: Record<string, T>
+) =>
+    projects
+        .map((project) => ({
+            project,
+            portfolio: project.portfolioSlug
+                ? portfolioItemMap[project.portfolioSlug]
+                : undefined,
+        }))
+        .filter((entry) => entry.project.portfolioSlug && entry.portfolio)
+        .slice(0, 5);
+
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
 export default async function ProjectsSection({
     projects,
@@ -58,24 +72,7 @@ export default async function ProjectsSection({
     );
 
     if (compact) {
-        const compactProjects = projects
-            .map((project) => ({
-                project,
-                portfolio: project.portfolioSlug
-                    ? portfolioItemMap[project.portfolioSlug]
-                    : undefined,
-            }))
-            .filter((entry) => entry.project.portfolioSlug && entry.portfolio)
-            .sort((left, right) =>
-                (
-                    right.project.endDate ||
-                    right.project.startDate ||
-                    ""
-                ).localeCompare(
-                    left.project.endDate || left.project.startDate || ""
-                )
-            )
-            .slice(0, 5);
+        const compactProjects = getCompactProjects(projects, portfolioItemMap);
 
         return (
             <section className="mb-10" data-pdf-block>
@@ -85,7 +82,8 @@ export default async function ProjectsSection({
                             {label}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            최신 대표 프로젝트 5건을 요약했습니다.
+                            관리자에서 지정한 순서대로 대표 프로젝트 5건을
+                            요약했습니다.
                         </p>
                     </div>
                     <a

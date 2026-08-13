@@ -1934,10 +1934,9 @@ export default function ResumePanel() {
                             </button>
                         </div>
                         <p className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3 text-sm leading-relaxed text-(--color-muted)">
-                            Web 이력서는 Web Portfolio Featured 순서에서 최대
-                            3건을 대표 프로젝트로 표시합니다. 여기서는 이력서의
-                            프로젝트 연결과 설명을 편집하며, Featured 선정과
-                            순서는 Portfolio 관리자에서 관리합니다.
+                            Web 이력서는 이 목록의 순서대로 최대 5건을 대표
+                            프로젝트로 표시합니다. 드래그로 순서를 바꾸고, 각
+                            프로젝트의 연결과 설명은 여기서 편집하세요.
                         </p>
 
                         {/* 직무 분야 필터 */}
@@ -2596,6 +2595,16 @@ export default function ResumePanel() {
                                                             ? "..."
                                                             : ""}
                                                     </p>
+                                                    {(proj.startDate ||
+                                                        proj.endDate) && (
+                                                        <p className="mt-1 text-sm font-medium text-(--color-muted)">
+                                                            {proj.startDate ||
+                                                                "시작일 미정"}{" "}
+                                                            ~{" "}
+                                                            {proj.endDate ||
+                                                                "진행 중"}
+                                                        </p>
+                                                    )}
                                                     <div className="mt-1 flex flex-wrap gap-1">
                                                         <JobFieldBadges
                                                             value={

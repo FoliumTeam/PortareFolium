@@ -39,8 +39,14 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     ).toBeVisible();
     await expect(
         projectsSection.getByText(
-            "Web 이력서는 Web Portfolio Featured 순서에서 최대 3건을 대표 프로젝트로 표시합니다."
+            "Web 이력서는 이 목록의 순서대로 최대 5건을 대표 프로젝트로 표시합니다. 드래그로 순서를 바꾸고, 각 프로젝트의 연결과 설명은 여기서 편집하세요."
         )
+    ).toBeVisible();
+    await expect(
+        projectsSection
+            .locator("p")
+            .filter({ hasText: /\d{4}-\d{2}/ })
+            .first()
     ).toBeVisible();
 
     const sectionTop = await projectsSection.evaluate(
