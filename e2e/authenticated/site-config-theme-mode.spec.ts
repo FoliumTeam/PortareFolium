@@ -16,12 +16,17 @@ test("Admin Config에서 화면 모드 정책을 라이트 고정으로 저장",
         page.getByRole("heading", { name: "화면 모드" })
     ).toBeVisible();
     await expect(
-        page.getByRole("heading", { name: "직무 분야 관리" })
+        page.getByRole("heading", { name: "직무 분야 프로필" })
     ).toBeVisible();
     await expect(page.getByText("현재 활성 직무 분야")).toHaveCount(0);
     await expect(page.getByText("기본으로 선택")).toHaveCount(0);
     await expect(
         page.getByRole("button", { name: "수정" }).first()
+    ).toBeVisible();
+    await expect(page.getByText("Header 미리보기").first()).toBeVisible();
+    await page.getByRole("button", { name: "수정" }).first().click();
+    await expect(
+        page.getByRole("button", { name: "직무 분야 이모지 선택" })
     ).toBeVisible();
 
     const lightMode = page.getByRole("radio", { name: /라이트 고정/ });

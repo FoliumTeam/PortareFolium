@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AboutPageContent from "../../about/about-content";
 import { resolvePublicJobField } from "@/lib/public-job-field";
+import { getSeoMetadata } from "@/lib/seo-metadata";
 
 type PageProps = {
     params: Promise<{ jobField: string }>;
 };
 
-export const metadata: Metadata = {
-    title: "About me",
-    description: "직무별 개발자 소개",
-};
+export async function generateMetadata({
+    params,
+}: PageProps): Promise<Metadata> {
+    const jobField = await resolvePublicJobField((await params).jobField);
+    return getSeoMetadata(jobField?.id);
+}
 
 export default async function JobFieldAboutPage({ params }: PageProps) {
     const jobField = await resolvePublicJobField((await params).jobField);

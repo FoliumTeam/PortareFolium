@@ -8,12 +8,15 @@ import { Toaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
+import { getSeoMetadata } from "@/lib/seo-metadata";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-    title: "PortareFolium",
-    description: "포트폴리오 & 기술 블로그",
+export async function generateMetadata(): Promise<Metadata> {
+    return { ...BASE_METADATA, ...(await getSeoMetadata()) };
+}
+
+const BASE_METADATA: Metadata = {
     icons: { icon: "/favicon.svg" },
     verification: {
         google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,

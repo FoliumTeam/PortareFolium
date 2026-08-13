@@ -36,6 +36,14 @@ type SaveSiteConfigInput = {
         defaultTitle: string;
         defaultDescription: string;
         defaultOgImage: string;
+        jobFields: Record<
+            string,
+            {
+                title: string;
+                description: string;
+                ogImage: string;
+            }
+        >;
     };
     githubUrl: string;
 };
@@ -365,6 +373,18 @@ export async function saveSiteConfig(
                 value: {
                     default_description: input.seoConfig.defaultDescription,
                     default_og_image: input.seoConfig.defaultOgImage,
+                    job_fields: Object.fromEntries(
+                        Object.entries(input.seoConfig.jobFields).map(
+                            ([id, seo]) => [
+                                id,
+                                {
+                                    title: seo.title.trim(),
+                                    description: seo.description.trim(),
+                                    og_image: seo.ogImage.trim(),
+                                },
+                            ]
+                        )
+                    ),
                 },
             },
         ];

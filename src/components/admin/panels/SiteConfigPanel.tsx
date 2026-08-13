@@ -33,12 +33,24 @@ import {
 import { COLOR_SCHEMES, type ColorScheme } from "@/lib/color-schemes";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
+import {
+    getJobFieldSeoConfig,
+    normalizeSeoConfig,
+    type JobFieldSeoConfig,
+} from "@/lib/seo-config";
 
 type JobFieldItem = {
     id: string;
     name: string;
     emoji: string;
     headerTitle?: string;
+};
+
+type SeoFormState = {
+    defaultTitle: string;
+    defaultDescription: string;
+    defaultOgImage: string;
+    jobFields: Record<string, JobFieldSeoConfig>;
 };
 
 const THEME_MODE_OPTIONS: {
@@ -143,10 +155,11 @@ export default function SiteConfigPanel() {
     const schemeDropdownRef = useRef<HTMLDivElement>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [headerName, setHeaderName] = useState("");
-    const [seoConfig, setSeoConfig] = useState({
+    const [seoConfig, setSeoConfig] = useState<SeoFormState>({
         defaultTitle: "",
         defaultDescription: "포트폴리오 & 기술 블로그",
         defaultOgImage: "",
+        jobFields: {},
     });
     const [githubUrl, setGithubUrl] = useState("");
     const [saving, setSaving] = useState(false);
@@ -168,6 +181,8 @@ export default function SiteConfigPanel() {
     const [editingName, setEditingName] = useState("");
     const [editingHeaderTitle, setEditingHeaderTitle] = useState("");
     const [editingEmoji, setEditingEmoji] = useState("");
+    const [editingPickerOpen, setEditingPickerOpen] = useState(false);
+    const editingPickerRef = useRef<HTMLDivElement>(null);
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
@@ -215,15 +230,12 @@ export default function SiteConfigPanel() {
                         setSeoConfig((prev) => ({ ...prev, defaultTitle: v }));
                     }
                     if (row.key === "seo_config") {
+                        const seo = normalizeSeoConfig(v);
                         setSeoConfig((prev) => ({
                             ...prev,
-                            defaultDescription:
-                                (v as { default_description?: string })
-                                    .default_description ||
-                                "포트폴리오 & 기술 블로그",
-                            defaultOgImage:
-                                (v as { default_og_image?: string })
-                                    .default_og_image || "",
+                            defaultDescription: seo.defaultDescription,
+                            defaultOgImage: seo.defaultOgImage,
+                            jobFields: seo.jobFields,
                         }));
                     }
                     if (row.key === "github_url" && typeof v === "string") {
@@ -247,6 +259,21 @@ export default function SiteConfigPanel() {
         if (showPicker) document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, [showPicker]);
+
+    // 편집 emoji picker 외부 클릭 처리
+    useEffect(() => {
+        const handleClick = (event: MouseEvent) => {
+            if (
+                editingPickerRef.current &&
+                !editingPickerRef.current.contains(event.target as Node)
+            ) {
+                setEditingPickerOpen(false);
+            }
+        };
+        if (editingPickerOpen)
+            document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [editingPickerOpen]);
 
     // 스킴 드롭다운 외부 클릭 시 닫기
     useEffect(() => {
@@ -334,6 +361,36 @@ export default function SiteConfigPanel() {
         setJobFields(dedupeJobFieldsById(result.jobFields));
         setEditingJobFieldId(null);
         setStatus({ type: "success", msg: "직무 분야가 수정됐습니다" });
+    };
+
+    const updateJobFieldSeo = (
+        jobField: string,
+        key: keyof JobFieldSeoConfig,
+        value: string
+    ) => {
+        setSeoConfig((previous) => {
+            const current = getJobFieldSeoConfig(
+                {
+                    defaultDescription: previous.defaultDescription,
+                    defaultOgImage: previous.defaultOgImage,
+                    jobFields: previous.jobFields,
+                },
+                jobField,
+                {
+                    title: previous.defaultTitle,
+                    description: previous.defaultDescription,
+                    ogImage: previous.defaultOgImage,
+                }
+            );
+
+            return {
+                ...previous,
+                jobFields: {
+                    ...previous.jobFields,
+                    [jobField]: { ...current, [key]: value },
+                },
+            };
+        });
     };
 
     // site_config 저장
@@ -577,183 +634,321 @@ export default function SiteConfigPanel() {
                         title="직무 분야 프로필"
                         description="각 분야는 독립된 공개 URL과 Resume, Portfolio, Blog, About me 기준을 가집니다."
                     >
-                        <div className="laptop:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] grid gap-4">
-                            <div className="space-y-4">
+                        <div className="laptop:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] grid gap-4">
+                            <div className="space-y-3">
                                 {jobFields.length === 0 ? (
-                                    <div className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-5 py-8 text-sm text-(--color-muted)">
-                                        등록된 직무 분야가 없습니다
+                                    <div className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-5 py-10 text-center text-sm text-(--color-muted)">
+                                        아직 등록된 직무 분야가 없습니다
                                     </div>
                                 ) : (
-                                    <div className="tablet:grid-cols-2 grid gap-3">
+                                    <div className="space-y-3">
                                         {jobFields.map((field) => {
                                             const isEditing =
                                                 editingJobFieldId === field.id;
+                                            const headerTitle =
+                                                field.headerTitle ?? field.name;
 
                                             return (
-                                                <div
+                                                <article
                                                     key={field.id}
-                                                    className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                                    className={`relative rounded-2xl border transition-colors ${editingPickerOpen && isEditing ? "overflow-visible" : "overflow-hidden"} ${isEditing ? "border-(--color-accent) bg-(--color-accent)/6 ring-1 ring-(--color-accent)/20" : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/45"}`}
                                                 >
-                                                    <div className="flex items-start gap-3">
-                                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] bg-(--color-surface-subtle) text-2xl shadow-sm">
+                                                    <div className="tablet:p-5 flex items-start gap-4 p-4">
+                                                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--color-border) bg-(--color-surface) text-2xl shadow-sm">
                                                             {field.emoji}
                                                         </span>
                                                         <div className="min-w-0 flex-1">
-                                                            <p className="text-sm font-semibold text-(--color-foreground)">
-                                                                {field.name}
-                                                            </p>
-                                                            <p className="mt-1 font-mono text-xs text-(--color-muted)">
-                                                                {field.id}
-                                                            </p>
-                                                            <p className="mt-3 text-sm text-(--color-muted)">
-                                                                /{field.id}에서
-                                                                독립 공개 프로필
-                                                            </p>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <p className="text-base font-semibold text-(--color-foreground)">
+                                                                    {field.name}
+                                                                </p>
+                                                                <span className="rounded-full bg-green-500/12 px-2 py-0.5 text-xs font-semibold text-green-700 dark:text-green-400">
+                                                                    공개 프로필
+                                                                </span>
+                                                            </div>
                                                             <p className="mt-1 text-sm text-(--color-muted)">
-                                                                헤더 제목:{" "}
-                                                                {field.headerTitle ??
-                                                                    field.name}
+                                                                <code className="rounded-md bg-(--color-surface) px-1.5 py-0.5 font-mono text-xs text-(--color-foreground)">
+                                                                    /{field.id}
+                                                                </code>
+                                                                <span className="ml-2">
+                                                                    독립 공개
+                                                                    경로
+                                                                </span>
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex shrink-0 items-center gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="default"
+                                                                onClick={() => {
+                                                                    setEditingJobFieldId(
+                                                                        field.id
+                                                                    );
+                                                                    setEditingName(
+                                                                        field.name
+                                                                    );
+                                                                    setEditingHeaderTitle(
+                                                                        headerTitle
+                                                                    );
+                                                                    setEditingEmoji(
+                                                                        field.emoji
+                                                                    );
+                                                                    setEditingPickerOpen(
+                                                                        false
+                                                                    );
+                                                                }}
+                                                                disabled={
+                                                                    saving
+                                                                }
+                                                                className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
+                                                            >
+                                                                <Pencil
+                                                                    size={13}
+                                                                />
+                                                                수정
+                                                            </Button>
+                                                            <Button
+                                                                variant="default"
+                                                                size="sm"
+                                                                disabled={
+                                                                    saving
+                                                                }
+                                                                onClick={async () => {
+                                                                    const ok =
+                                                                        await confirm(
+                                                                            {
+                                                                                title: "직무 분야 삭제",
+                                                                                description: `"${field.name}" 직무 분야를 정말 삭제하시겠습니까?`,
+                                                                                confirmText:
+                                                                                    "삭제",
+                                                                                cancelText:
+                                                                                    "취소",
+                                                                                variant:
+                                                                                    "destructive",
+                                                                            }
+                                                                        );
+                                                                    if (!ok)
+                                                                        return;
+                                                                    handleDeleteJobField(
+                                                                        field.id
+                                                                    );
+                                                                }}
+                                                                className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
+                                                            >
+                                                                <Trash2
+                                                                    size={13}
+                                                                />
+                                                                삭제
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="tablet:grid-cols-2 grid gap-px border-y border-(--color-border) bg-(--color-border)">
+                                                        <div className="tablet:px-5 bg-(--color-surface) px-4 py-3">
+                                                            <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                                Header 미리보기
+                                                            </p>
+                                                            <p className="mt-1.5 text-sm font-semibold text-(--color-foreground)">
+                                                                [{" "}
+                                                                {headerName.trim() ||
+                                                                    "헤더 이름"}{" "}
+                                                                · {headerTitle}{" "}
+                                                                ]
+                                                            </p>
+                                                        </div>
+                                                        <div className="tablet:px-5 bg-(--color-surface) px-4 py-3">
+                                                            <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                                적용 범위
+                                                            </p>
+                                                            <p className="mt-1.5 text-sm text-(--color-muted)">
+                                                                Home · About ·
+                                                                Resume ·
+                                                                Portfolio · Blog
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-(--color-border) pt-3">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="secondary"
-                                                            onClick={() => {
-                                                                setEditingJobFieldId(
-                                                                    field.id
-                                                                );
-                                                                setEditingName(
-                                                                    field.name
-                                                                );
-                                                                setEditingHeaderTitle(
-                                                                    field.headerTitle ??
-                                                                        field.name
-                                                                );
-                                                                setEditingEmoji(
-                                                                    field.emoji
-                                                                );
-                                                            }}
-                                                            disabled={saving}
-                                                        >
-                                                            <Pencil size={13} />
-                                                            수정
-                                                        </Button>
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            disabled={saving}
-                                                            onClick={async () => {
-                                                                const ok =
-                                                                    await confirm(
-                                                                        {
-                                                                            title: "직무 분야 삭제",
-                                                                            description: `"${field.name}" 직무 분야를 정말 삭제하시겠습니까?`,
-                                                                            confirmText:
-                                                                                "삭제",
-                                                                            cancelText:
-                                                                                "취소",
-                                                                            variant:
-                                                                                "destructive",
-                                                                        }
-                                                                    );
-                                                                if (!ok) return;
-                                                                handleDeleteJobField(
-                                                                    field.id
-                                                                );
-                                                            }}
-                                                            className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
-                                                        >
-                                                            <Trash2 size={13} />
-                                                            삭제
-                                                        </Button>
-                                                    </div>
                                                     {isEditing && (
-                                                        <div className="tablet:grid-cols-[3rem_1fr_1fr_auto] mt-3 grid gap-2 border-t border-(--color-border) pt-3">
-                                                            <Input
-                                                                value={
-                                                                    editingEmoji
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditingEmoji(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                aria-label="직무 분야 이모지"
-                                                            />
-                                                            <Input
-                                                                value={
-                                                                    editingName
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditingName(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                aria-label="직무 분야 이름"
-                                                            />
-                                                            <Input
-                                                                value={
-                                                                    editingHeaderTitle
-                                                                }
-                                                                onChange={(
-                                                                    event
-                                                                ) =>
-                                                                    setEditingHeaderTitle(
-                                                                        event
-                                                                            .target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                aria-label="헤더 직무 제목"
-                                                                placeholder="게임 개발자"
-                                                            />
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    handleUpdateJobField(
-                                                                        field.id
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    saving ||
-                                                                    !editingName.trim() ||
-                                                                    !editingHeaderTitle.trim()
-                                                                }
-                                                            >
-                                                                저장
-                                                            </Button>
+                                                        <div className="tablet:p-5 space-y-4 bg-(--color-accent)/5 p-4">
+                                                            <div>
+                                                                <div>
+                                                                    <p className="text-sm font-semibold text-(--color-foreground)">
+                                                                        프로필
+                                                                        편집
+                                                                    </p>
+                                                                    <p className="mt-1 text-xs text-(--color-muted)">
+                                                                        Header
+                                                                        표시와
+                                                                        공개 URL
+                                                                        기준
+                                                                        정보
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="tablet:grid-cols-[5rem_minmax(0,1fr)_minmax(0,1fr)] grid gap-3">
+                                                                <div>
+                                                                    <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                                        Emoji
+                                                                    </Label>
+                                                                    <div
+                                                                        className="relative mt-2"
+                                                                        ref={
+                                                                            editingPickerRef
+                                                                        }
+                                                                    >
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setEditingPickerOpen(
+                                                                                    (
+                                                                                        open
+                                                                                    ) =>
+                                                                                        !open
+                                                                                )
+                                                                            }
+                                                                            aria-label="직무 분야 이모지 선택"
+                                                                            aria-expanded={
+                                                                                editingPickerOpen
+                                                                            }
+                                                                            className="flex h-10 w-full items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) text-xl transition-colors hover:border-(--color-accent)/50"
+                                                                        >
+                                                                            {
+                                                                                editingEmoji
+                                                                            }
+                                                                        </button>
+                                                                        {editingPickerOpen && (
+                                                                            <div className="absolute top-12 left-0 z-50">
+                                                                                <Picker
+                                                                                    data={
+                                                                                        data
+                                                                                    }
+                                                                                    onEmojiSelect={(emoji: {
+                                                                                        native: string;
+                                                                                    }) => {
+                                                                                        setEditingEmoji(
+                                                                                            emoji.native
+                                                                                        );
+                                                                                        setEditingPickerOpen(
+                                                                                            false
+                                                                                        );
+                                                                                    }}
+                                                                                    locale="ko"
+                                                                                    previewPosition="none"
+                                                                                    skinTonePosition="none"
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                                        프로필
+                                                                        이름
+                                                                    </Label>
+                                                                    <Input
+                                                                        value={
+                                                                            editingName
+                                                                        }
+                                                                        onChange={(
+                                                                            event
+                                                                        ) =>
+                                                                            setEditingName(
+                                                                                event
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        aria-label="직무 분야 이름"
+                                                                        className="mt-2 bg-(--color-surface)"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                                        Header
+                                                                        제목
+                                                                    </Label>
+                                                                    <Input
+                                                                        value={
+                                                                            editingHeaderTitle
+                                                                        }
+                                                                        onChange={(
+                                                                            event
+                                                                        ) =>
+                                                                            setEditingHeaderTitle(
+                                                                                event
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        aria-label="헤더 직무 제목"
+                                                                        placeholder="게임 개발자"
+                                                                        className="mt-2 bg-(--color-surface)"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="secondary"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        setEditingJobFieldId(
+                                                                            null
+                                                                        );
+                                                                        setEditingPickerOpen(
+                                                                            false
+                                                                        );
+                                                                    }}
+                                                                    disabled={
+                                                                        saving
+                                                                    }
+                                                                >
+                                                                    취소
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handleUpdateJobField(
+                                                                            field.id
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        saving ||
+                                                                        !editingName.trim() ||
+                                                                        !editingHeaderTitle.trim()
+                                                                    }
+                                                                    className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
+                                                                >
+                                                                    저장
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     )}
-                                                </div>
+                                                </article>
                                             );
                                         })}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-5">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                                        새 직무 분야 추가
-                                    </p>
-                                    <p className="text-sm text-(--color-muted)">
-                                        새 이름과 emoji를 정한 뒤 필요하면 기존
-                                        분야를 상속해서 시작합니다.
-                                    </p>
+                            <aside className="tablet:p-6 h-fit rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-5">
+                                <div className="flex items-start gap-3">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-(--color-accent) text-white">
+                                        <Plus className="h-5 w-5" />
+                                    </span>
+                                    <div>
+                                        <p className="text-base font-semibold text-(--color-foreground)">
+                                            새 프로필
+                                        </p>
+                                        <p className="mt-1 text-sm leading-6 text-(--color-muted)">
+                                            이름과 Header 제목을 정한 뒤 기존
+                                            분야의 콘텐츠를 선택적으로
+                                            상속합니다.
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="mt-4 space-y-3">
+                                <div className="mt-6 space-y-4">
                                     <div className="flex items-center gap-3">
                                         <div
                                             className="relative"
@@ -764,7 +959,7 @@ export default function SiteConfigPanel() {
                                                 onClick={() =>
                                                     setShowPicker((v) => !v)
                                                 }
-                                                className="flex h-11 w-11 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface-subtle) text-2xl transition-colors hover:border-(--color-accent)/50"
+                                                className="flex h-12 w-12 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) text-2xl transition-colors hover:border-(--color-accent)/50"
                                             >
                                                 {newEmoji}
                                             </button>
@@ -789,38 +984,48 @@ export default function SiteConfigPanel() {
                                                 </div>
                                             )}
                                         </div>
+                                        <div className="min-w-0 flex-1">
+                                            <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                프로필 이름
+                                            </Label>
+                                            <Input
+                                                value={newName}
+                                                onChange={(e) =>
+                                                    setNewName(e.target.value)
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter")
+                                                        handleAddJobField();
+                                                }}
+                                                placeholder="직무 분야 이름"
+                                                className="mt-2 border-(--color-border) bg-(--color-surface)"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                            Header 제목
+                                        </Label>
                                         <Input
-                                            value={newName}
-                                            onChange={(e) =>
-                                                setNewName(e.target.value)
+                                            value={newHeaderTitle}
+                                            onChange={(event) =>
+                                                setNewHeaderTitle(
+                                                    event.target.value
+                                                )
                                             }
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter")
+                                            onKeyDown={(event) => {
+                                                if (event.key === "Enter")
                                                     handleAddJobField();
                                             }}
-                                            placeholder="직무 분야 이름"
-                                            className="flex-1 border-(--color-border)"
+                                            aria-label="새 직무 분야 헤더 제목"
+                                            placeholder="예: 게임 개발자"
+                                            className="mt-2 border-(--color-border) bg-(--color-surface)"
                                         />
                                     </div>
-                                    <Input
-                                        value={newHeaderTitle}
-                                        onChange={(event) =>
-                                            setNewHeaderTitle(
-                                                event.target.value
-                                            )
-                                        }
-                                        onKeyDown={(event) => {
-                                            if (event.key === "Enter")
-                                                handleAddJobField();
-                                        }}
-                                        aria-label="새 직무 분야 헤더 제목"
-                                        placeholder="헤더 직무 제목 (예: 게임 개발자)"
-                                        className="border-(--color-border)"
-                                    />
 
                                     {jobFields.length > 0 && (
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-(--color-muted)">
+                                        <div>
+                                            <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
                                                 상속 시작점
                                             </Label>
                                             <select
@@ -830,7 +1035,7 @@ export default function SiteConfigPanel() {
                                                         e.target.value
                                                     )
                                                 }
-                                                className="h-11 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                                                className="mt-2 h-11 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
                                             >
                                                 <option
                                                     value=""
@@ -858,21 +1063,24 @@ export default function SiteConfigPanel() {
                                             !newName.trim() ||
                                             !newHeaderTitle.trim()
                                         }
-                                        className="w-full bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                                        className="w-full bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
-                                        추가
+                                        프로필 추가
                                     </Button>
                                 </div>
-                            </div>
+                            </aside>
                         </div>
                     </ConfigSection>
 
                     <ConfigSection
                         Icon={Search}
-                        title="검색·공유 기본값"
-                        description="개별 포스트나 Portfolio에 별도 값이 없을 때 사용할 검색·공유 정보입니다."
+                        title="SEO 기본값"
+                        description="공통 기본값과 직무 분야별 검색·공유 metadata를 관리합니다. 직무 분야 값은 해당 공개 경로 전체에 우선 적용됩니다."
                     >
+                        <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                            공통 기본값
+                        </p>
                         <div className="tablet:grid-cols-2 grid gap-3">
                             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                                 <Label className="text-sm font-semibold text-(--color-foreground)">
@@ -935,6 +1143,122 @@ export default function SiteConfigPanel() {
                                 />
                             </div>
                         </div>
+                        {jobFields.length > 0 && (
+                            <div className="space-y-4 border-t border-(--color-border) pt-5">
+                                <div>
+                                    <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                        직무 분야별 SEO
+                                    </p>
+                                    <p className="mt-1 text-sm text-(--color-muted)">
+                                        비워 둔 값은 공통 기본값을 사용합니다.
+                                    </p>
+                                </div>
+                                <div className="space-y-3">
+                                    {jobFields.map((field) => {
+                                        const fieldSeo = getJobFieldSeoConfig(
+                                            {
+                                                defaultDescription:
+                                                    seoConfig.defaultDescription,
+                                                defaultOgImage:
+                                                    seoConfig.defaultOgImage,
+                                                jobFields: seoConfig.jobFields,
+                                            },
+                                            field.id,
+                                            {
+                                                title: seoConfig.defaultTitle,
+                                                description:
+                                                    seoConfig.defaultDescription,
+                                                ogImage:
+                                                    seoConfig.defaultOgImage,
+                                            }
+                                        );
+
+                                        return (
+                                            <div
+                                                key={field.id}
+                                                className="tablet:p-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) text-xl">
+                                                        {field.emoji}
+                                                    </span>
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-(--color-foreground)">
+                                                            {field.name} SEO
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-(--color-muted)">
+                                                            /{field.id} 공개
+                                                            경로 전체
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="tablet:grid-cols-2 mt-4 grid gap-3">
+                                                    <div>
+                                                        <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                            제목
+                                                        </Label>
+                                                        <Input
+                                                            value={
+                                                                fieldSeo.title
+                                                            }
+                                                            onChange={(event) =>
+                                                                updateJobFieldSeo(
+                                                                    field.id,
+                                                                    "title",
+                                                                    event.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            className="mt-2 bg-(--color-surface)"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                            OG 이미지 URL
+                                                        </Label>
+                                                        <Input
+                                                            value={
+                                                                fieldSeo.ogImage
+                                                            }
+                                                            onChange={(event) =>
+                                                                updateJobFieldSeo(
+                                                                    field.id,
+                                                                    "ogImage",
+                                                                    event.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            placeholder="https://..."
+                                                            className="mt-2 bg-(--color-surface)"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3">
+                                                    <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
+                                                        설명
+                                                    </Label>
+                                                    <textarea
+                                                        value={
+                                                            fieldSeo.description
+                                                        }
+                                                        onChange={(event) =>
+                                                            updateJobFieldSeo(
+                                                                field.id,
+                                                                "description",
+                                                                event.target
+                                                                    .value
+                                                            )
+                                                        }
+                                                        rows={3}
+                                                        className="mt-2 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </ConfigSection>
 
                     {/* Sticky 저장 바 */}
