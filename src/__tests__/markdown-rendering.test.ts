@@ -10,4 +10,13 @@ describe("Markdown 렌더링", () => {
         expect(html).toContain("1~2시간에서 1~2분");
         expect(html).not.toContain("<del>");
     }, 15_000);
+
+    it("목록 문장 안의 공백·가운뎃점을 포함한 강조를 렌더링한다", async () => {
+        const html = await renderMarkdown(
+            "- 최대 5시간 분량 통행배정 **4분 이내·실패율 0%**로 안정화"
+        );
+
+        expect(html).toContain("<strong>4분 이내·실패율 0%</strong>");
+        expect(html).not.toContain("**4분 이내·실패율 0%**");
+    }, 15_000);
 });

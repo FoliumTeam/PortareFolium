@@ -133,11 +133,27 @@ function escapeStrayCurlyBraces(chunk: string): string {
         .join("\n");
 }
 
+// MDX는 강조 범위의 끝이 %, ) 같은 문장 부호일 때 **를 일반 문자로 남길 수 있음
+// 인라인 코드 바깥의 해당 범위만 HTML strong 태그로 보정
+function normalizePunctuationTerminatedStrong(chunk: string): string {
+    return chunk
+        .split(/(`[^`\n]*`)/g)
+        .map((part, index) =>
+            index % 2 === 1
+                ? part
+                : part.replace(
+                      /\*\*([^*\n]*[\p{P}\p{S}])\*\*/gu,
+                      "<strong>$1</strong>"
+                  )
+        )
+        .join("");
+}
+
 // 모듈 레벨 선언 — slug + content가 실제 cache key의 일부로 포함됨
 // 클로저 방식(매 호출마다 새 함수 생성)은 content가 key에서 누락되어 stale 결과를 서빙
 const _renderCached = unstable_cache(
     async (_slug: string, content: string) => renderMarkdown(content),
-    ["mdx-html"],
+    ["mdx-html-v2"],
     { revalidate: false }
 );
 
@@ -153,6 +169,7 @@ export async function renderMarkdown(content: string): Promise<string> {
     // JSX 태그 내부 \[ \] escape 복원 (예외 경로로 DB에 오염된 content 방어)
     let mdx = unescapeJsxBrackets(content);
     mdx = directiveToJsx(mdx);
+    mdx = transformOutsideCodeBlocks(mdx, normalizePunctuationTerminatedStrong);
     mdx = transformOutsideCodeBlocks(mdx, normalizeKTableMdxHtml);
     mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
     try {
