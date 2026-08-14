@@ -305,31 +305,35 @@ export default async function HomePageContent({
                             핵심 역량
                         </h2>
                     </div>
-                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
+                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                         {coreCompetencies.map((comp, idx) => (
                             <div
                                 key={idx}
                                 className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
                             >
-                                <div className="mb-3 flex items-center gap-3">
-                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--color-accent)/10 text-sm font-(--font-display) font-bold text-(--color-accent)">
+                                <div className="flex items-start gap-4">
+                                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-accent)/12 text-base font-black text-(--color-accent)">
                                         {String(idx + 1).padStart(2, "0")}
                                     </span>
-                                    <h3 className="text-lg font-(--font-display) font-bold text-(--color-foreground)">
-                                        {comp.title}
-                                    </h3>
-                                </div>
-                                {comp.markdown ? (
-                                    <div className="text-base leading-relaxed text-(--color-muted)">
-                                        <CoreCompetencyMarkdown
-                                            description={comp.description}
-                                        />
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
+                                            {comp.title}
+                                        </h3>
+                                        {comp.markdown ? (
+                                            <div className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
+                                                <CoreCompetencyMarkdown
+                                                    description={
+                                                        comp.description
+                                                    }
+                                                />
+                                            </div>
+                                        ) : (
+                                            <p className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
+                                                {comp.description}
+                                            </p>
+                                        )}
                                     </div>
-                                ) : (
-                                    <p className="text-base leading-relaxed text-(--color-muted)">
-                                        {comp.description}
-                                    </p>
-                                )}
+                                </div>
                             </div>
                         ))}
                     </div>
