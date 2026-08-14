@@ -23,5 +23,8 @@ describe("Portfolio 사례 표현", () => {
         expect(html).toContain("관리 범위");
         expect(html).toContain("STEP");
         expect(html).toContain("01");
+        expect(html).toContain("!text-white");
+        expect(html).toContain("list-none");
+        expect(html).toContain("text-base font-extrabold");
     });
 });

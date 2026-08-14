@@ -161,7 +161,7 @@ function normalizePunctuationTerminatedStrong(chunk: string): string {
 // 클로저 방식(매 호출마다 새 함수 생성)은 content가 key에서 누락되어 stale 결과를 서빙
 const _renderCached = unstable_cache(
     async (_slug: string, content: string) => renderMarkdown(content),
-    ["mdx-html-v2"],
+    ["mdx-html-v4"],
     { revalidate: false }
 );
 
@@ -170,7 +170,9 @@ export function getCachedMarkdown(
     slug: string,
     content: string
 ): Promise<string> {
-    return _renderCached(slug, content);
+    return process.env.NODE_ENV === "development"
+        ? renderMarkdown(content)
+        : _renderCached(slug, content);
 }
 
 export async function renderMarkdown(content: string): Promise<string> {

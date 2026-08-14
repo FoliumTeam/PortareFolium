@@ -115,9 +115,7 @@ const BoundaryList = ({
     >
         <h3
             className={`text-xl font-bold ${
-                tone === "accent"
-                    ? "text-(--color-on-accent)"
-                    : "text-(--color-foreground)"
+                tone === "accent" ? "!text-white" : "text-(--color-foreground)"
             }`}
         >
             {title}
@@ -169,7 +167,7 @@ export function PortfolioFlow({ steps: rawSteps }: PortfolioFlowProps) {
 
     return (
         <ol
-            className="tablet:grid-cols-2 laptop:grid-cols-4 my-8 grid gap-3"
+            className="tablet:grid-cols-2 laptop:grid-cols-4 my-8 grid list-none gap-3 p-0"
             data-pdf-block
         >
             {steps.map((step, index) => (
@@ -178,7 +176,7 @@ export function PortfolioFlow({ steps: rawSteps }: PortfolioFlowProps) {
                     className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-4"
                     data-pdf-block-item
                 >
-                    <p className="text-xs font-bold tracking-[0.14em] text-(--color-accent)">
+                    <p className="text-base font-extrabold tracking-[0.12em] text-(--color-accent)">
                         STEP {String(index + 1).padStart(2, "0")}
                     </p>
                     <h3 className="mt-3 text-lg font-bold text-(--color-foreground)">
