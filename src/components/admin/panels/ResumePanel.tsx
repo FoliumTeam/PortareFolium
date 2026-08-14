@@ -1242,9 +1242,58 @@ export default function ResumePanel() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                설명 (Markdown)
-                                            </label>
+                                            <div className="mb-1 flex items-center justify-between gap-3">
+                                                <label className="block text-xs font-medium text-(--color-muted)">
+                                                    설명
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    aria-pressed={
+                                                        comp.markdown !== false
+                                                    }
+                                                    onClick={() =>
+                                                        setResumeData((prev) =>
+                                                            prev
+                                                                ? {
+                                                                      ...prev,
+                                                                      coreCompetencies:
+                                                                          {
+                                                                              ...prev.coreCompetencies,
+                                                                              entries:
+                                                                                  (
+                                                                                      prev
+                                                                                          .coreCompetencies
+                                                                                          ?.entries ??
+                                                                                      []
+                                                                                  ).map(
+                                                                                      (
+                                                                                          c,
+                                                                                          i
+                                                                                      ) =>
+                                                                                          i ===
+                                                                                          idx
+                                                                                              ? {
+                                                                                                    ...c,
+                                                                                                    markdown:
+                                                                                                        c.markdown ===
+                                                                                                        false,
+                                                                                                }
+                                                                                              : c
+                                                                                  ),
+                                                                          },
+                                                                  }
+                                                                : prev
+                                                        )
+                                                    }
+                                                    className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                                                        comp.markdown !== false
+                                                            ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                            : "border border-(--color-border) text-(--color-muted)"
+                                                    }`}
+                                                >
+                                                    Markdown
+                                                </button>
+                                            </div>
                                             <textarea
                                                 value={comp.description}
                                                 onChange={(e) =>
@@ -1282,7 +1331,11 @@ export default function ResumePanel() {
                                                             : prev
                                                     )
                                                 }
-                                                placeholder="**핵심 결과**를 먼저 쓰고, 빈 줄로 근거를 나누어 작성"
+                                                placeholder={
+                                                    comp.markdown !== false
+                                                        ? "**핵심 결과**를 먼저 쓰고, 빈 줄로 근거를 나누어 작성"
+                                                        : "핵심 역량 설명"
+                                                }
                                                 rows={3}
                                                 className="w-full resize-y rounded-lg border border-(--color-border) bg-transparent px-3 py-2 text-sm leading-relaxed text-(--color-foreground) placeholder-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                                             />

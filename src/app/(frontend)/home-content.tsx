@@ -4,6 +4,7 @@ import { formatPubDateKST } from "@/lib/blog";
 import type { Metadata } from "next";
 import LandingHero from "@/components/LandingHeroSwitcher";
 import PortfolioProjectGrid from "@/components/portfolio/PortfolioProjectGrid";
+import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import {
     groupPortfolioProjects,
     matchesPortfolioJobField,
@@ -89,7 +90,11 @@ export default async function HomePageContent({
     let siteName = "";
     let profileImage: string | undefined;
     let workItems: WorkItem[] = [];
-    let coreCompetencies: { title: string; description: string }[] = [];
+    let coreCompetencies: {
+        title: string;
+        description: string;
+        markdown: boolean;
+    }[] = [];
 
     if (serverClient) {
         const [aboutRes, siteRes, resumeRes] = await Promise.all([
@@ -120,12 +125,14 @@ export default async function HomePageContent({
                           entries?: {
                               title?: string;
                               description?: string;
+                              markdown?: boolean;
                               jobField?: string | string[];
                           }[];
                       }
                     | {
                           title?: string;
                           description?: string;
+                          markdown?: boolean;
                           jobField?: string | string[];
                       }[];
             };
@@ -157,6 +164,7 @@ export default async function HomePageContent({
                           {
                               title: entry.title.trim(),
                               description: entry.description.trim(),
+                              markdown: entry.markdown !== false,
                           },
                       ]
                     : []
@@ -311,9 +319,17 @@ export default async function HomePageContent({
                                         {comp.title}
                                     </h3>
                                 </div>
-                                <p className="text-sm leading-relaxed text-(--color-muted)">
-                                    {comp.description}
-                                </p>
+                                {comp.markdown ? (
+                                    <div className="text-base leading-relaxed text-(--color-muted)">
+                                        <CoreCompetencyMarkdown
+                                            description={comp.description}
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="text-base leading-relaxed text-(--color-muted)">
+                                        {comp.description}
+                                    </p>
+                                )}
                             </div>
                         ))}
                     </div>

@@ -65,7 +65,7 @@ export default function ResumeModernPreview({
                                 <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
                                     {comp.title}
                                 </h3>
-                                {comp.description && comp.markdown ? (
+                                {comp.description && comp.markdown !== false ? (
                                     <div className="mt-3 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-muted)">
                                         <CoreCompetencyMarkdown
                                             description={comp.description}
