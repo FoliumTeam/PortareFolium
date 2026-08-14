@@ -39,7 +39,15 @@ interface EditorToolbarProps {
     onImageUpload?: () => void;
     sourceMode?: boolean;
     onSourceToggle?: () => void;
+    showcaseTemplates?: EditorShowcaseTemplate[];
+    onShowcaseTemplateInsert?: (template: string) => void;
 }
+
+export type EditorShowcaseTemplate = {
+    label: string;
+    description: string;
+    content: string;
+};
 
 function ToolbarTooltip({
     label,
@@ -294,6 +302,67 @@ function AccordionInsert({ editor }: { editor: Editor }) {
     );
 }
 
+function ShowcaseTemplateInsert({
+    templates,
+    onInsert,
+}: {
+    templates: EditorShowcaseTemplate[];
+    onInsert: (template: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        if (open) document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [open]);
+
+    return (
+        <div ref={ref} className="relative">
+            <ToolbarTooltip label="사례 표현 삽입">
+                <button
+                    type="button"
+                    onClick={() => setOpen((current) => !current)}
+                    aria-label="사례 표현 삽입"
+                    className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                >
+                    ▦
+                </button>
+            </ToolbarTooltip>
+            {open && (
+                <div className="absolute top-full right-0 z-50 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                    <p className="px-2 pt-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                        소스 편집으로 추가 후 미리보기
+                    </p>
+                    {templates.map((template) => (
+                        <button
+                            key={template.label}
+                            type="button"
+                            onClick={() => {
+                                onInsert(template.content);
+                                setOpen(false);
+                            }}
+                            className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        >
+                            <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {template.label}
+                            </span>
+                            <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                {template.description}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function EditorToolbar({
     editor,
     isFullscreen,
@@ -301,6 +370,8 @@ export default function EditorToolbar({
     onImageUpload,
     sourceMode,
     onSourceToggle,
+    showcaseTemplates = [],
+    onShowcaseTemplateInsert,
 }: EditorToolbarProps) {
     // editor가 없으면 렌더 생략
     if (!editor) return null;
@@ -379,6 +450,13 @@ export default function EditorToolbar({
                     <YoutubeInput editor={editor} />
                     <LatexInput editor={editor} />
                     <AccordionInsert editor={editor} />
+                    {onShowcaseTemplateInsert &&
+                        showcaseTemplates.length > 0 && (
+                            <ShowcaseTemplateInsert
+                                templates={showcaseTemplates}
+                                onInsert={onShowcaseTemplateInsert}
+                            />
+                        )}
                 </ToolbarGroup>
 
                 <Spacer />

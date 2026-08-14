@@ -343,6 +343,23 @@ export default function MetadataSheet(props: MetadataSheetProps) {
 
                                 {type === "portfolio" && (
                                     <FieldBlock
+                                        label="기술 태그"
+                                        helper="쉼표로 구분해 입력하며 공개 카드와 기술 스택에 반영됩니다."
+                                    >
+                                        <input
+                                            type="text"
+                                            value={form.tags}
+                                            onChange={(e) =>
+                                                onChange("tags", e.target.value)
+                                            }
+                                            placeholder="예: Rust, CLI, SQLite"
+                                            className={inputClass}
+                                        />
+                                    </FieldBlock>
+                                )}
+
+                                {type === "portfolio" && (
+                                    <FieldBlock
                                         label="표시 순서"
                                         helper="Selected와 Other 그룹 안에서 낮은 숫자가 먼저 표시됩니다."
                                     >

@@ -17,6 +17,11 @@ import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import { normalizeKTableMdxHtml } from "@/lib/mdx-safe-html";
 import MarkdownImage from "@/components/MarkdownImage";
 import ImageGroup from "@/components/ImageGroup";
+import {
+    PortfolioBoundary,
+    PortfolioFeatureGrid,
+    PortfolioFlow,
+} from "@/components/portfolio/PortfolioShowcaseBlocks";
 
 function YouTube({ id }: { id?: string }) {
     if (!id) return null;
@@ -117,6 +122,9 @@ const components = {
     // 콘텐츠 내 <Image> JSX 사용 시 next/image 대신 안전한 컴포넌트로 대체
     Image: MarkdownImage,
     ImageGroup,
+    PortfolioFeatureGrid,
+    PortfolioBoundary,
+    PortfolioFlow,
 };
 
 // 코드 블록 밖의 홀로 남은 { } 를 라인 단위로 이스케이프

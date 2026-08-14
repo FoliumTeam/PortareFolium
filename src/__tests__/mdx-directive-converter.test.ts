@@ -60,6 +60,22 @@ describe("jsxToDirective", () => {
         });
     });
 
+    describe("Portfolio 사례 표현 변환", () => {
+        it("PortfolioFeatureGrid를 directive로 변환", () => {
+            const input = `<PortfolioFeatureGrid items='[{"title":"구조","description":"설명"}]' />`;
+            expect(jsxToDirective(input)).toContain(
+                `::portfolio-feature-grid[]{items='[{"title":"구조","description":"설명"}]'}`
+            );
+        });
+
+        it("PortfolioBoundary와 PortfolioFlow를 directive로 변환", () => {
+            const input = `<PortfolioBoundary owned='["관리"]' outside='["외부"]' />\n<PortfolioFlow steps='[{"title":"검증","description":"근거"}]' />`;
+            const result = jsxToDirective(input);
+            expect(result).toContain("::portfolio-boundary[]");
+            expect(result).toContain("::portfolio-flow[]");
+        });
+    });
+
     describe("코드 블록 보호", () => {
         it("코드 블록 내부 LaTeX($$...$$)는 변환하지 않음", () => {
             const input = "```\n$$E=mc^2$$\n```\nOutside $$x+y$$";
@@ -123,6 +139,26 @@ describe("directiveToJsx", () => {
         });
     });
 
+    describe("Portfolio 사례 표현 변환", () => {
+        it("PortfolioFeatureGrid를 JSX로 변환", () => {
+            const input = `::portfolio-feature-grid[]{items='[{"title":"구조","description":"설명"}]'}`;
+            expect(directiveToJsx(input)).toContain(
+                `<PortfolioFeatureGrid items='[{"title":"구조","description":"설명"}]' />`
+            );
+        });
+
+        it("PortfolioBoundary와 PortfolioFlow를 JSX로 변환", () => {
+            const input = `::portfolio-boundary[]{owned='["관리"]' outside='["외부"]'}\n::portfolio-flow[]{steps='[{"title":"검증","description":"근거"}]'}`;
+            const result = directiveToJsx(input);
+            expect(result).toContain(
+                `<PortfolioBoundary owned='["관리"]' outside='["외부"]' />`
+            );
+            expect(result).toContain(
+                `<PortfolioFlow steps='[{"title":"검증","description":"근거"}]' />`
+            );
+        });
+    });
+
     describe("이스케이프 제거", () => {
         it("directive 라인의 백슬래시 이스케이프 제거", () => {
             // MDXEditor가 삽입하는 이스케이프 처리
@@ -153,6 +189,12 @@ describe("왕복 변환 일관성", () => {
         expect(restored).toContain(
             `images='["https://example.com/a.webp","https://example.com/b.webp"]'`
         );
+    });
+
+    it("Portfolio 사례 표현: JSX → directive → JSX 왕복", () => {
+        const original = `<PortfolioFeatureGrid items='[{"title":"구조","description":"설명"}]' />`;
+        const restored = directiveToJsx(jsxToDirective(original));
+        expect(restored).toContain(original);
     });
 });
 

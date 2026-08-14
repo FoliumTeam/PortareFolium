@@ -73,6 +73,24 @@ type PortfolioItem = PortfolioAdminItem;
 type ItemForm = PortfolioEditorForm;
 const EMPTY_FORM = EMPTY_PORTFOLIO_FORM;
 
+const PORTFOLIO_SHOWCASE_TEMPLATES = [
+    {
+        label: "핵심 기능 카드",
+        description: "강점·구조·적용 범위를 카드로 정리",
+        content: `::portfolio-feature-grid[]{items='[{"label":"핵심 기능","title":"기능 제목","description":"프로젝트 가치와 구현 판단"},{"label":"적용 범위","title":"적용 대상","description":"사용자 또는 개발 흐름"}]'}`,
+    },
+    {
+        label: "책임 경계",
+        description: "관리 범위와 외부 책임을 두 열로 구분",
+        content: `::portfolio-boundary[]{owned='["직접 관리하는 범위","검증 기준과 변경 경계"]' outside='["외부 도구 또는 제공자의 책임","사용자 승인 없는 변경"]'}`,
+    },
+    {
+        label: "작동 흐름",
+        description: "핵심 과정을 짧은 단계 카드로 구성",
+        content: `::portfolio-flow[]{steps='[{"title":"입력","description":"필요한 맥락과 목표 확인"},{"title":"구성","description":"규약과 구현 범위 정리"},{"title":"검증","description":"결과와 근거 확인"},{"title":"공개","description":"사용 가능한 결과 전달"}]'}`,
+    },
+];
+
 const getItemJobFields = (item: PortfolioItem): string[] =>
     Array.from(
         new Set(
@@ -603,6 +621,7 @@ export default function PortfolioPanel({
                         onSetThumbnail={(url) =>
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
+                        showcaseTemplates={PORTFOLIO_SHOWCASE_TEMPLATES}
                         onImagesRemoved={(urls) => {
                             const folder = `portfolio/${form.slug || "untitled"}`;
                             const keys = urls.flatMap((u) =>

@@ -61,4 +61,25 @@ describe("groupTechnicalStack", () => {
         expect(assignedKeywords).toHaveLength(technicalKeywords.length);
         expect(new Set(assignedKeywords)).toEqual(new Set(technicalKeywords));
     });
+
+    it("Rust 기반 AI 작업 환경의 기술 태그를 분야에 배정한다", () => {
+        expect(
+            groupTechnicalStack([
+                "Rust",
+                "CLI",
+                "SQLite",
+                "Markdown",
+                "YAML",
+                "TOML",
+                "Ed25519",
+            ])
+        ).toEqual([
+            { category: "Backend", keywords: ["SQLite", "Ed25519"] },
+            { category: "프로그래밍 언어", keywords: ["Rust"] },
+            {
+                category: "DevOps",
+                keywords: ["CLI", "Markdown", "YAML", "TOML"],
+            },
+        ]);
+    });
 });

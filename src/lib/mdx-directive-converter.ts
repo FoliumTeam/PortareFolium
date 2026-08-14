@@ -54,6 +54,22 @@ export function jsxToDirective(content: string): string {
         return `::image-group[]{layout="${layout}" images='${images.replace(/'/g, "\\'")}'}`;
     });
 
+    out = out.replace(
+        /<PortfolioFeatureGrid\s+items\s*=\s*'((?:[^'\\]|\\.)*)'\s*\/>/g,
+        (_, items) => `::portfolio-feature-grid[]{items='${items}'}`
+    );
+
+    out = out.replace(
+        /<PortfolioBoundary\s+owned\s*=\s*'((?:[^'\\]|\\.)*)'\s+outside\s*=\s*'((?:[^'\\]|\\.)*)'\s*\/>/g,
+        (_, owned, outside) =>
+            `::portfolio-boundary[]{owned='${owned}' outside='${outside}'}`
+    );
+
+    out = out.replace(
+        /<PortfolioFlow\s+steps\s*=\s*'((?:[^'\\]|\\.)*)'\s*\/>/g,
+        (_, steps) => `::portfolio-flow[]{steps='${steps}'}`
+    );
+
     // <Accordion title="X">...</Accordion> → :::accordion[X]\n...\n:::
     out = out.replace(
         /<Accordion\s+title\s*=\s*(?:\{'((?:[^'\\]|\\.)*)'\}|'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")\s*>([\s\S]*?)<\/Accordion>/g,
@@ -137,6 +153,22 @@ export function directiveToJsx(content: string): string {
 
         return `<ImageGroup layout="${layout}" images='${images.replace(/'/g, "\\'")}' />`;
     });
+
+    out = out.replace(
+        /::portfolio-feature-grid(?:\[\])?\{items='((?:[^'\\]|\\.)*)'\}/g,
+        (_, items) => `<PortfolioFeatureGrid items='${items}' />`
+    );
+
+    out = out.replace(
+        /::portfolio-boundary(?:\[\])?\{owned='((?:[^'\\]|\\.)*)'\s+outside='((?:[^'\\]|\\.)*)'\}/g,
+        (_, owned, outside) =>
+            `<PortfolioBoundary owned='${owned}' outside='${outside}' />`
+    );
+
+    out = out.replace(
+        /::portfolio-flow(?:\[\])?\{steps='((?:[^'\\]|\\.)*)'\}/g,
+        (_, steps) => `<PortfolioFlow steps='${steps}' />`
+    );
 
     // :::accordion[X]\n...\n::: → <Accordion title={'X'}>...</Accordion>
     out = out.replace(

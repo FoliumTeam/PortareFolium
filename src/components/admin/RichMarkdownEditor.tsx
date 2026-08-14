@@ -41,7 +41,9 @@ import {
 } from "@/extensions/ImageDropPaste";
 import { uploadImage } from "@/lib/image-upload";
 import type { ImageGroupLayout } from "@/components/ImageGroup";
-import EditorToolbar from "@/components/admin/EditorToolbar";
+import EditorToolbar, {
+    type EditorShowcaseTemplate,
+} from "@/components/admin/EditorToolbar";
 import ImageDeleteConfirmDialog from "@/components/admin/ImageDeleteConfirmDialog";
 import ImageLayoutModal from "@/components/admin/ImageLayoutModal";
 import type { MultiImageLayout } from "@/components/admin/ImageLayoutModal";
@@ -59,6 +61,7 @@ interface RichMarkdownEditorProps {
     onSetThumbnail?: (url: string) => void;
     // Trigger 1 — 본문에서 image 노드가 제거되면 호출 (1초 debounce, coalesced URL 배열)
     onImagesRemoved?: (urls: string[]) => void;
+    showcaseTemplates?: EditorShowcaseTemplate[];
 }
 
 type PendingMultiImageInsert = {
@@ -86,6 +89,7 @@ export default function RichMarkdownEditor({
     transferring = false,
     onSetThumbnail,
     onImagesRemoved,
+    showcaseTemplates,
 }: RichMarkdownEditorProps) {
     const AUTOSAVE_KEY = `portare_autosave_editor_${storageKey ?? "default"}`;
 
@@ -376,6 +380,21 @@ export default function RichMarkdownEditor({
         },
     });
 
+    const insertShowcaseTemplate = useCallback(
+        (template: string) => {
+            if (!editor) return;
+            const current = sourceMode
+                ? sourceText
+                : directiveToJsx(getCleanMarkdown(editor));
+            const next = `${current.trimEnd()}\n\n${template}\n`;
+            if (!sourceMode) saveScrollRatio();
+            setSourceText(next);
+            onChange(directiveToJsx(next));
+            setSourceMode(true);
+        },
+        [editor, onChange, saveScrollRatio, sourceMode, sourceText]
+    );
+
     // multi-image group 삽입
     const handleInsertImageGroup = useCallback(
         async (layout: MultiImageLayout) => {
@@ -609,6 +628,12 @@ export default function RichMarkdownEditor({
                             sourceMode={sourceMode}
                             onSourceToggle={
                                 sourceMode ? exitSourceMode : enterSourceMode
+                            }
+                            showcaseTemplates={showcaseTemplates}
+                            onShowcaseTemplateInsert={
+                                showcaseTemplates?.length
+                                    ? insertShowcaseTemplate
+                                    : undefined
                             }
                         />
                         {isFullscreen && (
