@@ -258,13 +258,21 @@ export default async function PortfolioDetailContent({
                                 {teamMembers.map((member) => (
                                     <li
                                         key={member}
-                                        className={
-                                            member.includes("본인")
-                                                ? "font-bold text-(--color-foreground)"
-                                                : undefined
-                                        }
+                                        className="flex items-start gap-3 leading-relaxed"
                                     >
-                                        {member}
+                                        <span
+                                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                            aria-hidden="true"
+                                        />
+                                        <span
+                                            className={
+                                                member.includes("본인")
+                                                    ? "font-bold text-(--color-foreground)"
+                                                    : undefined
+                                            }
+                                        >
+                                            {member}
+                                        </span>
                                     </li>
                                 ))}
                             </ul>
