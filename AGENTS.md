@@ -13,6 +13,7 @@ Direct edits go here.
 - [.agents/directives/04-workflow.md](.agents/directives/04-workflow.md) — Branch strategy, commit/PR conventions, testing gates, documentation.
 - [.agents/directives/05-architecture.md](.agents/directives/05-architecture.md) — Project structure, directory layout, PDF export, pitfalls, MCP guide.
 - [.agents/directives/06-security.md](.agents/directives/06-security.md) — Trust boundaries, MDX trust model, R2/route guard-rails, lessons from past security fixes.
+- [.agents/directives/07-local-db-content-mutation.md](.agents/directives/07-local-db-content-mutation.md) — Local clone-only DB content mutation workflow, ephemeral MCP token lifecycle, verification boundaries.
 
 ## OMC directives (auto-synced from `.claude/rules/`)
 
