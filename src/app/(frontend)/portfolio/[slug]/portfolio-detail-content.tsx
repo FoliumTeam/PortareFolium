@@ -53,6 +53,12 @@ const formatDateRange = (startDate: string, endDate: string): string => {
     return `${startDate || "시작일 미정"} — ${endDate || "진행 중"}`;
 };
 
+const splitTeamComposition = (teamComposition: string): string[] =>
+    teamComposition
+        .split(/\s*(?:\r?\n|[·;]|,(?![^()]*\)))\s*/)
+        .map((member) => member.trim())
+        .filter(Boolean);
+
 const ProjectHeroMedia = ({ media }: { media?: PortfolioMedia }) => {
     if (!media) return null;
     return (
@@ -161,6 +167,7 @@ export default async function PortfolioDetailContent({
         .split(/\n+/)
         .map((goal) => goal.trim())
         .filter(Boolean);
+    const teamMembers = splitTeamComposition(project.teamComposition);
 
     return (
         <div className="portfolio-case-study min-w-0">
@@ -246,10 +253,21 @@ export default async function PortfolioDetailContent({
                         <p className="font-semibold text-(--color-foreground)">
                             {project.teamSize}명
                         </p>
-                        {project.teamComposition && (
-                            <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
-                                {project.teamComposition}
-                            </p>
+                        {teamMembers.length > 0 && (
+                            <ul className="mt-3 space-y-1.5 text-base leading-relaxed text-(--color-muted)">
+                                {teamMembers.map((member) => (
+                                    <li
+                                        key={member}
+                                        className={
+                                            member.includes("본인")
+                                                ? "font-bold text-(--color-foreground)"
+                                                : undefined
+                                        }
+                                    >
+                                        {member}
+                                    </li>
+                                ))}
+                            </ul>
                         )}
                     </div>
                 )}
