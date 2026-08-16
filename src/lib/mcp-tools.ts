@@ -4,6 +4,7 @@ import type { Resume } from "@/types/resume";
 import { mergePortfolioDataPatch } from "@/lib/portfolio";
 import type { PortfolioRawRow } from "@/types/portfolio";
 import { getPublicJobFields } from "@/lib/public-job-field";
+import { PUBLIC_CONTENT_CACHE_TAG } from "@/lib/queries";
 
 const PORTFOLIO_MUTATION_KEYS = [
     "title",
@@ -56,7 +57,7 @@ const toPersistedPortfolioJobField = (value: unknown): unknown => {
 };
 
 const revalidateMcpPortfolio = async (slug: string) => {
-    const { revalidatePath } = await import("next/cache");
+    const { revalidatePath, revalidateTag } = await import("next/cache");
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
     const jobFields = await getPublicJobFields();
@@ -66,6 +67,7 @@ const revalidateMcpPortfolio = async (slug: string) => {
         revalidatePath(`/${jobField.id}`);
     }
     revalidatePath("/");
+    revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
 };
 
 export const prepareMcpPortfolioCreate = (
@@ -585,6 +587,7 @@ export async function handleCreatePortfolioItem(
             `[mcp-tools::handleCreatePortfolioItem] ${error.message}`
         );
     }
+    await revalidateMcpPortfolio(String(args.slug));
     return data;
 }
 
