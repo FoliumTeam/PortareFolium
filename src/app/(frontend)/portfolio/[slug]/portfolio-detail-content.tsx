@@ -59,6 +59,22 @@ const splitTeamComposition = (teamComposition: string): string[] =>
         .map((member) => member.trim())
         .filter(Boolean);
 
+const formatTeamMemberLabel = (member: string, role: string): string => {
+    if (!role || !member.includes("본인") || !member.startsWith(role)) {
+        return member;
+    }
+    const contribution = member.slice(role.length).trim();
+    if (!contribution.startsWith("(") || !contribution.endsWith(")")) {
+        return member;
+    }
+    const details = contribution
+        .slice(1, -1)
+        .split(",")
+        .map((detail) => detail.trim())
+        .filter(Boolean);
+    return details[0] === "본인" ? details.join(" · ") : member;
+};
+
 const ProjectHeroMedia = ({ media }: { media?: PortfolioMedia }) => {
     if (!media) return null;
     return (
@@ -255,26 +271,32 @@ export default async function PortfolioDetailContent({
                         </p>
                         {teamMembers.length > 0 && (
                             <ul className="mt-3 space-y-1.5 text-base leading-relaxed text-(--color-muted)">
-                                {teamMembers.map((member) => (
-                                    <li
-                                        key={member}
-                                        className="flex items-start gap-3 leading-relaxed"
-                                    >
-                                        <span
-                                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
-                                            aria-hidden="true"
-                                        />
-                                        <span
-                                            className={
-                                                member.includes("본인")
-                                                    ? "font-bold text-(--color-foreground)"
-                                                    : undefined
-                                            }
+                                {teamMembers.map((member) => {
+                                    const label = formatTeamMemberLabel(
+                                        member,
+                                        project.role
+                                    );
+                                    return (
+                                        <li
+                                            key={member}
+                                            className="flex items-start gap-3 leading-relaxed"
                                         >
-                                            {member}
-                                        </span>
-                                    </li>
-                                ))}
+                                            <span
+                                                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-(--color-accent)"
+                                                aria-hidden="true"
+                                            />
+                                            <span
+                                                className={
+                                                    member.includes("본인")
+                                                        ? "font-bold text-(--color-foreground)"
+                                                        : undefined
+                                                }
+                                            >
+                                                {label}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
                     </div>
