@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ImageIcon } from "lucide-react";
+import { CalendarDays, ImageIcon } from "lucide-react";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import { SkillBadge } from "@/components/resume/SkillBadge";
+import { formatPortfolioMonthRange } from "@/lib/portfolio";
 import type { PortfolioProject } from "@/types/portfolio";
 
 type PortfolioProjectCardProps = {
@@ -37,6 +38,10 @@ export default function PortfolioProjectCard({
     const imageSource = media?.type === "video" ? media.poster : media?.src;
     const pitch = project.oneLinePitch || project.description;
     const projectTypeBadge = getProjectTypeBadge(project.projectType);
+    const projectDate = formatPortfolioMonthRange(
+        project.startDate,
+        project.endDate
+    );
 
     return (
         <article
@@ -78,6 +83,10 @@ export default function PortfolioProjectCard({
                 >
                     {projectTypeBadge.label}
                 </span>
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-(--color-muted)">
+                    <CalendarDays className="size-4" aria-hidden="true" />
+                    <span>{projectDate}</span>
+                </p>
                 <h3 className="text-xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     {project.title}
                 </h3>

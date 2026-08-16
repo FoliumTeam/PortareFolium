@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     EDITABLE_PORTFOLIO_DATA_KEYS,
+    formatPortfolioMonthRange,
     KNOWN_PORTFOLIO_DATA_KEYS,
     PRESERVED_LEGACY_DATA_KEYS,
     extractLegacyPortfolioGallery,
@@ -76,6 +77,16 @@ const validV2Data = {
 };
 
 describe("portfolio domain", () => {
+    it("카드용 프로젝트 기간은 월까지만 표시", () => {
+        expect(formatPortfolioMonthRange("2023-10-01", "2023-12-31")).toBe(
+            "2023.10 - 2023.12"
+        );
+        expect(formatPortfolioMonthRange("2023-10-01", "")).toBe(
+            "2023.10 - 진행 중"
+        );
+        expect(formatPortfolioMonthRange("", "")).toBe("기간 미정");
+    });
+
     it("기존 Deep Dive heading을 포트폴리오 서사 heading으로 표시", () => {
         expect(
             normalizePortfolioCaseStudyContent(
