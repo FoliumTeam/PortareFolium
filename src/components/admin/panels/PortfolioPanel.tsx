@@ -20,6 +20,7 @@ import {
     deletePortfolioItemById,
     getPortfolioPanelBootstrap,
     reorderFeaturedPortfolioItems,
+    savePortfolioDesign,
     savePortfolioItem,
     setPortfolioFeatured,
     setPortfolioPublished,
@@ -146,6 +147,10 @@ export default function PortfolioPanel({
     onEditPathChange,
 }: PortfolioPanelProps) {
     const [tab, setTab] = useState<"portfolio" | "books">("portfolio");
+    const [portfolioDesign, setPortfolioDesign] = useState<
+        "timeline" | "cards"
+    >("cards");
+    const [portfolioDesignSaving, setPortfolioDesignSaving] = useState(false);
     const [items, setItems] = useState<PortfolioItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [editTarget, setEditTarget] = useState<PortfolioItem | null | "new">(
@@ -219,7 +224,23 @@ export default function PortfolioPanel({
         );
         setActiveJobField(nextActiveJobField);
         setFeaturedJobField((current) => current || nextActiveJobField);
+        setPortfolioDesign(result.portfolioDesign);
         setLoading(false);
+    };
+
+    const changePortfolioDesign = async (design: "timeline" | "cards") => {
+        if (design === portfolioDesign || portfolioDesignSaving) return;
+        const previousDesign = portfolioDesign;
+        setPortfolioDesign(design);
+        setPortfolioDesignSaving(true);
+        const result = await savePortfolioDesign(design);
+        setPortfolioDesignSaving(false);
+        if (!result.success) {
+            setPortfolioDesign(previousDesign);
+            setError(`디자인 저장 실패: ${result.error ?? "알 수 없는 오류"}`);
+            return;
+        }
+        showToast("Portfolio 목록 디자인이 저장됐습니다.");
     };
 
     useEffect(() => {
@@ -875,6 +896,39 @@ export default function PortfolioPanel({
 
                 {tab === "portfolio" && (
                     <div className="pt-6">
+                        <section className="mb-6 space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                            <div>
+                                <h3 className="text-xl font-bold text-(--color-foreground)">
+                                    목록 디자인
+                                </h3>
+                                <p className="mt-1 text-base text-(--color-muted)">
+                                    Portfolio 목록 페이지에만 적용됩니다.
+                                    프로젝트 상세 페이지는 현재 디자인을
+                                    유지합니다.
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                {(["timeline", "cards"] as const).map(
+                                    (design) => (
+                                        <button
+                                            key={design}
+                                            type="button"
+                                            onClick={() =>
+                                                changePortfolioDesign(design)
+                                            }
+                                            disabled={portfolioDesignSaving}
+                                            className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity disabled:opacity-50 ${
+                                                portfolioDesign === design
+                                                    ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                    : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                                            }`}
+                                        >
+                                            {design}
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        </section>
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-(--color-foreground)">

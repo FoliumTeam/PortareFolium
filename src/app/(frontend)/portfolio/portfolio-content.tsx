@@ -38,6 +38,11 @@ export default async function PortfolioPageContent({
         typeof githubConfig?.value === "string"
             ? githubConfig.value.replace(/^"|"$/g, "")
             : "";
+    const portfolioDesign =
+        configRows.find((row) => row.key === "portfolio_design")?.value ===
+        "timeline"
+            ? "timeline"
+            : "cards";
     const portfolioEyebrow = "Selected Work";
     const portfolioIntroduction =
         "프로젝트의 목표, 개인 책임, 핵심 구현과 확인 가능한 결과를 정리했습니다.";
@@ -135,7 +140,7 @@ export default async function PortfolioPageContent({
                 <PortfolioView
                     projects={publicProjects}
                     portfolioBasePath={portfolioBasePath}
-                    jobField={jobField}
+                    design={portfolioDesign}
                 />
 
                 {publicBooks.length > 0 && (

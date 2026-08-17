@@ -43,6 +43,16 @@ export async function revalidatePortfolioItem(slug: string) {
     revalidatePath("/");
 }
 
+// 포트폴리오 목록 디자인 저장 후 목록 경로 재생성 트리거
+export async function revalidatePortfolioIndex() {
+    await requireAdminSession();
+    revalidatePublicContent();
+    revalidatePath("/portfolio");
+    await revalidateJobFieldPaths((jobField) => {
+        revalidatePath(`/${jobField}/portfolio`);
+    });
+}
+
 // About Me 저장 후 직무별 공개 페이지 재생성 트리거
 export async function revalidateAbout() {
     await requireAdminSession();

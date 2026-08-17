@@ -2,7 +2,10 @@
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
-import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
+import {
+    revalidatePortfolioIndex,
+    revalidatePortfolioItem,
+} from "@/app/admin/actions/revalidate";
 import { getPortfolioJobFields } from "@/lib/portfolio";
 import { normalizeUniqueJobFieldList } from "@/lib/job-field";
 import type { PortfolioRawRow } from "@/types/portfolio";
@@ -102,6 +105,7 @@ export async function getPortfolioPanelBootstrap() {
             stateCounts: {} as Record<string, number>,
             jobFields: [] as JobFieldItem[],
             activeJobField: "",
+            portfolioDesign: "cards" as const,
         };
     }
 
@@ -109,6 +113,7 @@ export async function getPortfolioPanelBootstrap() {
         { data: itemsData, error: itemsError },
         { data: stateData, error: stateError },
         { data: jobFieldsRow, error: jobFieldsError },
+        { data: portfolioDesignRow, error: portfolioDesignError },
     ] = await Promise.all([
         serverClient
             .from("portfolio_items")
@@ -124,6 +129,11 @@ export async function getPortfolioPanelBootstrap() {
             .select("value")
             .eq("key", "job_fields")
             .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
+            .eq("key", "portfolio_design")
+            .maybeSingle(),
     ]);
 
     // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
@@ -139,6 +149,10 @@ export async function getPortfolioPanelBootstrap() {
         console.error(
             `[portfolio.ts::getPortfolioPanelBootstrap] ${jobFieldsError.message}`
         );
+    if (portfolioDesignError)
+        console.error(
+            `[portfolio.ts::getPortfolioPanelBootstrap] ${portfolioDesignError.message}`
+        );
 
     const stateCounts: Record<string, number> = {};
     for (const row of stateData ?? []) {
@@ -150,7 +164,27 @@ export async function getPortfolioPanelBootstrap() {
         stateCounts,
         jobFields: (jobFieldsRow?.value as JobFieldItem[]) ?? [],
         activeJobField: "",
+        portfolioDesign:
+            portfolioDesignRow?.value === "timeline"
+                ? ("timeline" as const)
+                : ("cards" as const),
     };
+}
+
+// 포트폴리오 목록 디자인 저장
+export async function savePortfolioDesign(
+    design: "timeline" | "cards"
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const { error } = await serverClient
+        .from("site_config")
+        .upsert({ key: "portfolio_design", value: design });
+    if (error) return { success: false, error: error.message };
+
+    await revalidatePortfolioIndex();
+    return { success: true };
 }
 
 // 포트폴리오 생성/수정

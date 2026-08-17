@@ -1,4 +1,5 @@
 import PortfolioProjectGrid from "@/components/portfolio/PortfolioProjectGrid";
+import PortfolioTimeline from "@/components/portfolio/PortfolioTimeline";
 import type { PortfolioProject } from "@/types/portfolio";
 import { BriefcaseBusiness, UserRound } from "lucide-react";
 
@@ -6,6 +7,7 @@ type PortfolioViewProps = {
     projects: PortfolioProject[];
     portfolioBasePath?: string;
     jobField?: string;
+    design?: "timeline" | "cards";
 };
 
 const sortByRecentDate = (left: PortfolioProject, right: PortfolioProject) =>
@@ -16,8 +18,25 @@ const sortByRecentDate = (left: PortfolioProject, right: PortfolioProject) =>
 export default function PortfolioView({
     projects,
     portfolioBasePath,
-    jobField,
+    design = "cards",
 }: PortfolioViewProps) {
+    if (projects.length === 0) {
+        return (
+            <p className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) px-5 py-10 text-center text-(--color-muted)">
+                공개된 프로젝트가 없습니다.
+            </p>
+        );
+    }
+
+    if (design === "timeline") {
+        return (
+            <PortfolioTimeline
+                projects={projects}
+                portfolioBasePath={portfolioBasePath}
+            />
+        );
+    }
+
     const groupedProjects = [
         {
             eyebrow: "경력 및 협업",
@@ -44,14 +63,6 @@ export default function PortfolioView({
                 .sort(sortByRecentDate),
         },
     ];
-
-    if (projects.length === 0) {
-        return (
-            <p className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) px-5 py-10 text-center text-(--color-muted)">
-                공개된 프로젝트가 없습니다.
-            </p>
-        );
-    }
 
     return (
         <div className="space-y-20">
