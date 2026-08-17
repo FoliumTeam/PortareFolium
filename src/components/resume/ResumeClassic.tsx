@@ -2,6 +2,7 @@ import type { Resume, ResumeCoreCompetency } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
+import AwardsSection from "@/components/resume/AwardsSection";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
@@ -396,13 +397,13 @@ export default async function ResumeClassic({
                 "volunteer",
                 (resume.volunteer?.entries ?? []) as Record<string, unknown>[]
             ),
-        awards: () => {
-            const awards = (resume.awards?.entries ?? []) as Record<
-                string,
-                unknown
-            >[];
-            return awards.length > 0 ? renderGeneric("awards", awards) : null;
-        },
+        awards: () => (
+            <AwardsSection
+                awards={resume.awards?.entries ?? []}
+                label={getLabel("awards")}
+                dataPdfBlock
+            />
+        ),
         certificates: () =>
             renderGeneric(
                 "certificates",
