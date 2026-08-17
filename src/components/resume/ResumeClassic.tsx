@@ -399,6 +399,7 @@ export default async function ResumeClassic({
             ),
         awards: () => (
             <AwardsSection
+                key="awards"
                 awards={resume.awards?.entries ?? []}
                 label={getLabel("awards")}
                 dataPdfBlock

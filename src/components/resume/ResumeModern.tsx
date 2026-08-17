@@ -390,6 +390,7 @@ export default async function ResumeModern({
 
     const renderAwards = () => (
         <AwardsSection
+            key="awards"
             awards={resume.awards?.entries ?? []}
             label={getLabel("awards")}
             dataPdfBlock
