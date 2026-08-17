@@ -92,6 +92,7 @@ export interface ResumeEducation {
 
 export interface ResumeAward {
     title?: string;
+    position?: string;
     date?: string;
     awarder?: string;
     summary?: string;

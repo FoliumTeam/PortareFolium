@@ -3728,6 +3728,7 @@ export default function ResumePanel() {
                                     setBackupData(resumeData);
                                     const newAward: ResumeAward = {
                                         title: "",
+                                        position: "",
                                         date: "",
                                         awarder: "",
                                         summary: "",
@@ -3812,6 +3813,36 @@ export default function ResumePanel() {
                                                             a[idx] = {
                                                                 ...a[idx],
                                                                 awarder: v,
+                                                            };
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                awards: {
+                                                                    ...(resumeData.awards || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: a,
+                                                                },
+                                                            });
+                                                        }}
+                                                    />
+                                                    <InputField
+                                                        label="수상 등급"
+                                                        value={
+                                                            award.position || ""
+                                                        }
+                                                        onChange={(v) => {
+                                                            const a = [
+                                                                ...(resumeData
+                                                                    .awards
+                                                                    ?.entries ||
+                                                                    []),
+                                                            ];
+                                                            a[idx] = {
+                                                                ...a[idx],
+                                                                position: v,
                                                             };
                                                             setResumeData({
                                                                 ...resumeData,
