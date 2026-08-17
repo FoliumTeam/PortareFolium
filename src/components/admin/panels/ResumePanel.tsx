@@ -178,6 +178,7 @@ export default function ResumePanel() {
     const [isDirty, setIsDirty] = useState(false);
     const savedDataRef = useRef<string>("");
     const [resumeLayout, setResumeLayout] = useState<ResumeLayout>("modern");
+    const [resumeLayoutSaving, setResumeLayoutSaving] = useState(false);
     const [resumeSectionLayout, setResumeSectionLayout] =
         useState<ResumeSectionLayout>(DEFAULT_RESUME_LAYOUT);
     const [initialSectionLayout, setInitialSectionLayout] =
@@ -419,16 +420,27 @@ export default function ResumePanel() {
         }
     };
 
-    const saveLayout = async (layout: ResumeLayout) => {
+    const changeResumeLayout = async (layout: ResumeLayout) => {
+        if (layout === resumeLayout || resumeLayoutSaving) return;
+        const previousLayout = resumeLayout;
+        setResumeLayout(layout);
+        setResumeLayoutSaving(true);
+        setStatus(null);
         const result = await saveResumeTheme(layout);
+        setResumeLayoutSaving(false);
         if (!result.success) {
+            setResumeLayout(previousLayout);
             setStatus({
                 type: "error",
                 msg: `레이아웃 저장 실패: ${result.error}`,
             });
-        } else {
-            setSavedAt(new Date());
+            return;
         }
+        setSavedAt(new Date());
+        setStatus({
+            type: "success",
+            msg: "이력서 디자인이 저장됐습니다. 공개 이력서에 즉시 반영됩니다.",
+        });
     };
 
     const saveSharedIntroduction = async () => {
@@ -636,11 +648,10 @@ export default function ResumePanel() {
                                 (l) => (
                                     <button
                                         key={l}
-                                        onClick={() => {
-                                            setResumeLayout(l);
-                                            saveLayout(l);
-                                        }}
-                                        className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
+                                        type="button"
+                                        onClick={() => changeResumeLayout(l)}
+                                        disabled={resumeLayoutSaving}
+                                        className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity disabled:opacity-50 ${
                                             resumeLayout === l
                                                 ? "bg-(--color-accent) text-(--color-on-accent)"
                                                 : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
