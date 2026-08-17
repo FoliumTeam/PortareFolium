@@ -317,6 +317,32 @@ describe("createJobFieldResumeView", () => {
         ).toEqual(["Web core"]);
     });
 
+    it("수상을 직무 분야별로 필터링하며 기존 미설정 항목은 유지", () => {
+        const resume = {
+            awards: {
+                emoji: "🏆",
+                showEmoji: true,
+                entries: [
+                    { title: "기존 수상" },
+                    { title: "웹 수상", jobField: "web" },
+                    { title: "게임 수상", jobField: "game" },
+                    { title: "숨김 수상", jobField: [] },
+                ],
+            },
+        };
+
+        expect(
+            createJobFieldResumeView(resume, "web").awards?.entries.map(
+                (award) => award.title
+            )
+        ).toEqual(["기존 수상", "웹 수상"]);
+        expect(
+            createJobFieldResumeView(resume, "game").awards?.entries.map(
+                (award) => award.title
+            )
+        ).toEqual(["기존 수상", "게임 수상"]);
+    });
+
     it("game mode에서 웹 경력과 게임 전환 단계를 함께 유지", () => {
         const result = createJobFieldResumeView(
             {

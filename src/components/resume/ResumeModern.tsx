@@ -387,48 +387,53 @@ export default async function ResumeModern({
         </section>
     );
 
-    const renderAwards = () => (
-        <section key="awards" className="mb-10" data-pdf-block>
-            <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("awards")}
-            </h2>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-                {(resume.awards?.entries ?? []).map((award, idx) => (
-                    <div
-                        key={idx}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
-                        data-pdf-block-item
-                    >
-                        {award.title ? (
-                            <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
-                                {award.title}
-                            </h3>
-                        ) : null}
-                        {award.awarder ? (
-                            <div className="mb-0.5 text-base text-(--color-muted)">
-                                {award.awarder}
-                            </div>
-                        ) : null}
-                        {award.date ? (
-                            <div
-                                className="mb-1 text-sm text-(--color-muted)"
-                                style={{
-                                    fontVariantNumeric: "tabular-nums",
-                                }}
-                            >
-                                {award.date}
-                            </div>
-                        ) : null}
-                        {award.summary ? (
-                            <p className="text-base text-(--color-foreground)">
-                                {award.summary}
-                            </p>
-                        ) : null}
-                    </div>
-                ))}
-            </div>
-        </section>
-    );
+    const renderAwards = () => {
+        const awards = resume.awards?.entries ?? [];
+        if (awards.length === 0) return null;
+
+        return (
+            <section key="awards" className="mb-10" data-pdf-block>
+                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                    {getLabel("awards")}
+                </h2>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+                    {awards.map((award, idx) => (
+                        <div
+                            key={idx}
+                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
+                            data-pdf-block-item
+                        >
+                            {award.title ? (
+                                <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
+                                    {award.title}
+                                </h3>
+                            ) : null}
+                            {award.awarder ? (
+                                <div className="mb-0.5 text-base text-(--color-muted)">
+                                    {award.awarder}
+                                </div>
+                            ) : null}
+                            {award.date ? (
+                                <div
+                                    className="mb-1 text-sm text-(--color-muted)"
+                                    style={{
+                                        fontVariantNumeric: "tabular-nums",
+                                    }}
+                                >
+                                    {award.date}
+                                </div>
+                            ) : null}
+                            {award.summary ? (
+                                <p className="text-base text-(--color-foreground)">
+                                    {award.summary}
+                                </p>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            </section>
+        );
+    };
 
     const renderCertificates = () => (
         <section key="certificates" className="mb-10" data-pdf-block>

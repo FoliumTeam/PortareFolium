@@ -396,11 +396,13 @@ export default async function ResumeClassic({
                 "volunteer",
                 (resume.volunteer?.entries ?? []) as Record<string, unknown>[]
             ),
-        awards: () =>
-            renderGeneric(
-                "awards",
-                (resume.awards?.entries ?? []) as Record<string, unknown>[]
-            ),
+        awards: () => {
+            const awards = (resume.awards?.entries ?? []) as Record<
+                string,
+                unknown
+            >[];
+            return awards.length > 0 ? renderGeneric("awards", awards) : null;
+        },
         certificates: () =>
             renderGeneric(
                 "certificates",

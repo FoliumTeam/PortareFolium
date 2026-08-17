@@ -2,6 +2,7 @@ import { filterByJobField } from "@/lib/job-field";
 import type { FieldIntroduction } from "@/types/about";
 import type {
     Resume,
+    ResumeAward,
     ResumeCoreCompetency,
     ResumeSection,
     ResumeSkill,
@@ -98,6 +99,21 @@ function filterResumeSkills(
     return { ...section, entries };
 }
 
+function filterResumeAwards(
+    section: ResumeSection<ResumeAward> | undefined,
+    jobField: string
+): ResumeSection<ResumeAward> | undefined {
+    if (!section) return undefined;
+    return {
+        ...section,
+        entries: section.entries.filter(
+            (award) =>
+                award.jobField === undefined ||
+                filterByJobField([award], jobField).length > 0
+        ),
+    };
+}
+
 function filterCoreCompetencies(
     section: Resume["coreCompetencies"],
     jobField: string
@@ -140,6 +156,7 @@ export function createJobFieldResumeView(
         basics,
         work: filterResumeSection(resume.work, jobField),
         projects: filterResumeSection(resume.projects, jobField),
+        awards: filterResumeAwards(resume.awards, jobField),
         careerPhases: jobField === "game" ? resume.careerPhases : undefined,
         skills: filterResumeSkills(resume.skills, jobField),
         coreCompetencies: filterCoreCompetencies(

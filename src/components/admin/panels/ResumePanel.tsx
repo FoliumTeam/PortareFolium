@@ -3731,6 +3731,9 @@ export default function ResumePanel() {
                                         date: "",
                                         awarder: "",
                                         summary: "",
+                                        jobField: jobFields.map(
+                                            (jobField) => jobField.id
+                                        ),
                                     };
                                     setResumeData({
                                         ...resumeData,
@@ -3853,6 +3856,33 @@ export default function ResumePanel() {
                                                         }}
                                                     />
                                                 </div>
+                                                <JobFieldSelector
+                                                    value={award.jobField}
+                                                    fields={jobFields}
+                                                    onChange={(v) => {
+                                                        const a = [
+                                                            ...(resumeData
+                                                                .awards
+                                                                ?.entries ||
+                                                                []),
+                                                        ];
+                                                        a[idx] = {
+                                                            ...a[idx],
+                                                            jobField: v,
+                                                        };
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            awards: {
+                                                                ...(resumeData.awards || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: a,
+                                                            },
+                                                        });
+                                                    }}
+                                                />
                                                 <div className="space-y-1">
                                                     <div className="flex items-center justify-between">
                                                         <label className="text-sm font-medium text-(--color-muted)">
