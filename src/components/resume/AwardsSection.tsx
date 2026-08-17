@@ -58,20 +58,17 @@ export default function AwardsSection({
                                 />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                                    {title ? (
-                                        <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
-                                            {title}
-                                        </h3>
-                                    ) : null}
-                                    {award.date ? (
-                                        <time className="shrink-0 text-sm font-semibold text-(--color-muted) tabular-nums">
-                                            {award.date}
-                                        </time>
-                                    ) : null}
-                                </div>
+                                {title ? (
+                                    <h3 className="m-0 text-lg leading-snug font-bold text-(--color-foreground)">
+                                        {title}
+                                    </h3>
+                                ) : null}
                                 <EducationMetadata
-                                    items={[position, award.awarder]}
+                                    items={[
+                                        position,
+                                        award.awarder,
+                                        award.date,
+                                    ]}
                                 />
                                 {award.summary ? (
                                     <p className="mt-4 border-l-2 border-(--color-accent)/45 pl-4 text-base leading-7 text-(--color-foreground)">
