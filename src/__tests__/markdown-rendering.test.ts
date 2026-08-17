@@ -19,4 +19,14 @@ describe("Markdown 렌더링", () => {
         expect(html).toContain("<strong>4분 이내·실패율 0%</strong>");
         expect(html).not.toContain("**4분 이내·실패율 0%**");
     }, 15_000);
+
+    it("script 태그를 제거하고 제목의 << 연산자를 안전하게 렌더링한다", async () => {
+        const html = await renderMarkdown(
+            '## << 출력 연산자\n\n<script>alert("unsafe")</script>\n\n본문'
+        );
+
+        expect(html).toContain("&lt;&lt; 출력 연산자");
+        expect(html).not.toContain("script");
+        expect(html).toContain("본문");
+    }, 15_000);
 });

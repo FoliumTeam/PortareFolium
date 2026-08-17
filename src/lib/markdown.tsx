@@ -157,6 +157,13 @@ function normalizePunctuationTerminatedStrong(chunk: string): string {
         .join("");
 }
 
+function normalizeUnsafeMdx(chunk: string): string {
+    return chunk
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+        .replace(/<script\b[^>]*\/>/gi, "")
+        .replace(/(^#{1,6}\s*)<</gm, "$1&lt;&lt;");
+}
+
 // 모듈 레벨 선언 — slug + content가 실제 cache key의 일부로 포함됨
 // 클로저 방식(매 호출마다 새 함수 생성)은 content가 key에서 누락되어 stale 결과를 서빙
 const _renderCached = unstable_cache(
@@ -179,6 +186,7 @@ export async function renderMarkdown(content: string): Promise<string> {
     // JSX 태그 내부 \[ \] escape 복원 (예외 경로로 DB에 오염된 content 방어)
     let mdx = unescapeJsxBrackets(content);
     mdx = directiveToJsx(mdx);
+    mdx = transformOutsideCodeBlocks(mdx, normalizeUnsafeMdx);
     mdx = transformOutsideCodeBlocks(mdx, normalizePunctuationTerminatedStrong);
     mdx = transformOutsideCodeBlocks(mdx, normalizeKTableMdxHtml);
     mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
