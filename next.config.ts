@@ -7,6 +7,7 @@ const r2Hostname = process.env.R2_PUBLIC_URL
 const nextConfig: NextConfig = {
     reactStrictMode: true,
     reactCompiler: true,
+    allowedDevOrigins: ["127.0.0.1"],
     experimental: {
         serverActions: {
             bodySizeLimit: "4mb",

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Resume, ResumeCoreCompetency } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
@@ -692,7 +693,9 @@ export default async function ResumeModern({
             <main>
                 {resolvedOrder.map((key) => {
                     const render = rendererMap[key];
-                    return render ? render() : null;
+                    return render ? (
+                        <Fragment key={key}>{render()}</Fragment>
+                    ) : null;
                 })}
             </main>
         </div>

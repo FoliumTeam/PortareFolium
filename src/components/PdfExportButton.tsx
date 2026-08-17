@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { Download } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { SessionContext } from "next-auth/react";
 import PdfPreviewModal, { type PdfSection } from "@/components/PdfPreviewModal";
 
 interface Props {
@@ -18,8 +18,10 @@ export default function PdfExportButton({
 }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
-    const { data: session, status } = useSession();
-    const authed = status === "authenticated" && session?.user?.isAdmin;
+    const sessionContext = useContext(SessionContext);
+    const authed =
+        sessionContext?.status === "authenticated" &&
+        sessionContext.data?.user?.isAdmin;
 
     return (
         <>

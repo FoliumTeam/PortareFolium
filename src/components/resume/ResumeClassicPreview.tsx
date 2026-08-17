@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import type { Resume, ResumeCoreCompetency } from "@/types/resume";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
@@ -363,7 +364,9 @@ export default function ResumeClassicPreview({
             <div className="p-6">
                 {resolvedOrder.map((key) => {
                     const render = rendererMap[key];
-                    return render ? render() : null;
+                    return render ? (
+                        <Fragment key={key}>{render()}</Fragment>
+                    ) : null;
                 })}
             </div>
         </div>
