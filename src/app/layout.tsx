@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "@/styles/global.css";
 import "katex/dist/katex.min.css";
 import { getSiteConfig } from "@/lib/queries";
@@ -63,7 +64,9 @@ export default async function RootLayout({
             suppressHydrationWarning
         >
             <head>
-                <script
+                <Script
+                    id="theme-initialization"
+                    strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{
                         __html: `(function(){var m=${JSON.stringify(themeMode)};var a=location.pathname.startsWith("/admin");var t=a?(localStorage.getItem("theme")||"system"):m;var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var p=localStorage.getItem("folium_plain_mode");if(p==="true"){document.documentElement.setAttribute("data-plain","")}else if(p==="false"){document.documentElement.removeAttribute("data-plain")}})();`,
                     }}
