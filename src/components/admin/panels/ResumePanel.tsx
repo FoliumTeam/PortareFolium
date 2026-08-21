@@ -805,14 +805,10 @@ export default function ResumePanel() {
                     <ResumeBasicsPresentationSection
                         presentation={resumeBasicsPresentation}
                         jobFields={jobFields}
-                        headlineByJobField={
-                            resumeData.basics?.headlineByJobField
-                        }
                         saving={resumeBasicsPresentationSaving}
                         onPersist={(next) =>
                             void persistResumeBasicsPresentation(next)
                         }
-                        onHeadlineChange={updateJobFieldHeadline}
                         onResetOverride={(jobField) =>
                             void resetResumeBasicsOverride(jobField)
                         }

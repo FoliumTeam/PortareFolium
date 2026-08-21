@@ -156,12 +156,6 @@ export const ResumeBasicsSection = ({
                         onChange={(name) => update({ name })}
                     />
                     <InputField
-                        label="공통 전문 직함"
-                        value={value.label ?? ""}
-                        onChange={(label) => update({ label })}
-                        placeholder="예: Full-stack Developer"
-                    />
-                    <InputField
                         label="이메일"
                         value={value.email ?? ""}
                         onChange={(email) => update({ email })}

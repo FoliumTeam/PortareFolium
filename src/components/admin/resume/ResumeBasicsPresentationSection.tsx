@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { InputField } from "@/components/admin/resume/ResumeEditorFields";
 import {
     RESUME_BASICS_VISIBILITY_KEYS,
     type ResumeBasicsPresentation,
@@ -26,10 +25,8 @@ type PresentationPatch = Omit<
 type ResumeBasicsPresentationSectionProps = {
     presentation: ResumeBasicsPresentationConfig;
     jobFields: JobFieldItem[];
-    headlineByJobField: Record<string, string> | undefined;
     saving: boolean;
     onPersist: (next: ResumeBasicsPresentationConfig) => void;
-    onHeadlineChange: (jobField: string, headline: string) => void;
     onResetOverride: (jobField: string) => void;
 };
 
@@ -91,10 +88,8 @@ const detailPresets: Array<{
 export const ResumeBasicsPresentationSection = ({
     presentation,
     jobFields,
-    headlineByJobField,
     saving,
     onPersist,
-    onHeadlineChange,
     onResetOverride,
 }: ResumeBasicsPresentationSectionProps) => {
     const [activeJobFieldId, setActiveJobFieldId] = useState("");
@@ -252,19 +247,6 @@ export const ResumeBasicsPresentationSection = ({
                     </div>
                 )}
             </div>
-
-            {hasOverride && activeJobFieldId ? (
-                <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
-                    <InputField
-                        label={`${activeJobField?.name ?? "직무 분야"} 전문 직함`}
-                        value={headlineByJobField?.[activeJobFieldId] ?? ""}
-                        onChange={(headline) =>
-                            onHeadlineChange(activeJobFieldId, headline)
-                        }
-                        placeholder="예: Full-stack Developer"
-                    />
-                </div>
-            ) : null}
 
             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                 <div className="flex items-center justify-between gap-3">

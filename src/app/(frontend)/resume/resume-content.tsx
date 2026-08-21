@@ -5,6 +5,7 @@ import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import PdfExportButton from "@/components/PdfExportButton";
 import { createJobFieldResumeView } from "@/lib/resume-job-field";
+import { getPublicJobFields } from "@/lib/public-job-field";
 import type { AboutData } from "@/types/about";
 import {
     DEFAULT_RESUME_LAYOUT,
@@ -119,6 +120,9 @@ export default async function ResumePageContent({
         aboutData.introductions?.[jobField],
         fallbackIntroduction
     );
+    const jobFieldTitle = (await getPublicJobFields()).find(
+        (field) => field.id === jobField
+    )?.headerTitle;
     const coreCompetencies = filteredResumeData.coreCompetencies?.entries ?? [];
     const portfolioBasePath = `/${jobField}/portfolio`;
     const basicsPresentation = resolveResumeBasicsPresentation(
@@ -128,6 +132,9 @@ export default async function ResumePageContent({
 
     const resumeData: Resume = {
         ...filteredResumeData,
+        basics: filteredResumeData.basics
+            ? { ...filteredResumeData.basics, label: jobFieldTitle }
+            : filteredResumeData.basics,
         work: filteredResumeData.work
             ? {
                   ...filteredResumeData.work,
