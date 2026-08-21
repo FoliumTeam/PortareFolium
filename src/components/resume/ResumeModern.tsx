@@ -9,6 +9,7 @@ import {
     formatResumeBirthDate,
     formatResumeMilitary,
 } from "@/lib/resume-basics-presentation";
+import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import EducationMetadata from "@/components/resume/EducationMetadata";
@@ -699,27 +700,32 @@ export default async function ResumeModern({
             label: "프로필",
             value: (
                 <span className="flex flex-wrap gap-2">
-                    {basics.profiles.map((profile, index) =>
-                        profile.url ? (
+                    {basics.profiles.map((profile, index) => {
+                        const brand = getResumeProfileBrand(profile);
+                        return profile.url ? (
                             <a
                                 key={index}
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`${profile.network || "외부"} 프로필 열기`}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-semibold text-(--color-link) no-underline transition-colors hover:border-(--color-accent)/55 hover:bg-(--color-accent)/10"
+                                aria-label={`${brand.label} 프로필 열기`}
+                                style={{
+                                    backgroundColor: brand.backgroundColor,
+                                    color: brand.foregroundColor,
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold no-underline shadow-sm transition-opacity hover:opacity-85"
                             >
-                                <ProfileIcon network={profile.network} />
+                                <ProfileIcon preset={brand.preset} />
                                 {profile.username ||
                                     profile.network ||
-                                    profile.url}
+                                    brand.label}
                             </a>
                         ) : (
                             <span key={index}>
                                 {profile.username || profile.network}
                             </span>
-                        )
-                    )}
+                        );
+                    })}
                 </span>
             ),
         });
@@ -786,7 +792,9 @@ export default async function ResumeModern({
         ) : null;
 
     const renderHeader = () => {
-        const image = renderImage("h-44 w-44 max-tablet:h-28 max-tablet:w-28");
+        const image = renderImage(
+            "h-full min-h-64 w-44 self-stretch object-top max-tablet:h-36 max-tablet:min-h-0 max-tablet:w-36"
+        );
         if (basicsPresentation.headerPreset === "profileCard") {
             return (
                 <header
@@ -837,7 +845,7 @@ export default async function ResumeModern({
                 data-pdf-block
             >
                 <div
-                    className={`grid items-start gap-6 ${
+                    className={`grid items-stretch gap-6 ${
                         image
                             ? "tablet:grid-cols-[11rem_minmax(0,1fr)]"
                             : "grid-cols-1"
@@ -875,9 +883,12 @@ export default async function ResumeModern({
     );
 }
 
-const ProfileIcon = ({ network }: { network?: string }) => {
-    const normalized = network?.trim().toLowerCase();
-    if (normalized === "github") return <Github className="h-4 w-4" />;
-    if (normalized === "linkedin") return <Linkedin className="h-4 w-4" />;
+const ProfileIcon = ({
+    preset,
+}: {
+    preset: "github" | "linkedin" | "custom";
+}) => {
+    if (preset === "github") return <Github className="h-4 w-4" />;
+    if (preset === "linkedin") return <Linkedin className="h-4 w-4" />;
     return <Link className="h-4 w-4" />;
 };

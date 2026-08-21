@@ -31,7 +31,10 @@ export interface ResumeProfile {
     network?: string;
     username?: string;
     url?: string;
+    preset?: ResumeProfilePreset;
 }
+
+export type ResumeProfilePreset = "github" | "linkedin" | "custom";
 
 export type ResumeMilitary = {
     status?: string;

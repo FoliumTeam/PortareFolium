@@ -1,7 +1,16 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import type { ResumeBasics, ResumeProfile } from "@/types/resume";
+import { Github, Link, Linkedin } from "lucide-react";
+import type {
+    ResumeBasics,
+    ResumeProfile,
+    ResumeProfilePreset,
+} from "@/types/resume";
+import {
+    getResumeProfileBrand,
+    inferResumeProfilePreset,
+} from "@/lib/resume-profile-preset";
 import {
     InputField,
     TextAreaField,
@@ -18,6 +27,7 @@ const emptyProfile = (): ResumeProfile => ({
     network: "",
     username: "",
     url: "",
+    preset: "custom",
 });
 
 export const ResumeBasicsSection = ({
@@ -43,6 +53,15 @@ export const ResumeBasicsSection = ({
         const [profile] = next.splice(from, 1);
         next.splice(to, 0, profile);
         update({ profiles: next });
+    };
+
+    const applyProfilePreset = (index: number, preset: ResumeProfilePreset) => {
+        const profile = profiles[index];
+        const brand = getResumeProfileBrand({ preset });
+        updateProfile(index, {
+            preset,
+            network: profile.network?.trim() || brand.label,
+        });
     };
 
     const imageClass =
@@ -263,6 +282,56 @@ export const ResumeBasicsSection = ({
                             key={index}
                             className="rounded-lg border border-(--color-border) bg-(--color-surface) p-3"
                         >
+                            <div className="mb-3">
+                                <p className="text-sm font-medium text-(--color-muted)">
+                                    플랫폼 preset
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {(
+                                        [
+                                            "github",
+                                            "linkedin",
+                                            "custom",
+                                        ] as const
+                                    ).map((preset) => {
+                                        const brand = getResumeProfileBrand({
+                                            preset,
+                                        });
+                                        const selected =
+                                            inferResumeProfilePreset(
+                                                profile
+                                            ) === preset;
+                                        return (
+                                            <button
+                                                key={preset}
+                                                type="button"
+                                                aria-pressed={selected}
+                                                onClick={() =>
+                                                    applyProfilePreset(
+                                                        index,
+                                                        preset
+                                                    )
+                                                }
+                                                style={{
+                                                    backgroundColor:
+                                                        brand.backgroundColor,
+                                                    color: brand.foregroundColor,
+                                                }}
+                                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-85 ${
+                                                    selected
+                                                        ? "ring-2 ring-(--color-accent) ring-offset-2 ring-offset-(--color-surface)"
+                                                        : "opacity-70"
+                                                }`}
+                                            >
+                                                <ProfilePresetIcon
+                                                    preset={preset}
+                                                />
+                                                {brand.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                             <div className="tablet:grid-cols-[1fr_1fr_1fr_auto] grid grid-cols-1 gap-3">
                                 <InputField
                                     label="서비스"
@@ -337,4 +406,10 @@ export const ResumeBasicsSection = ({
             />
         </section>
     );
+};
+
+const ProfilePresetIcon = ({ preset }: { preset: ResumeProfilePreset }) => {
+    if (preset === "github") return <Github className="h-4 w-4" />;
+    if (preset === "linkedin") return <Linkedin className="h-4 w-4" />;
+    return <Link className="h-4 w-4" />;
 };
