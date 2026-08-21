@@ -13,6 +13,7 @@
 - **Curated Presets**: layout, design, density, format처럼 여러 시각 결정을 포함하는 선택은 2~4개의 완성형 preset으로 제공한다. 각 preset에는 실제 구조가 보이는 preview, 짧은 설명, 추천 기본값 필수.
 - **Low-Level Controls**: spacing, width, alignment, color처럼 서로 결합된 저수준 control의 기본 노출 금지. preset으로 해결할 수 없는 반복적 사용자 요구와 명확한 검증 기준이 있는 경우만 추가.
 - **Preset Persistence**: preset 선택은 즉시 저장, 공개 화면 재검증, 실패 rollback 제공. 선택 상태는 label과 semantic color를 함께 표시.
+- **Control Guidance**: Admin의 각 value group에는 목적과 공개 효과를 설명하는 짧은 문구 제공. 입력 field에는 구체적 label과 필요한 형식·예시 제공. Custom option에는 사용 범위와 추가 입력 안내 제공. 순서·삭제·reset button에는 화면 결과가 드러나는 label 또는 tooltip·`aria-label` 제공.
 
 ## Implementation Specifics
 

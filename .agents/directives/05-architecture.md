@@ -40,6 +40,7 @@
 - PortareFolium의 핵심 제품 계약: 사용자가 Admin Dashboard 로그인만으로 자신의 사이트에 무엇을 어떤 방식으로 표시할지 결정 가능. 코드 수정, CLI, DB 직접 조작, MCP, AI agent는 사용자 설정의 전제 조건 금지
 - 적용 대상: 모든 사용자 노출 정보와 표현 요소. 문구, label, 날짜·숫자 형식, metadata, media, link, section 이름, 항목 순서, 공개 범위, 직무별 내용, layout·design 선택지를 포함
 - 모든 사용자 노출 정보는 Admin Dashboard에서 생성·수정·삭제 또는 초기화 가능해야 하며, 개별 표시 여부 제어 필수. 같은 성격의 반복 항목에는 순서 변경 지원 필수
+- Admin control은 사용자가 코드·AI agent 도움 없이 완결할 수 있도록 목적, 입력 형식, 공개 결과, preset·override·reset 관계를 짧은 on-page 설명 또는 tooltip으로 제공. Custom preset은 기본 preset과 겹치는 입력을 숨기고 필요한 추가 입력만 표시
 - 표현 방식에 의미 있는 선택지가 존재하면 지원 가능한 형식·layout·design variant를 Admin 설정으로 제공. 디자인 선택은 2~4개의 coherent preset, preview, 추천 기본값 우선. spacing·width·alignment·color 같은 저수준 control은 preset으로 해결 불가한 반복 요구가 있는 경우만 허용
 - Frontend component의 사용자 노출 값과 표시 정책 hardcode 금지. 코드 기본값은 초기 fallback으로만 허용하며 Admin에서 override·reset 가능해야 함
 - 필수 범위: Resume의 모든 section과 개인 정보, 모든 Portfolio entry, About Me 정보, Blog post, Landing page, navigation·footer의 사용자 노출 정보, 앞으로 추가되는 모든 public content surface
