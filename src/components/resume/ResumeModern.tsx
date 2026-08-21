@@ -6,10 +6,7 @@ import type {
     ResumeCoreCompetency,
     ResumeProfilePreset,
 } from "@/types/resume";
-import {
-    formatResumeBirthDate,
-    formatResumeMilitary,
-} from "@/lib/resume-basics-presentation";
+import { formatResumeBirthDate } from "@/lib/resume-basics-presentation";
 import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
@@ -659,7 +656,11 @@ export default async function ResumeModern({
               basics.location.city,
               basics.location.region,
               basics.location.postalCode,
-              basics.location.countryCode,
+              basics.location.countryCode === "KR"
+                  ? "대한민국"
+                  : basics.location.countryCode === "US"
+                    ? "미국"
+                    : basics.location.countryCode,
           ]
               .filter(Boolean)
               .join(", ")
@@ -685,16 +686,26 @@ export default async function ResumeModern({
             ),
         });
     }
-    const military = formatResumeMilitary(
-        basics.military,
-        basicsPresentation.personalDetailPreset
-    );
-    if (visible.military && military) {
+    if (visible.military && basics.military?.status) {
         metadataItems.push({
-            key: "military",
-            label: "병역",
-            value: <span>{military}</span>,
+            key: "militaryStatus",
+            label: "병역 상태",
+            value: <span>{basics.military.status}</span>,
         });
+        const militaryPeriod =
+            basicsPresentation.personalDetailPreset === "detailed"
+                ? [basics.military.startDate, basics.military.endDate]
+                      .filter(Boolean)
+                      .map((value) => value?.replace("-", "."))
+                      .join(" – ")
+                : "";
+        if (militaryPeriod) {
+            metadataItems.push({
+                key: "militaryPeriod",
+                label: "복무 기간",
+                value: <span>{militaryPeriod}</span>,
+            });
+        }
     }
     if (visible.profiles && basics.profiles?.length) {
         metadataItems.push({
@@ -772,7 +783,19 @@ export default async function ResumeModern({
         metadataItems.length > 0 ? (
             <div className={className}>
                 {metadataItems.map((item) => (
-                    <div key={item.key} className="min-w-0">
+                    <div
+                        key={item.key}
+                        className={`min-w-0 ${
+                            [
+                                "location",
+                                "birthDate",
+                                "militaryStatus",
+                                "militaryPeriod",
+                            ].includes(item.key)
+                                ? "rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5"
+                                : ""
+                        }`}
+                    >
                         <p className="text-xs font-bold tracking-[0.14em] text-(--color-muted) uppercase">
                             {item.label}
                         </p>
