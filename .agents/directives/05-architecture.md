@@ -35,13 +35,21 @@
 - **Admin 저장 바**: `AdminSaveBar.tsx` — `createPortal`로 `#admin-save-bar-slot`에 렌더링.
 - **공개 경로 ISR**: recruiter 공개 경로는 `revalidate = 3600` 기반 정적 ISR 우선. `revalidate = false`는 캐시 정책 기본값이 아니며, 명시적 무기한 cache·무효화 요구가 있는 독립 경로에만 제한.
 
-## Admin editability contract
+## Admin customization contract
 
-- 공개 화면에 표시되는 콘텐츠 데이터는 Admin Dashboard에서 생성·수정·삭제할 수 있어야 한다. Frontend component에 콘텐츠 문구, media, 항목 순서, 공개 범위 또는 직무별 내용을 hardcode하지 않는다.
-- 필수 범위는 Resume의 모든 section, 모든 Portfolio entry, About Me 정보, Blog post다. Landing page와 새 public content surface도 별도 합의가 없으면 같은 계약을 적용한다.
-- section이 public layout에서 disabled이거나 content가 Draft·Unpublished 상태여도 관리자 편집 경로는 숨기지 않는다. 공개 여부와 편집 가능 여부를 분리한다.
-- 공개 화면과 관리자 editor는 같은 DB schema와 source of truth를 사용한다. 관리자 누락을 우회하기 위한 중복 data source를 만들지 않는다.
-- layout shell, 접근성 attribute, 공통 navigation처럼 content가 아닌 presentation code는 codebase에서 관리할 수 있다. 실제 공개 content를 임시 hardcode해야 하면 구현 전에 사용자 승인과 Admin 편집 경로 후속 계획이 필요하다.
+- PortareFolium의 핵심 제품 계약: 사용자가 자신의 사이트에 무엇을 어떤 방식으로 표시할지 Admin Dashboard에서 결정 가능
+- 적용 대상: 모든 사용자 노출 정보와 표현 요소. 문구, label, 날짜·숫자 형식, metadata, media, link, section 이름, 항목 순서, 공개 범위, 직무별 내용, layout·design 선택지를 포함
+- 모든 사용자 노출 정보는 Admin Dashboard에서 생성·수정·삭제 또는 초기화 가능해야 하며, 개별 표시 여부 제어 필수. 같은 성격의 반복 항목에는 순서 변경 지원 필수
+- 표현 방식에 의미 있는 선택지가 존재하면 지원 가능한 형식·layout·design variant를 Admin 설정으로 제공. 특정 표현 하나를 코드에 고정하고 다른 표현을 위해 코드 수정을 요구하는 구현 금지
+- Frontend component의 사용자 노출 값과 표시 정책 hardcode 금지. 코드 기본값은 초기 fallback으로만 허용하며 Admin에서 override·reset 가능해야 함
+- 필수 범위: Resume의 모든 section과 개인 정보, 모든 Portfolio entry, About Me 정보, Blog post, Landing page, navigation·footer의 사용자 노출 정보, 앞으로 추가되는 모든 public content surface
+- 신규 기능은 public consumer와 같은 작업 범위에 Admin 입력, 표시 여부, 필요한 순서·표현 설정, 저장·초기화 경로를 포함. Admin 경로 없는 사용자 노출 기능은 미완료 상태
+- 민감하거나 선택적인 정보는 값 입력과 공개 여부를 분리. 저장된 값이 있다는 이유만으로 자동 공개하는 동작 금지
+- section이 public layout에서 disabled이거나 content가 Draft·Unpublished 상태여도 Admin 편집 경로 유지. 공개 여부와 편집 가능 여부 분리
+- 공통 기본값과 직무별 차이가 필요한 정보는 기존 job-field override 구조 사용. 공통값 상속, 독립 override 생성, 공통값 복귀 지원
+- 공개 화면과 Admin editor는 같은 DB schema와 source of truth 사용. Admin 누락을 우회하기 위한 중복 data source 금지
+- 보안 경계, 권한 검사, 접근성 attribute, semantic markup, routing·cache 규칙, pagination 알고리즘 같은 내부 기술 계약은 코드 관리 대상. 단, 그 결과가 사용자가 선택해야 하는 시각·콘텐츠 표현이면 지원 범위를 Admin 설정으로 노출
+- 사용자 노출 정보를 임시 hardcode해야 하는 예외는 구현 전 사용자 승인, 제한된 적용 기간, Admin 설정 후속 계획 필요
 
 ## Public route performance contract
 

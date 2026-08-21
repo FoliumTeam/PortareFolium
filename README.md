@@ -1,6 +1,18 @@
 # PortareFolium
 
-Next.js 16 App Router + Supabase 기반 포트폴리오 & 기술 블로그 템플릿. Admin 대시보드에서 블로그, 포트폴리오, About me 콘텐츠를 직접 관리함.
+Next.js 16 App Router + Supabase 기반 포트폴리오 & 기술 블로그 플랫폼. Admin Dashboard에서 Resume, Portfolio, About Me, Blog와 사이트 설정을 코드 수정 없이 직접 관리함.
+
+## 핵심 제품 원칙
+
+PortareFolium은 사용자가 자신의 사이트에 무엇을 어떤 방식으로 표시할지 직접 결정하는 플랫폼.
+
+- 모든 사용자 노출 정보의 값과 표시 여부를 Admin Dashboard에서 설정
+- 반복 항목의 순서와 공개 범위 관리
+- 날짜 형식, label, layout, design처럼 지원되는 표현 방식 선택
+- 공통 기본값과 직무별 독립 내용의 상속·override·reset 지원
+- 새 기능에도 동일한 Admin 맞춤 설정 계약 적용
+
+보안, 권한, 접근성, routing처럼 서비스 안전성과 동작을 보장하는 내부 규칙은 코드에서 관리. 사용자에게 보이는 정보나 제품이 지원하는 표현 선택은 코드 편집 없이 Admin Dashboard에서 관리 가능해야 함.
 
 ---
 
@@ -84,19 +96,19 @@ Next.js 16 App Router + Supabase 기반 포트폴리오 & 기술 블로그 템�
 2. 방금 Fork한 저장소를 선택함.
 3. **Environment Variables**에 아래 값을 입력함:
 
-| 변수                                   | 값                                            |
-| -------------------------------------- | --------------------------------------------- |
-| `AUTH_SECRET`                          | 아래 명령으로 생성한 랜덤 secret              |
-| `AUTH_ADMIN_EMAIL`                     | 관리자 로그인 email                           |
-| `AUTH_ADMIN_PASSWORD_HASH`             | 아래 명령으로 생성한 scrypt hash              |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase 프로젝트 URL                         |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key                      |
-| `SUPABASE_SECRET_KEY`                  | Supabase secret key                           |
-| `R2_ACCOUNT_ID`                        | Cloudflare Account ID                         |
-| `R2_ACCESS_KEY_ID`                     | R2 API token Access Key ID                    |
-| `R2_SECRET_ACCESS_KEY`                 | R2 API token Secret Access Key                |
-| `R2_BUCKET`                            | R2 bucket 이름                                |
-| `R2_PUBLIC_URL`                        | R2 public URL (`https://pub-...`)             |
+| 변수                                   | 값                                |
+| -------------------------------------- | --------------------------------- |
+| `AUTH_SECRET`                          | 아래 명령으로 생성한 랜덤 secret  |
+| `AUTH_ADMIN_EMAIL`                     | 관리자 로그인 email               |
+| `AUTH_ADMIN_PASSWORD_HASH`             | 아래 명령으로 생성한 scrypt hash  |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase 프로젝트 URL             |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key          |
+| `SUPABASE_SECRET_KEY`                  | Supabase secret key               |
+| `R2_ACCOUNT_ID`                        | Cloudflare Account ID             |
+| `R2_ACCESS_KEY_ID`                     | R2 API token Access Key ID        |
+| `R2_SECRET_ACCESS_KEY`                 | R2 API token Secret Access Key    |
+| `R2_BUCKET`                            | R2 bucket 이름                    |
+| `R2_PUBLIC_URL`                        | R2 public URL (`https://pub-...`) |
 
 1. **Deploy**를 클릭함.
 
@@ -123,19 +135,19 @@ Next.js 16 App Router + Supabase 기반 포트폴리오 & 기술 블로그 템�
 
 위 버튼을 클릭하고 환경 변수를 입력함:
 
-| 변수                                   | 값                                            |
-| -------------------------------------- | --------------------------------------------- |
-| `AUTH_SECRET`                          | 아래 명령으로 생성한 랜덤 secret              |
-| `AUTH_ADMIN_EMAIL`                     | 관리자 로그인 email                           |
-| `AUTH_ADMIN_PASSWORD_HASH`             | 아래 명령으로 생성한 scrypt hash              |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase 프로젝트 URL                         |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key                      |
-| `SUPABASE_SECRET_KEY`                  | Supabase secret key                           |
-| `R2_ACCOUNT_ID`                        | Cloudflare Account ID                         |
-| `R2_ACCESS_KEY_ID`                     | R2 API token Access Key ID                    |
-| `R2_SECRET_ACCESS_KEY`                 | R2 API token Secret Access Key                |
-| `R2_BUCKET`                            | R2 bucket 이름                                |
-| `R2_PUBLIC_URL`                        | R2 public URL (`https://pub-...`)             |
+| 변수                                   | 값                                |
+| -------------------------------------- | --------------------------------- |
+| `AUTH_SECRET`                          | 아래 명령으로 생성한 랜덤 secret  |
+| `AUTH_ADMIN_EMAIL`                     | 관리자 로그인 email               |
+| `AUTH_ADMIN_PASSWORD_HASH`             | 아래 명령으로 생성한 scrypt hash  |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase 프로젝트 URL             |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key          |
+| `SUPABASE_SECRET_KEY`                  | Supabase secret key               |
+| `R2_ACCOUNT_ID`                        | Cloudflare Account ID             |
+| `R2_ACCESS_KEY_ID`                     | R2 API token Access Key ID        |
+| `R2_SECRET_ACCESS_KEY`                 | R2 API token Secret Access Key    |
+| `R2_BUCKET`                            | R2 bucket 이름                    |
+| `R2_PUBLIC_URL`                        | R2 public URL (`https://pub-...`) |
 
 ---
 
@@ -171,9 +183,9 @@ Admin은 Supabase Auth 계정이 아니라 Vercel 환경 변수의 credentials�
 
 > `AUTH_ADMIN_PASSWORD_HASH`의 `$`는 반드시 `\$`로 둔다. Next.js `.env.local` loader는 raw `scrypt$...$...`의 `$...` 부분을 환경 변수 참조로 치환하려고 하므로 hash가 `scrypt`처럼 잘려 invalid 상태가 된다. 로그인 setup 화면도 같은 이유로 `scrypt\$<salt>\$<hash>` 형식의 명령을 출력한다.
 
-### 4단계 — 콘텐츠 입력
+### 4단계 — 콘텐츠와 표시 방식 설정
 
-`/admin`에 로그인해 About me, 포트폴리오, 블로그 글을 채우면 됨. Color Scheme과 직군(Job Field)은 Admin → **Site Config**에서 언제든 변경 가능.
+`/admin`에 로그인해 Resume, About Me, Portfolio, Blog와 각 정보의 표시 여부·순서·지원되는 표현 방식을 설정. Color Scheme과 직군(Job Field)은 Admin → **Site Config**에서 언제든 변경 가능.
 
 ---
 
