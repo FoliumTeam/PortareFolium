@@ -101,7 +101,7 @@ test("Resume 관리자에서 개인 정보와 preset 설정을 제공한다", as
         presentation.getByRole("heading", { name: "표시와 디자인" })
     ).toBeVisible();
     await expect(
-        presentation.getByRole("button", { name: /좌우 분할형/ })
+        presentation.getByRole("button", { name: /프로필 헤더형/ })
     ).toBeVisible();
     await expect(
         presentation.getByText("생년월일", { exact: true })
