@@ -40,6 +40,7 @@ export const ResumeBasicsSection = ({
     const update = (patch: Partial<ResumeBasics>) =>
         onChange({ ...value, ...patch });
     const profiles = value.profiles ?? [];
+    const countryCode = value.location?.countryCode ?? "";
 
     const updateProfile = (index: number, patch: Partial<ResumeProfile>) => {
         const next = [...profiles];
@@ -185,47 +186,151 @@ export const ResumeBasicsSection = ({
                 <p className="mb-4 text-base font-semibold text-(--color-foreground)">
                     위치와 개인 사항
                 </p>
-                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                    <InputField
-                        label="주소"
-                        value={value.location?.address ?? ""}
-                        onChange={(address) =>
-                            update({ location: { ...value.location, address } })
-                        }
-                    />
-                    <InputField
-                        label="도시"
-                        value={value.location?.city ?? ""}
-                        onChange={(city) =>
-                            update({ location: { ...value.location, city } })
-                        }
-                    />
-                    <InputField
-                        label="지역"
-                        value={value.location?.region ?? ""}
-                        onChange={(region) =>
-                            update({ location: { ...value.location, region } })
-                        }
-                    />
-                    <InputField
-                        label="우편번호"
-                        value={value.location?.postalCode ?? ""}
-                        onChange={(postalCode) =>
+                <div>
+                    <label
+                        htmlFor="resume-country-code"
+                        className="text-sm font-medium text-(--color-muted)"
+                    >
+                        국가
+                    </label>
+                    <select
+                        id="resume-country-code"
+                        value={countryCode}
+                        onChange={(event) =>
                             update({
-                                location: { ...value.location, postalCode },
+                                location: {
+                                    ...value.location,
+                                    countryCode: event.target.value,
+                                },
                             })
                         }
-                    />
-                    <InputField
-                        label="국가 코드"
-                        value={value.location?.countryCode ?? ""}
-                        onChange={(countryCode) =>
-                            update({
-                                location: { ...value.location, countryCode },
-                            })
-                        }
-                        placeholder="KR"
-                    />
+                        className="mt-1 w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground)"
+                    >
+                        <option value="">국가 선택</option>
+                        <option value="KR">대한민국</option>
+                        <option value="US">미국</option>
+                    </select>
+                    <p className="mt-1 text-sm leading-6 text-(--color-muted)">
+                        국가를 먼저 선택하면 해당 국가에 맞는 주소 입력 항목이
+                        표시됩니다.
+                    </p>
+                </div>
+
+                {countryCode === "KR" ? (
+                    <div className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-4">
+                        <InputField
+                            label="도로명 주소"
+                            value={value.location?.address ?? ""}
+                            onChange={(address) =>
+                                update({
+                                    location: { ...value.location, address },
+                                })
+                            }
+                            placeholder="예: 세종대로 110"
+                        />
+                        <InputField
+                            label="상세 주소"
+                            value={value.location?.addressDetail ?? ""}
+                            onChange={(addressDetail) =>
+                                update({
+                                    location: {
+                                        ...value.location,
+                                        addressDetail,
+                                    },
+                                })
+                            }
+                            placeholder="예: 101동 1001호"
+                        />
+                        <InputField
+                            label="시/군/구"
+                            value={value.location?.city ?? ""}
+                            onChange={(city) =>
+                                update({
+                                    location: { ...value.location, city },
+                                })
+                            }
+                        />
+                        <InputField
+                            label="시/도"
+                            value={value.location?.region ?? ""}
+                            onChange={(region) =>
+                                update({
+                                    location: { ...value.location, region },
+                                })
+                            }
+                        />
+                        <InputField
+                            label="우편번호"
+                            value={value.location?.postalCode ?? ""}
+                            onChange={(postalCode) =>
+                                update({
+                                    location: {
+                                        ...value.location,
+                                        postalCode,
+                                    },
+                                })
+                            }
+                        />
+                    </div>
+                ) : countryCode === "US" ? (
+                    <div className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-4">
+                        <InputField
+                            label="Street address"
+                            value={value.location?.address ?? ""}
+                            onChange={(address) =>
+                                update({
+                                    location: { ...value.location, address },
+                                })
+                            }
+                            placeholder="예: 123 Main Street"
+                        />
+                        <InputField
+                            label="Apt, suite, unit"
+                            value={value.location?.addressDetail ?? ""}
+                            onChange={(addressDetail) =>
+                                update({
+                                    location: {
+                                        ...value.location,
+                                        addressDetail,
+                                    },
+                                })
+                            }
+                        />
+                        <InputField
+                            label="City"
+                            value={value.location?.city ?? ""}
+                            onChange={(city) =>
+                                update({
+                                    location: { ...value.location, city },
+                                })
+                            }
+                        />
+                        <InputField
+                            label="State"
+                            value={value.location?.region ?? ""}
+                            onChange={(region) =>
+                                update({
+                                    location: { ...value.location, region },
+                                })
+                            }
+                            placeholder="예: CA"
+                        />
+                        <InputField
+                            label="ZIP code"
+                            value={value.location?.postalCode ?? ""}
+                            onChange={(postalCode) =>
+                                update({
+                                    location: {
+                                        ...value.location,
+                                        postalCode,
+                                    },
+                                })
+                            }
+                        />
+                    </div>
+                ) : null}
+
+                <div className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-4">
                     <InputField
                         label="생년월일"
                         value={value.birthDate ?? ""}

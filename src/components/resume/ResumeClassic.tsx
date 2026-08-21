@@ -582,6 +582,7 @@ export default async function ResumeClassic({
                         <div className="text-base text-(--color-foreground)">
                             {[
                                 basics.location.address,
+                                basics.location.addressDetail,
                                 basics.location.city,
                                 basics.location.region,
                                 basics.location.postalCode,

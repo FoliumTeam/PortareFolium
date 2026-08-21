@@ -84,6 +84,10 @@ test("Resume 관리자에서 개인 정보와 preset 설정을 제공한다", as
     ).toBeVisible();
     await expect(basics.getByText("생년월일", { exact: true })).toBeVisible();
     await expect(basics.getByText("병역 상태", { exact: true })).toBeVisible();
+    await expect(basics.getByLabel("국가")).toBeVisible();
+    await expect(
+        basics.getByText(/국가를 먼저 선택하면 해당 국가에 맞는 주소 입력 항목/)
+    ).toBeVisible();
     await expect(
         basics.getByText(/Custom은 목록에 없는 서비스용/)
     ).toBeVisible();

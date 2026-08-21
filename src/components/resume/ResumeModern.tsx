@@ -655,6 +655,7 @@ export default async function ResumeModern({
     const location = basics.location
         ? [
               basics.location.address,
+              basics.location.addressDetail,
               basics.location.city,
               basics.location.region,
               basics.location.postalCode,

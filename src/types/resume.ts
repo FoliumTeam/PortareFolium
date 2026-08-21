@@ -21,6 +21,7 @@ export const defaultSectionLabels: Record<string, string> = {
 
 export interface ResumeLocation {
     address?: string;
+    addressDetail?: string;
     postalCode?: string;
     city?: string;
     countryCode?: string;
