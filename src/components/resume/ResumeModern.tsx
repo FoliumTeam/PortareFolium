@@ -872,7 +872,7 @@ export default async function ResumeModern({
                         {renderImage(
                             "h-24 w-24 max-tablet:h-20 max-tablet:w-20"
                         )}
-                        {renderIdentity(true)}
+                        {renderIdentity()}
                     </div>
                     {renderMetadata(
                         "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
