@@ -68,11 +68,7 @@ export function normalizeResumeBasicsPresentation(
     );
 
     return {
-        headerPreset:
-            value.headerPreset === "profileCard" ||
-            value.headerPreset === "compact"
-                ? value.headerPreset
-                : "split",
+        headerPreset: "split",
         personalDetailPreset:
             value.personalDetailPreset === "concise" ? "concise" : "detailed",
         visibility,

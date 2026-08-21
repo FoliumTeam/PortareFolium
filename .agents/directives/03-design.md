@@ -16,6 +16,7 @@
 - **Control Guidance**: Admin의 각 value group에는 목적과 공개 효과를 설명하는 짧은 문구 제공. 입력 field에는 구체적 label과 필요한 형식·예시 제공. Custom option에는 사용 범위와 추가 입력 안내 제공. 순서·삭제·reset button에는 화면 결과가 드러나는 label 또는 tooltip·`aria-label` 제공.
 - **Icon Actions**: 순서 이동·삭제·편집처럼 널리 이해되는 compact action은 Lucide icon button 우선. button 본문에 중복 text를 넣지 않고 tooltip과 `aria-label`에만 행동 설명 제공.
 - **Breakpoint Direction**: `tablet:` prefix부터 widescreen·PC view 규칙으로 취급. 중복되는 style class의 non-prefixed 값은 mobile 기본값, `tablet:` 값은 desktop override로 작성. 모든 breakpoint에 공통인 non-overlapping style class에는 prefix를 붙이지 않는다.
+- **Reusable Thumbnail Selector**: Admin에서 2개 이상 preset을 고를 때 thumbnail card selector를 재사용. 실제 구조 preview, 짧은 설명, 추천 badge, `aria-pressed`, 선택 semantic color, 즉시 저장·rollback 적용. 단일 preset은 선택 control 대신 현재 구조 설명으로 축소.
 
 ## Implementation Specifics
 

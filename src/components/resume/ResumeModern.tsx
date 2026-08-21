@@ -891,22 +891,20 @@ export default async function ResumeModern({
                 data-pdf-block
             >
                 <div
-                    className={`grid items-start gap-6 ${
+                    className={`grid items-center gap-6 ${
                         image
                             ? "tablet:grid-cols-[13rem_minmax(0,1fr)]"
                             : "grid-cols-1"
                     } max-tablet:justify-items-center`}
                 >
                     {image}
-                    <div className="max-tablet:w-full min-w-0">
-                        <div className="max-tablet:text-center">
-                            {renderIdentity()}
-                        </div>
-                        {renderMetadata(
-                            "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2 max-tablet:text-left"
-                        )}
+                    <div className="max-tablet:w-full max-tablet:text-center min-w-0">
+                        {renderIdentity("text-left max-tablet:text-center")}
                     </div>
                 </div>
+                {renderMetadata(
+                    "mt-6 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
+                )}
                 {renderSummary("mt-6 border-t border-(--color-border) pt-5")}
             </header>
         );

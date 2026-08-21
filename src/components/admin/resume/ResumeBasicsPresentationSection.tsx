@@ -52,19 +52,9 @@ const headerPresets: Array<{
 }> = [
     {
         value: "split",
-        title: "좌우 분할형",
-        description: "사진과 전문 정보를 분리한 균형형 상단",
+        title: "프로필 헤더형",
+        description: "사진·identity 상단 행과 full-width metadata 구성",
         recommended: true,
-    },
-    {
-        value: "profileCard",
-        title: "프로필 카드형",
-        description: "정체성과 연락처를 뚜렷하게 분리한 카드형 상단",
-    },
-    {
-        value: "compact",
-        title: "콤팩트 가로형",
-        description: "짧은 Resume와 PDF 첫 페이지를 위한 밀도형 상단",
     },
 ];
 
@@ -264,7 +254,7 @@ export const ResumeBasicsPresentationSection = ({
                         </span>
                     ) : null}
                 </div>
-                <div className="tablet:grid-cols-3 mt-4 grid grid-cols-1 gap-3">
+                <div className="mt-4 grid grid-cols-1 gap-3">
                     {headerPresets.map((preset) => {
                         const selected =
                             activePresentation.headerPreset === preset.value;
