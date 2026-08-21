@@ -6,7 +6,8 @@ const DEBOUNCE_MS = 3_000;
 export function useAutoSave(
     isDirty: boolean,
     enabled: boolean,
-    saveFn: () => Promise<void>
+    saveFn: () => Promise<void>,
+    changeToken?: unknown
 ): { savedAt: Date | null; saving: boolean } {
     const [savedAt, setSavedAt] = useState<Date | null>(null);
     const [saving, setSaving] = useState(false);
@@ -48,7 +49,7 @@ export function useAutoSave(
                 timerRef.current = null;
             }
         };
-    }, [enabled, isDirty]);
+    }, [changeToken, enabled, isDirty]);
 
     return { savedAt, saving };
 }

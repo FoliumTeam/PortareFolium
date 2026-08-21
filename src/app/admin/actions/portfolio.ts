@@ -12,6 +12,8 @@ import type { PortfolioRawRow } from "@/types/portfolio";
 
 const PORTFOLIO_SELECT_FIELDS =
     "id, slug, title, description, tags, thumbnail, content, data, featured, order_idx, published, job_field, meta_title, meta_description, og_image";
+const PORTFOLIO_BOOTSTRAP_SELECT_FIELDS =
+    "id, slug, title, description, tags, thumbnail, data, featured, order_idx, published, job_field, meta_title, meta_description, og_image";
 
 type PortfolioRow = {
     id: string;
@@ -117,7 +119,7 @@ export async function getPortfolioPanelBootstrap() {
     ] = await Promise.all([
         serverClient
             .from("portfolio_items")
-            .select(PORTFOLIO_SELECT_FIELDS)
+            .select(PORTFOLIO_BOOTSTRAP_SELECT_FIELDS)
             .order("order_idx"),
         serverClient
             .from("editor_states")
@@ -160,7 +162,10 @@ export async function getPortfolioPanelBootstrap() {
     }
 
     return {
-        items: (itemsData as PortfolioRow[]) ?? [],
+        items:
+            (itemsData as Omit<PortfolioRow, "content">[] | null)?.map(
+                (item) => ({ ...item, content: "" })
+            ) ?? [],
         stateCounts,
         jobFields: (jobFieldsRow?.value as JobFieldItem[]) ?? [],
         activeJobField: "",
@@ -169,6 +174,23 @@ export async function getPortfolioPanelBootstrap() {
                 ? ("timeline" as const)
                 : ("cards" as const),
     };
+}
+
+export async function getPortfolioItemContent(
+    id: string
+): Promise<
+    { success: true; content: string } | { success: false; error: string }
+> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const { data, error } = await serverClient
+        .from("portfolio_items")
+        .select("content")
+        .eq("id", id)
+        .single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, content: data?.content ?? "" };
 }
 
 // 포트폴리오 목록 디자인 저장

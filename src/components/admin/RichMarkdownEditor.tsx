@@ -640,7 +640,8 @@ export default function RichMarkdownEditor({
                             <button
                                 onClick={() => setIsFullscreen(false)}
                                 className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                aria-label="Exit fullscreen"
+                                title="전체화면 종료"
+                                aria-label="전체화면 종료"
                             >
                                 ✕
                             </button>
