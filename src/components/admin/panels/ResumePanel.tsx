@@ -682,16 +682,6 @@ export default function ResumePanel() {
                                 자동 저장 완료 {fmtTime(savedAt)}
                             </span>
                         )}
-                        {!layoutEditMode && (
-                            <button
-                                onClick={() =>
-                                    scrollToEditorSection("projects")
-                                }
-                                className="rounded-lg bg-blue-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                            >
-                                대표 프로젝트 편집
-                            </button>
-                        )}
                         <button
                             onClick={async () => {
                                 const saved = initialSectionLayoutRef.current;
@@ -4627,6 +4617,9 @@ export default function ResumePanel() {
                             layout={resumeSectionLayout}
                             onChange={setResumeSectionLayout}
                             theme={resumeLayout}
+                            jobFields={jobFields}
+                            aboutData={aboutData ?? {}}
+                            basicsPresentation={resumeBasicsPresentation}
                         />
                     </div>
                 ) : null}

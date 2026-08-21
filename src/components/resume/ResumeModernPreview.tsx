@@ -1,7 +1,11 @@
 "use client";
 
-import { Fragment } from "react";
-import type { Resume, ResumeCoreCompetency } from "@/types/resume";
+import { Fragment, type ReactNode } from "react";
+import type {
+    Resume,
+    ResumeBasicsPresentation,
+    ResumeCoreCompetency,
+} from "@/types/resume";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import EducationMetadata from "@/components/resume/EducationMetadata";
 import LanguagesSection from "@/components/resume/LanguagesSection";
@@ -10,11 +14,19 @@ import {
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
+import {
+    formatResumeBirthDate,
+    formatResumeMilitary,
+} from "@/lib/resume-basics-presentation";
+import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
+import { ResumeProfileIcon } from "@/components/resume/ResumeProfileIcon";
 
 interface Props {
     resume: Resume;
     coreCompetencies?: ResumeCoreCompetency[];
     sectionLayout?: ResumeSectionLayout;
+    basicsPresentation: ResumeBasicsPresentation;
+    activeJobField?: string;
 }
 
 // 날짜 포맷
@@ -32,8 +44,11 @@ export default function ResumeModernPreview({
     resume,
     coreCompetencies = [],
     sectionLayout,
+    basicsPresentation,
+    activeJobField,
 }: Props) {
     const basics = resume.basics ?? {};
+    const visible = basicsPresentation.visibility;
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
 
     const getLabel = (key: string) => {
@@ -185,7 +200,9 @@ export default function ResumeModernPreview({
 
     const renderProjects = () => (
         <section key="projects" className="mb-10">
-            {sectionH2(getLabel("projects"))}
+            {sectionH2(
+                `${activeJobField ? "대표 " : ""}${getLabel("projects")}`
+            )}
             <div className="grid grid-cols-1 gap-4">
                 {(resume.projects?.entries ?? []).map((p, idx) => (
                     <div
@@ -418,21 +435,124 @@ export default function ResumeModernPreview({
             ),
     };
 
+    const location = basics.location
+        ? [
+              basics.location.address,
+              basics.location.addressDetail,
+              basics.location.city,
+              basics.location.region,
+              basics.location.postalCode,
+              basics.location.countryCode === "KR"
+                  ? "대한민국"
+                  : basics.location.countryCode === "US"
+                    ? "미국"
+                    : basics.location.countryCode,
+          ]
+              .filter(Boolean)
+              .join(", ")
+        : "";
+    const metadataItems: { label: string; value: ReactNode }[] = [];
+    if (visible.email && basics.email) {
+        metadataItems.push({ label: "이메일", value: basics.email });
+    }
+    if (visible.phone && basics.phone) {
+        metadataItems.push({ label: "전화번호", value: basics.phone });
+    }
+    if (visible.url && basics.url) {
+        metadataItems.push({ label: "웹사이트", value: basics.url });
+    }
+    if (visible.location && location) {
+        metadataItems.push({ label: "위치", value: location });
+    }
+    if (visible.birthDate && basics.birthDate) {
+        metadataItems.push({
+            label: "생년월일",
+            value: formatResumeBirthDate(
+                basics.birthDate,
+                basicsPresentation.personalDetailPreset
+            ),
+        });
+    }
+    if (visible.military && basics.military?.status) {
+        metadataItems.push({
+            label: "병역",
+            value: formatResumeMilitary(
+                basics.military,
+                basicsPresentation.personalDetailPreset
+            ),
+        });
+    }
+
     return (
         <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
-            <header className="mb-8 border-b-2 border-(--color-border) pb-7">
-                {basics.name ? (
-                    <h1 className="m-0 mb-1 text-center text-4xl font-extrabold tracking-[-0.03em] text-(--color-foreground)">
-                        {basics.name}
-                    </h1>
+            <header className="mb-10 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-8">
+                <div
+                    className={`grid items-center gap-6 ${visible.image && basics.image ? "grid-cols-[13rem_minmax(0,1fr)]" : "grid-cols-1"}`}
+                >
+                    {visible.image && basics.image ? (
+                        <img
+                            src={basics.image}
+                            alt={basics.name || "Profile"}
+                            className={`h-52 w-52 shrink-0 border border-(--color-border) object-cover object-top ${
+                                basics.imageStyle === "rounded"
+                                    ? "rounded-full"
+                                    : basics.imageStyle === "squared"
+                                      ? "rounded-none"
+                                      : "rounded-xl"
+                            }`}
+                        />
+                    ) : null}
+                    <div className="min-w-0 text-left">
+                        {visible.name && basics.name ? (
+                            <h1 className="m-0 text-3xl leading-tight font-extrabold tracking-[-0.03em] text-(--color-foreground)">
+                                {basics.name}
+                            </h1>
+                        ) : null}
+                        {visible.headline && basics.label ? (
+                            <p className="mt-1 text-lg font-medium text-(--color-muted)">
+                                {basics.label}
+                            </p>
+                        ) : null}
+                    </div>
+                </div>
+                {metadataItems.length > 0 ? (
+                    <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4">
+                        {metadataItems.map((item) => (
+                            <div key={item.label} className="min-w-0">
+                                <p className="text-xs font-bold tracking-[0.14em] text-(--color-muted) uppercase">
+                                    {item.label}
+                                </p>
+                                <div className="mt-1 text-base break-words text-(--color-foreground)">
+                                    {item.value}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : null}
-                {basics.label ? (
-                    <p className="m-0 mb-3 text-center text-lg text-(--color-muted)">
-                        {basics.label}
-                    </p>
+                {visible.profiles && basics.profiles?.length ? (
+                    <div className="mt-5 flex flex-wrap gap-2">
+                        {basics.profiles.map((profile, index) => {
+                            const brand = getResumeProfileBrand(profile);
+                            return (
+                                <span
+                                    key={`${brand.preset}-${index}`}
+                                    style={{
+                                        backgroundColor: brand.backgroundColor,
+                                        color: brand.foregroundColor,
+                                    }}
+                                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold shadow-sm"
+                                >
+                                    <ResumeProfileIcon preset={brand.preset} />
+                                    {profile.username ||
+                                        profile.network ||
+                                        brand.label}
+                                </span>
+                            );
+                        })}
+                    </div>
                 ) : null}
-                {basics.summary ? (
-                    <p className="m-0 mt-3 text-center text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
+                {visible.summary && basics.summary ? (
+                    <p className="m-0 mt-6 max-w-[72ch] border-t border-(--color-border) pt-5 text-lg leading-[1.75] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
