@@ -9,13 +9,19 @@ type ProfileBrand = {
 
 const PROFILE_BRAND_COLORS: Record<ResumeProfilePreset, string> = {
     github: "#24292f",
+    gitlab: "#fc6d26",
     linkedin: "#0a66c2",
+    figma: "#f24e1e",
+    npm: "#cb3837",
     custom: "#64748b",
 };
 
 const PROFILE_LABELS: Record<ResumeProfilePreset, string> = {
     github: "GitHub",
+    gitlab: "GitLab",
     linkedin: "LinkedIn",
+    figma: "Figma",
+    npm: "npm",
     custom: "Custom",
 };
 
@@ -49,12 +55,21 @@ export function getProfileContrastColor(
 export function inferResumeProfilePreset(
     profile: Pick<ResumeProfile, "network" | "preset">
 ): ResumeProfilePreset {
-    if (profile.preset === "github" || profile.preset === "linkedin") {
+    if (
+        profile.preset === "github" ||
+        profile.preset === "gitlab" ||
+        profile.preset === "linkedin" ||
+        profile.preset === "figma" ||
+        profile.preset === "npm"
+    ) {
         return profile.preset;
     }
     const network = profile.network?.trim().toLowerCase();
     if (network === "github") return "github";
+    if (network === "gitlab") return "gitlab";
     if (network === "linkedin") return "linkedin";
+    if (network === "figma") return "figma";
+    if (network === "npm") return "npm";
     return "custom";
 }
 

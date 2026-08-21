@@ -11,6 +11,9 @@ describe("resume profile presets", () => {
         expect(inferResumeProfilePreset({ network: "linkedin" })).toBe(
             "linkedin"
         );
+        expect(inferResumeProfilePreset({ network: "GitLab" })).toBe("gitlab");
+        expect(inferResumeProfilePreset({ network: "Figma" })).toBe("figma");
+        expect(inferResumeProfilePreset({ network: "npm" })).toBe("npm");
         expect(inferResumeProfilePreset({ network: "Website" })).toBe("custom");
     });
 
@@ -26,6 +29,18 @@ describe("resume profile presets", () => {
             label: "LinkedIn",
             backgroundColor: "#0a66c2",
             foregroundColor: "#ffffff",
+        });
+        expect(getResumeProfileBrand({ preset: "gitlab" })).toMatchObject({
+            label: "GitLab",
+            backgroundColor: "#fc6d26",
+        });
+        expect(getResumeProfileBrand({ preset: "figma" })).toMatchObject({
+            label: "Figma",
+            backgroundColor: "#f24e1e",
+        });
+        expect(getResumeProfileBrand({ preset: "npm" })).toMatchObject({
+            label: "npm",
+            backgroundColor: "#cb3837",
         });
     });
 });

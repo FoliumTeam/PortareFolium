@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode } from "react";
-import { Github, Link, Linkedin } from "lucide-react";
+import { Figma, Github, Gitlab, Link, Linkedin, Package } from "lucide-react";
 import type {
     Resume,
     ResumeBasicsPresentation,
     ResumeCoreCompetency,
+    ResumeProfilePreset,
 } from "@/types/resume";
 import {
     formatResumeBirthDate,
@@ -793,7 +794,7 @@ export default async function ResumeModern({
 
     const renderHeader = () => {
         const image = renderImage(
-            "h-full min-h-64 w-44 self-stretch object-top max-tablet:h-36 max-tablet:min-h-0 max-tablet:w-36"
+            "h-52 w-52 object-top max-tablet:h-36 max-tablet:w-36"
         );
         if (basicsPresentation.headerPreset === "profileCard") {
             return (
@@ -845,9 +846,9 @@ export default async function ResumeModern({
                 data-pdf-block
             >
                 <div
-                    className={`grid items-stretch gap-6 ${
+                    className={`grid items-start gap-6 ${
                         image
-                            ? "tablet:grid-cols-[11rem_minmax(0,1fr)]"
+                            ? "tablet:grid-cols-[13rem_minmax(0,1fr)]"
                             : "grid-cols-1"
                     } max-tablet:justify-items-center`}
                 >
@@ -883,12 +884,11 @@ export default async function ResumeModern({
     );
 }
 
-const ProfileIcon = ({
-    preset,
-}: {
-    preset: "github" | "linkedin" | "custom";
-}) => {
+const ProfileIcon = ({ preset }: { preset: ResumeProfilePreset }) => {
     if (preset === "github") return <Github className="h-4 w-4" />;
+    if (preset === "gitlab") return <Gitlab className="h-4 w-4" />;
     if (preset === "linkedin") return <Linkedin className="h-4 w-4" />;
+    if (preset === "figma") return <Figma className="h-4 w-4" />;
+    if (preset === "npm") return <Package className="h-4 w-4" />;
     return <Link className="h-4 w-4" />;
 };

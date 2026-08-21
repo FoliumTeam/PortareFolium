@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { Github, Link, Linkedin } from "lucide-react";
+import { Figma, Github, Gitlab, Link, Linkedin, Package } from "lucide-react";
 import type {
     ResumeBasics,
     ResumeProfile,
@@ -290,7 +290,10 @@ export const ResumeBasicsSection = ({
                                     {(
                                         [
                                             "github",
+                                            "gitlab",
                                             "linkedin",
+                                            "figma",
+                                            "npm",
                                             "custom",
                                         ] as const
                                     ).map((preset) => {
@@ -410,6 +413,9 @@ export const ResumeBasicsSection = ({
 
 const ProfilePresetIcon = ({ preset }: { preset: ResumeProfilePreset }) => {
     if (preset === "github") return <Github className="h-4 w-4" />;
+    if (preset === "gitlab") return <Gitlab className="h-4 w-4" />;
     if (preset === "linkedin") return <Linkedin className="h-4 w-4" />;
+    if (preset === "figma") return <Figma className="h-4 w-4" />;
+    if (preset === "npm") return <Package className="h-4 w-4" />;
     return <Link className="h-4 w-4" />;
 };

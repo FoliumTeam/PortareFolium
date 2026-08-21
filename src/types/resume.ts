@@ -34,7 +34,13 @@ export interface ResumeProfile {
     preset?: ResumeProfilePreset;
 }
 
-export type ResumeProfilePreset = "github" | "linkedin" | "custom";
+export type ResumeProfilePreset =
+    | "github"
+    | "gitlab"
+    | "linkedin"
+    | "figma"
+    | "npm"
+    | "custom";
 
 export type ResumeMilitary = {
     status?: string;
