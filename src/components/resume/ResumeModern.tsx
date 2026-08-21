@@ -792,14 +792,33 @@ export default async function ResumeModern({
                                 "militaryStatus",
                                 "militaryPeriod",
                             ].includes(item.key)
-                                ? "rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5"
+                                ? "border-l-2 border-(--color-accent)/45 pl-3"
                                 : ""
                         }`}
                     >
-                        <p className="text-xs font-bold tracking-[0.14em] text-(--color-muted) uppercase">
+                        <p
+                            className={`text-xs font-bold tracking-[0.14em] uppercase ${
+                                [
+                                    "location",
+                                    "birthDate",
+                                    "militaryStatus",
+                                    "militaryPeriod",
+                                ].includes(item.key)
+                                    ? "text-(--color-accent)"
+                                    : "text-(--color-muted)"
+                            }`}
+                        >
                             {item.label}
                         </p>
-                        <div className="mt-1 text-base text-(--color-foreground)">
+                        <div
+                            className={`mt-1 text-base text-(--color-foreground) ${
+                                ["birthDate", "militaryPeriod"].includes(
+                                    item.key
+                                )
+                                    ? "font-semibold tabular-nums"
+                                    : ""
+                            }`}
+                        >
                             {item.value}
                         </div>
                     </div>
