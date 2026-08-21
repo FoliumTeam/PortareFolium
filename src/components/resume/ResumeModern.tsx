@@ -764,8 +764,8 @@ export default async function ResumeModern({
             />
         ) : null;
 
-    const renderIdentity = (centered = false) => (
-        <div className={centered ? "text-center" : "text-left"}>
+    const renderIdentity = (alignmentClass = "text-left") => (
+        <div className={alignmentClass}>
             {visible.name && basics.name ? (
                 <h1 className="m-0 text-3xl leading-tight font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                     {basics.name}
@@ -849,7 +849,9 @@ export default async function ResumeModern({
                         {renderImage(
                             "h-44 w-44 max-tablet:h-28 max-tablet:w-28"
                         )}
-                        <div className="mt-4">{renderIdentity(true)}</div>
+                        <div className="mt-4">
+                            {renderIdentity("text-center")}
+                        </div>
                     </div>
                     <div className="min-w-0">
                         {renderMetadata(
@@ -872,7 +874,7 @@ export default async function ResumeModern({
                         {renderImage(
                             "h-24 w-24 max-tablet:h-20 max-tablet:w-20"
                         )}
-                        {renderIdentity()}
+                        {renderIdentity("text-center tablet:text-left")}
                     </div>
                     {renderMetadata(
                         "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
