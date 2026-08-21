@@ -842,12 +842,12 @@ export default async function ResumeModern({
         if (basicsPresentation.headerPreset === "profileCard") {
             return (
                 <header
-                    className="tablet:grid-cols-[11rem_minmax(0,1fr)] tablet:p-8 mb-10 grid gap-6 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                    className="tablet:grid-cols-[15rem_minmax(0,1fr)] tablet:p-8 mb-10 grid gap-6 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
                     data-pdf-block
                 >
                     <div className="flex flex-col items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
                         {renderImage(
-                            "h-44 w-44 max-tablet:h-28 max-tablet:w-28"
+                            "aspect-square w-full max-w-44 object-top max-tablet:max-w-28"
                         )}
                         <div className="mt-4">
                             {renderIdentity("text-center")}
