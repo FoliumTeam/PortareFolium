@@ -2,6 +2,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { serverClient } from "@/lib/supabase";
 import { readPostContentById } from "@/lib/post-content-chunks";
+import type { ResumeBasics } from "@/types/resume";
 
 export const PUBLIC_CONTENT_CACHE_TAG = "public-content";
 
@@ -70,6 +71,24 @@ const getCachedSiteConfig = unstable_cache(
 );
 
 export const getSiteConfig = cache(getCachedSiteConfig);
+
+const getCachedResumeBasics = unstable_cache(
+    async (): Promise<ResumeBasics> => {
+        if (!serverClient) return {};
+        const { data } = await serverClient
+            .from("resume_data")
+            .select("data")
+            .eq("lang", "ko")
+            .single();
+        const basics = (data?.data as { basics?: ResumeBasics } | undefined)
+            ?.basics;
+        return basics ?? {};
+    },
+    ["resume-basics"],
+    PUBLIC_CONTENT_CACHE_OPTIONS
+);
+
+export const getPublicResumeBasics = cache(getCachedResumeBasics);
 
 // generateMetadata 전용 — content 제외 경량 쿼리
 const getCachedPostMeta = unstable_cache(

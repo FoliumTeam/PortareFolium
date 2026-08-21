@@ -273,7 +273,7 @@ export const ResumeBasicsPresentationSection = ({
                                         : "border-(--color-border) bg-(--color-surface) hover:border-(--color-accent)/50"
                                 }`}
                             >
-                                <PresetPreview preset={preset.value} />
+                                <PresetPreview />
                                 <span className="mt-3 flex items-center gap-2 text-sm font-semibold text-(--color-foreground)">
                                     {preset.title}
                                     {preset.recommended ? (
@@ -360,37 +360,7 @@ export const ResumeBasicsPresentationSection = ({
     );
 };
 
-const PresetPreview = ({
-    preset,
-}: {
-    preset: ResumeBasicsPresentation["headerPreset"];
-}) => {
-    if (preset === "profileCard") {
-        return (
-            <div className="grid h-16 grid-cols-[0.7fr_1.3fr] gap-2 rounded-lg bg-(--color-surface-subtle) p-2">
-                <span className="rounded-md bg-(--color-muted)/35" />
-                <span className="space-y-1.5 pt-1">
-                    <i className="block h-2 w-3/4 rounded bg-(--color-foreground)/45" />
-                    <i className="block h-1.5 w-full rounded bg-(--color-muted)/35" />
-                    <i className="block h-1.5 w-2/3 rounded bg-(--color-muted)/35" />
-                </span>
-            </div>
-        );
-    }
-    if (preset === "compact") {
-        return (
-            <div className="h-16 rounded-lg bg-(--color-surface-subtle) p-2">
-                <div className="flex items-center gap-2">
-                    <span className="h-7 w-7 rounded-full bg-(--color-muted)/35" />
-                    <span className="flex-1 space-y-1.5">
-                        <i className="block h-2 w-1/2 rounded bg-(--color-foreground)/45" />
-                        <i className="block h-1.5 w-full rounded bg-(--color-muted)/35" />
-                    </span>
-                </div>
-                <i className="mt-2 block h-1.5 w-full rounded bg-(--color-muted)/25" />
-            </div>
-        );
-    }
+const PresetPreview = () => {
     return (
         <div className="grid h-16 grid-cols-[0.55fr_1.45fr] gap-2 rounded-lg bg-(--color-surface-subtle) p-2">
             <span className="rounded-md bg-(--color-muted)/35" />

@@ -1,18 +1,8 @@
-import type { ValuePillar } from "@/types/about";
 import type { PublicJobField } from "@/lib/public-job-field";
-
-export interface AboutData {
-    name?: string;
-    description?: string;
-    descriptionSub?: string;
-    contacts?: {
-        email?: string;
-        github?: string;
-        linkedin?: string;
-    };
-    sections?: Record<string, string[]>;
-    competencySections?: Record<string, string[]>;
-}
+import type { AboutData, ValuePillar } from "@/types/about";
+import type { ResumeBasics, ResumeBasicsPresentation } from "@/types/resume";
+import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
+import { ResumeProfileIcon } from "@/components/resume/ResumeProfileIcon";
 
 const PLACEHOLDER_IMAGE = "/avatar-placeholder.svg";
 
@@ -39,7 +29,8 @@ const competencyPresentation: Record<string, string> = {
 
 type Props = {
     data: AboutData;
-    profileImage: string | null;
+    basics: ResumeBasics;
+    basicsPresentation: ResumeBasicsPresentation;
     jobField: PublicJobField;
     valuePillars: ValuePillar[];
 };
@@ -60,40 +51,66 @@ function HighlightText({ text }: { text: string }) {
 
 export default function AboutView({
     data,
-    profileImage,
+    basics,
+    basicsPresentation,
     jobField,
     valuePillars,
 }: Props) {
-    const resolvedProfileImage = profileImage || PLACEHOLDER_IMAGE;
-    const contacts = data.contacts ?? {};
+    const visible = basicsPresentation.visibility;
+    const resolvedProfileImage = basics.image?.trim() || PLACEHOLDER_IMAGE;
     const sections = data.sections ?? {};
     const competencySections = data.competencySections ?? {};
     const profileEmoji = jobField.emoji;
     const profileLabel = `${jobField.name.toUpperCase()} PROFILE`;
+    const location = basics.location
+        ? [
+              basics.location.address,
+              basics.location.addressDetail,
+              basics.location.city,
+              basics.location.region,
+              basics.location.postalCode,
+              basics.location.countryCode === "KR"
+                  ? "대한민국"
+                  : basics.location.countryCode === "US"
+                    ? "미국"
+                    : basics.location.countryCode,
+          ]
+              .filter(Boolean)
+              .join(", ")
+        : "";
 
     const contactEntries = [
         {
             label: "Email",
-            value: contacts.email?.trim(),
-            href: contacts.email ? `mailto:${contacts.email}` : undefined,
+            value: visible.email ? basics.email?.trim() : undefined,
+            href: basics.email ? `mailto:${basics.email}` : undefined,
         },
         {
-            label: "GitHub",
-            value: contacts.github?.trim(),
-            href: contacts.github || undefined,
+            label: "전화번호",
+            value: visible.phone ? basics.phone?.trim() : undefined,
+            href: basics.phone
+                ? `tel:${basics.phone.replace(/[^\d+]/g, "")}`
+                : undefined,
         },
         {
-            label: "LinkedIn",
-            value: contacts.linkedin?.trim(),
-            href: contacts.linkedin || undefined,
+            label: "위치",
+            value: visible.location ? location : undefined,
+            href: undefined,
+        },
+        {
+            label: "웹사이트",
+            value: visible.url ? basics.url?.trim() : undefined,
+            href: basics.url || undefined,
         },
     ].filter((entry) => entry.value);
 
     const sectionEntries = Object.entries(sections).filter(
-        ([, items]) => Array.isArray(items) && items.length > 0
+        (entry): entry is [string, string[]] =>
+            Array.isArray(entry[1]) && entry[1].length > 0
     );
     const competencyEntries = Object.entries(competencySections).filter(
-        ([, items]) => Array.isArray(items) && items.length > 0
+        (entry): entry is [string, string[]] =>
+            Array.isArray(entry[1]) && entry[1].length > 0
     );
 
     return (
@@ -104,27 +121,35 @@ export default function AboutView({
                     aria-hidden="true"
                 />
                 <div className="tablet:flex-row tablet:items-center tablet:gap-10 relative flex flex-col gap-7">
-                    <div className="tablet:h-36 tablet:w-36 relative h-28 w-28 shrink-0">
-                        <div
-                            className="absolute inset-0 rounded-full bg-(--color-accent)/25 blur-xl"
-                            aria-hidden="true"
-                        />
-                        <img
-                            src={resolvedProfileImage}
-                            alt="정호진 프로필 사진"
-                            width={144}
-                            height={144}
-                            className="tablet:h-36 tablet:w-36 relative h-28 w-28 rounded-full object-cover ring-4 ring-(--color-accent)/30"
-                        />
-                    </div>
+                    {visible.image ? (
+                        <div className="tablet:h-36 tablet:w-36 relative h-28 w-28 shrink-0">
+                            <div
+                                className="absolute inset-0 rounded-full bg-(--color-accent)/25 blur-xl"
+                                aria-hidden="true"
+                            />
+                            <img
+                                src={resolvedProfileImage}
+                                alt={`${basics.name || "프로필"} 사진`}
+                                width={144}
+                                height={144}
+                                className={`tablet:h-36 tablet:w-36 relative h-28 w-28 object-cover ring-4 ring-(--color-accent)/30 ${
+                                    basics.imageStyle === "squared"
+                                        ? "rounded-none"
+                                        : basics.imageStyle === "standard"
+                                          ? "rounded-xl"
+                                          : "rounded-full"
+                                }`}
+                            />
+                        </div>
+                    ) : null}
                     <div className="min-w-0 flex-1">
                         <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-(--color-accent)/10 px-3 py-1 text-xs font-bold tracking-[0.16em] text-(--color-accent)">
                             <span aria-hidden="true">{profileEmoji}</span>
                             {profileLabel}
                         </p>
-                        {data.name && (
+                        {visible.name && basics.name && (
                             <h1 className="tablet:text-5xl text-4xl font-black tracking-tight text-(--color-foreground)">
-                                {data.name}
+                                {basics.name}
                             </h1>
                         )}
                         {data.description && (
@@ -141,7 +166,7 @@ export default function AboutView({
                 </div>
 
                 {contactEntries.length > 0 && (
-                    <div className="tablet:grid-cols-3 relative mt-8 grid overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-border)">
+                    <div className="tablet:grid-cols-2 relative mt-8 grid overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-border)">
                         {contactEntries.map(({ label, value, href }) => {
                             const content = (
                                 <>
@@ -183,6 +208,32 @@ export default function AboutView({
                         })}
                     </div>
                 )}
+                {visible.profiles && basics.profiles?.length ? (
+                    <div className="relative mt-4 flex flex-wrap gap-2">
+                        {basics.profiles.map((profile, index) => {
+                            const brand = getResumeProfileBrand(profile);
+                            return profile.url ? (
+                                <a
+                                    key={`${brand.preset}-${index}`}
+                                    href={profile.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`${brand.label} 프로필 열기`}
+                                    style={{
+                                        backgroundColor: brand.backgroundColor,
+                                        color: brand.foregroundColor,
+                                    }}
+                                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold no-underline shadow-sm transition-opacity hover:opacity-85"
+                                >
+                                    <ResumeProfileIcon preset={brand.preset} />
+                                    {profile.username ||
+                                        profile.network ||
+                                        brand.label}
+                                </a>
+                            ) : null;
+                        })}
+                    </div>
+                ) : null}
             </header>
 
             {valuePillars.length > 0 && (

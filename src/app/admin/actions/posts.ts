@@ -1,8 +1,8 @@
 "use server";
 
 import { requireAdminSession } from "@/lib/server-admin";
-import { serverClient } from "@/lib/supabase";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
+import { serverClient } from "@/lib/supabase";
 
 const POST_SELECT_FIELDS =
     "id, slug, title, description, pub_date, category, tags, job_field, thumbnail, content, published, updated_at, meta_title, meta_description, og_image";
@@ -176,6 +176,7 @@ export async function savePostTocStyle(
         .upsert({ key: "post_toc_styles", value: next }, { onConflict: "key" });
 
     if (error) return { success: false, error: error.message };
+    await revalidatePost(slug);
     return { success: true };
 }
 

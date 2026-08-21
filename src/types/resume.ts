@@ -66,7 +66,7 @@ export const RESUME_BASICS_VISIBILITY_KEYS = [
 export type ResumeBasicsVisibilityKey =
     (typeof RESUME_BASICS_VISIBILITY_KEYS)[number];
 
-export type ResumeHeaderPreset = "split" | "profileCard" | "compact";
+export type ResumeHeaderPreset = "split";
 
 export type ResumePersonalDetailPreset = "detailed" | "concise";
 

@@ -293,9 +293,16 @@ export default function PostsPanel({
 
     // 포스트 목차 스타일 저장 (site_config upsert)
     const saveTocStyle = async (slug: string, style: string) => {
+        const previous = postTocStyles;
         const next = { ...postTocStyles, [slug]: style };
         setPostTocStyles(next);
-        await savePostTocStyle(slug, style);
+        const result = await savePostTocStyle(slug, style);
+        if (!result.success) {
+            setPostTocStyles(previous);
+            window.alert(
+                `목차 스타일 저장 실패: ${result.error ?? "알 수 없는 오류"}`
+            );
+        }
     };
 
     const fetchPostContent = async (

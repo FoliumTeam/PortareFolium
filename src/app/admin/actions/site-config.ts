@@ -45,7 +45,6 @@ type SaveSiteConfigInput = {
             }
         >;
     };
-    githubUrl: string;
 };
 
 type SiteConfigActionResult =
@@ -157,7 +156,6 @@ export async function getSiteConfigBootstrap(): Promise<{
             "header_name",
             "site_name",
             "seo_config",
-            "github_url",
         ]);
 
     return {
@@ -389,19 +387,21 @@ export async function saveSiteConfig(
             },
         ];
 
-        rows.push(
-            { key: "plain_mode", value: input.plainMode },
-            {
-                key: "github_url",
-                value: JSON.stringify(input.githubUrl.trim()),
-            }
-        );
+        rows.push({ key: "plain_mode", value: input.plainMode });
 
         const { error } = await serverClient
             .from("site_config")
             .upsert(rows, { onConflict: "key" });
 
         if (error) return { success: false, error: error.message };
+
+        const { error: legacyGithubError } = await serverClient
+            .from("site_config")
+            .delete()
+            .eq("key", "github_url");
+        if (legacyGithubError) {
+            return { success: false, error: legacyGithubError.message };
+        }
 
         await revalidateHome();
         await revalidateResume();

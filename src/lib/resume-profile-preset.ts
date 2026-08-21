@@ -85,3 +85,18 @@ export function getResumeProfileBrand(
         foregroundColor: getProfileContrastColor(backgroundColor),
     };
 }
+
+export function getResumeProfileUrl(
+    profiles: ResumeProfile[] | undefined,
+    preset: ResumeProfilePreset
+): string {
+    return (
+        profiles
+            ?.find(
+                (profile) =>
+                    inferResumeProfilePreset(profile) === preset &&
+                    Boolean(profile.url?.trim())
+            )
+            ?.url?.trim() ?? ""
+    );
+}

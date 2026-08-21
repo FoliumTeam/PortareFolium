@@ -795,39 +795,86 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     <SettingsSection
                                         eyebrow="TOC"
                                         title="목차 표시"
-                                        description="본문 목차가 표시되는 방식을 선택합니다."
+                                        description="본문 목차의 위치를 선택합니다. 선택 즉시 저장되며 공개 포스트에 반영됩니다."
                                         className="order-5"
                                     >
-                                        <FieldBlock label="목차 스타일">
-                                            <select
-                                                value={
-                                                    (props as PostSheetProps)
-                                                        .tocStyle ?? "hover"
-                                                }
-                                                onChange={(e) =>
-                                                    (
-                                                        props as PostSheetProps
-                                                    ).onTocStyleChange?.(
-                                                        e.target.value
-                                                    )
-                                                }
-                                                disabled={
-                                                    (props as PostSheetProps)
-                                                        .tocDisabled
-                                                }
-                                                className={inputClass}
-                                            >
-                                                <option value="hover">
-                                                    호버링 사이드바 목차
-                                                </option>
-                                                <option value="github">
-                                                    GitHub 형식 목차 (본문 상단)
-                                                </option>
-                                                <option value="both">
-                                                    둘 다 표시
-                                                </option>
-                                            </select>
-                                        </FieldBlock>
+                                        <div className="grid gap-2">
+                                            {[
+                                                {
+                                                    value: "hover",
+                                                    title: "사이드바 목차",
+                                                    description:
+                                                        "본문 옆에서 hover로 열기",
+                                                },
+                                                {
+                                                    value: "github",
+                                                    title: "본문 상단 목차",
+                                                    description:
+                                                        "GitHub처럼 본문 시작에 표시",
+                                                },
+                                                {
+                                                    value: "both",
+                                                    title: "두 위치 모두",
+                                                    description:
+                                                        "사이드바와 본문 상단 함께 표시",
+                                                },
+                                            ].map((option) => {
+                                                const selected =
+                                                    ((props as PostSheetProps)
+                                                        .tocStyle ??
+                                                        "hover") ===
+                                                    option.value;
+                                                return (
+                                                    <button
+                                                        key={option.value}
+                                                        type="button"
+                                                        aria-pressed={selected}
+                                                        disabled={
+                                                            (
+                                                                props as PostSheetProps
+                                                            ).tocDisabled
+                                                        }
+                                                        onClick={() =>
+                                                            (
+                                                                props as PostSheetProps
+                                                            ).onTocStyleChange?.(
+                                                                option.value
+                                                            )
+                                                        }
+                                                        className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors disabled:opacity-50 ${
+                                                            selected
+                                                                ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30"
+                                                                : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"
+                                                        }`}
+                                                    >
+                                                        <span className="flex h-12 w-16 shrink-0 rounded-lg border border-(--color-border) bg-(--color-surface) p-2">
+                                                            {option.value !==
+                                                            "github" ? (
+                                                                <i className="mr-1 w-2 rounded bg-(--color-accent)/40" />
+                                                            ) : null}
+                                                            <span className="flex-1 space-y-1 pt-1">
+                                                                {option.value !==
+                                                                "hover" ? (
+                                                                    <i className="block h-1 w-3/4 rounded bg-(--color-accent)/45" />
+                                                                ) : null}
+                                                                <i className="block h-1 w-full rounded bg-(--color-muted)/35" />
+                                                                <i className="block h-1 w-4/5 rounded bg-(--color-muted)/35" />
+                                                            </span>
+                                                        </span>
+                                                        <span>
+                                                            <span className="block text-sm font-semibold text-(--color-foreground)">
+                                                                {option.title}
+                                                            </span>
+                                                            <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                                                {
+                                                                    option.description
+                                                                }
+                                                            </span>
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </SettingsSection>
                                 )}
                         </aside>

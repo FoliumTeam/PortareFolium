@@ -7,14 +7,11 @@ import {
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
 import type { AboutData } from "@/types/about";
+import type { ResumeBasics } from "@/types/resume";
 
 type SaveAboutInput = {
     aboutData: AboutData;
     aboutRowId: string | null;
-    profileImage: string;
-    resumeRowId: string | null;
-    resumeFullData: Record<string, unknown> | null;
-    githubUrl: string;
 };
 
 type SaveAboutResult =
@@ -29,10 +26,8 @@ type SaveAboutIntroductionInput = {
 type AboutBootstrap = {
     aboutRowId: string | null;
     aboutData: AboutData | null;
-    resumeRowId: string | null;
-    resumeData: Record<string, unknown> | null;
+    resumeBasics: ResumeBasics;
     jobFields: { id: string; name: string; emoji: string }[];
-    githubUrl: string;
 };
 
 // AboutPanel 초기 데이터 조회
@@ -42,10 +37,8 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
         return {
             aboutRowId: null,
             aboutData: null,
-            resumeRowId: null,
-            resumeData: null,
+            resumeBasics: {},
             jobFields: [],
-            githubUrl: "",
         };
     }
 
@@ -63,7 +56,7 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
         serverClient
             .from("site_config")
             .select("key, value")
-            .in("key", ["job_fields", "github_url"]),
+            .eq("key", "job_fields"),
     ]);
 
     // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
@@ -74,7 +67,6 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
     if (configsError)
         console.error(`[about.ts::getAboutBootstrap] ${configsError.message}`);
 
-    let githubUrl = "";
     let jobFields: { id: string; name: string; emoji: string }[] = [];
     for (const cfg of configs ?? []) {
         let value = cfg.value;
@@ -88,92 +80,51 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
         if (cfg.key === "job_fields" && Array.isArray(value)) {
             jobFields = value as { id: string; name: string; emoji: string }[];
         }
-        if (cfg.key === "github_url" && typeof value === "string") {
-            githubUrl = value;
-        }
     }
 
     return {
         aboutRowId: aboutRow?.id ?? null,
         aboutData: (aboutRow?.data as AboutData | undefined) ?? null,
-        resumeRowId: resumeRow?.id ?? null,
-        resumeData:
-            (resumeRow?.data as Record<string, unknown> | undefined) ?? null,
+        resumeBasics:
+            (resumeRow?.data as { basics?: ResumeBasics } | undefined)
+                ?.basics ?? {},
         jobFields,
-        githubUrl,
     };
 }
 
-// About / resume basics.image / github_url 저장
+// About 콘텐츠 저장
 export async function saveAboutPanel(
     input: SaveAboutInput
 ): Promise<SaveAboutResult> {
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    const {
-        aboutData,
-        aboutRowId,
-        profileImage,
-        resumeRowId,
-        resumeFullData,
-        githubUrl,
-    } = input;
+    const { aboutData, aboutRowId } = input;
 
     try {
-        if (resumeRowId && resumeFullData) {
-            const basics =
-                resumeFullData.basics &&
-                typeof resumeFullData.basics === "object" &&
-                !Array.isArray(resumeFullData.basics)
-                    ? (resumeFullData.basics as Record<string, unknown>)
-                    : {};
-
-            const mergedResume = {
-                ...resumeFullData,
-                basics: {
-                    ...basics,
-                    image: profileImage.trim() || undefined,
-                },
-            };
-
-            const { error } = await serverClient
-                .from("resume_data")
-                .update({ data: mergedResume })
-                .eq("id", resumeRowId);
-            if (error) return { success: false, error: error.message };
-        }
+        const legacyData = aboutData as AboutData & Record<string, unknown>;
+        const {
+            name: _name,
+            profileImage: _profileImage,
+            contacts: _contacts,
+            ...content
+        } = legacyData;
 
         let nextAboutRowId = aboutRowId;
         if (aboutRowId) {
             const { error } = await serverClient
                 .from("about_data")
-                .update({ data: aboutData })
+                .update({ data: content })
                 .eq("id", aboutRowId);
             if (error) return { success: false, error: error.message };
         } else {
             const { data, error } = await serverClient
                 .from("about_data")
-                .insert({ data: aboutData })
+                .insert({ data: content })
                 .select("id")
                 .single();
             if (error) return { success: false, error: error.message };
             nextAboutRowId = data?.id ?? null;
-        }
-
-        const { error: githubError } = await serverClient
-            .from("site_config")
-            .upsert(
-                [
-                    {
-                        key: "github_url",
-                        value: JSON.stringify(githubUrl.trim()),
-                    },
-                ],
-                { onConflict: "key" }
-            );
-        if (githubError) {
-            return { success: false, error: githubError.message };
         }
 
         await revalidateAbout();

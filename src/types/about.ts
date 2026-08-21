@@ -31,12 +31,6 @@ export const COMPETENCY_SECTION_KEYS = [
 
 export type CompetencySectionKey = (typeof COMPETENCY_SECTION_KEYS)[number];
 
-export interface AboutContacts {
-    email?: string;
-    github?: string;
-    linkedin?: string;
-}
-
 export type AboutSections = Record<AboutSectionKey, string[]>;
 export type AboutCompetencySections = Record<CompetencySectionKey, string[]>;
 
@@ -62,20 +56,17 @@ export interface FieldIntroduction {
 }
 
 export interface AboutData {
-    profileImage?: string;
-    name?: string;
     description?: string;
     descriptionSub?: string;
-    contacts?: AboutContacts;
     // Job Field ID → 소개 오버라이드
     introductions?: Record<string, FieldIntroduction>;
     // 랜딩 페이지 히어로 데이터
     valuePillars?: ValuePillar[];
     coreCompetencies?: CoreValue[];
     /** 경험 유형별 리스트 (테이블 1) */
-    sections?: AboutSections;
+    sections?: Partial<AboutSections>;
     /** 역량 키워드별 리스트 (테이블 2) */
-    competencySections?: AboutCompetencySections;
+    competencySections?: Partial<AboutCompetencySections>;
 }
 
 /** 경험 유형별 입력 가이드용 플레이스홀더 (Admin 폼에서 사용) */
