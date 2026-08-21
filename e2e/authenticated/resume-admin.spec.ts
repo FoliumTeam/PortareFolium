@@ -76,6 +76,15 @@ test("Resume 관리자에서 개인 정보와 preset 설정을 제공한다", as
     await expect(basics.getByText("생년월일", { exact: true })).toBeVisible();
     await expect(basics.getByText("병역 상태", { exact: true })).toBeVisible();
     await expect(
+        basics.getByText(/Custom은 목록에 없는 서비스용/)
+    ).toBeVisible();
+    await expect(
+        basics.getByText(/위·아래 버튼은 공개 Resume에서/)
+    ).toBeVisible();
+    await expect(
+        basics.getByRole("button", { name: /프로필을 한 칸 위로 이동/ }).first()
+    ).toBeVisible();
+    await expect(
         presentation.getByRole("heading", { name: "표시와 디자인" })
     ).toBeVisible();
     await expect(

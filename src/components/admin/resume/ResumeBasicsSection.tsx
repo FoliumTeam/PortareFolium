@@ -60,7 +60,7 @@ export const ResumeBasicsSection = ({
         const brand = getResumeProfileBrand({ preset });
         updateProfile(index, {
             preset,
-            network: profile.network?.trim() || brand.label,
+            network: preset === "custom" ? profile.network : brand.label,
         });
     };
 
@@ -277,127 +277,170 @@ export const ResumeBasicsSection = ({
                     </button>
                 </div>
                 <div className="mt-4 space-y-3">
-                    {profiles.map((profile, index) => (
-                        <div
-                            key={index}
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface) p-3"
-                        >
-                            <div className="mb-3">
-                                <p className="text-sm font-medium text-(--color-muted)">
-                                    플랫폼 preset
-                                </p>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {(
-                                        [
-                                            "github",
-                                            "gitlab",
-                                            "linkedin",
-                                            "figma",
-                                            "npm",
-                                            "custom",
-                                        ] as const
-                                    ).map((preset) => {
-                                        const brand = getResumeProfileBrand({
-                                            preset,
-                                        });
-                                        const selected =
-                                            inferResumeProfilePreset(
-                                                profile
-                                            ) === preset;
-                                        return (
-                                            <button
-                                                key={preset}
-                                                type="button"
-                                                aria-pressed={selected}
-                                                onClick={() =>
-                                                    applyProfilePreset(
-                                                        index,
-                                                        preset
-                                                    )
+                    <p className="text-sm leading-6 text-(--color-muted)">
+                        preset은 공개 버튼의 브랜드 색상과 icon을 정합니다.
+                        Custom은 목록에 없는 서비스용 중립 버튼이며 서비스 표시
+                        이름을 직접 입력합니다. 표시 이름은 버튼 문구, URL은
+                        이동 주소입니다.
+                    </p>
+                    <p className="text-sm leading-6 text-(--color-muted)">
+                        위·아래 버튼은 공개 Resume에서 프로필 버튼의 표시 순서를
+                        한 칸씩 바꿉니다.
+                    </p>
+                    {profiles.map((profile, index) => {
+                        const activePreset = inferResumeProfilePreset(profile);
+                        const activeBrand = getResumeProfileBrand(profile);
+                        const isCustom = activePreset === "custom";
+                        return (
+                            <div
+                                key={index}
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface) p-3"
+                            >
+                                <div className="mb-3">
+                                    <p className="text-sm font-medium text-(--color-muted)">
+                                        플랫폼 preset
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {(
+                                            [
+                                                "github",
+                                                "gitlab",
+                                                "linkedin",
+                                                "figma",
+                                                "npm",
+                                                "custom",
+                                            ] as const
+                                        ).map((preset) => {
+                                            const brand = getResumeProfileBrand(
+                                                {
+                                                    preset,
                                                 }
-                                                style={{
-                                                    backgroundColor:
-                                                        brand.backgroundColor,
-                                                    color: brand.foregroundColor,
-                                                }}
-                                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-85 ${
-                                                    selected
-                                                        ? "ring-2 ring-(--color-accent) ring-offset-2 ring-offset-(--color-surface)"
-                                                        : "opacity-70"
-                                                }`}
-                                            >
+                                            );
+                                            const selected =
+                                                activePreset === preset;
+                                            return (
+                                                <button
+                                                    key={preset}
+                                                    type="button"
+                                                    aria-pressed={selected}
+                                                    onClick={() =>
+                                                        applyProfilePreset(
+                                                            index,
+                                                            preset
+                                                        )
+                                                    }
+                                                    style={{
+                                                        backgroundColor:
+                                                            brand.backgroundColor,
+                                                        color: brand.foregroundColor,
+                                                    }}
+                                                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-opacity hover:opacity-85 ${
+                                                        selected
+                                                            ? "ring-2 ring-(--color-accent) ring-offset-2 ring-offset-(--color-surface)"
+                                                            : "opacity-70"
+                                                    }`}
+                                                >
+                                                    <ProfilePresetIcon
+                                                        preset={preset}
+                                                    />
+                                                    {brand.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div
+                                    className={`grid grid-cols-1 gap-3 ${
+                                        isCustom
+                                            ? "tablet:grid-cols-[1fr_1fr_1fr_auto]"
+                                            : "tablet:grid-cols-[1fr_1fr_auto]"
+                                    }`}
+                                >
+                                    {isCustom ? (
+                                        <InputField
+                                            label="서비스 표시 이름"
+                                            value={profile.network ?? ""}
+                                            onChange={(network) =>
+                                                updateProfile(index, {
+                                                    network,
+                                                })
+                                            }
+                                            placeholder="예: Dev.to"
+                                        />
+                                    ) : (
+                                        <div className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2">
+                                            <p className="text-sm font-medium text-(--color-muted)">
+                                                선택 플랫폼
+                                            </p>
+                                            <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-(--color-foreground)">
                                                 <ProfilePresetIcon
-                                                    preset={preset}
+                                                    preset={activePreset}
                                                 />
-                                                {brand.label}
-                                            </button>
-                                        );
-                                    })}
+                                                {activeBrand.label} preset 사용
+                                            </p>
+                                        </div>
+                                    )}
+                                    <InputField
+                                        label="버튼 표시 이름"
+                                        value={profile.username ?? ""}
+                                        onChange={(username) =>
+                                            updateProfile(index, { username })
+                                        }
+                                    />
+                                    <InputField
+                                        label="프로필 URL"
+                                        value={profile.url ?? ""}
+                                        onChange={(url) =>
+                                            updateProfile(index, { url })
+                                        }
+                                        type="url"
+                                    />
+                                    <div className="flex items-end gap-2">
+                                        <button
+                                            type="button"
+                                            aria-label={`${profile.network || activeBrand.label} 프로필을 한 칸 위로 이동`}
+                                            title="공개 Resume에서 이 버튼을 한 칸 위로 이동"
+                                            onClick={() =>
+                                                moveProfile(index, index - 1)
+                                            }
+                                            disabled={index === 0}
+                                            className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                        >
+                                            위
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label={`${profile.network || activeBrand.label} 프로필을 한 칸 아래로 이동`}
+                                            title="공개 Resume에서 이 버튼을 한 칸 아래로 이동"
+                                            onClick={() =>
+                                                moveProfile(index, index + 1)
+                                            }
+                                            disabled={
+                                                index === profiles.length - 1
+                                            }
+                                            className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                        >
+                                            아래
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                update({
+                                                    profiles: profiles.filter(
+                                                        (_, itemIndex) =>
+                                                            itemIndex !== index
+                                                    ),
+                                                })
+                                            }
+                                            className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white"
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="tablet:grid-cols-[1fr_1fr_1fr_auto] grid grid-cols-1 gap-3">
-                                <InputField
-                                    label="서비스"
-                                    value={profile.network ?? ""}
-                                    onChange={(network) =>
-                                        updateProfile(index, { network })
-                                    }
-                                    placeholder="GitHub"
-                                />
-                                <InputField
-                                    label="표시 이름"
-                                    value={profile.username ?? ""}
-                                    onChange={(username) =>
-                                        updateProfile(index, { username })
-                                    }
-                                />
-                                <InputField
-                                    label="URL"
-                                    value={profile.url ?? ""}
-                                    onChange={(url) =>
-                                        updateProfile(index, { url })
-                                    }
-                                    type="url"
-                                />
-                                <div className="flex items-end gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            moveProfile(index, index - 1)
-                                        }
-                                        disabled={index === 0}
-                                        className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
-                                    >
-                                        위
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            moveProfile(index, index + 1)
-                                        }
-                                        disabled={index === profiles.length - 1}
-                                        className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
-                                    >
-                                        아래
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            update({
-                                                profiles: profiles.filter(
-                                                    (_, itemIndex) =>
-                                                        itemIndex !== index
-                                                ),
-                                            })
-                                        }
-                                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white"
-                                    >
-                                        삭제
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
