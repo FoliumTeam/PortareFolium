@@ -769,7 +769,7 @@ export default function ResumePanel() {
                                         value: "modern" as const,
                                         title: "Modern",
                                         description:
-                                            "프로필 헤더와 카드형 정보 구조",
+                                            "단일 열 프로필 헤더와 분리 section 구조",
                                         recommended: true,
                                     },
                                     {
@@ -810,12 +810,22 @@ export default function ResumePanel() {
                                             }`}
                                         >
                                             {option.value === "modern" ? (
-                                                <span className="grid w-full grid-cols-[0.35fr_1fr] gap-2">
-                                                    <i className="rounded-md bg-(--color-muted)/35" />
-                                                    <span className="space-y-2 pt-1">
-                                                        <i className="block h-2 w-2/3 rounded bg-(--color-foreground)/45" />
-                                                        <i className="block h-1.5 w-full rounded bg-(--color-muted)/35" />
-                                                        <i className="block h-1.5 w-4/5 rounded bg-(--color-muted)/35" />
+                                                <span className="flex w-full flex-col gap-1.5">
+                                                    <span className="flex h-5 items-center gap-2 rounded-md bg-(--color-muted)/18 px-2">
+                                                        <i className="h-3 w-3 shrink-0 rounded-full bg-(--color-muted)/45" />
+                                                        <span className="flex-1 space-y-1">
+                                                            <i className="block h-1 w-2/5 rounded bg-(--color-foreground)/45" />
+                                                            <i className="block h-1 w-3/5 rounded bg-(--color-muted)/35" />
+                                                        </span>
+                                                    </span>
+                                                    <i className="block h-1 w-full rounded bg-(--color-border)" />
+                                                    <span className="space-y-1 rounded-md border border-(--color-border) bg-(--color-surface) p-1.5">
+                                                        <i className="block h-1 w-1/4 rounded bg-(--color-accent)/55" />
+                                                        <i className="block h-1 w-full rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                    <span className="space-y-1 rounded-md border border-(--color-border) bg-(--color-surface) p-1.5">
+                                                        <i className="block h-1 w-1/3 rounded bg-(--color-accent)/55" />
+                                                        <i className="block h-1 w-4/5 rounded bg-(--color-muted)/35" />
                                                     </span>
                                                 </span>
                                             ) : (
