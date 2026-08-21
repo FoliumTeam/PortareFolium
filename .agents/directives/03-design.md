@@ -7,6 +7,13 @@
 - **Visual Consistency**: Any new UI element MUST inherit the existing layout, visual hierarchy, and color schemes (#XXXXXX) of the Admin Dashboard.
 - **Proposing Changes**: If a radically new UI is required, do not just build it. First, propose the design using `v0.dev` best practices and request user approval.
 
+## Preset-First User Customization
+
+- **Admin Only**: 사용자 소유 데이터와 지원되는 표현 방식은 Admin Dashboard 로그인만으로 관리 가능해야 한다. 코드 수정, CLI, DB 직접 조작, MCP, AI agent는 사용자 설정의 전제 조건 금지.
+- **Curated Presets**: layout, design, density, format처럼 여러 시각 결정을 포함하는 선택은 2~4개의 완성형 preset으로 제공한다. 각 preset에는 실제 구조가 보이는 preview, 짧은 설명, 추천 기본값 필수.
+- **Low-Level Controls**: spacing, width, alignment, color처럼 서로 결합된 저수준 control의 기본 노출 금지. preset으로 해결할 수 없는 반복적 사용자 요구와 명확한 검증 기준이 있는 경우만 추가.
+- **Preset Persistence**: preset 선택은 즉시 저장, 공개 화면 재검증, 실패 rollback 제공. 선택 상태는 label과 semantic color를 함께 표시.
+
 ## Implementation Specifics
 
 - **Tailwind CSS**: Use Tailwind CSS for all styling unless there's a specific reason not to.

@@ -37,13 +37,13 @@
 
 ## Admin customization contract
 
-- PortareFolium의 핵심 제품 계약: 사용자가 자신의 사이트에 무엇을 어떤 방식으로 표시할지 Admin Dashboard에서 결정 가능
+- PortareFolium의 핵심 제품 계약: 사용자가 Admin Dashboard 로그인만으로 자신의 사이트에 무엇을 어떤 방식으로 표시할지 결정 가능. 코드 수정, CLI, DB 직접 조작, MCP, AI agent는 사용자 설정의 전제 조건 금지
 - 적용 대상: 모든 사용자 노출 정보와 표현 요소. 문구, label, 날짜·숫자 형식, metadata, media, link, section 이름, 항목 순서, 공개 범위, 직무별 내용, layout·design 선택지를 포함
 - 모든 사용자 노출 정보는 Admin Dashboard에서 생성·수정·삭제 또는 초기화 가능해야 하며, 개별 표시 여부 제어 필수. 같은 성격의 반복 항목에는 순서 변경 지원 필수
-- 표현 방식에 의미 있는 선택지가 존재하면 지원 가능한 형식·layout·design variant를 Admin 설정으로 제공. 특정 표현 하나를 코드에 고정하고 다른 표현을 위해 코드 수정을 요구하는 구현 금지
+- 표현 방식에 의미 있는 선택지가 존재하면 지원 가능한 형식·layout·design variant를 Admin 설정으로 제공. 디자인 선택은 2~4개의 coherent preset, preview, 추천 기본값 우선. spacing·width·alignment·color 같은 저수준 control은 preset으로 해결 불가한 반복 요구가 있는 경우만 허용
 - Frontend component의 사용자 노출 값과 표시 정책 hardcode 금지. 코드 기본값은 초기 fallback으로만 허용하며 Admin에서 override·reset 가능해야 함
 - 필수 범위: Resume의 모든 section과 개인 정보, 모든 Portfolio entry, About Me 정보, Blog post, Landing page, navigation·footer의 사용자 노출 정보, 앞으로 추가되는 모든 public content surface
-- 신규 기능은 public consumer와 같은 작업 범위에 Admin 입력, 표시 여부, 필요한 순서·표현 설정, 저장·초기화 경로를 포함. Admin 경로 없는 사용자 노출 기능은 미완료 상태
+- 신규 기능은 public consumer와 같은 작업 범위에 Admin 입력, 표시 여부, 필요한 순서·preset 기반 표현 설정, 저장·초기화 경로를 포함. Admin 경로 없는 사용자 노출 기능은 미완료 상태
 - 민감하거나 선택적인 정보는 값 입력과 공개 여부를 분리. 저장된 값이 있다는 이유만으로 자동 공개하는 동작 금지
 - section이 public layout에서 disabled이거나 content가 Draft·Unpublished 상태여도 Admin 편집 경로 유지. 공개 여부와 편집 가능 여부 분리
 - 공통 기본값과 직무별 차이가 필요한 정보는 기존 job-field override 구조 사용. 공통값 상속, 독립 override 생성, 공통값 복귀 지원

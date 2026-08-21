@@ -6,13 +6,14 @@ Next.js 16 App Router + Supabase 기반 포트폴리오 & 기술 블로그 플�
 
 PortareFolium은 사용자가 자신의 사이트에 무엇을 어떤 방식으로 표시할지 직접 결정하는 플랫폼.
 
-- 모든 사용자 노출 정보의 값과 표시 여부를 Admin Dashboard에서 설정
+- Admin Dashboard 로그인만으로 모든 사용자 노출 정보의 값·표시 여부·지원 표현 방식 설정
 - 반복 항목의 순서와 공개 범위 관리
 - 날짜 형식, label, layout, design처럼 지원되는 표현 방식 선택
+- 빠른 결정을 위한 완성형 preset과 preview 우선 제공
 - 공통 기본값과 직무별 독립 내용의 상속·override·reset 지원
 - 새 기능에도 동일한 Admin 맞춤 설정 계약 적용
 
-보안, 권한, 접근성, routing처럼 서비스 안전성과 동작을 보장하는 내부 규칙은 코드에서 관리. 사용자에게 보이는 정보나 제품이 지원하는 표현 선택은 코드 편집 없이 Admin Dashboard에서 관리 가능해야 함.
+보안, 권한, 접근성, routing처럼 서비스 안전성과 동작을 보장하는 내부 규칙은 코드에서 관리. 사용자에게 보이는 정보와 지원 표현 선택은 코드·CLI·MCP·AI agent 없이 Admin Dashboard에서 관리 가능해야 함. 디자인 설정은 저수준 control 나열보다 완성형 preset과 preview 우선.
 
 ---
 
