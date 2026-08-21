@@ -82,7 +82,7 @@ export const ResumeAboutIntroductionSection = ({
 
     return (
         <section
-            data-resume-section="basics"
+            data-resume-section="introduction"
             className="space-y-5 rounded-xl border border-(--color-border) bg-(--color-surface) p-6"
         >
             <div className="space-y-2">

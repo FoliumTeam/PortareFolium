@@ -9,7 +9,8 @@ type EditorSection = {
 };
 
 const editorSections: EditorSection[] = [
-    { key: "basics", label: "자기소개" },
+    { key: "basics", label: "기본 정보" },
+    { key: "introduction", label: "자기소개" },
     { key: "careerPhases", label: "커리어 타임라인" },
     { key: "coreCompetencies", label: "핵심역량" },
     { key: "work", label: "경력" },
@@ -43,6 +44,7 @@ export const ResumeSectionNavigation = ({
     );
     const orderedSections = [
         sectionMap.get("basics")!,
+        sectionMap.get("introduction")!,
         ...layout.order
             .map((key) => sectionMap.get(key))
             .filter((section): section is EditorSection => Boolean(section)),

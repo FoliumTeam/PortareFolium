@@ -348,12 +348,17 @@ export const ResumeBasicsSection = ({
                                             );
                                         })}
                                     </div>
+                                    <p className="mt-3 text-sm leading-6 text-(--color-muted)">
+                                        {isCustom
+                                            ? "Custom 선택: 목록에 없는 서비스의 표시 이름을 직접 입력합니다."
+                                            : `${activeBrand.label} 선택: 서비스명은 preset으로 자동 설정되며 버튼 색상과 icon에 사용됩니다.`}
+                                    </p>
                                 </div>
                                 <div
                                     className={`grid grid-cols-1 gap-3 ${
                                         isCustom
-                                            ? "tablet:grid-cols-[1fr_1fr_1fr_auto]"
-                                            : "tablet:grid-cols-[1fr_1fr_auto]"
+                                            ? "tablet:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                                            : "tablet:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
                                     }`}
                                 >
                                     {isCustom ? (
@@ -367,19 +372,7 @@ export const ResumeBasicsSection = ({
                                             }
                                             placeholder="예: Dev.to"
                                         />
-                                    ) : (
-                                        <div className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2">
-                                            <p className="text-sm font-medium text-(--color-muted)">
-                                                선택 플랫폼
-                                            </p>
-                                            <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-(--color-foreground)">
-                                                <ProfilePresetIcon
-                                                    preset={activePreset}
-                                                />
-                                                {activeBrand.label} preset 사용
-                                            </p>
-                                        </div>
-                                    )}
+                                    ) : null}
                                     <InputField
                                         label="버튼 표시 이름"
                                         value={profile.username ?? ""}

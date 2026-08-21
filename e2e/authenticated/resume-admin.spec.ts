@@ -69,7 +69,16 @@ test("Resume 관리자에서 개인 정보와 preset 설정을 제공한다", as
     const presentation = page.locator(
         '[data-resume-section="basics-presentation"]'
     );
+    const sectionNavigation = page.getByRole("navigation", {
+        name: "이력서 편집 섹션",
+    });
+    const basicsNavigation = sectionNavigation.getByRole("button", {
+        name: /기본 정보 공개/,
+    });
 
+    await expect(basicsNavigation).toBeVisible();
+    await basicsNavigation.click();
+    await expect(basicsNavigation).toHaveAttribute("aria-current", "location");
     await expect(
         basics.getByRole("heading", { name: "기본 정보" })
     ).toBeVisible();
