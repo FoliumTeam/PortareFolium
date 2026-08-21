@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import { Github, Link, Linkedin } from "lucide-react";
 import type {
     Resume,
     ResumeBasicsPresentation,
@@ -612,7 +613,7 @@ export default async function ResumeModern({
             value: (
                 <a
                     href={`mailto:${basics.email}`}
-                    className="break-all text-(--color-link) no-underline hover:underline"
+                    className="inline-flex rounded-md bg-(--color-accent)/12 px-2 py-1 font-semibold break-all text-(--color-link) no-underline hover:bg-(--color-accent)/18 hover:underline"
                 >
                     {basics.email}
                 </a>
@@ -623,7 +624,14 @@ export default async function ResumeModern({
         metadataItems.push({
             key: "phone",
             label: "전화번호",
-            value: <span>{basics.phone}</span>,
+            value: (
+                <a
+                    href={`tel:${basics.phone.replace(/[^\d+]/g, "")}`}
+                    className="inline-flex rounded-md bg-(--color-accent)/12 px-2 py-1 font-semibold text-(--color-link) no-underline hover:bg-(--color-accent)/18 hover:underline"
+                >
+                    {basics.phone}
+                </a>
+            ),
         });
     }
     if (visible.url && basics.url) {
@@ -690,7 +698,7 @@ export default async function ResumeModern({
             key: "profiles",
             label: "프로필",
             value: (
-                <span className="flex flex-wrap gap-x-3 gap-y-1">
+                <span className="flex flex-wrap gap-2">
                     {basics.profiles.map((profile, index) =>
                         profile.url ? (
                             <a
@@ -698,8 +706,10 @@ export default async function ResumeModern({
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-(--color-link) no-underline hover:underline"
+                                aria-label={`${profile.network || "외부"} 프로필 열기`}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm font-semibold text-(--color-link) no-underline transition-colors hover:border-(--color-accent)/55 hover:bg-(--color-accent)/10"
                             >
+                                <ProfileIcon network={profile.network} />
                                 {profile.username ||
                                     profile.network ||
                                     profile.url}
@@ -769,14 +779,14 @@ export default async function ResumeModern({
     const renderSummary = (className: string) =>
         visible.summary && basics.summary ? (
             <p
-                className={`m-0 max-w-[72ch] text-base leading-[1.7] whitespace-pre-line text-(--color-foreground) ${className}`}
+                className={`m-0 max-w-[72ch] text-lg leading-[1.75] whitespace-pre-line text-(--color-foreground) ${className}`}
             >
                 {basics.summary}
             </p>
         ) : null;
 
     const renderHeader = () => {
-        const image = renderImage("h-36 w-36 max-tablet:h-28 max-tablet:w-28");
+        const image = renderImage("h-44 w-44 max-tablet:h-28 max-tablet:w-28");
         if (basicsPresentation.headerPreset === "profileCard") {
             return (
                 <header
@@ -829,7 +839,7 @@ export default async function ResumeModern({
                 <div
                     className={`grid items-start gap-6 ${
                         image
-                            ? "tablet:grid-cols-[9rem_minmax(0,1fr)]"
+                            ? "tablet:grid-cols-[11rem_minmax(0,1fr)]"
                             : "grid-cols-1"
                     } max-tablet:justify-items-center`}
                 >
@@ -864,3 +874,10 @@ export default async function ResumeModern({
         </div>
     );
 }
+
+const ProfileIcon = ({ network }: { network?: string }) => {
+    const normalized = network?.trim().toLowerCase();
+    if (normalized === "github") return <Github className="h-4 w-4" />;
+    if (normalized === "linkedin") return <Linkedin className="h-4 w-4" />;
+    return <Link className="h-4 w-4" />;
+};
