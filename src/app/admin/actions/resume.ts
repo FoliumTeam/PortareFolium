@@ -6,7 +6,11 @@ import {
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
-import type { Resume } from "@/types/resume";
+import type { Resume, ResumeBasicsPresentationConfig } from "@/types/resume";
+import {
+    normalizeResumeBasicsPresentationConfig,
+    RESUME_BASICS_PRESENTATION_CONFIG_KEY,
+} from "@/lib/resume-basics-presentation";
 import {
     DEFAULT_RESUME_LAYOUT,
     normalizeLayout,
@@ -32,6 +36,7 @@ export async function getResumeBootstrap(): Promise<{
     resumeData: Resume | null;
     resumeLayout: "classic" | "modern";
     resumeSectionLayout: ResumeSectionLayout;
+    resumeBasicsPresentation: ResumeBasicsPresentationConfig;
     jobFields: JobFieldItem[];
     activeJobField: string;
 }> {
@@ -42,6 +47,8 @@ export async function getResumeBootstrap(): Promise<{
             resumeData: null,
             resumeLayout: "modern",
             resumeSectionLayout: DEFAULT_RESUME_LAYOUT,
+            resumeBasicsPresentation:
+                normalizeResumeBasicsPresentationConfig(undefined),
             jobFields: [],
             activeJobField: "",
         };
@@ -51,6 +58,7 @@ export async function getResumeBootstrap(): Promise<{
         { data: row },
         { data: layoutRow },
         { data: sectionLayoutRow },
+        { data: basicsPresentationRow },
         { data: jfRow },
     ] = await Promise.all([
         serverClient
@@ -72,6 +80,11 @@ export async function getResumeBootstrap(): Promise<{
         serverClient
             .from("site_config")
             .select("value")
+            .eq("key", RESUME_BASICS_PRESENTATION_CONFIG_KEY)
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("value")
             .eq("key", "job_fields")
             .single(),
     ]);
@@ -84,9 +97,30 @@ export async function getResumeBootstrap(): Promise<{
             (sectionLayoutRow?.value as ResumeSectionLayout | undefined) ??
                 DEFAULT_RESUME_LAYOUT
         ),
+        resumeBasicsPresentation: normalizeResumeBasicsPresentationConfig(
+            basicsPresentationRow?.value
+        ),
         jobFields: (jfRow?.value as JobFieldItem[] | undefined) ?? [],
         activeJobField: "",
     };
+}
+
+export async function saveResumeBasicsPresentation(
+    presentation: ResumeBasicsPresentationConfig
+): Promise<{ success: true } | { success: false; error: string }> {
+    await requireAdminSession();
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
+
+    const normalized = normalizeResumeBasicsPresentationConfig(presentation);
+    const { error } = await serverClient.from("site_config").upsert({
+        key: RESUME_BASICS_PRESENTATION_CONFIG_KEY,
+        value: normalized as unknown as object,
+    });
+    if (error) return { success: false, error: error.message };
+
+    await revalidateResume();
+    await revalidateHome();
+    return { success: true };
 }
 
 // resume_data + layout 설정 저장

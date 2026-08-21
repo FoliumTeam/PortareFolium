@@ -299,7 +299,7 @@ describe("createJobFieldResumeView", () => {
         );
 
         expect(result.basics).toEqual({
-            label: undefined,
+            label: "게임 개발자",
             summary: "웹 풀스택 개발자\n제품 개발 경험",
         });
         expect(result.work?.entries.map((item) => item.name)).toEqual([
@@ -385,7 +385,7 @@ describe("createJobFieldResumeView", () => {
         );
 
         expect(result.basics).toEqual({
-            label: undefined,
+            label: "기존 직함",
             summary: "About 공통 소개\nAbout 공통 보조 소개",
         });
     });

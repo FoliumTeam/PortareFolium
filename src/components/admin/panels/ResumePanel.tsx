@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
     getResumeBootstrap,
+    saveResumeBasicsPresentation,
     saveResumePanel,
     saveResumeTheme,
 } from "@/app/admin/actions/resume";
@@ -29,6 +30,8 @@ import {
     TextAreaField,
 } from "@/components/admin/resume/ResumeEditorFields";
 import { ResumeAboutIntroductionSection } from "@/components/admin/resume/ResumeAboutIntroductionSection";
+import { ResumeBasicsSection } from "@/components/admin/resume/ResumeBasicsSection";
+import { ResumeBasicsPresentationSection } from "@/components/admin/resume/ResumeBasicsPresentationSection";
 import { ResumeSectionNavigation } from "@/components/admin/resume/ResumeSectionNavigation";
 import { GripVertical, Trash2 } from "lucide-react";
 import SkillsAdminSection from "@/components/admin/skills/SkillsAdminSection";
@@ -44,6 +47,7 @@ import {
 } from "@/lib/resume-layout";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { uploadImage } from "@/lib/image-upload";
 import type {
     Resume,
     ResumeWork,
@@ -54,7 +58,12 @@ import type {
     ResumeSkillKeyword,
     ResumeLanguage,
     ResumeCareerPhase,
+    ResumeBasicsPresentationConfig,
 } from "@/types/resume";
+import {
+    normalizeResumeBasicsPresentationConfig,
+    removeResumeBasicsPresentationOverride,
+} from "@/lib/resume-basics-presentation";
 import type { PortfolioAdminItem } from "@/lib/portfolio-admin";
 import type { AboutData } from "@/types/about";
 
@@ -189,6 +198,13 @@ export default function ResumePanel() {
     const [layoutEditMode, setLayoutEditMode] = useState(false);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [activeJobField, setActiveJobField] = useState<string>("");
+    const [resumeBasicsPresentation, setResumeBasicsPresentation] =
+        useState<ResumeBasicsPresentationConfig>(
+            normalizeResumeBasicsPresentationConfig(undefined)
+        );
+    const [resumeBasicsPresentationSaving, setResumeBasicsPresentationSaving] =
+        useState(false);
+    const [uploadingBasicsImage, setUploadingBasicsImage] = useState(false);
     const [portfolioItems, setPortfolioItems] = useState<PortfolioAdminItem[]>(
         []
     );
@@ -262,6 +278,7 @@ export default function ResumePanel() {
             initialSectionLayoutRef.current = result.resumeSectionLayout;
             setJobFields(result.jobFields);
             setActiveJobField(normalizeJobFieldValue(result.activeJobField));
+            setResumeBasicsPresentation(result.resumeBasicsPresentation);
         });
     }, []);
 
@@ -441,6 +458,104 @@ export default function ResumePanel() {
             type: "success",
             msg: "이력서 디자인이 저장됐습니다. 공개 이력서에 즉시 반영됩니다.",
         });
+    };
+
+    const persistResumeBasicsPresentation = async (
+        next: ResumeBasicsPresentationConfig
+    ) => {
+        if (resumeBasicsPresentationSaving) return;
+        const previous = resumeBasicsPresentation;
+        const normalized = normalizeResumeBasicsPresentationConfig(next);
+        setResumeBasicsPresentation(normalized);
+        setResumeBasicsPresentationSaving(true);
+        setStatus(null);
+        const result = await saveResumeBasicsPresentation(normalized);
+        setResumeBasicsPresentationSaving(false);
+        if (!result.success) {
+            setResumeBasicsPresentation(previous);
+            setStatus({
+                type: "error",
+                msg: `표시 설정 저장 실패: ${result.error}`,
+            });
+            return;
+        }
+        setStatus({
+            type: "success",
+            msg: "표시와 preset 설정이 공개 이력서에 즉시 반영됐습니다.",
+        });
+    };
+
+    const handleBasicsImageChange = async (
+        event: ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.target.files?.[0];
+        if (!file || !resumeData) return;
+        setUploadingBasicsImage(true);
+        try {
+            const image = await uploadImage(file, "resume/profile");
+            setResumeData({
+                ...resumeData,
+                basics: { ...resumeData.basics, image },
+            });
+        } catch {
+            setStatus({ type: "error", msg: "프로필 사진 업로드 실패" });
+        } finally {
+            setUploadingBasicsImage(false);
+            event.target.value = "";
+        }
+    };
+
+    const updateJobFieldHeadline = (jobField: string, headline: string) => {
+        setResumeData((current) =>
+            current
+                ? {
+                      ...current,
+                      basics: {
+                          ...current.basics,
+                          headlineByJobField: {
+                              ...current.basics?.headlineByJobField,
+                              [jobField]: headline,
+                          },
+                      },
+                  }
+                : current
+        );
+    };
+
+    const resetJobFieldHeadline = (jobField: string) => {
+        setResumeData((current) => {
+            if (!current?.basics?.headlineByJobField) return current;
+            const headlineByJobField = {
+                ...current.basics.headlineByJobField,
+            };
+            delete headlineByJobField[jobField];
+            return {
+                ...current,
+                basics: {
+                    ...current.basics,
+                    headlineByJobField,
+                },
+            };
+        });
+    };
+
+    const resetResumeBasicsOverride = async (jobField: string) => {
+        const jobFieldItem = jobFields.find((item) => item.id === jobField);
+        const ok = await confirm({
+            title: "개인 정보 표시 설정 초기화",
+            description: `${jobFieldItem?.name ?? jobField}의 독립 표시 설정과 전문 직함을 공통값으로 되돌립니다.`,
+            confirmText: "공통값으로 되돌리기",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
+        resetJobFieldHeadline(jobField);
+        await persistResumeBasicsPresentation(
+            removeResumeBasicsPresentationOverride(
+                resumeBasicsPresentation,
+                jobField
+            )
+        );
     };
 
     const saveSharedIntroduction = async () => {
@@ -672,6 +787,35 @@ export default function ResumePanel() {
                         saving={aboutSaving}
                         onChange={setAboutData}
                         onSave={() => void saveSharedIntroduction()}
+                    />
+                ) : null}
+
+                {!layoutEditMode ? (
+                    <ResumeBasicsSection
+                        basics={resumeData.basics}
+                        uploadingImage={uploadingBasicsImage}
+                        onImageChange={handleBasicsImageChange}
+                        onChange={(basics) =>
+                            setResumeData({ ...resumeData, basics })
+                        }
+                    />
+                ) : null}
+
+                {!layoutEditMode ? (
+                    <ResumeBasicsPresentationSection
+                        presentation={resumeBasicsPresentation}
+                        jobFields={jobFields}
+                        headlineByJobField={
+                            resumeData.basics?.headlineByJobField
+                        }
+                        saving={resumeBasicsPresentationSaving}
+                        onPersist={(next) =>
+                            void persistResumeBasicsPresentation(next)
+                        }
+                        onHeadlineChange={updateJobFieldHeadline}
+                        onResetOverride={(jobField) =>
+                            void resetResumeBasicsOverride(jobField)
+                        }
                     />
                 ) : null}
 

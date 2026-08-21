@@ -11,6 +11,11 @@ import {
     normalizeLayout,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
+import {
+    normalizeResumeBasicsPresentationConfig,
+    resolveResumeBasicsPresentation,
+    RESUME_BASICS_PRESENTATION_CONFIG_KEY,
+} from "@/lib/resume-basics-presentation";
 
 export const metadata: Metadata = {
     title: "Resume",
@@ -40,31 +45,39 @@ export default async function ResumePageContent({
     let resumeDataRaw: Resume = {} as Resume;
     let aboutData: AboutData = {};
     let sectionLayout: ResumeSectionLayout = DEFAULT_RESUME_LAYOUT;
+    let resumeBasicsPresentationConfig =
+        normalizeResumeBasicsPresentationConfig(undefined);
 
     if (serverClient) {
-        const [layoutRes, sectionLayoutRes, resumeRes, aboutRes] =
-            await Promise.all([
-                serverClient
-                    .from("site_config")
-                    .select("value")
-                    .eq("key", "resume_layout")
-                    .single(),
-                serverClient
-                    .from("site_config")
-                    .select("value")
-                    .eq("key", "resume_section_layout")
-                    .single(),
-                serverClient
-                    .from("resume_data")
-                    .select("data")
-                    .eq("lang", "ko")
-                    .single(),
-                serverClient
-                    .from("about_data")
-                    .select("data")
-                    .limit(1)
-                    .single(),
-            ]);
+        const [
+            layoutRes,
+            sectionLayoutRes,
+            basicsPresentationRes,
+            resumeRes,
+            aboutRes,
+        ] = await Promise.all([
+            serverClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "resume_layout")
+                .single(),
+            serverClient
+                .from("site_config")
+                .select("value")
+                .eq("key", "resume_section_layout")
+                .single(),
+            serverClient
+                .from("site_config")
+                .select("value")
+                .eq("key", RESUME_BASICS_PRESENTATION_CONFIG_KEY)
+                .single(),
+            serverClient
+                .from("resume_data")
+                .select("data")
+                .eq("lang", "ko")
+                .single(),
+            serverClient.from("about_data").select("data").limit(1).single(),
+        ]);
 
         if (layoutRes.data?.value) {
             resumeLayout = coerceTheme(layoutRes.data.value);
@@ -75,6 +88,10 @@ export default async function ResumePageContent({
                 sectionLayoutRes.data.value as ResumeSectionLayout
             );
         }
+        resumeBasicsPresentationConfig =
+            normalizeResumeBasicsPresentationConfig(
+                basicsPresentationRes.data?.value
+            );
 
         if (resumeRes.data?.data) {
             resumeDataRaw = resumeRes.data.data as unknown as Resume;
@@ -104,6 +121,10 @@ export default async function ResumePageContent({
     );
     const coreCompetencies = filteredResumeData.coreCompetencies?.entries ?? [];
     const portfolioBasePath = `/${jobField}/portfolio`;
+    const basicsPresentation = resolveResumeBasicsPresentation(
+        resumeBasicsPresentationConfig,
+        jobField
+    );
 
     const resumeData: Resume = {
         ...filteredResumeData,
@@ -130,6 +151,7 @@ export default async function ResumePageContent({
                     sectionLayout={sectionLayout}
                     portfolioBasePath={portfolioBasePath}
                     activeJobField={jobField}
+                    basicsPresentation={basicsPresentation}
                 />
             )}
             {resumeLayout === "modern" && (
@@ -139,6 +161,7 @@ export default async function ResumePageContent({
                     sectionLayout={sectionLayout}
                     activeJobField={jobField}
                     portfolioBasePath={portfolioBasePath}
+                    basicsPresentation={basicsPresentation}
                 />
             )}
         </PdfExportButton>

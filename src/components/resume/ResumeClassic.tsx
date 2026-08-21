@@ -1,5 +1,13 @@
 import { Fragment } from "react";
-import type { Resume, ResumeCoreCompetency } from "@/types/resume";
+import type {
+    Resume,
+    ResumeBasicsPresentation,
+    ResumeCoreCompetency,
+} from "@/types/resume";
+import {
+    formatResumeBirthDate,
+    formatResumeMilitary,
+} from "@/lib/resume-basics-presentation";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
@@ -19,6 +27,7 @@ interface Props {
     sectionLayout?: ResumeSectionLayout;
     portfolioBasePath?: string;
     activeJobField?: string;
+    basicsPresentation: ResumeBasicsPresentation;
 }
 
 const formatDateRange = (
@@ -36,8 +45,30 @@ export default async function ResumeClassic({
     sectionLayout,
     portfolioBasePath,
     activeJobField,
+    basicsPresentation,
 }: Props) {
     const basics = resume.basics ?? {};
+    const visible = basicsPresentation.visibility;
+    const personalDetails = [
+        visible.birthDate && basics.birthDate
+            ? {
+                  label: "생년월일",
+                  value: formatResumeBirthDate(
+                      basics.birthDate,
+                      basicsPresentation.personalDetailPreset
+                  ),
+              }
+            : null,
+        visible.military && basics.military?.status
+            ? {
+                  label: "병역",
+                  value: formatResumeMilitary(
+                      basics.military,
+                      basicsPresentation.personalDetailPreset
+                  ),
+              }
+            : null,
+    ].filter((item): item is { label: string; value: string } => Boolean(item));
 
     // layout 기반 right-side 섹션 순서 결정
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
@@ -439,7 +470,7 @@ export default async function ResumeClassic({
         <div className="max-tablet:grid-cols-1 grid min-h-full grid-cols-[220px_1fr] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Sidebar — basics 고정 */}
             <div className="max-tablet:border-r-0 max-tablet:border-b max-tablet:border-(--color-border) max-tablet:p-6 flex flex-col gap-5 border-r border-(--color-border) bg-(--color-surface-subtle) p-[2rem_1.5rem]">
-                {basics.image && basics.image.trim() ? (
+                {visible.image && basics.image && basics.image.trim() ? (
                     <div className="mb-4">
                         <img
                             src={
@@ -459,26 +490,28 @@ export default async function ResumeClassic({
                         />
                     </div>
                 ) : null}
-                {basics.name ? (
+                {visible.name && basics.name ? (
                     <h1 className="m-0 mb-1 text-[1.375rem] leading-[1.15] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                         {basics.name}
                     </h1>
                 ) : null}
-                {basics.label ? (
+                {visible.headline && basics.label ? (
                     <p className="m-0 text-[1.05rem] text-(--color-muted)">
                         {basics.label}
                     </p>
                 ) : null}
-                {basics.summary ? (
+                {visible.summary && basics.summary ? (
                     <p className="m-0 text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
                 ) : null}
 
                 {/* Contact */}
-                {basics.email || basics.phone || basics.url ? (
+                {(visible.email && basics.email) ||
+                (visible.phone && basics.phone) ||
+                (visible.url && basics.url) ? (
                     <div className="flex flex-col gap-1.5">
-                        {basics.email ? (
+                        {visible.email && basics.email ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Email
@@ -491,7 +524,7 @@ export default async function ResumeClassic({
                                 </a>
                             </div>
                         ) : null}
-                        {basics.phone ? (
+                        {visible.phone && basics.phone ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Phone
@@ -501,7 +534,7 @@ export default async function ResumeClassic({
                                 </span>
                             </div>
                         ) : null}
-                        {basics.url ? (
+                        {visible.url && basics.url ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                     Website
@@ -519,8 +552,29 @@ export default async function ResumeClassic({
                     </div>
                 ) : null}
 
+                {personalDetails.length > 0 ? (
+                    <div className="flex flex-col gap-1.5">
+                        <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
+                            개인 사항
+                        </strong>
+                        {personalDetails.map((detail) => (
+                            <div
+                                key={detail.label}
+                                className="flex flex-col gap-0.5"
+                            >
+                                <span className="text-xs font-semibold text-(--color-muted)">
+                                    {detail.label}
+                                </span>
+                                <span className="text-base text-(--color-foreground)">
+                                    {detail.value}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+
                 {/* Location */}
-                {basics.location ? (
+                {visible.location && basics.location ? (
                     <div className="flex flex-col gap-0.5">
                         <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                             Location
@@ -540,7 +594,9 @@ export default async function ResumeClassic({
                 ) : null}
 
                 {/* Profiles */}
-                {basics.profiles && basics.profiles.length > 0 ? (
+                {visible.profiles &&
+                basics.profiles &&
+                basics.profiles.length > 0 ? (
                     <div className="flex flex-col gap-0.5">
                         <strong className="mb-0.5 block text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
                             Profiles

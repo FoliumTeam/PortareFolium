@@ -33,6 +33,44 @@ export interface ResumeProfile {
     url?: string;
 }
 
+export type ResumeMilitary = {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+};
+
+export const RESUME_BASICS_VISIBILITY_KEYS = [
+    "image",
+    "name",
+    "headline",
+    "summary",
+    "email",
+    "phone",
+    "url",
+    "location",
+    "profiles",
+    "birthDate",
+    "military",
+] as const;
+
+export type ResumeBasicsVisibilityKey =
+    (typeof RESUME_BASICS_VISIBILITY_KEYS)[number];
+
+export type ResumeHeaderPreset = "split" | "profileCard" | "compact";
+
+export type ResumePersonalDetailPreset = "detailed" | "concise";
+
+export type ResumeBasicsPresentation = {
+    headerPreset: ResumeHeaderPreset;
+    personalDetailPreset: ResumePersonalDetailPreset;
+    visibility: Record<ResumeBasicsVisibilityKey, boolean>;
+};
+
+export type ResumeBasicsPresentationConfig = {
+    shared: ResumeBasicsPresentation;
+    jobFields?: Record<string, ResumeBasicsPresentation>;
+};
+
 export interface ResumeBasics {
     name?: string;
     label?: string;
@@ -45,6 +83,9 @@ export interface ResumeBasics {
     summary?: string;
     location?: ResumeLocation;
     profiles?: ResumeProfile[];
+    birthDate?: string;
+    military?: ResumeMilitary;
+    headlineByJobField?: Record<string, string>;
 }
 
 export interface ResumeWork {

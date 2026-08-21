@@ -138,10 +138,15 @@ export function createJobFieldResumeView(
     >
 ): Resume {
     const profileIntroduction = introduction ?? fallbackIntroduction;
+    const headlineOverrides = resume.basics?.headlineByJobField;
+    const headline =
+        headlineOverrides && Object.hasOwn(headlineOverrides, jobField)
+            ? headlineOverrides[jobField]
+            : resume.basics?.label;
     const basics = profileIntroduction
         ? {
               ...resume.basics,
-              label: undefined,
+              label: headline,
               summary: [
                   profileIntroduction.description,
                   profileIntroduction.descriptionSub,
@@ -149,7 +154,7 @@ export function createJobFieldResumeView(
                   .filter(Boolean)
                   .join("\n"),
           }
-        : resume.basics;
+        : { ...resume.basics, label: headline };
 
     return {
         ...resume,

@@ -52,3 +52,42 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
 });
+
+test("Resume 관리자에서 개인 정보와 preset 설정을 제공한다", async ({
+    page,
+}) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
+
+    const basics = page.locator('[data-resume-section="basics"]').last();
+    const presentation = page.locator(
+        '[data-resume-section="basics-presentation"]'
+    );
+
+    await expect(
+        basics.getByRole("heading", { name: "기본 정보" })
+    ).toBeVisible();
+    await expect(basics.getByText("생년월일", { exact: true })).toBeVisible();
+    await expect(basics.getByText("병역 상태", { exact: true })).toBeVisible();
+    await expect(
+        presentation.getByRole("heading", { name: "표시와 디자인" })
+    ).toBeVisible();
+    await expect(
+        presentation.getByRole("button", { name: /좌우 분할형/ })
+    ).toBeVisible();
+    await expect(
+        presentation.getByText("생년월일", { exact: true })
+    ).toBeVisible();
+    await expect(
+        presentation.getByText("병역 사항", { exact: true })
+    ).toBeVisible();
+
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+});

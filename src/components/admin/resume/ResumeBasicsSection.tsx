@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import type { ResumeBasics } from "@/types/resume";
+import type { ResumeBasics, ResumeProfile } from "@/types/resume";
 import {
     InputField,
     TextAreaField,
@@ -11,8 +11,14 @@ type ResumeBasicsSectionProps = {
     basics: ResumeBasics | undefined;
     uploadingImage: boolean;
     onImageChange: (event: ChangeEvent<HTMLInputElement>) => void;
-    onChange: (field: keyof ResumeBasics, value: string) => void;
+    onChange: (basics: ResumeBasics) => void;
 };
+
+const emptyProfile = (): ResumeProfile => ({
+    network: "",
+    username: "",
+    url: "",
+});
 
 export const ResumeBasicsSection = ({
     basics,
@@ -20,68 +26,313 @@ export const ResumeBasicsSection = ({
     onImageChange,
     onChange,
 }: ResumeBasicsSectionProps) => {
+    const value = basics ?? {};
+    const update = (patch: Partial<ResumeBasics>) =>
+        onChange({ ...value, ...patch });
+    const profiles = value.profiles ?? [];
+
+    const updateProfile = (index: number, patch: Partial<ResumeProfile>) => {
+        const next = [...profiles];
+        next[index] = { ...next[index], ...patch };
+        update({ profiles: next });
+    };
+
+    const moveProfile = (from: number, to: number) => {
+        if (to < 0 || to >= profiles.length) return;
+        const next = [...profiles];
+        const [profile] = next.splice(from, 1);
+        next.splice(to, 0, profile);
+        update({ profiles: next });
+    };
+
+    const imageClass =
+        value.imageStyle === "rounded"
+            ? "rounded-full"
+            : value.imageStyle === "squared"
+              ? "rounded-none"
+              : "rounded-md";
+
     return (
         <section
             data-resume-section="basics"
-            className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6"
+            className="space-y-6 rounded-xl border border-(--color-border) bg-(--color-surface) p-6"
         >
-            <h3 className="text-xl font-bold text-(--color-foreground)">
-                기본 정보
-            </h3>
-            <div className="tablet:flex-row tablet:gap-6 mb-4 flex flex-col items-start gap-4">
-                {basics?.image ? (
-                    <img
-                        src={basics.image}
-                        alt="Profile"
-                        className="tablet:h-48 tablet:w-48 h-32 w-32 shrink-0 rounded-full border border-(--color-border) object-cover"
+            <div>
+                <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
+                    Personal data
+                </p>
+                <h3 className="mt-1 text-xl font-bold text-(--color-foreground)">
+                    기본 정보
+                </h3>
+                <p className="mt-1 text-sm text-(--color-muted)">
+                    공개 Resume에 사용하는 공통 개인 데이터입니다.
+                </p>
+            </div>
+
+            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                <p className="mb-4 text-base font-semibold text-(--color-foreground)">
+                    프로필
+                </p>
+                <div className="tablet:flex-row tablet:gap-6 flex flex-col items-start gap-4">
+                    {value.image ? (
+                        <img
+                            src={value.image}
+                            alt="프로필 사진 미리보기"
+                            className={`h-32 w-32 shrink-0 border border-(--color-border) object-cover ${imageClass}`}
+                        />
+                    ) : null}
+                    <div className="min-w-0 flex-1 space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-(--color-muted)">
+                                프로필 사진
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={onImageChange}
+                                disabled={uploadingImage}
+                                className="mt-2 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) disabled:opacity-50"
+                            />
+                        </div>
+                        <InputField
+                            label="사진 URL"
+                            value={value.image ?? ""}
+                            onChange={(image) => update({ image })}
+                            placeholder="https://..."
+                        />
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-(--color-muted)">
+                                사진 형태
+                            </label>
+                            <select
+                                value={value.imageStyle ?? "standard"}
+                                onChange={(event) =>
+                                    update({
+                                        imageStyle: event.target
+                                            .value as NonNullable<
+                                            ResumeBasics["imageStyle"]
+                                        >,
+                                    })
+                                }
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground)"
+                            >
+                                <option value="rounded">원형</option>
+                                <option value="standard">둥근 사각형</option>
+                                <option value="squared">사각형</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                <p className="mb-4 text-base font-semibold text-(--color-foreground)">
+                    이름과 연락처
+                </p>
+                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                    <InputField
+                        label="이름"
+                        value={value.name ?? ""}
+                        onChange={(name) => update({ name })}
                     />
-                ) : null}
-                <div className="max-w-full min-w-0 flex-1">
-                    <label className="text-sm font-medium text-(--color-muted)">
-                        프로필 사진 (자동 업로드)
-                    </label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={onImageChange}
-                        disabled={uploadingImage}
-                        className="mt-4 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50"
+                    <InputField
+                        label="공통 전문 직함"
+                        value={value.label ?? ""}
+                        onChange={(label) => update({ label })}
+                        placeholder="예: Full-stack Developer"
+                    />
+                    <InputField
+                        label="이메일"
+                        value={value.email ?? ""}
+                        onChange={(email) => update({ email })}
+                        type="email"
+                    />
+                    <InputField
+                        label="전화번호"
+                        value={value.phone ?? ""}
+                        onChange={(phone) => update({ phone })}
+                        type="tel"
+                    />
+                    <InputField
+                        label="웹사이트 URL"
+                        value={value.url ?? ""}
+                        onChange={(url) => update({ url })}
+                        type="url"
                     />
                 </div>
             </div>
 
-            <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                <InputField
-                    label="이름 (Name)"
-                    value={basics?.name || ""}
-                    onChange={(value) => onChange("name", value)}
-                />
-                <InputField
-                    label="직함 (Label)"
-                    value={basics?.label || ""}
-                    onChange={(value) => onChange("label", value)}
-                    placeholder="예: Frontend Developer"
-                />
-                <InputField
-                    label="이메일"
-                    value={basics?.email || ""}
-                    onChange={(value) => onChange("email", value)}
-                />
-                <InputField
-                    label="전화번호"
-                    value={basics?.phone || ""}
-                    onChange={(value) => onChange("phone", value)}
-                />
-                <InputField
-                    label="웹사이트 URL"
-                    value={basics?.url || ""}
-                    onChange={(value) => onChange("url", value)}
-                />
+            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                <p className="mb-4 text-base font-semibold text-(--color-foreground)">
+                    위치와 개인 사항
+                </p>
+                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                    <InputField
+                        label="주소"
+                        value={value.location?.address ?? ""}
+                        onChange={(address) =>
+                            update({ location: { ...value.location, address } })
+                        }
+                    />
+                    <InputField
+                        label="도시"
+                        value={value.location?.city ?? ""}
+                        onChange={(city) =>
+                            update({ location: { ...value.location, city } })
+                        }
+                    />
+                    <InputField
+                        label="지역"
+                        value={value.location?.region ?? ""}
+                        onChange={(region) =>
+                            update({ location: { ...value.location, region } })
+                        }
+                    />
+                    <InputField
+                        label="우편번호"
+                        value={value.location?.postalCode ?? ""}
+                        onChange={(postalCode) =>
+                            update({
+                                location: { ...value.location, postalCode },
+                            })
+                        }
+                    />
+                    <InputField
+                        label="국가 코드"
+                        value={value.location?.countryCode ?? ""}
+                        onChange={(countryCode) =>
+                            update({
+                                location: { ...value.location, countryCode },
+                            })
+                        }
+                        placeholder="KR"
+                    />
+                    <InputField
+                        label="생년월일"
+                        value={value.birthDate ?? ""}
+                        onChange={(birthDate) => update({ birthDate })}
+                        type="date"
+                    />
+                    <InputField
+                        label="병역 상태"
+                        value={value.military?.status ?? ""}
+                        onChange={(status) =>
+                            update({ military: { ...value.military, status } })
+                        }
+                        placeholder="예: 육군 병장 만기전역"
+                    />
+                    <InputField
+                        label="복무 시작월"
+                        value={value.military?.startDate ?? ""}
+                        onChange={(startDate) =>
+                            update({
+                                military: { ...value.military, startDate },
+                            })
+                        }
+                        type="month"
+                    />
+                    <InputField
+                        label="복무 종료월"
+                        value={value.military?.endDate ?? ""}
+                        onChange={(endDate) =>
+                            update({ military: { ...value.military, endDate } })
+                        }
+                        type="month"
+                    />
+                </div>
             </div>
+
+            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-base font-semibold text-(--color-foreground)">
+                        외부 프로필
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            update({ profiles: [...profiles, emptyProfile()] })
+                        }
+                        className="rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent)"
+                    >
+                        프로필 추가
+                    </button>
+                </div>
+                <div className="mt-4 space-y-3">
+                    {profiles.map((profile, index) => (
+                        <div
+                            key={index}
+                            className="rounded-lg border border-(--color-border) bg-(--color-surface) p-3"
+                        >
+                            <div className="tablet:grid-cols-[1fr_1fr_1fr_auto] grid grid-cols-1 gap-3">
+                                <InputField
+                                    label="서비스"
+                                    value={profile.network ?? ""}
+                                    onChange={(network) =>
+                                        updateProfile(index, { network })
+                                    }
+                                    placeholder="GitHub"
+                                />
+                                <InputField
+                                    label="표시 이름"
+                                    value={profile.username ?? ""}
+                                    onChange={(username) =>
+                                        updateProfile(index, { username })
+                                    }
+                                />
+                                <InputField
+                                    label="URL"
+                                    value={profile.url ?? ""}
+                                    onChange={(url) =>
+                                        updateProfile(index, { url })
+                                    }
+                                    type="url"
+                                />
+                                <div className="flex items-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            moveProfile(index, index - 1)
+                                        }
+                                        disabled={index === 0}
+                                        className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                    >
+                                        위
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            moveProfile(index, index + 1)
+                                        }
+                                        disabled={index === profiles.length - 1}
+                                        className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                    >
+                                        아래
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            update({
+                                                profiles: profiles.filter(
+                                                    (_, itemIndex) =>
+                                                        itemIndex !== index
+                                                ),
+                                            })
+                                        }
+                                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white"
+                                    >
+                                        삭제
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <TextAreaField
-                label="자기소개 (Summary)"
-                value={basics?.summary || ""}
-                onChange={(value) => onChange("summary", value)}
+                label="공통 자기소개"
+                value={value.summary ?? ""}
+                onChange={(summary) => update({ summary })}
                 rows={4}
             />
         </section>

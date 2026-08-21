@@ -1,5 +1,13 @@
-import { Fragment } from "react";
-import type { Resume, ResumeCoreCompetency } from "@/types/resume";
+import { Fragment, type ReactNode } from "react";
+import type {
+    Resume,
+    ResumeBasicsPresentation,
+    ResumeCoreCompetency,
+} from "@/types/resume";
+import {
+    formatResumeBirthDate,
+    formatResumeMilitary,
+} from "@/lib/resume-basics-presentation";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import EducationMetadata from "@/components/resume/EducationMetadata";
@@ -20,6 +28,7 @@ interface Props {
     sectionLayout?: ResumeSectionLayout;
     activeJobField?: string;
     portfolioBasePath?: string;
+    basicsPresentation: ResumeBasicsPresentation;
 }
 
 // 날짜 포맷
@@ -38,8 +47,10 @@ export default async function ResumeModern({
     sectionLayout,
     activeJobField,
     portfolioBasePath,
+    basicsPresentation,
 }: Props) {
     const basics = resume.basics ?? {};
+    const visible = basicsPresentation.visibility;
 
     // layout 기반 섹션 순서 결정
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
@@ -589,105 +600,257 @@ export default async function ResumeModern({
         references: renderReferences,
     };
 
-    return (
-        <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
-            {/* Header */}
-            <header
-                className="mb-8 border-b-2 border-(--color-border) pb-7"
-                data-pdf-block
-            >
-                {basics.image && basics.image.trim() ? (
-                    <div className="mb-4 flex justify-center">
-                        <img
-                            src={
-                                basics.image.startsWith("http") ||
-                                basics.image.startsWith("/")
-                                    ? basics.image
-                                    : `/${basics.image}`
-                            }
-                            alt={basics.name || "Profile"}
-                            className={`block h-56 w-56 object-cover ${
-                                basics.imageStyle === "rounded"
-                                    ? "rounded-full"
-                                    : basics.imageStyle === "squared"
-                                      ? "rounded-none"
-                                      : "rounded-md"
-                            }`}
-                        />
-                    </div>
-                ) : null}
-                {basics.name ? (
-                    <h1 className="m-0 mb-1 text-center text-4xl leading-[1.15] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
-                        {basics.name}
-                    </h1>
-                ) : null}
-                {basics.label ? (
-                    <p className="m-0 mb-3 text-center text-lg text-(--color-muted)">
-                        {basics.label}
-                    </p>
-                ) : null}
-                <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
-                    {basics.email ? (
-                        <a
-                            href={`mailto:${basics.email}`}
-                            className="text-base text-(--color-link) no-underline hover:opacity-80"
-                        >
-                            {basics.email}
-                        </a>
-                    ) : null}
-                    {basics.phone ? (
-                        <span className="text-base text-(--color-link)">
-                            {basics.phone}
-                        </span>
-                    ) : null}
-                    {basics.url ? (
-                        <a
-                            href={basics.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-base text-(--color-link) no-underline hover:opacity-80"
-                        >
-                            {basics.url}
-                        </a>
-                    ) : null}
-                    {basics.location
-                        ? [
-                              basics.location.city,
-                              basics.location.region,
-                              basics.location.countryCode,
-                          ]
-                              .filter(Boolean)
-                              .map((location, idx) => (
-                                  <span
-                                      key={idx}
-                                      className="text-base text-(--color-link)"
-                                  >
-                                      {location}
-                                  </span>
-                              ))
-                        : null}
-                </div>
-                {basics.profiles && basics.profiles.length > 0 ? (
-                    <div className="mt-1.5 flex flex-wrap justify-center gap-x-3 gap-y-1">
-                        {basics.profiles.map((profile, idx) => (
+    const metadataItems: Array<{
+        key: string;
+        label: string;
+        value: ReactNode;
+    }> = [];
+    if (visible.email && basics.email) {
+        metadataItems.push({
+            key: "email",
+            label: "이메일",
+            value: (
+                <a
+                    href={`mailto:${basics.email}`}
+                    className="break-all text-(--color-link) no-underline hover:underline"
+                >
+                    {basics.email}
+                </a>
+            ),
+        });
+    }
+    if (visible.phone && basics.phone) {
+        metadataItems.push({
+            key: "phone",
+            label: "전화번호",
+            value: <span>{basics.phone}</span>,
+        });
+    }
+    if (visible.url && basics.url) {
+        metadataItems.push({
+            key: "url",
+            label: "웹사이트",
+            value: (
+                <a
+                    href={basics.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-(--color-link) no-underline hover:underline"
+                >
+                    {basics.url}
+                </a>
+            ),
+        });
+    }
+    const location = basics.location
+        ? [
+              basics.location.address,
+              basics.location.city,
+              basics.location.region,
+              basics.location.postalCode,
+              basics.location.countryCode,
+          ]
+              .filter(Boolean)
+              .join(", ")
+        : "";
+    if (visible.location && location) {
+        metadataItems.push({
+            key: "location",
+            label: "위치",
+            value: <span>{location}</span>,
+        });
+    }
+    if (visible.birthDate && basics.birthDate) {
+        metadataItems.push({
+            key: "birthDate",
+            label: "생년월일",
+            value: (
+                <span>
+                    {formatResumeBirthDate(
+                        basics.birthDate,
+                        basicsPresentation.personalDetailPreset
+                    )}
+                </span>
+            ),
+        });
+    }
+    const military = formatResumeMilitary(
+        basics.military,
+        basicsPresentation.personalDetailPreset
+    );
+    if (visible.military && military) {
+        metadataItems.push({
+            key: "military",
+            label: "병역",
+            value: <span>{military}</span>,
+        });
+    }
+    if (visible.profiles && basics.profiles?.length) {
+        metadataItems.push({
+            key: "profiles",
+            label: "프로필",
+            value: (
+                <span className="flex flex-wrap gap-x-3 gap-y-1">
+                    {basics.profiles.map((profile, index) =>
+                        profile.url ? (
                             <a
-                                key={idx}
+                                key={index}
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-base font-medium text-(--color-link) no-underline hover:opacity-80"
+                                className="text-(--color-link) no-underline hover:underline"
                             >
-                                {profile.network}
+                                {profile.username ||
+                                    profile.network ||
+                                    profile.url}
                             </a>
-                        ))}
+                        ) : (
+                            <span key={index}>
+                                {profile.username || profile.network}
+                            </span>
+                        )
+                    )}
+                </span>
+            ),
+        });
+    }
+
+    const renderImage = (sizeClass: string) =>
+        visible.image && basics.image?.trim() ? (
+            <img
+                src={
+                    basics.image.startsWith("http") ||
+                    basics.image.startsWith("/")
+                        ? basics.image
+                        : `/${basics.image}`
+                }
+                alt={basics.name || "Profile"}
+                className={`${sizeClass} shrink-0 border border-(--color-border) object-cover ${
+                    basics.imageStyle === "rounded"
+                        ? "rounded-full"
+                        : basics.imageStyle === "squared"
+                          ? "rounded-none"
+                          : "rounded-xl"
+                }`}
+            />
+        ) : null;
+
+    const renderIdentity = (centered = false) => (
+        <div className={centered ? "text-center" : "text-left"}>
+            {visible.name && basics.name ? (
+                <h1 className="m-0 text-3xl leading-tight font-extrabold tracking-[-0.03em] text-(--color-foreground)">
+                    {basics.name}
+                </h1>
+            ) : null}
+            {visible.headline && basics.label ? (
+                <p className="mt-1 text-lg font-medium text-(--color-muted)">
+                    {basics.label}
+                </p>
+            ) : null}
+        </div>
+    );
+
+    const renderMetadata = (className: string) =>
+        metadataItems.length > 0 ? (
+            <div className={className}>
+                {metadataItems.map((item) => (
+                    <div key={item.key} className="min-w-0">
+                        <p className="text-xs font-bold tracking-[0.14em] text-(--color-muted) uppercase">
+                            {item.label}
+                        </p>
+                        <div className="mt-1 text-base text-(--color-foreground)">
+                            {item.value}
+                        </div>
                     </div>
-                ) : null}
-                {basics.summary ? (
-                    <p className="m-0 mt-3 text-center text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
-                        {basics.summary}
-                    </p>
-                ) : null}
+                ))}
+            </div>
+        ) : null;
+
+    const renderSummary = (className: string) =>
+        visible.summary && basics.summary ? (
+            <p
+                className={`m-0 max-w-[72ch] text-base leading-[1.7] whitespace-pre-line text-(--color-foreground) ${className}`}
+            >
+                {basics.summary}
+            </p>
+        ) : null;
+
+    const renderHeader = () => {
+        const image = renderImage("h-36 w-36 max-tablet:h-28 max-tablet:w-28");
+        if (basicsPresentation.headerPreset === "profileCard") {
+            return (
+                <header
+                    className="tablet:grid-cols-[11rem_minmax(0,1fr)] tablet:p-8 mb-10 grid gap-6 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                    data-pdf-block
+                >
+                    <div className="flex flex-col items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
+                        {renderImage(
+                            "h-44 w-44 max-tablet:h-28 max-tablet:w-28"
+                        )}
+                        <div className="mt-4">{renderIdentity(true)}</div>
+                    </div>
+                    <div className="min-w-0">
+                        {renderMetadata(
+                            "grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
+                        )}
+                        {renderSummary(
+                            "mt-6 border-t border-(--color-border) pt-5"
+                        )}
+                    </div>
+                </header>
+            );
+        }
+        if (basicsPresentation.headerPreset === "compact") {
+            return (
+                <header
+                    className="mb-10 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                    data-pdf-block
+                >
+                    <div className="max-tablet:flex-col max-tablet:items-center flex flex-wrap items-center gap-4">
+                        {renderImage(
+                            "h-24 w-24 max-tablet:h-20 max-tablet:w-20"
+                        )}
+                        {renderIdentity(true)}
+                    </div>
+                    {renderMetadata(
+                        "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
+                    )}
+                    {renderSummary(
+                        "mt-5 border-t border-(--color-border) pt-5"
+                    )}
+                </header>
+            );
+        }
+        return (
+            <header
+                className="tablet:p-8 mb-10 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
+                data-pdf-block
+            >
+                <div
+                    className={`grid items-start gap-6 ${
+                        image
+                            ? "tablet:grid-cols-[9rem_minmax(0,1fr)]"
+                            : "grid-cols-1"
+                    } max-tablet:justify-items-center`}
+                >
+                    {image}
+                    <div className="max-tablet:w-full min-w-0">
+                        <div className="max-tablet:text-center">
+                            {renderIdentity()}
+                        </div>
+                        {renderMetadata(
+                            "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2 max-tablet:text-left"
+                        )}
+                    </div>
+                </div>
+                {renderSummary("mt-6 border-t border-(--color-border) pt-5")}
             </header>
+        );
+    };
+
+    return (
+        <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
+            {renderHeader()}
 
             {/* Main content — layout 기반 순서 */}
             <main>
