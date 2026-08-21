@@ -42,7 +42,11 @@ export const MIGRATIONS: Migration[] = [
         title: "tags.color 컬럼 추가",
         feature: "태그 색상 (oklch 컬러 피커)",
         sql: `ALTER TABLE tags
-  ADD COLUMN IF NOT EXISTS color text;`,
+  ADD COLUMN IF NOT EXISTS color text;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.2"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.2"';`,
     },
     {
         version: "0.5.3",
@@ -51,7 +55,11 @@ export const MIGRATIONS: Migration[] = [
         sql: `ALTER TABLE posts
   ADD COLUMN IF NOT EXISTS meta_title       text,
   ADD COLUMN IF NOT EXISTS meta_description text,
-  ADD COLUMN IF NOT EXISTS og_image         text;`,
+  ADD COLUMN IF NOT EXISTS og_image         text;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.3"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.3"';`,
     },
     {
         version: "0.5.4",
@@ -60,7 +68,11 @@ export const MIGRATIONS: Migration[] = [
         sql: `CREATE TABLE IF NOT EXISTS site_config (
   key   text primary key,
   value jsonb not null
-);`,
+);
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.4"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.4"';`,
     },
     {
         version: "0.5.5",
@@ -76,14 +88,22 @@ export const MIGRATIONS: Migration[] = [
 
 INSERT INTO resume_data (lang, data)
 VALUES ('ko', '{}'::jsonb)
-ON CONFLICT (lang) DO NOTHING;`,
+ON CONFLICT (lang) DO NOTHING;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.5"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.5"';`,
     },
     {
         version: "0.5.6",
         title: "posts.category 컬럼 추가",
         feature: "포스트 카테고리",
         sql: `ALTER TABLE posts
-  ADD COLUMN IF NOT EXISTS category text;`,
+  ADD COLUMN IF NOT EXISTS category text;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.6"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.6"';`,
     },
     {
         version: "0.6.2",
@@ -132,7 +152,11 @@ DO $$ BEGIN
       USING (auth.role() = 'authenticated')
       WITH CHECK (auth.role() = 'authenticated');
   END IF;
-END $$;`,
+END $$;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.6.2"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.6.2"';`,
     },
     {
         version: "0.6.17",

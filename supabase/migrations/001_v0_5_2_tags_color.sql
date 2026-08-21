@@ -3,3 +3,7 @@
 
 ALTER TABLE tags
   ADD COLUMN IF NOT EXISTS color text;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.2"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.2"';

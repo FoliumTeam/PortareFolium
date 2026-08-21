@@ -5,3 +5,7 @@ ALTER TABLE posts
   ADD COLUMN IF NOT EXISTS meta_title       text,
   ADD COLUMN IF NOT EXISTS meta_description text,
   ADD COLUMN IF NOT EXISTS og_image         text;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.3"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.3"';

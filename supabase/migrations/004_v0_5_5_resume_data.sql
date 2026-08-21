@@ -12,3 +12,7 @@ CREATE TABLE IF NOT EXISTS resume_data (
 INSERT INTO resume_data (lang, data)
 VALUES ('ko', '{}'::jsonb)
 ON CONFLICT (lang) DO NOTHING;
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.5.5"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.5.5"';

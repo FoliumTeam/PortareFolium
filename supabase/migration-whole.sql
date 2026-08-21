@@ -3,7 +3,7 @@
 -- PortareFolium DB 스키마 전체 동기화
 --
 -- 대상: 모든 사용자 (최초 설치 또는 구버전 DB 보유)
--- 효과: 실행 후 db_schema_version = "0.11.74" 로 설정됨
+-- 효과: 실행 후 db_schema_version = "0.12.190" 로 설정됨
 -- 실행: Supabase 대시보드 → SQL Editor → 전체 내용 붙여넣기 후 실행
 -- 안전: idempotent — 이미 최신 DB에 재실행해도 에러 없음
 -- ============================================================
@@ -215,6 +215,9 @@ CREATE TABLE IF NOT EXISTS gantt_chart_archives (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE gantt_chart_archives
+    ADD COLUMN IF NOT EXISTS category_colors JSONB NOT NULL DEFAULT '{}';
+
 CREATE INDEX IF NOT EXISTS idx_editor_states_entity
     ON editor_states (entity_type, entity_slug, created_at DESC);
 
@@ -403,9 +406,251 @@ UPDATE about_data
 SET data = data - 'coreCompetencies'
 WHERE data ? 'coreCompetencies';
 
--- ── DB 스키마 버전 설정 ───────────────────────────────────────
--- 항상 최신 버전으로 덮어씀 (migration-whole.sql은 전체 재동기화 목적)
+-- ── post_tags 정규화 조회 구조 ───────────────────────────────
+
+CREATE INDEX IF NOT EXISTS idx_posts_tags_gin
+ON posts USING GIN (tags);
+
+CREATE TABLE IF NOT EXISTS post_tags (
+    post_id    UUID        NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    tag_slug   TEXT        NOT NULL,
+    pub_date   TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (post_id, tag_slug)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_tags_tag_pub_date
+ON post_tags (tag_slug, pub_date DESC, post_id);
+
+CREATE INDEX IF NOT EXISTS idx_posts_category_pub_date
+ON posts (category, pub_date DESC);
+
+INSERT INTO post_tags (post_id, tag_slug, pub_date)
+SELECT
+    posts.id,
+    normalized_tags.tag_slug,
+    posts.pub_date
+FROM posts
+CROSS JOIN LATERAL (
+    SELECT DISTINCT btrim(tag) AS tag_slug
+    FROM unnest(posts.tags) AS tag
+    WHERE btrim(tag) <> ''
+) AS normalized_tags
+ON CONFLICT (post_id, tag_slug)
+DO UPDATE SET pub_date = EXCLUDED.pub_date;
+
+CREATE OR REPLACE FUNCTION sync_post_tags()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM post_tags WHERE post_id = NEW.id;
+
+    INSERT INTO post_tags (post_id, tag_slug, pub_date)
+    SELECT
+        NEW.id,
+        normalized_tags.tag_slug,
+        NEW.pub_date
+    FROM (
+        SELECT DISTINCT btrim(tag) AS tag_slug
+        FROM unnest(COALESCE(NEW.tags, '{}'::text[])) AS tag
+        WHERE btrim(tag) <> ''
+    ) AS normalized_tags
+    ON CONFLICT (post_id, tag_slug)
+    DO UPDATE SET pub_date = EXCLUDED.pub_date;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_post_tags ON posts;
+CREATE TRIGGER trg_sync_post_tags
+    AFTER INSERT OR UPDATE OF tags, pub_date ON posts
+    FOR EACH ROW EXECUTE FUNCTION sync_post_tags();
+
+ALTER TABLE post_tags ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "post_tags_public_read" ON post_tags;
+CREATE POLICY "post_tags_public_read"
+    ON post_tags FOR SELECT USING (
+        EXISTS (
+            SELECT 1
+            FROM posts
+            WHERE posts.id = post_tags.post_id
+              AND posts.published = true
+        )
+    );
+
+DROP POLICY IF EXISTS "post_tags_auth_all" ON post_tags;
+CREATE POLICY "post_tags_auth_all"
+    ON post_tags FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+CREATE OR REPLACE VIEW post_tag_counts
+WITH (security_invoker = true) AS
+SELECT
+    tag_slug,
+    COUNT(*)::int AS count
+FROM post_tags
+GROUP BY tag_slug;
+
+-- ── post_categories registry ────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS post_categories (
+    name        TEXT        PRIMARY KEY,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_categories_created_at
+ON post_categories (created_at DESC);
+
+INSERT INTO post_categories (name)
+SELECT DISTINCT btrim(category) AS name
+FROM posts
+WHERE category IS NOT NULL
+  AND btrim(category) <> ''
+ON CONFLICT (name) DO NOTHING;
+
+ALTER TABLE post_categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "post_categories_public_read" ON post_categories;
+CREATE POLICY "post_categories_public_read"
+    ON post_categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "post_categories_auth_write" ON post_categories;
+CREATE POLICY "post_categories_auth_write"
+    ON post_categories FOR ALL
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+CREATE OR REPLACE VIEW post_category_counts
+WITH (security_invoker = true) AS
+WITH post_counts AS (
+    SELECT
+        btrim(category) AS category,
+        COUNT(*)::int AS count
+    FROM posts
+    WHERE category IS NOT NULL
+      AND btrim(category) <> ''
+    GROUP BY btrim(category)
+)
+SELECT
+    post_categories.name AS category,
+    COALESCE(post_counts.count, 0)::int AS count
+FROM post_categories
+LEFT JOIN post_counts ON post_counts.category = post_categories.name
+UNION
+SELECT
+    post_counts.category,
+    post_counts.count
+FROM post_counts
+LEFT JOIN post_categories ON post_categories.name = post_counts.category
+WHERE post_categories.name IS NULL;
+
+-- ── 긴 post content chunk 저장 ───────────────────────────────
+
+CREATE TABLE IF NOT EXISTS post_content_revisions (
+    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id      UUID        NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    content_hash TEXT        NOT NULL,
+    content_size INTEGER     NOT NULL CHECK (content_size >= 0),
+    chunk_size   INTEGER     NOT NULL CHECK (chunk_size > 0),
+    chunk_count  INTEGER     NOT NULL CHECK (chunk_count > 0),
+    active       BOOLEAN     NOT NULL DEFAULT FALSE,
+    status       TEXT        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'committed')),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    committed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS post_content_chunks (
+    revision_id UUID    NOT NULL REFERENCES post_content_revisions(id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL CHECK (chunk_index >= 0),
+    content     TEXT    NOT NULL,
+    checksum    TEXT    NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (revision_id, chunk_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_content_revisions_post_active
+    ON post_content_revisions(post_id, active, committed_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_post_content_chunks_revision_index
+    ON post_content_chunks(revision_id, chunk_index);
+
+ALTER TABLE post_content_revisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_content_chunks ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'post_content_revisions'
+          AND policyname = 'post_content_revisions_public_read'
+    ) THEN
+        CREATE POLICY "post_content_revisions_public_read"
+            ON post_content_revisions FOR SELECT USING (
+                status = 'committed'
+                AND active = true
+                AND EXISTS (
+                    SELECT 1
+                    FROM posts
+                    WHERE posts.id = post_content_revisions.post_id
+                      AND posts.published = true
+                )
+            );
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'post_content_revisions'
+          AND policyname = 'post_content_revisions_auth_all'
+    ) THEN
+        CREATE POLICY "post_content_revisions_auth_all"
+            ON post_content_revisions FOR ALL
+            USING (auth.role() = 'authenticated')
+            WITH CHECK (auth.role() = 'authenticated');
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'post_content_chunks'
+          AND policyname = 'post_content_chunks_public_read'
+    ) THEN
+        CREATE POLICY "post_content_chunks_public_read"
+            ON post_content_chunks FOR SELECT USING (
+                EXISTS (
+                    SELECT 1
+                    FROM post_content_revisions r
+                    JOIN posts ON posts.id = r.post_id
+                    WHERE r.id = post_content_chunks.revision_id
+                      AND r.status = 'committed'
+                      AND r.active = true
+                      AND posts.published = true
+                )
+            );
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'post_content_chunks'
+          AND policyname = 'post_content_chunks_auth_all'
+    ) THEN
+        CREATE POLICY "post_content_chunks_auth_all"
+            ON post_content_chunks FOR ALL
+            USING (auth.role() = 'authenticated')
+            WITH CHECK (auth.role() = 'authenticated');
+    END IF;
+END $$;
+
+-- ── 최신 data 정리와 설정 ───────────────────────────────────
+
+DELETE FROM resume_data
+WHERE lang = 'en';
 
 INSERT INTO site_config (key, value)
-VALUES ('db_schema_version', '"0.11.74"')
-ON CONFLICT (key) DO UPDATE SET value = '"0.11.74"';
+VALUES ('theme_mode', '"light"')
+ON CONFLICT (key) DO NOTHING;
+
+DELETE FROM public.site_config
+WHERE key = 'job_field';
+
+-- ── DB schema version ───────────────────────────────────────
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.12.190"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.12.190"';

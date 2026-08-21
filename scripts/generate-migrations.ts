@@ -113,6 +113,9 @@ function parseMigration(
     );
     const sql = stripTrailingWhitespace(sqlLines.join("\n"));
     if (!sql) fail(`${fileName} has no SQL body`);
+    if (!sql.includes("db_schema_version")) {
+        fail(`${fileName} must update db_schema_version in its SQL body`);
+    }
 
     return {
         version: fileVersion,
