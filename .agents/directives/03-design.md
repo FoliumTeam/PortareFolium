@@ -14,6 +14,7 @@
 - **Low-Level Controls**: spacing, width, alignment, color처럼 서로 결합된 저수준 control의 기본 노출 금지. preset으로 해결할 수 없는 반복적 사용자 요구와 명확한 검증 기준이 있는 경우만 추가.
 - **Preset Persistence**: preset 선택은 즉시 저장, 공개 화면 재검증, 실패 rollback 제공. 선택 상태는 label과 semantic color를 함께 표시.
 - **Control Guidance**: Admin의 각 value group에는 목적과 공개 효과를 설명하는 짧은 문구 제공. 입력 field에는 구체적 label과 필요한 형식·예시 제공. Custom option에는 사용 범위와 추가 입력 안내 제공. 순서·삭제·reset button에는 화면 결과가 드러나는 label 또는 tooltip·`aria-label` 제공.
+- **Icon Actions**: 순서 이동·삭제·편집처럼 널리 이해되는 compact action은 Lucide icon button 우선. button 본문에 중복 text를 넣지 않고 tooltip과 `aria-label`에만 행동 설명 제공.
 
 ## Implementation Specifics
 

@@ -1,7 +1,16 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { Figma, Github, Gitlab, Link, Linkedin, Package } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronUp,
+    Figma,
+    Github,
+    Gitlab,
+    Link,
+    Linkedin,
+    Package,
+} from "lucide-react";
 import type {
     ResumeBasics,
     ResumeProfile,
@@ -496,9 +505,9 @@ export const ResumeBasicsSection = ({
                                                 moveProfile(index, index - 1)
                                             }
                                             disabled={index === 0}
-                                            className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-(--color-foreground) disabled:opacity-40"
                                         >
-                                            위
+                                            <ChevronUp className="h-4 w-4" />
                                         </button>
                                         <button
                                             type="button"
@@ -510,9 +519,9 @@ export const ResumeBasicsSection = ({
                                             disabled={
                                                 index === profiles.length - 1
                                             }
-                                            className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-40"
+                                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-(--color-border) text-(--color-foreground) disabled:opacity-40"
                                         >
-                                            아래
+                                            <ChevronDown className="h-4 w-4" />
                                         </button>
                                         <button
                                             type="button"
