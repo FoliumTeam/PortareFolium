@@ -1,4 +1,5 @@
-import { getSiteConfig } from "@/lib/queries";
+import { getPublicResumeBasics, getSiteConfig } from "@/lib/queries";
+import { getResumeProfileUrl } from "@/lib/resume-profile-preset";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ContentWrapper from "@/components/ContentWrapper";
@@ -14,7 +15,10 @@ export default async function FrontendLayout({
     let headerName = "";
     let themeMode: ThemeMode = "system";
 
-    const configRows = await getSiteConfig();
+    const [configRows, resumeBasics] = await Promise.all([
+        getSiteConfig(),
+        getPublicResumeBasics(),
+    ]);
     const row = configRows.find((r) => r.key === "site_name");
     if (row?.value) {
         let v = row.value;
@@ -54,19 +58,7 @@ export default async function FrontendLayout({
         if (typeof value === "string") headerName = value;
     }
 
-    let githubUrl = "";
-    const ghRow = configRows.find((r) => r.key === "github_url");
-    if (ghRow?.value) {
-        let v = ghRow.value;
-        if (typeof v === "string" && v.startsWith('"')) {
-            try {
-                v = JSON.parse(v);
-            } catch {
-                // invalid JSON
-            }
-        }
-        if (typeof v === "string") githubUrl = v;
-    }
+    const githubUrl = getResumeProfileUrl(resumeBasics.profiles, "github");
 
     const jobFields = await getPublicJobFields();
 

@@ -13,6 +13,7 @@ import {
 import { matchesJobField } from "@/lib/job-field";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 import type { FieldIntroduction, ValuePillar } from "@/types/about";
+import type { ResumeBasics } from "@/types/resume";
 
 export const revalidate = false;
 
@@ -39,7 +40,6 @@ const PLACEHOLDER_VALUE_PILLARS = [
 ];
 
 interface AboutData {
-    name?: string;
     description?: string;
     descriptionSub?: string;
     introductions?: Record<string, FieldIntroduction>;
@@ -89,6 +89,7 @@ export default async function HomePageContent({
     let about: AboutData = {};
     let siteName = "";
     let profileImage: string | undefined;
+    let resumeBasics: ResumeBasics = {};
     let workItems: WorkItem[] = [];
     let coreCompetencies: {
         title: string;
@@ -118,7 +119,7 @@ export default async function HomePageContent({
         }
         if (resumeRes.data?.data) {
             const resumeFull = resumeRes.data.data as {
-                basics?: { image?: string };
+                basics?: ResumeBasics;
                 work?: { entries?: WorkItem[] };
                 coreCompetencies?:
                     | {
@@ -138,6 +139,7 @@ export default async function HomePageContent({
             };
             const img = resumeFull.basics?.image?.trim();
             if (img) profileImage = img;
+            resumeBasics = resumeFull.basics ?? {};
 
             workItems = (resumeFull.work?.entries ?? [])
                 .filter((w) => {
@@ -227,7 +229,7 @@ export default async function HomePageContent({
     }
 
     const fieldIntroduction = about.introductions?.[jobField];
-    const heroName = about.name ?? siteName;
+    const heroName = resumeBasics.name?.trim() || siteName;
     const heroDesc =
         fieldIntroduction?.description ??
         about.description ??

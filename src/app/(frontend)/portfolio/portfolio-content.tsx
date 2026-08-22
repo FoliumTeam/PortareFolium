@@ -6,7 +6,8 @@ import {
     matchesPortfolioJobField,
     normalizePortfolioProject,
 } from "@/lib/portfolio";
-import { getSiteConfig } from "@/lib/queries";
+import { getPublicResumeBasics, getSiteConfig } from "@/lib/queries";
+import { getResumeProfileUrl } from "@/lib/resume-profile-preset";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, FileText, Star } from "lucide-react";
@@ -32,12 +33,11 @@ type PortfolioPageContentProps = {
 export default async function PortfolioPageContent({
     jobField,
 }: PortfolioPageContentProps) {
-    const configRows = await getSiteConfig();
-    const githubConfig = configRows.find((row) => row.key === "github_url");
-    const githubUrl =
-        typeof githubConfig?.value === "string"
-            ? githubConfig.value.replace(/^"|"$/g, "")
-            : "";
+    const [configRows, resumeBasics] = await Promise.all([
+        getSiteConfig(),
+        getPublicResumeBasics(),
+    ]);
+    const githubUrl = getResumeProfileUrl(resumeBasics.profiles, "github");
     const portfolioDesign =
         configRows.find((row) => row.key === "portfolio_design")?.value ===
         "timeline"

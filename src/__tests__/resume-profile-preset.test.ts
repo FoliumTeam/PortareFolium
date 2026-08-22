@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     getProfileContrastColor,
     getResumeProfileBrand,
+    getResumeProfileUrl,
     inferResumeProfilePreset,
 } from "@/lib/resume-profile-preset";
 
@@ -42,5 +43,17 @@ describe("resume profile presets", () => {
             label: "npm",
             backgroundColor: "#cb3837",
         });
+    });
+
+    it("Resume basics의 플랫폼 profile URL을 단일 공개 source로 사용", () => {
+        const profiles = [
+            { preset: "linkedin" as const, url: "https://linkedin.example" },
+            { network: "GitHub", url: "https://github.example" },
+        ];
+
+        expect(getResumeProfileUrl(profiles, "github")).toBe(
+            "https://github.example"
+        );
+        expect(getResumeProfileUrl(profiles, "npm")).toBe("");
     });
 });

@@ -4,7 +4,12 @@ import {
     dedupeJobFieldsById,
     normalizeUniqueJobFieldList,
 } from "@/lib/job-field";
-export type JobFieldItem = { id: string; name: string; emoji?: string };
+export type JobFieldItem = {
+    id: string;
+    name: string;
+    emoji?: string;
+    headerTitle?: string;
+};
 
 // job field 다중 선택 toggle 버튼 그룹
 export function JobFieldSelector({

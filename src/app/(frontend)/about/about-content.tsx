@@ -3,6 +3,12 @@ import { serverClient } from "@/lib/supabase";
 import AboutView from "@/components/AboutView";
 import type { AboutData } from "@/types/about";
 import type { PublicJobField } from "@/lib/public-job-field";
+import { getPublicResumeBasics, getSiteConfig } from "@/lib/queries";
+import {
+    normalizeResumeBasicsPresentationConfig,
+    resolveResumeBasicsPresentation,
+    RESUME_BASICS_PRESENTATION_CONFIG_KEY,
+} from "@/lib/resume-basics-presentation";
 
 export const revalidate = false;
 
@@ -19,28 +25,28 @@ export default async function AboutPageContent({
     jobField,
 }: AboutPageContentProps) {
     let aboutData: AboutData | null = null;
-    let profileImage: string | null = null;
+    const [basics, configRows] = await Promise.all([
+        getPublicResumeBasics(),
+        getSiteConfig(),
+    ]);
+    const basicsPresentation = resolveResumeBasicsPresentation(
+        normalizeResumeBasicsPresentationConfig(
+            configRows.find(
+                (row) => row.key === RESUME_BASICS_PRESENTATION_CONFIG_KEY
+            )?.value
+        ),
+        jobField.id
+    );
 
     if (serverClient) {
-        const [aboutRes, resumeRes] = await Promise.all([
-            serverClient.from("about_data").select("data").limit(1).single(),
-            serverClient
-                .from("resume_data")
-                .select("data")
-                .eq("lang", "ko")
-                .single(),
-        ]);
+        const aboutRes = await serverClient
+            .from("about_data")
+            .select("data")
+            .limit(1)
+            .single();
 
         if (aboutRes.data?.data) {
             aboutData = aboutRes.data.data as AboutData;
-        }
-
-        if (resumeRes.data?.data) {
-            const basics = (
-                resumeRes.data.data as { basics?: { image?: string } }
-            ).basics;
-            const img = basics?.image?.trim();
-            if (img) profileImage = img;
         }
     }
 
@@ -60,15 +66,21 @@ export default async function AboutPageContent({
         description: introduction?.description ?? aboutData.description,
         descriptionSub:
             introduction?.descriptionSub ?? aboutData.descriptionSub,
-        sections: introduction?.sections ?? aboutData.sections,
-        competencySections:
-            introduction?.competencySections ?? aboutData.competencySections,
+        sections: {
+            ...aboutData.sections,
+            ...introduction?.sections,
+        },
+        competencySections: {
+            ...aboutData.competencySections,
+            ...introduction?.competencySections,
+        },
     };
 
     return (
         <AboutView
             data={profileAboutData}
-            profileImage={profileImage}
+            basics={basics}
+            basicsPresentation={basicsPresentation}
             jobField={jobField}
             valuePillars={
                 introduction?.valuePillars ?? aboutData.valuePillars ?? []

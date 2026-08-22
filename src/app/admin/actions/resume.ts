@@ -28,7 +28,12 @@ type SaveResumeResult =
     | { success: true; rowId: string | null }
     | { success: false; error: string };
 
-type JobFieldItem = { id: string; name: string; emoji: string };
+type JobFieldItem = {
+    id: string;
+    name: string;
+    emoji: string;
+    headerTitle?: string;
+};
 
 // ResumePanel 초기 데이터 조회
 export async function getResumeBootstrap(): Promise<{

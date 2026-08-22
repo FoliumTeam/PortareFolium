@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이동한다", async ({
+test("Resume 관리자 section navigation으로 대표 프로젝트 편집 영역에 이동한다", async ({
     page,
 }) => {
     const consoleErrors: string[] = [];
@@ -11,6 +11,9 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
+    await expect(
+        page.getByRole("button", { name: "대표 프로젝트 편집", exact: true })
+    ).toHaveCount(0);
 
     const sectionNavigation = page.getByRole("navigation", {
         name: "이력서 편집 섹션",
@@ -49,6 +52,42 @@ test("Resume 관리자에서 대표 프로젝트 편집 영역으로 바로 이�
     );
     expect(sectionTop).toBeGreaterThanOrEqual(0);
     expect(sectionTop).toBeLessThan(400);
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+});
+
+test("Resume layout editor에서 직무별 공개 design과 section toggle을 live preview한다", async ({
+    page,
+}) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "레이아웃 편집" }).click();
+
+    const preview = page.getByTestId("resume-layout-live-preview");
+    await expect(preview).toBeVisible();
+    await expect(page.getByText("공개 Resume live preview")).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: /공개 Resume 미리보기/ }).first()
+    ).toBeVisible();
+
+    const competencyToggle = page.getByRole("button", {
+        name: "핵심역량 숨김",
+    });
+    await expect(
+        preview.getByRole("heading", { name: /핵심\s*역량/ })
+    ).toBeVisible();
+    await competencyToggle.click();
+    await expect(
+        preview.getByRole("heading", { name: /핵심\s*역량/ })
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "핵심역량 표시" }).click();
+
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
 });

@@ -161,7 +161,6 @@ export default function SiteConfigPanel() {
         defaultOgImage: "",
         jobFields: {},
     });
-    const [githubUrl, setGithubUrl] = useState("");
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{
         type: "error" | "success";
@@ -237,9 +236,6 @@ export default function SiteConfigPanel() {
                             defaultOgImage: seo.defaultOgImage,
                             jobFields: seo.jobFields,
                         }));
-                    }
-                    if (row.key === "github_url" && typeof v === "string") {
-                        setGithubUrl(v);
                     }
                 }
             }
@@ -404,7 +400,6 @@ export default function SiteConfigPanel() {
             plainMode,
             themeMode,
             seoConfig,
-            githubUrl,
         });
 
         setSaving(false);
@@ -1126,19 +1121,6 @@ export default function SiteConfigPanel() {
                                         })
                                     }
                                     placeholder="https://..."
-                                    className="mt-2 border-(--color-border) bg-(--color-surface)"
-                                />
-                            </div>
-                            <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
-                                <Label className="text-sm font-semibold text-(--color-foreground)">
-                                    GitHub URL
-                                </Label>
-                                <Input
-                                    value={githubUrl}
-                                    onChange={(e) =>
-                                        setGithubUrl(e.target.value)
-                                    }
-                                    placeholder="https://github.com/username"
                                     className="mt-2 border-(--color-border) bg-(--color-surface)"
                                 />
                             </div>

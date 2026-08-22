@@ -682,16 +682,6 @@ export default function ResumePanel() {
                                 자동 저장 완료 {fmtTime(savedAt)}
                             </span>
                         )}
-                        {!layoutEditMode && (
-                            <button
-                                onClick={() =>
-                                    scrollToEditorSection("projects")
-                                }
-                                className="rounded-lg bg-blue-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                            >
-                                대표 프로젝트 편집
-                            </button>
-                        )}
                         <button
                             onClick={async () => {
                                 const saved = initialSectionLayoutRef.current;
@@ -756,26 +746,119 @@ export default function ResumePanel() {
                 {!layoutEditMode && (
                     <section className="space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                         <h3 className="text-xl font-bold text-(--color-foreground)">
-                            레이아웃
+                            이력서 디자인
                         </h3>
-                        <div className="flex gap-3">
-                            {(["classic", "modern"] as ResumeLayout[]).map(
-                                (l) => (
+                        <p className="text-sm leading-6 text-(--color-muted)">
+                            전체 이력서의 구조와 분위기를 정합니다. 선택 즉시
+                            저장되며 공개 Resume에 반영됩니다.
+                        </p>
+                        <div className="tablet:grid-cols-2 grid gap-3">
+                            {(
+                                [
+                                    {
+                                        value: "modern" as const,
+                                        title: "Modern",
+                                        description:
+                                            "단일 열 프로필 헤더와 분리 section 구조",
+                                        recommended: true,
+                                    },
+                                    {
+                                        value: "classic" as const,
+                                        title: "Classic",
+                                        description:
+                                            "사이드바와 문서형 정보 구조",
+                                        recommended: false,
+                                    },
+                                ] satisfies Array<{
+                                    value: ResumeLayout;
+                                    title: string;
+                                    description: string;
+                                    recommended: boolean;
+                                }>
+                            ).map((option) => {
+                                const selected = resumeLayout === option.value;
+                                return (
                                     <button
-                                        key={l}
+                                        key={option.value}
                                         type="button"
-                                        onClick={() => changeResumeLayout(l)}
+                                        onClick={() =>
+                                            changeResumeLayout(option.value)
+                                        }
                                         disabled={resumeLayoutSaving}
-                                        className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity disabled:opacity-50 ${
-                                            resumeLayout === l
-                                                ? "bg-(--color-accent) text-(--color-on-accent)"
-                                                : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                                        aria-pressed={selected}
+                                        className={`rounded-2xl border p-4 text-left transition-colors disabled:opacity-50 ${
+                                            selected
+                                                ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30"
+                                                : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"
                                         }`}
                                     >
-                                        {l}
+                                        <span
+                                            className={`mb-4 flex h-20 overflow-hidden rounded-xl border p-3 ${
+                                                option.value === "modern"
+                                                    ? "border-(--color-accent)/25 bg-(--color-surface-subtle)"
+                                                    : "border-(--color-border) bg-(--color-surface)"
+                                            }`}
+                                        >
+                                            {option.value === "modern" ? (
+                                                <span className="flex w-full flex-col gap-1.5">
+                                                    <span className="flex h-5 items-center gap-2 rounded-md bg-(--color-muted)/18 px-2">
+                                                        <i className="h-3 w-3 shrink-0 rounded-full bg-(--color-muted)/45" />
+                                                        <span className="flex-1 space-y-1">
+                                                            <i className="block h-1 w-2/5 rounded bg-(--color-foreground)/45" />
+                                                            <i className="block h-1 w-3/5 rounded bg-(--color-muted)/35" />
+                                                        </span>
+                                                    </span>
+                                                    <i className="block h-1 w-full rounded bg-(--color-border)" />
+                                                    <span className="space-y-1 rounded-md border border-(--color-border) bg-(--color-surface) p-1.5">
+                                                        <i className="block h-1 w-1/4 rounded bg-(--color-accent)/55" />
+                                                        <i className="block h-1 w-full rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                    <span className="space-y-1 rounded-md border border-(--color-border) bg-(--color-surface) p-1.5">
+                                                        <i className="block h-1 w-1/3 rounded bg-(--color-accent)/55" />
+                                                        <i className="block h-1 w-4/5 rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="grid w-full grid-cols-[0.42fr_1fr] gap-2">
+                                                    <span className="space-y-2 rounded-md bg-(--color-muted)/20 p-2">
+                                                        <i className="block h-2 w-full rounded bg-(--color-muted)/45" />
+                                                        <i className="block h-1.5 w-3/4 rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                    <span className="space-y-2 pt-1">
+                                                        <i className="block h-2 w-2/3 rounded bg-(--color-foreground)/45" />
+                                                        <i className="block h-1.5 w-full rounded bg-(--color-muted)/35" />
+                                                        <i className="block h-1.5 w-full rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="flex items-start gap-2">
+                                            <span
+                                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                                    selected
+                                                        ? "border-(--color-accent) bg-(--color-accent)"
+                                                        : "border-(--color-muted)"
+                                                }`}
+                                            >
+                                                {selected ? (
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-(--color-on-accent)" />
+                                                ) : null}
+                                            </span>
+                                            <span>
+                                                <span className="block text-sm font-semibold text-(--color-foreground)">
+                                                    {option.title}
+                                                    {option.recommended
+                                                        ? " · 추천"
+                                                        : ""}
+                                                </span>
+                                                <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                                    {option.description}
+                                                </span>
+                                            </span>
+                                        </span>
                                     </button>
-                                )
-                            )}
+                                );
+                            })}
                         </div>
                     </section>
                 )}
@@ -4534,6 +4617,9 @@ export default function ResumePanel() {
                             layout={resumeSectionLayout}
                             onChange={setResumeSectionLayout}
                             theme={resumeLayout}
+                            jobFields={jobFields}
+                            aboutData={aboutData ?? {}}
+                            basicsPresentation={resumeBasicsPresentation}
                         />
                     </div>
                 ) : null}

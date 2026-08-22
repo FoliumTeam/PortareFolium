@@ -18,6 +18,7 @@ import {
     batchSetPortfolioJobField,
     batchSetPortfolioPublished,
     deletePortfolioItemById,
+    getPortfolioItemContent,
     getPortfolioPanelBootstrap,
     reorderFeaturedPortfolioItems,
     savePortfolioDesign,
@@ -59,6 +60,7 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import BooksSubPanel from "@/components/admin/panels/BooksSubPanel";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -153,6 +155,7 @@ export default function PortfolioPanel({
     const [portfolioDesignSaving, setPortfolioDesignSaving] = useState(false);
     const [items, setItems] = useState<PortfolioItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [openingItemId, setOpeningItemId] = useState<string | null>(null);
     const [editTarget, setEditTarget] = useState<PortfolioItem | null | "new">(
         null
     );
@@ -263,7 +266,7 @@ export default function PortfolioPanel({
         } else if (editPath.startsWith("edit/")) {
             const slug = editPath.slice(5);
             const item = items.find((i) => i.slug === slug);
-            if (item) openEdit(item);
+            if (item) void openEdit(item);
             else onEditPathChange?.("");
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -273,24 +276,32 @@ export default function PortfolioPanel({
     const buildPayload = () =>
         buildPortfolioSavePayload(form, originalDataRef.current);
 
-    const openEdit = (item: PortfolioItem) => {
+    const openEdit = async (item: PortfolioItem) => {
+        setOpeningItemId(item.id);
+        setError(null);
+        setSuccess(null);
+        const contentResult = await getPortfolioItemContent(item.id);
+        setOpeningItemId(null);
+        if (!contentResult.success) {
+            setError(`본문 조회 실패: ${contentResult.error}`);
+            return;
+        }
+        const hydratedItem = { ...item, content: contentResult.content };
         void maybeCleanupOnOpen("portfolio", item.slug, {
             folderPath: `portfolio/${item.slug}`,
             entityType: "portfolio",
             entitySlug: item.slug,
-            currentContent: item.content,
+            currentContent: contentResult.content,
             thumbnail: item.thumbnail ?? "",
         });
-        const f = itemToPortfolioForm(item);
+        const f = itemToPortfolioForm(hydratedItem);
         initialFormRef.current = f;
         originalDataRef.current = { ...item.data };
         savedSlugRef.current = item.slug;
         setSlugLocked(true);
         setForm(f);
-        setEditTarget(item);
+        setEditTarget(hydratedItem);
         onEditPathChange?.(`edit/${item.slug}`);
-        setError(null);
-        setSuccess(null);
     };
 
     const openNew = (useCaseStudyTemplate = false) => {
@@ -368,7 +379,8 @@ export default function PortfolioPanel({
     const { savedAt: autoSavedAt, saving: autoSaving } = useAutoSave(
         isDirty,
         editTarget !== null && editTarget !== "new",
-        autoSave
+        autoSave,
+        form
     );
 
     // 수동 저장 (신규 insert / 수정 update)
@@ -567,6 +579,7 @@ export default function PortfolioPanel({
                         설정
                     </button>
                 </div>
+                <ContentEditorGuide kind="portfolio" />
                 <p className="text-center text-base text-(--color-muted)">
                     저장하면 공개 화면에 즉시 반영됩니다.
                 </p>
@@ -907,26 +920,63 @@ export default function PortfolioPanel({
                                     유지합니다.
                                 </p>
                             </div>
-                            <div className="flex gap-3">
-                                {(["timeline", "cards"] as const).map(
-                                    (design) => (
+                            <div className="tablet:grid-cols-2 grid gap-3">
+                                {[
+                                    {
+                                        value: "cards" as const,
+                                        title: "카드 grid",
+                                        description:
+                                            "프로젝트를 카드로 빠르게 비교",
+                                    },
+                                    {
+                                        value: "timeline" as const,
+                                        title: "타임라인",
+                                        description:
+                                            "시간 흐름과 프로젝트 순서를 강조",
+                                    },
+                                ].map((option) => {
+                                    const selected =
+                                        portfolioDesign === option.value;
+                                    return (
                                         <button
-                                            key={design}
+                                            key={option.value}
                                             type="button"
                                             onClick={() =>
-                                                changePortfolioDesign(design)
+                                                changePortfolioDesign(
+                                                    option.value
+                                                )
                                             }
                                             disabled={portfolioDesignSaving}
-                                            className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity disabled:opacity-50 ${
-                                                portfolioDesign === design
-                                                    ? "bg-(--color-accent) text-(--color-on-accent)"
-                                                    : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                                            aria-pressed={selected}
+                                            className={`rounded-2xl border p-4 text-left transition-colors disabled:opacity-50 ${
+                                                selected
+                                                    ? "border-(--color-accent) bg-(--color-accent)/8 ring-1 ring-(--color-accent)/30"
+                                                    : "border-(--color-border) bg-(--color-surface-subtle)/55 hover:border-(--color-accent)/50"
                                             }`}
                                         >
-                                            {design}
+                                            <span className="mb-3 flex h-16 rounded-xl border border-(--color-border) bg-(--color-surface) p-2">
+                                                {option.value === "cards" ? (
+                                                    <span className="grid w-full grid-cols-2 gap-2">
+                                                        <i className="rounded-md bg-(--color-muted)/25" />
+                                                        <i className="rounded-md bg-(--color-muted)/35" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="relative flex w-full flex-col justify-around pl-4">
+                                                        <i className="absolute top-1 bottom-1 left-1.5 w-0.5 bg-(--color-accent)/45" />
+                                                        <i className="h-2 w-4/5 rounded bg-(--color-muted)/35" />
+                                                        <i className="h-2 w-3/5 rounded bg-(--color-muted)/35" />
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span className="block text-sm font-semibold text-(--color-foreground)">
+                                                {option.title}
+                                            </span>
+                                            <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
+                                                {option.description}
+                                            </span>
                                         </button>
-                                    )
-                                )}
+                                    );
+                                })}
                             </div>
                         </section>
                         <div className="flex items-center justify-between">
@@ -934,6 +984,10 @@ export default function PortfolioPanel({
                                 <h2 className="text-2xl font-bold text-(--color-foreground)">
                                     포트폴리오
                                 </h2>
+                                <p className="mt-1 text-sm text-(--color-muted)">
+                                    일반 항목은 빠른 기록, 사례 연구 템플릿은
+                                    구조화된 장문 프로젝트에 사용
+                                </p>
                                 <div className="mt-2 flex flex-wrap items-center gap-2">
                                     <span className="text-sm text-(--color-muted)">
                                         Featured scope
@@ -1062,6 +1116,7 @@ export default function PortfolioPanel({
                                         key={key}
                                         onClick={() => setSortAndSave(key)}
                                         title={label}
+                                        aria-label={label}
                                         className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
                                             sortKey === key
                                                 ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
@@ -1193,11 +1248,36 @@ export default function PortfolioPanel({
                             불러오는 중...
                         </p>
                     ) : displayedItems.length === 0 ? (
-                        <p className="text-base text-(--color-muted)">
-                            {items.length === 0
-                                ? "항목이 없습니다."
-                                : "필터 조건에 맞는 항목이 없습니다."}
-                        </p>
+                        <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-6 py-10 text-center">
+                            <p className="text-base font-semibold text-(--color-foreground)">
+                                {items.length === 0
+                                    ? "첫 프로젝트를 기록할 준비가 됐습니다"
+                                    : "필터 조건에 맞는 프로젝트가 없습니다"}
+                            </p>
+                            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-(--color-muted)">
+                                {items.length === 0
+                                    ? "빠른 기록은 새 항목, 문제·역할·근거를 자세히 설명하려면 사례 연구 템플릿을 선택하세요."
+                                    : "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."}
+                            </p>
+                            {items.length === 0 ? (
+                                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => openNew(false)}
+                                        className="rounded-lg bg-(--color-muted) px-4 py-2 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90"
+                                    >
+                                        빠른 프로젝트 기록
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => openNew(true)}
+                                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                                    >
+                                        사례 연구로 시작
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             {/* 전체 선택 행 */}
@@ -1360,6 +1440,8 @@ export default function PortfolioPanel({
                                                 onClick={() =>
                                                     toggleFeatured(item)
                                                 }
+                                                title={`${item.title} ${featuredInScope ? "Featured 해제" : "Featured 설정"}`}
+                                                aria-label={`${item.title} ${featuredInScope ? "Featured 해제" : "Featured 설정"}`}
                                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                                     featuredInScope
                                                         ? "bg-slate-500"
@@ -1381,6 +1463,8 @@ export default function PortfolioPanel({
                                                 onClick={() =>
                                                     togglePublish(item)
                                                 }
+                                                title={`${item.title} ${item.published ? "비공개로 전환" : "공개로 전환"}`}
+                                                aria-label={`${item.title} ${item.published ? "비공개로 전환" : "공개로 전환"}`}
                                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                                     item.published
                                                         ? "bg-amber-500"
@@ -1399,18 +1483,29 @@ export default function PortfolioPanel({
                                                 </span>
                                             </button>
                                             <button
-                                                onClick={() => openEdit(item)}
+                                                onClick={() =>
+                                                    void openEdit(item)
+                                                }
+                                                disabled={
+                                                    openingItemId === item.id
+                                                }
+                                                title={`${item.title} 편집`}
+                                                aria-label={`${item.title} 편집`}
                                                 className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                             >
                                                 <Pencil size={12} />
                                                 <span className="tablet:inline hidden">
-                                                    편집
+                                                    {openingItemId === item.id
+                                                        ? "불러오는 중"
+                                                        : "편집"}
                                                 </span>
                                             </button>
                                             <button
                                                 onClick={() =>
                                                     handleDelete(item.id)
                                                 }
+                                                title={`${item.title} 삭제`}
+                                                aria-label={`${item.title} 삭제`}
                                                 className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
                                                 <Trash2 size={12} />

@@ -1,10 +1,8 @@
 import { Fragment, type ReactNode } from "react";
-import { Figma, Github, Gitlab, Link, Linkedin, Package } from "lucide-react";
 import type {
     Resume,
     ResumeBasicsPresentation,
     ResumeCoreCompetency,
-    ResumeProfilePreset,
 } from "@/types/resume";
 import { formatResumeBirthDate } from "@/lib/resume-basics-presentation";
 import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
@@ -16,6 +14,7 @@ import AwardsSection from "@/components/resume/AwardsSection";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
 import ProjectsSection from "@/components/resume/ProjectsSection";
+import { ResumeProfileIcon } from "@/components/resume/ResumeProfileIcon";
 import {
     getResumeSectionLabel,
     resolveSectionOrder,
@@ -728,7 +727,7 @@ export default async function ResumeModern({
                                 }}
                                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold no-underline shadow-sm transition-opacity hover:opacity-85"
                             >
-                                <ProfileIcon preset={brand.preset} />
+                                <ResumeProfileIcon preset={brand.preset} />
                                 {profile.username ||
                                     profile.network ||
                                     brand.label}
@@ -839,52 +838,6 @@ export default async function ResumeModern({
         const image = renderImage(
             "h-52 w-52 object-top max-tablet:h-36 max-tablet:w-36"
         );
-        if (basicsPresentation.headerPreset === "profileCard") {
-            return (
-                <header
-                    className="tablet:grid-cols-[15rem_minmax(0,1fr)] tablet:p-8 mb-10 grid gap-6 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
-                    data-pdf-block
-                >
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
-                        {renderImage(
-                            "aspect-square w-full max-w-44 object-top max-tablet:max-w-28"
-                        )}
-                        <div className="mt-4">
-                            {renderIdentity("text-center")}
-                        </div>
-                    </div>
-                    <div className="min-w-0">
-                        {renderMetadata(
-                            "grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
-                        )}
-                        {renderSummary(
-                            "mt-6 border-t border-(--color-border) pt-5"
-                        )}
-                    </div>
-                </header>
-            );
-        }
-        if (basicsPresentation.headerPreset === "compact") {
-            return (
-                <header
-                    className="mb-10 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
-                    data-pdf-block
-                >
-                    <div className="max-tablet:flex-col max-tablet:items-center flex flex-wrap items-center gap-4">
-                        {renderImage(
-                            "h-24 w-24 max-tablet:h-20 max-tablet:w-20"
-                        )}
-                        {renderIdentity("text-center tablet:text-left")}
-                    </div>
-                    {renderMetadata(
-                        "mt-5 grid grid-cols-1 gap-x-8 gap-y-4 tablet:grid-cols-2"
-                    )}
-                    {renderSummary(
-                        "mt-5 border-t border-(--color-border) pt-5"
-                    )}
-                </header>
-            );
-        }
         return (
             <header
                 className="tablet:p-8 mb-10 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-6"
@@ -926,12 +879,3 @@ export default async function ResumeModern({
         </div>
     );
 }
-
-const ProfileIcon = ({ preset }: { preset: ResumeProfilePreset }) => {
-    if (preset === "github") return <Github className="h-4 w-4" />;
-    if (preset === "gitlab") return <Gitlab className="h-4 w-4" />;
-    if (preset === "linkedin") return <Linkedin className="h-4 w-4" />;
-    if (preset === "figma") return <Figma className="h-4 w-4" />;
-    if (preset === "npm") return <Package className="h-4 w-4" />;
-    return <Link className="h-4 w-4" />;
-};

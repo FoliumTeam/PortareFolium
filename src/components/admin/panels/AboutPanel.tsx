@@ -1,9 +1,8 @@
 "use client";
 
-// about_data 테이블 편집 + 프로필 이미지 업로드 + Job Field별 소개 관리
+// about_data 테이블 편집 + Job Field별 소개 관리
 import { useEffect, useRef, useState } from "react";
 import { getAboutBootstrap, saveAboutPanel } from "@/app/admin/actions/about";
-import { uploadImage } from "@/lib/image-upload";
 import type {
     AboutData,
     AboutSectionKey,
@@ -24,7 +23,6 @@ import {
     Brain,
     Globe2,
     Layers3,
-    Mail,
     RotateCcw,
     Sparkles,
     Trash2,
@@ -75,18 +73,13 @@ function parseSectionText(text: string): string[] {
 
 export default function AboutPanel() {
     const { confirm } = useConfirmDialog();
-    const [profileImage, setProfileImage] = useState("");
-    const [imageUploading, setImageUploading] = useState(false);
-    // resume_data 행 참조 (basics.image 단일 출처)
-    const [resumeRowId, setResumeRowId] = useState<string | null>(null);
-    const [resumeFullData, setResumeFullData] = useState<Record<
-        string,
-        unknown
-    > | null>(null);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [github, setGithub] = useState("");
-    const [linkedin, setLinkedin] = useState("");
+    const [resumeBasics, setResumeBasics] = useState<{
+        name?: string;
+        image?: string;
+        email?: string;
+        phone?: string;
+        profiles?: { network?: string; username?: string; url?: string }[];
+    }>({});
     const [rowId, setRowId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{
@@ -107,7 +100,6 @@ export default function AboutPanel() {
     );
 
     // uncontrolled refs (textarea undo 동작 보장)
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
     const descriptionSubRef = useRef<HTMLTextAreaElement>(null);
     const sectionRefs = useRef<
@@ -123,10 +115,6 @@ export default function AboutPanel() {
             if (result.aboutData) {
                 const d = result.aboutData as AboutData;
                 setRowId(result.aboutRowId);
-                setName(d.name ?? "");
-                setEmail(d.contacts?.email ?? "");
-                setGithub(d.contacts?.github ?? "");
-                setLinkedin(d.contacts?.linkedin ?? "");
                 if (descriptionRef.current)
                     descriptionRef.current.value = d.description ?? "";
                 if (descriptionSubRef.current)
@@ -143,36 +131,10 @@ export default function AboutPanel() {
                 setIntroductions(d.introductions ?? {});
                 setValuePillars(d.valuePillars ?? []);
             }
-            if (result.resumeData) {
-                setResumeRowId(result.resumeRowId);
-                setResumeFullData(result.resumeData);
-                const img = (
-                    result.resumeData.basics as { image?: string } | undefined
-                )?.image?.trim();
-                if (img) setProfileImage(img);
-            }
+            setResumeBasics(result.resumeBasics);
             setJobFields(result.jobFields);
-            setGithub((prev) => result.githubUrl || prev);
         });
     }, []);
-
-    // 프로필 이미지 파일 업로드
-    const handleImageUpload = async (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setImageUploading(true);
-        try {
-            const url = await uploadImage(file, "about/profile");
-            setProfileImage(url);
-        } catch {
-            setStatus({ type: "error", msg: "이미지 업로드에 실패했습니다." });
-        } finally {
-            setImageUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
 
     // 직무 분야별 소개 기본값 상속
     const handleCreateFieldIntroduction = (fieldId: string) => {
@@ -268,15 +230,9 @@ export default function AboutPanel() {
         setStatus(null);
 
         const data: AboutData = {
-            name: name.trim() || undefined,
             description: descriptionRef.current?.value?.trim() || undefined,
             descriptionSub:
                 descriptionSubRef.current?.value?.trim() || undefined,
-            contacts: {
-                email: email.trim() || undefined,
-                github: github.trim() || undefined,
-                linkedin: linkedin.trim() || undefined,
-            },
             introductions:
                 Object.keys(introductions).length > 0
                     ? introductions
@@ -299,10 +255,6 @@ export default function AboutPanel() {
         const result = await saveAboutPanel({
             aboutData: data,
             aboutRowId: rowId,
-            profileImage,
-            resumeRowId,
-            resumeFullData,
-            githubUrl: github,
         });
 
         if (result.success) {
@@ -349,107 +301,40 @@ export default function AboutPanel() {
 
             <AboutSection
                 Icon={UserRound}
-                title="공통 프로필"
-                description="모든 직무 분야에서 공유하는 기본 인물 정보와 연락처입니다."
+                title="공통 기본 정보"
+                description="사진·이름·연락처·외부 프로필은 Resume 기본 정보의 단일 데이터입니다. About은 같은 값을 자동으로 사용합니다."
             >
-                <div className="tablet:flex-row tablet:gap-6 flex flex-col items-start gap-4">
-                    {/* 이미지 미리보기 */}
-                    <div className="shrink-0">
-                        {profileImage ? (
-                            <img
-                                src={profileImage}
-                                alt="프로필 미리보기"
-                                className="h-24 w-24 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-(--color-surface-subtle) text-sm text-(--color-muted)">
-                                없음
-                            </div>
-                        )}
+                <div className="tablet:flex-row tablet:items-center flex flex-col gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
+                    {resumeBasics.image ? (
+                        <img
+                            src={resumeBasics.image}
+                            alt="Resume 기본 정보 프로필 사진"
+                            className="h-16 w-16 rounded-xl object-cover"
+                        />
+                    ) : (
+                        <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-(--color-surface) text-xs text-(--color-muted)">
+                            사진 없음
+                        </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold text-(--color-foreground)">
+                            {resumeBasics.name?.trim() || "이름 미입력"}
+                        </p>
+                        <p className="mt-1 text-sm text-(--color-muted)">
+                            {[resumeBasics.email, resumeBasics.phone]
+                                .filter(Boolean)
+                                .join(" · ") || "연락처 미입력"}
+                        </p>
+                        <p className="mt-1 text-xs text-(--color-muted)">
+                            외부 프로필 {resumeBasics.profiles?.length ?? 0}개
+                        </p>
                     </div>
-                    {/* 업로드 버튼 */}
-                    <div className="flex flex-col gap-2 pt-2">
-                        <Button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={imageUploading}
-                            className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
-                        >
-                            {imageUploading ? "업로드 중..." : "이미지 업로드"}
-                        </Button>
-                        {profileImage && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={async () => {
-                                    const ok = await confirm({
-                                        title: "프로필 이미지 삭제",
-                                        description:
-                                            "프로필 이미지를 삭제하시겠습니까?",
-                                        confirmText: "삭제",
-                                        cancelText: "취소",
-                                        variant: "destructive",
-                                    });
-                                    if (!ok) return;
-                                    setProfileImage("");
-                                }}
-                            >
-                                <Trash2 size={13} />
-                                삭제
-                            </Button>
-                        )}
-                    </div>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                    />
-                </div>
-                <div className="max-w-xl rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
-                    <label className="mb-2 block text-sm font-semibold text-(--color-foreground)">
-                        이름
-                    </label>
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="정호진"
-                        className={inputCls}
-                    />
-                </div>
-            </AboutSection>
-
-            <AboutSection
-                Icon={Mail}
-                title="공통 연락처"
-                description="About과 Resume에서 함께 사용하는 기본 연락처입니다."
-            >
-                <div className="tablet:grid-cols-3 grid gap-3">
-                    {[
-                        ["Email", email, setEmail],
-                        ["GitHub URL", github, setGithub],
-                        ["LinkedIn URL", linkedin, setLinkedin],
-                    ].map(([label, value, setValue]) => (
-                        <div
-                            key={label as string}
-                            className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
-                        >
-                            <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                {label as string}
-                            </label>
-                            <input
-                                value={value as string}
-                                onChange={(event) =>
-                                    (
-                                        setValue as React.Dispatch<
-                                            React.SetStateAction<string>
-                                        >
-                                    )(event.target.value)
-                                }
-                                className={`${inputCls} mt-2 bg-(--color-surface)`}
-                            />
-                        </div>
-                    ))}
+                    <a
+                        href="#resume"
+                        className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                    >
+                        Resume 기본 정보 열기
+                    </a>
                 </div>
             </AboutSection>
 

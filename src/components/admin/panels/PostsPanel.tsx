@@ -59,6 +59,7 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import { Badge } from "@/components/ui/badge";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -293,9 +294,16 @@ export default function PostsPanel({
 
     // 포스트 목차 스타일 저장 (site_config upsert)
     const saveTocStyle = async (slug: string, style: string) => {
+        const previous = postTocStyles;
         const next = { ...postTocStyles, [slug]: style };
         setPostTocStyles(next);
-        await savePostTocStyle(slug, style);
+        const result = await savePostTocStyle(slug, style);
+        if (!result.success) {
+            setPostTocStyles(previous);
+            window.alert(
+                `목차 스타일 저장 실패: ${result.error ?? "알 수 없는 오류"}`
+            );
+        }
     };
 
     const fetchPostContent = async (
@@ -521,7 +529,8 @@ export default function PostsPanel({
     const { savedAt: autoSavedAt, saving: autoSaving } = useAutoSave(
         isDirty,
         editTarget !== null,
-        autoSave
+        autoSave,
+        form
     );
 
     // 수동 저장 (신규 insert / 수정 update)
@@ -675,6 +684,7 @@ export default function PostsPanel({
                     저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
                     즉시 제공됩니다.
                 </p>
+                <ContentEditorGuide kind="post" />
 
                 {/* 제목 입력 */}
                 <div className="px-1">
@@ -1070,9 +1080,15 @@ export default function PostsPanel({
             <div className="shrink-0 pt-1 pb-4">
                 {/* 헤더 */}
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-(--color-foreground)">
-                        블로그 포스트
-                    </h2>
+                    <div>
+                        <h2 className="text-2xl font-bold text-(--color-foreground)">
+                            블로그 포스트
+                        </h2>
+                        <p className="mt-1 text-sm text-(--color-muted)">
+                            검색·필터로 항목을 찾고, 편집 화면의 설정에서 공개
+                            정보와 본문을 함께 관리
+                        </p>
+                    </div>
                     <button
                         onClick={openNew}
                         className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
@@ -1154,6 +1170,7 @@ export default function PostsPanel({
                                 key={key}
                                 onClick={() => setSortAndSave(key)}
                                 title={label}
+                                aria-label={label}
                                 className={`rounded-lg border px-2 py-1.5 text-sm transition-colors ${
                                     sortKey === key
                                         ? "border-(--color-accent) bg-(--color-accent)/10 text-(--color-accent)"
@@ -1348,11 +1365,27 @@ export default function PostsPanel({
                         불러오는 중...
                     </p>
                 ) : displayedPosts.length === 0 ? (
-                    <p className="text-sm text-(--color-muted)">
-                        {posts.length === 0
-                            ? "포스트가 없습니다."
-                            : "필터 조건에 맞는 포스트가 없습니다."}
-                    </p>
+                    <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-6 py-10 text-center">
+                        <p className="text-base font-semibold text-(--color-foreground)">
+                            {posts.length === 0
+                                ? "첫 포스트를 작성할 준비가 됐습니다"
+                                : "필터 조건에 맞는 포스트가 없습니다"}
+                        </p>
+                        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-(--color-muted)">
+                            {posts.length === 0
+                                ? "제목을 입력하면 주소가 자동 생성됩니다. 설정에서 직무 분야와 공개 여부를 확인한 뒤 본문을 작성하세요."
+                                : "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."}
+                        </p>
+                        {posts.length === 0 ? (
+                            <button
+                                type="button"
+                                onClick={openNew}
+                                className="mt-5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
+                            >
+                                첫 포스트 작성
+                            </button>
+                        ) : null}
+                    </div>
                 ) : (
                     <>
                         {/* 전체 선택 행 */}
@@ -1478,6 +1511,8 @@ export default function PostsPanel({
                                                 onClick={() =>
                                                     togglePublish(post)
                                                 }
+                                                title={`${post.title} ${post.published ? "비공개로 전환" : "공개로 전환"}`}
+                                                aria-label={`${post.title} ${post.published ? "비공개로 전환" : "공개로 전환"}`}
                                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 ${
                                                     post.published
                                                         ? "bg-amber-500"
@@ -1499,6 +1534,8 @@ export default function PostsPanel({
                                                 onClick={() =>
                                                     void openEdit(post)
                                                 }
+                                                title={`${post.title} 편집`}
+                                                aria-label={`${post.title} 편집`}
                                                 className="flex items-center gap-1 rounded-lg bg-(--color-accent) px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                             >
                                                 <Pencil size={12} />
@@ -1510,6 +1547,8 @@ export default function PostsPanel({
                                                 onClick={() =>
                                                     handleDelete(post.id)
                                                 }
+                                                title={`${post.title} 삭제`}
+                                                aria-label={`${post.title} 삭제`}
                                                 className="flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                             >
                                                 <Trash2 size={12} />

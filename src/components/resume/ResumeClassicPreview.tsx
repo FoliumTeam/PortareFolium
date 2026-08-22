@@ -1,7 +1,11 @@
 "use client";
 
 import { Fragment } from "react";
-import type { Resume, ResumeCoreCompetency } from "@/types/resume";
+import type {
+    Resume,
+    ResumeBasicsPresentation,
+    ResumeCoreCompetency,
+} from "@/types/resume";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
 import {
@@ -9,11 +13,17 @@ import {
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
+import {
+    formatResumeBirthDate,
+    formatResumeMilitary,
+} from "@/lib/resume-basics-presentation";
 
 interface Props {
     resume: Resume;
     coreCompetencies?: ResumeCoreCompetency[];
     sectionLayout?: ResumeSectionLayout;
+    basicsPresentation: ResumeBasicsPresentation;
+    activeJobField?: string;
 }
 
 const formatDateRange = (
@@ -30,8 +40,11 @@ export default function ResumeClassicPreview({
     resume,
     coreCompetencies = [],
     sectionLayout,
+    basicsPresentation,
+    activeJobField,
 }: Props) {
     const basics = resume.basics ?? {};
+    const visible = basicsPresentation.visibility;
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
 
     const getLabel = (key: string) => {
@@ -208,7 +221,9 @@ export default function ResumeClassicPreview({
 
     const renderProjects = () => (
         <section key="projects" className="mb-10">
-            {sectionH2(getLabel("projects"))}
+            {sectionH2(
+                `${activeJobField ? "대표 " : ""}${getLabel("projects")}`
+            )}
             <div className="flex flex-col gap-4">
                 {(resume.projects?.entries ?? []).map((p, idx) => (
                     <div
@@ -344,20 +359,126 @@ export default function ResumeClassicPreview({
         <div className="max-tablet:grid-cols-1 grid min-h-full grid-cols-[220px_1fr] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Sidebar */}
             <div className="flex flex-col gap-5 border-r border-(--color-border) bg-(--color-surface-subtle) p-6">
-                {basics.name ? (
+                {visible.image && basics.image ? (
+                    <img
+                        src={basics.image}
+                        alt={basics.name || "Profile"}
+                        className={`h-44 w-44 object-cover ${
+                            basics.imageStyle === "rounded"
+                                ? "rounded-full"
+                                : basics.imageStyle === "squared"
+                                  ? "rounded-none"
+                                  : "rounded-md"
+                        }`}
+                    />
+                ) : null}
+                {visible.name && basics.name ? (
                     <h1 className="m-0 mb-1 text-[1.375rem] font-extrabold tracking-[-0.03em] text-(--color-foreground)">
                         {basics.name}
                     </h1>
                 ) : null}
-                {basics.label ? (
+                {visible.headline && basics.label ? (
                     <p className="m-0 text-[1.05rem] text-(--color-muted)">
                         {basics.label}
                     </p>
                 ) : null}
-                {basics.summary ? (
+                {visible.summary && basics.summary ? (
                     <p className="m-0 text-base leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
+                ) : null}
+                {visible.email && basics.email ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            Email
+                        </strong>
+                        <p className="mt-1 text-base break-all text-(--color-link)">
+                            {basics.email}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.phone && basics.phone ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            Phone
+                        </strong>
+                        <p className="mt-1 text-base text-(--color-link)">
+                            {basics.phone}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.url && basics.url ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            Website
+                        </strong>
+                        <p className="mt-1 text-base break-all text-(--color-link)">
+                            {basics.url}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.location && basics.location ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            Location
+                        </strong>
+                        <p className="mt-1 text-base text-(--color-foreground)">
+                            {[
+                                basics.location.city,
+                                basics.location.region,
+                                basics.location.countryCode === "KR"
+                                    ? "대한민국"
+                                    : basics.location.countryCode === "US"
+                                      ? "미국"
+                                      : basics.location.countryCode,
+                            ]
+                                .filter(Boolean)
+                                .join(", ")}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.birthDate && basics.birthDate ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            생년월일
+                        </strong>
+                        <p className="mt-1 text-base text-(--color-foreground)">
+                            {formatResumeBirthDate(
+                                basics.birthDate,
+                                basicsPresentation.personalDetailPreset
+                            )}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.military && basics.military?.status ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            병역
+                        </strong>
+                        <p className="mt-1 text-base text-(--color-foreground)">
+                            {formatResumeMilitary(
+                                basics.military,
+                                basicsPresentation.personalDetailPreset
+                            )}
+                        </p>
+                    </div>
+                ) : null}
+                {visible.profiles && basics.profiles?.length ? (
+                    <div>
+                        <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
+                            Profiles
+                        </strong>
+                        <div className="mt-1 space-y-1">
+                            {basics.profiles.map((profile, index) => (
+                                <p
+                                    key={`${profile.network}-${index}`}
+                                    className="text-base break-all text-(--color-link)"
+                                >
+                                    {profile.network}: {profile.username}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
                 ) : null}
             </div>
             {/* Main */}
