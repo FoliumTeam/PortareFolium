@@ -121,6 +121,20 @@ export default function SnapshotsPanel() {
                     <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
                         DB 스냅샷
                     </h2>
+                    <div className="my-3 rounded-xl border border-(--color-border) p-4">
+                        <a
+                            className="inline-flex items-center gap-2 font-semibold underline"
+                            href="/api/orireki-export"
+                            download
+                        >
+                            <Download size={16} /> Orireki로 내보내기
+                        </a>
+                        <p className="mt-2 text-sm text-(--color-muted)">
+                            콘텐츠·설정·소유 미디어를 담은 ZIP 다운로드. 인증
+                            정보·관리 토큰 제외. Orireki의 가져오기 화면에서
+                            검사 후 Draft로 이전 가능. 원본 사이트 변경 없음.
+                        </p>
+                    </div>
                     <div className="space-y-1 text-sm text-(--color-muted)">
                         <p>
                             <code>Take snapshot</code>은 현재{" "}
