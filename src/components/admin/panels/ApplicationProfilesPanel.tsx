@@ -9,6 +9,7 @@ import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
 import {
     createApplicationProfile as raw_createApplicationProfile,
     getApplicationProfilesBootstrap as raw_getApplicationProfilesBootstrap,
@@ -368,6 +369,14 @@ export default function ApplicationProfilesPanel() {
                         </label>
                     </div>
                     <div className="mt-7 flex flex-wrap gap-3">
+                        {selected && (
+                            <LanguageCopyButton
+                                kind="application"
+                                sourceKey={selected.public_token}
+                                sourceTitle={selected.name}
+                                disabled={saving}
+                            />
+                        )}
                         <button
                             type="button"
                             onClick={() => void persist()}

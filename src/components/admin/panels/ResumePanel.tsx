@@ -1,5 +1,7 @@
 "use client";
 import { useUILocale } from "@/components/LocaleProvider";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
+import { DocumentPublicationControl } from "@/components/admin/DocumentPublicationControl";
 import {
     LocalizedText,
     LocalizedElement,
@@ -710,11 +712,11 @@ export default function ResumePanel() {
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             {/* 상단 고정: 제목 + 저장 버튼 */}
             <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-2xl font-bold text-(--color-foreground)">
                         <LocalizedText text={"이력서 편집"} />
                     </h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         {savedAt && (
                             <span className="text-sm text-green-600">
                                 <LocalizedRichText
@@ -723,6 +725,15 @@ export default function ResumePanel() {
                                 />
                             </span>
                         )}
+                        <DocumentPublicationControl
+                            kind="resume"
+                            saved={rowId !== null}
+                        />
+                        <LanguageCopyButton
+                            kind="resume"
+                            sourceTitle="Resume"
+                            disabled={rowId === null}
+                        />
                         <button
                             onClick={async () => {
                                 const saved = initialSectionLayoutRef.current;

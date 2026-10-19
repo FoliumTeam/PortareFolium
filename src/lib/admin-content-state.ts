@@ -53,6 +53,7 @@ export const setContentDirty = (owner: object, value: boolean) => {
     notify();
 };
 export const hasDirtyContent = () => dirty.size > 0;
+export const hasPendingContentActions = () => pending.size > 0;
 export const subscribeContentState = (listener: () => void) => {
     listeners.add(listener);
     return () => {

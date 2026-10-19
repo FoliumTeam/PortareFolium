@@ -21,7 +21,7 @@ type Row = Record<string, unknown>;
 type Write = {
     table: string;
     locale: Locale;
-    operation: "insert" | "upsert";
+    operation: "insert" | "upsert" | "update";
     payload: Row;
     options?: unknown;
 };
@@ -29,6 +29,7 @@ type Write = {
 let rows: Record<Locale, Row | null>;
 let writes: Write[];
 let readErrors: Partial<Record<Locale, { message: string }>>;
+let beforeUpdate: (() => void) | undefined;
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -48,6 +49,7 @@ beforeEach(() => {
     };
     writes = [];
     readErrors = {};
+    beforeUpdate = undefined;
     mocks.readPostContentById.mockResolvedValue({
         content: "완전한 분할 본문",
         storageMode: "chunked",
@@ -63,6 +65,14 @@ beforeEach(() => {
     mocks.from.mockImplementation((table: string) => {
         const locale = getContentLocale();
         const filters: [string, unknown][] = [];
+        let update: Row | undefined;
+        const matches = () =>
+            rows[locale] &&
+            filters.every(([key, value]) =>
+                key === "data" && value === "{}"
+                    ? JSON.stringify(rows[locale]?.data) === "{}"
+                    : rows[locale]?.[key] === value
+            );
         const builder = {
             select: (_columns: string) => builder,
             eq: (key: string, value: unknown) => {
@@ -93,6 +103,29 @@ beforeEach(() => {
                     options,
                 });
                 return { error: null };
+            },
+            update: (payload: Row) => {
+                beforeUpdate?.();
+                update = payload;
+                return builder;
+            },
+            then: (
+                resolve: (value: { data: Row[]; error: null }) => unknown
+            ) => {
+                const selected: Row[] = [];
+                if (update && matches()) {
+                    writes.push({
+                        table,
+                        locale,
+                        operation: "update",
+                        payload: update,
+                    });
+                    rows[locale] = { ...rows[locale], ...update };
+                    selected.push({ id: rows[locale]?.id });
+                }
+                return Promise.resolve({ data: selected, error: null }).then(
+                    resolve
+                );
             },
         };
         return builder;
@@ -178,11 +211,61 @@ describe("언어 사본의 원본과 기존 번역 보호", () => {
             {
                 table: "resume_data",
                 locale: "en",
-                operation: "upsert",
-                payload: { data: rows.ko.data, lang: "en", published: false },
-                options: { onConflict: "lang" },
+                operation: "update",
+                payload: { data: rows.ko.data, published: false },
             },
         ]);
+    });
+
+    it("대상 확인 뒤 다른 저장이 채운 이력서는 조건부 갱신에서 보존", async () => {
+        rows.ko = { id: "source", data: { basics: { name: "원본" } } };
+        rows.en = { id: "empty-en", data: {} };
+        beforeUpdate = () => {
+            rows.en = {
+                id: "empty-en",
+                data: { basics: { name: "다른 저장" } },
+            };
+        };
+        await expect(copyContentVariant("resume", "ko", "en")).rejects.toThrow(
+            "복사 중단"
+        );
+        expect(rows.en.data).toEqual({ basics: { name: "다른 저장" } });
+        expect(writes).toEqual([]);
+    });
+
+    it.each([null, undefined, [], "", "{}"].map((value) => ({ value })))(
+        "$value는 빈 이력서 초기 행으로 취급 제외",
+        async ({ value }) => {
+            rows.ko = { id: "source", data: { basics: {} } };
+            rows.en = { id: "target", data: value };
+            await expect(
+                copyContentVariant("resume", "ko", "en")
+            ).rejects.toThrow("기존 내용 보존");
+            expect(writes).toEqual([]);
+        }
+    );
+
+    it("소개 최초 사본은 같은 대상 문서의 고정 식별자로 삽입", async () => {
+        rows.en = { id: "source-en", data: { description: "English" } };
+        rows.ja = { id: "source-ja", data: { description: "日本語" } };
+        rows.ko = null;
+        await copyContentVariant("about", "en", "ko");
+        await copyContentVariant("about", "ja", "ko");
+        expect(writes[0].payload.id).toMatch(/^[a-f\d-]{36}$/i);
+        expect(writes[0].payload.id).toBe(writes[1].payload.id);
+        expect(writes.every((write) => write.operation === "insert")).toBe(
+            true
+        );
+    });
+
+    it("이력서 대상 행 부재 시 upsert 대신 삽입만 사용", async () => {
+        rows.ko = { id: "source", data: { basics: {} } };
+        await copyContentVariant("resume", "ko", "en");
+        expect(writes[0]).toMatchObject({
+            operation: "insert",
+            locale: "en",
+            payload: { lang: "en", published: false },
+        });
     });
 
     it("소개 사본을 비공개로 저장하고 공개 원본 보존", async () => {
@@ -211,7 +294,8 @@ describe("언어 사본의 원본과 기존 번역 보호", () => {
         await copyContentVariant("post", "ko", "en", "example");
         expect(mocks.readPostContentById).toHaveBeenCalledExactlyOnceWith(
             "source-id",
-            "원본 본문"
+            "원본 본문",
+            { strict: true }
         );
         expect(readLocale).toBe("ko");
         expect(writes[0].payload.content).toBe(complete);
@@ -260,7 +344,7 @@ describe("지원용 공유본 언어 사본", () => {
         await copyContentVariant("application", "ko", "en", "example");
         expect(
             mocks.createApplicationSourceSnapshot
-        ).toHaveBeenCalledExactlyOnceWith("web");
+        ).toHaveBeenCalledExactlyOnceWith("web", { strict: true });
         expect(writes[0].payload.base_snapshot).toMatchObject({
             sourceHash: "target-hash",
             locale: "en",

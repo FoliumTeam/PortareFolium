@@ -65,6 +65,7 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
 import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import { Badge } from "@/components/ui/badge";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -1671,7 +1672,13 @@ export default function PostsPanel({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 tablet:focus-within:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                            <LanguageCopyButton
+                                                kind="post"
+                                                sourceKey={post.slug}
+                                                sourceTitle={post.title}
+                                                compact
+                                            />
                                             <button
                                                 onClick={() =>
                                                     togglePublish(post)

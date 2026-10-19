@@ -139,12 +139,19 @@ export const loadUIMessages = async (locale: Locale): Promise<UIMessages> => {
             : locale === "ja"
               ? await import("@/lib/locales/training-ja.json")
               : await import("@/lib/locales/training-ko.json");
+    const languageCopy =
+        locale === "en"
+            ? await import("@/lib/locales/language-copy-en.json")
+            : locale === "ja"
+              ? await import("@/lib/locales/language-copy-ja.json")
+              : await import("@/lib/locales/language-copy-ko.json");
     return Object.assign(
         {},
         ...modules.map((module) => module.default),
         overrides.default,
         sentences.default,
         debug.default,
-        training.default
+        training.default,
+        languageCopy.default
     ) as UIMessages;
 };

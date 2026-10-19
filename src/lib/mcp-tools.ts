@@ -7,6 +7,7 @@ import { revalidateLocalizedPath as revalidatePath } from "@/lib/localized-reval
 import { getContentLocale, withContentLocale } from "@/lib/content-locale";
 import { isLocale } from "@/lib/i18n";
 import { serverClient } from "@/lib/supabase";
+import { insertAboutDocument } from "@/lib/about-document";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
 import { mergePortfolioDataPatch } from "@/lib/portfolio";
@@ -1172,11 +1173,12 @@ async function dispatchToolInLocale(
                 Array.isArray(args.data)
             )
                 throw new Error("Invalid About data");
-            const { data: row } = await serverClient
+            const { data: row, error: readError } = await serverClient
                 .from("about_data")
                 .select("id, data, published")
-                .limit(1)
+                .limit(2)
                 .maybeSingle();
+            if (readError) throw new Error("About read failed");
             const payload = {
                 data: { ...((row?.data ?? {}) as object), ...args.data },
                 published:
@@ -1189,7 +1191,7 @@ async function dispatchToolInLocale(
                       .from("about_data")
                       .update(payload)
                       .eq("id", row.id)
-                : await serverClient.from("about_data").insert(payload);
+                : await insertAboutDocument(payload);
             if (result.error) throw new Error("About save failed");
             revalidatePath("/", "layout");
             const { revalidateTag } = await import("next/cache");

@@ -14,9 +14,6 @@ vi.mock("@/components/admin/CommandPalette", () => ({ default: () => null }));
 vi.mock("@/components/admin/ContentLanguageSelector", () => ({
     ContentLanguageSelector: () => null,
 }));
-vi.mock("@/components/admin/LanguageVariantTools", () => ({
-    LanguageVariantTools: () => null,
-}));
 vi.mock("@/components/admin/panels/MainPanel", () => ({
     default: () => {
         useEffect(() => {

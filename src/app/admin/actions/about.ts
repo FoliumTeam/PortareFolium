@@ -11,6 +11,7 @@ import {
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
+import { insertAboutDocument } from "@/lib/about-document";
 import type { AboutData } from "@/types/about";
 import type { ResumeBasics } from "@/types/resume";
 
@@ -123,11 +124,9 @@ async function saveAboutPanelInLocale(
                 .eq("id", aboutRowId);
             if (error) return { success: false, error: error.message };
         } else {
-            const { data, error } = await serverClient
-                .from("about_data")
-                .insert({ data: content })
-                .select("id")
-                .single();
+            const { data, error } = await insertAboutDocument({
+                data: content,
+            });
             if (error) return { success: false, error: error.message };
             nextAboutRowId = data?.id ?? null;
         }
@@ -159,11 +158,9 @@ async function saveAboutIntroductionsInLocale(
                 .eq("id", input.aboutRowId);
             if (error) return { success: false, error: error.message };
         } else {
-            const { data, error } = await serverClient
-                .from("about_data")
-                .insert({ data: input.aboutData })
-                .select("id")
-                .single();
+            const { data, error } = await insertAboutDocument({
+                data: input.aboutData,
+            });
             if (error) return { success: false, error: error.message };
             await revalidateAbout();
             await revalidateResume();

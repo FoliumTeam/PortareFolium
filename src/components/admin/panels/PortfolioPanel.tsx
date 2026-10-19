@@ -71,6 +71,7 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
 import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import BooksSubPanel from "@/components/admin/panels/BooksSubPanel";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -1980,7 +1981,13 @@ export default function PortfolioPanel({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 tablet:focus-within:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                            <LanguageCopyButton
+                                                kind="portfolio"
+                                                sourceKey={item.slug}
+                                                sourceTitle={item.title}
+                                                compact
+                                            />
                                             <button
                                                 onClick={() =>
                                                     toggleFeatured(item)

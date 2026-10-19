@@ -35,12 +35,27 @@ export function sha256Hex(value: string): string {
 
 export async function readPostContentById(
     postId: string,
-    fallbackContent = ""
+    fallbackContent = "",
+    options?: { strict?: boolean }
 ): Promise<PostContentReadResult> {
-    if (!serverClient)
+    if (!serverClient) {
+        if (options?.strict) {
+            throw new Error(
+                "[post-content-chunks.ts::readPostContentById] serverClient 없음"
+            );
+        }
         return { content: fallbackContent, storageMode: "inline" };
+    }
 
-    const { data: revision } = await serverClient
+    // 복사 경로의 오류 전달과 공개 화면의 기존 본문 유지
+    const handleReadError = (message: string): PostContentReadResult => {
+        const errorMessage = `[post-content-chunks.ts::readPostContentById] ${message}`;
+        if (options?.strict) throw new Error(errorMessage);
+        console.error(errorMessage);
+        return { content: fallbackContent, storageMode: "inline" };
+    };
+
+    const { data: revision, error: revisionError } = await serverClient
         .from("post_content_revisions")
         .select(
             "id, post_id, content_hash, content_size, chunk_size, chunk_count, active, status, created_at, committed_at"
@@ -51,6 +66,10 @@ export async function readPostContentById(
         .order("committed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+    if (revisionError && options?.strict) {
+        return handleReadError(revisionError.message);
+    }
 
     const activeRevision = revision as PostContentRevisionRow | null;
     if (!activeRevision) {
@@ -64,26 +83,31 @@ export async function readPostContentById(
         .order("chunk_index", { ascending: true });
 
     if (error || !chunks) {
-        console.error(
-            `[post-content-chunks.ts::readPostContentById] ${error?.message ?? "chunk 조회 실패"}`
-        );
-        return { content: fallbackContent, storageMode: "inline" };
+        return handleReadError(error?.message ?? "chunk 조회 실패");
     }
 
     const rows = chunks as PostContentChunkRow[];
     if (rows.length !== activeRevision.chunk_count) {
-        console.error(
-            `[post-content-chunks.ts::readPostContentById] chunk count mismatch: ${rows.length}/${activeRevision.chunk_count}`
+        return handleReadError(
+            `chunk count mismatch: ${rows.length}/${activeRevision.chunk_count}`
         );
-        return { content: fallbackContent, storageMode: "inline" };
+    }
+
+    if (options?.strict) {
+        for (let index = 0; index < rows.length; index += 1) {
+            const chunk = rows[index];
+            if (chunk.chunk_index !== index) {
+                return handleReadError("chunk index mismatch");
+            }
+            if (sha256Hex(chunk.content) !== chunk.checksum) {
+                return handleReadError("chunk checksum mismatch");
+            }
+        }
     }
 
     const content = rows.map((chunk) => chunk.content).join("");
     if (sha256Hex(content) !== activeRevision.content_hash) {
-        console.error(
-            "[post-content-chunks.ts::readPostContentById] content hash mismatch"
-        );
-        return { content: fallbackContent, storageMode: "inline" };
+        return handleReadError("content hash mismatch");
     }
 
     return { content, storageMode: "chunked" };

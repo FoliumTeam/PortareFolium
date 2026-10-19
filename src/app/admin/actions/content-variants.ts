@@ -5,7 +5,6 @@ import { getContentLocale, withContentLocale } from "@/lib/content-locale";
 import {
     copyContentVariant,
     isVariantKind,
-    listVariantSources,
     validateVariantLocales,
     type VariantKind,
 } from "@/lib/content-variants";
@@ -17,28 +16,50 @@ import { revalidateLayout } from "@/app/admin/actions/revalidate";
 import { serverClient } from "@/lib/supabase";
 import type { Locale } from "@/lib/i18n";
 
-export const getLanguageSources = async (kind: VariantKind, source: Locale) => {
-    await requireAdminSession();
-    if (!isVariantKind(kind)) throw new Error("Unsupported content kind");
-    validateVariantLocales(source, source);
-    return listVariantSources(kind, source);
-};
+const COPY_MESSAGES = new Set([
+    "복사할 다른 언어 선택 필요",
+    "원본 항목 선택 필요",
+    "원본 콘텐츠 조회 실패",
+    "대상 언어 조회 실패",
+    "대상 언어의 기존 내용 보존을 위해 복사 중단",
+    "대상 언어 내용 변경으로 복사 중단",
+    "언어 사본 저장 실패",
+    "소개 문서 조회 실패",
+    "소개 기존 자료 보존을 위해 생성 중단",
+]);
 
-export const createLanguageVariant = async (
+// 호출 시 고정한 원본 언어에서 명시한 대상으로 복사
+export const copyContentToLanguage = async (
     kind: VariantKind,
-    source: Locale,
-    slug: string | undefined,
+    target: Locale,
+    sourceKey?: string,
     scope?: ContentLocaleScope
 ) => {
     await requireAdminSession();
     if (!isVariantKind(kind)) throw new Error("Unsupported content kind");
-    const target = isContentLocaleScope(scope)
+    if (
+        sourceKey !== undefined &&
+        (typeof sourceKey !== "string" || !sourceKey.trim())
+    )
+        throw new Error("원본 항목 선택 필요");
+    if (scope !== undefined && !isContentLocaleScope(scope))
+        throw new Error("Unsupported locale");
+    const source = isContentLocaleScope(scope)
         ? scope.__contentLocale
         : getContentLocale();
     validateVariantLocales(source, target);
-    await copyContentVariant(kind, source, target, slug);
+    const result = await copyContentVariant(
+        kind,
+        source,
+        target,
+        sourceKey
+    ).catch((failure: unknown) => {
+        if (failure instanceof Error && COPY_MESSAGES.has(failure.message))
+            throw failure;
+        throw new Error("자료 확인 실패로 복사 중단");
+    });
     await revalidateLayout();
-    return { success: true };
+    return result;
 };
 
 export const getDocumentPublication = async (

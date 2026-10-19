@@ -39,6 +39,8 @@ import {
     UserRound,
 } from "lucide-react";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
+import { DocumentPublicationControl } from "@/components/admin/DocumentPublicationControl";
 import { bindContentAction } from "@/lib/admin-content-state";
 const getAboutBootstrap = bindContentAction(raw_getAboutBootstrap);
 const saveAboutPanel = bindContentAction(raw_saveAboutPanel);
@@ -333,6 +335,17 @@ export default function AboutPanel() {
                         }
                     />
                 </p>
+                <div className="mt-4 flex flex-wrap items-start gap-3">
+                    <DocumentPublicationControl
+                        kind="about"
+                        saved={rowId !== null}
+                    />
+                    <LanguageCopyButton
+                        kind="about"
+                        sourceTitle="About"
+                        disabled={rowId === null}
+                    />
+                </div>
             </div>
 
             <LocalizedElement

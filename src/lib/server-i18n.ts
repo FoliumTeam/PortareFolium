@@ -32,6 +32,9 @@ import koDebug from "@/lib/locales/debug-ko.json";
 import enTraining from "@/lib/locales/training-en.json";
 import jaTraining from "@/lib/locales/training-ja.json";
 import koTraining from "@/lib/locales/training-ko.json";
+import enLanguageCopy from "@/lib/locales/language-copy-en.json";
+import jaLanguageCopy from "@/lib/locales/language-copy-ja.json";
+import koLanguageCopy from "@/lib/locales/language-copy-ko.json";
 
 const messages: Record<Locale, UIMessages> = {
     en: {
@@ -44,6 +47,7 @@ const messages: Record<Locale, UIMessages> = {
         ...enSentences,
         ...enDebug,
         ...enTraining,
+        ...enLanguageCopy,
     },
     ja: {
         ...jaA,
@@ -55,6 +59,7 @@ const messages: Record<Locale, UIMessages> = {
         ...jaSentences,
         ...jaDebug,
         ...jaTraining,
+        ...jaLanguageCopy,
     },
     ko: {
         ...koA,
@@ -66,6 +71,7 @@ const messages: Record<Locale, UIMessages> = {
         ...koSentences,
         ...koDebug,
         ...koTraining,
+        ...koLanguageCopy,
     },
 };
 

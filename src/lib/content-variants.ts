@@ -3,6 +3,7 @@ import { readPostContentById } from "@/lib/post-content-chunks";
 import { serverClient } from "@/lib/supabase";
 import { withContentLocale } from "@/lib/content-locale";
 import { isLocale, type Locale } from "@/lib/i18n";
+import { insertAboutDocument } from "@/lib/about-document";
 
 export type VariantKind =
     | "resume"
@@ -42,7 +43,7 @@ export const copyContentVariant = async (
                     kind === "application" ? "public_token" : "slug",
                     slug!
                 );
-            return query.limit(1).maybeSingle();
+            return query.limit(kind === "about" ? 2 : 1).maybeSingle();
         });
     const [original, existing] = await Promise.all([
         read(source),
@@ -51,10 +52,13 @@ export const copyContentVariant = async (
     if (original.error || !original.data)
         throw new Error("원본 콘텐츠 조회 실패");
     if (existing.error) throw new Error("대상 언어 조회 실패");
-    if (
-        existing.data &&
-        (kind !== "resume" || Object.keys(existing.data.data ?? {}).length)
-    )
+    const targetData = existing.data?.data;
+    const emptyResume =
+        targetData !== null &&
+        typeof targetData === "object" &&
+        !Array.isArray(targetData) &&
+        Object.keys(targetData).length === 0;
+    if (existing.data && (kind !== "resume" || !emptyResume))
         throw new Error("대상 언어의 기존 내용 보존을 위해 복사 중단");
     const {
         id: _id,
@@ -68,7 +72,8 @@ export const copyContentVariant = async (
             await withContentLocale(source, () =>
                 readPostContentById(
                     String(original.data.id),
-                    String(fields.content ?? "")
+                    String(fields.content ?? ""),
+                    { strict: true }
                 )
             )
         ).content;
@@ -82,7 +87,8 @@ export const copyContentVariant = async (
                   version: 1,
                   base_snapshot: await withContentLocale(target, () =>
                       createApplicationSourceSnapshot(
-                          String(fields.parent_job_field)
+                          String(fields.parent_job_field),
+                          { strict: true }
                       )
                   ),
                   overrides: {
@@ -92,33 +98,29 @@ export const copyContentVariant = async (
                   },
               }
             : { ...fields, published: false };
-    const result = await withContentLocale(target, () =>
-        kind === "resume"
-            ? serverClient!
-                  .from(table)
-                  .upsert({ ...payload, lang: target }, { onConflict: "lang" })
-            : serverClient!.from(table).insert(payload)
-    );
+    const result = await withContentLocale(target, async () => {
+        if (kind === "about") return insertAboutDocument(payload);
+        if (kind === "resume" && existing.data) {
+            const changed = await serverClient!
+                .from(table)
+                .update(payload)
+                .eq("id", existing.data.id)
+                .eq("data", "{}")
+                .select("id");
+            if (
+                !changed.error &&
+                (!Array.isArray(changed.data) || changed.data.length !== 1)
+            )
+                throw new Error("대상 언어 내용 변경으로 복사 중단");
+            return changed;
+        }
+        return serverClient!
+            .from(table)
+            .insert(kind === "resume" ? { ...payload, lang: target } : payload);
+    });
     if (result.error) throw new Error("언어 사본 저장 실패");
     return { success: true as const, lang: target, published: false };
 };
-
-// 관리자 원본 선택 목록에 필요한 필드만 조회
-export const listVariantSources = async (kind: VariantKind, source: Locale) =>
-    withContentLocale(source, async () => {
-        if (!serverClient || ["resume", "about"].includes(kind)) return [];
-        const { data, error } = await serverClient
-            .from(TABLES[kind])
-            .select(
-                kind === "application" ? "public_token, name" : "slug, title"
-            )
-            .order(kind === "application" ? "name" : "title");
-        if (error) throw new Error("원본 목록 조회 실패");
-        return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
-            slug: String(kind === "application" ? row.public_token : row.slug),
-            title: String(kind === "application" ? row.name : row.title),
-        }));
-    });
 
 export const validateVariantLocales = (
     source: unknown,

@@ -2,6 +2,7 @@ import { getContentLocale, withContentLocale } from "@/lib/content-locale";
 import { LOCALES } from "@/lib/i18n";
 import { createHash, randomBytes } from "node:crypto";
 import { createJobFieldResumeView } from "@/lib/resume-job-field";
+import { readPostContentById } from "@/lib/post-content-chunks";
 import {
     matchesPortfolioJobField,
     normalizePortfolioProject,
@@ -123,19 +124,24 @@ export function createApplicationProfileToken(): string {
 }
 
 export async function createApplicationSourceSnapshot(
-    jobField: string
+    jobField: string,
+    options?: { strict?: boolean }
 ): Promise<ApplicationProfileSnapshot> {
     if (!serverClient)
         throw new Error(
             "[application-profile::createApplicationSourceSnapshot] serverClient 없음"
         );
+    const resumeQuery = serverClient
+        .from("resume_data")
+        .select("data")
+        .eq("lang", "ko");
+    const aboutQuery = serverClient
+        .from("about_data")
+        .select("data")
+        .limit(options?.strict ? 2 : 1);
     const [resumeRes, aboutRes, portfolioRes, postsRes] = await Promise.all([
-        serverClient
-            .from("resume_data")
-            .select("data")
-            .eq("lang", "ko")
-            .single(),
-        serverClient.from("about_data").select("data").limit(1).single(),
+        options?.strict ? resumeQuery.maybeSingle() : resumeQuery.single(),
+        options?.strict ? aboutQuery.maybeSingle() : aboutQuery.single(),
         serverClient
             .from("portfolio_items")
             .select(
@@ -146,11 +152,20 @@ export async function createApplicationSourceSnapshot(
         serverClient
             .from("posts")
             .select(
-                "slug, title, description, content, pub_date, category, tags, thumbnail, meta_title, meta_description, og_image, job_field"
+                "id, slug, title, description, content, pub_date, category, tags, thumbnail, meta_title, meta_description, og_image, job_field"
             )
             .eq("published", true)
             .order("pub_date", { ascending: false }),
     ]);
+    if (options?.strict) {
+        for (const result of [resumeRes, aboutRes, portfolioRes, postsRes]) {
+            if (result.error) {
+                throw new Error(
+                    `[application-profile::createApplicationSourceSnapshot] ${result.error.message}`
+                );
+            }
+        }
+    }
     const rawResume = (resumeRes.data?.data ?? {}) as Resume;
     const rawAbout = (aboutRes.data?.data ?? {}) as AboutData;
     const introduction = rawAbout.introductions?.[jobField];
@@ -168,8 +183,9 @@ export async function createApplicationSourceSnapshot(
         (item) =>
             matchesPortfolioJobField(normalizePortfolioProject(item), jobField)
     );
-    const posts = (
+    const selectedPosts = (
         (postsRes.data ?? []) as (ApplicationPost & {
+            id: string;
             job_field?: string | string[];
         })[]
     )
@@ -180,6 +196,18 @@ export async function createApplicationSourceSnapshot(
                 : fields === jobField;
         })
         .map(({ job_field: _jobField, ...post }) => post);
+    const posts = options?.strict
+        ? await Promise.all(
+              selectedPosts.map(async ({ id, ...post }) => {
+                  const { content } = await readPostContentById(
+                      id,
+                      post.content,
+                      { strict: true }
+                  );
+                  return { ...post, content };
+              })
+          )
+        : selectedPosts.map(({ id: _id, ...post }) => post);
     const source = {
         jobField,
         resume: createJobFieldResumeView(rawResume, jobField, introduction),

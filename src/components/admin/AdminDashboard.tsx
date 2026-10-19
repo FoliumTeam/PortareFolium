@@ -22,8 +22,6 @@ import DebugPanel from "@/components/admin/panels/DebugPanel";
 import ApplicationProfilesPanel from "@/components/admin/panels/ApplicationProfilesPanel";
 import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
 import { ContentLanguageSelector } from "@/components/admin/ContentLanguageSelector";
-import { LanguageVariantTools } from "@/components/admin/LanguageVariantTools";
-import type { VariantKind } from "@/lib/content-variants";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
@@ -229,27 +227,6 @@ export default function AdminDashboard({
                     onChange={() => setTabKey((value) => value + 1)}
                 />
             </div>
-            {(
-                [
-                    "resume",
-                    "about",
-                    "portfolio",
-                    "posts",
-                    "application-profiles",
-                ] as string[]
-            ).includes(activeTab) && (
-                <LanguageVariantTools
-                    key={`variant-${activeTab}-${tabKey}`}
-                    kind={
-                        (activeTab === "posts"
-                            ? "post"
-                            : activeTab === "application-profiles"
-                              ? "application"
-                              : activeTab) as VariantKind
-                    }
-                    onCopied={() => setTabKey((value) => value + 1)}
-                />
-            )}
 
             {/* 사이드바 + 메인: 헤더 아래 */}
             <div className="flex flex-1 overflow-hidden">
