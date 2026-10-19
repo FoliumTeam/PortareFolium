@@ -7,6 +7,29 @@ const asset =
     "https://github.com/user-attachments/assets/00000000-0000-0000-0000-000000000000";
 
 describe("PDF 이미지 최적화의 외부 경로 경계", () => {
+    it("언어·국가 표시의 기존 국기 이미지 경로 허용", () => {
+        expect(
+            hasRemoteMatch(
+                [],
+                patterns,
+                new URL("https://flagcdn.com/w80/jp.png")
+            )
+        ).toBe(true);
+        expect(
+            hasRemoteMatch(
+                [],
+                patterns,
+                new URL("https://flagcdn.com/w160/jp.png")
+            )
+        ).toBe(false);
+        expect(
+            hasRemoteMatch(
+                [],
+                patterns,
+                new URL("https://flagcdn.com/w80/jp.png?other")
+            )
+        ).toBe(false);
+    });
     it("기존 본문의 GitHub 첨부 이미지 경로 허용", () => {
         expect(hasRemoteMatch([], patterns, new URL(asset))).toBe(true);
     });

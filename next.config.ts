@@ -17,6 +17,13 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             {
                 protocol: "https",
+                hostname: "flagcdn.com",
+                port: "",
+                pathname: "/w80/*.png",
+                search: "",
+            },
+            {
+                protocol: "https",
                 hostname: "github.com",
                 port: "",
                 pathname: "/user-attachments/assets/*",
