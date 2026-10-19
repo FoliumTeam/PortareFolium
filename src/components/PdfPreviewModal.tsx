@@ -6,9 +6,7 @@ import { createPortal } from "react-dom";
 import { Download, X, ChevronDown, Loader2 } from "lucide-react";
 import { PDF_COLOR_SCHEMES, type PdfColorScheme } from "@/lib/color-schemes";
 import { getPdfImageSource } from "@/lib/pdf-image-source";
-
-// A4 비율 (297mm / 210mm)
-const A4_RATIO = 297 / 210;
+import { paginateBlocks } from "@/lib/pdf-pagination";
 
 export interface PdfSection {
     key: string;
@@ -22,128 +20,6 @@ interface Props {
     contentRef: React.RefObject<HTMLElement | null>;
     fileName?: string;
     sections?: PdfSection[];
-}
-
-// spacer 생성 헬퍼
-function createSpacer(height: number, isGridItem: boolean): HTMLElement {
-    const spacer = document.createElement("div");
-    spacer.setAttribute("data-pdf-spacer", "true");
-    spacer.style.height = `${height}px`;
-    spacer.style.background = "transparent";
-    spacer.style.pointerEvents = "none";
-    // grid item spacer는 전체 열 span
-    if (isGridItem) spacer.style.gridColumn = "1 / -1";
-    return spacer;
-}
-
-// 블록 높이 측정 후 페이지 경계에서 잘리는 블록 앞에 spacer 삽입
-function paginateBlocks(container: HTMLElement): number[] {
-    const pageWidth = container.offsetWidth;
-    if (pageWidth === 0) return [];
-    const pageHeight = pageWidth * A4_RATIO;
-
-    // 기존 spacer 제거
-    container
-        .querySelectorAll("[data-pdf-spacer]")
-        .forEach((el) => el.remove());
-
-    const allBlocks = container.querySelectorAll<HTMLElement>(
-        "[data-pdf-block], [data-pdf-block-item]"
-    );
-    // container block이 block-type 자식을 가진 경우 container 제외 (자식이 개별 처리)
-    const blocks = Array.from(allBlocks).filter((block) => {
-        if (block.hasAttribute("data-pdf-block-item")) return true;
-        return !block.querySelector("[data-pdf-block], [data-pdf-block-item]");
-    });
-    if (blocks.length === 0) return [];
-
-    const containerRect = container.getBoundingClientRect();
-    const pageBreaks: number[] = [];
-    let currentPageBottom = pageHeight;
-    // grid row 중복 처리 방지용
-    let lastGridRowTop = -Infinity;
-
-    for (const block of blocks) {
-        const isGridItem = block.hasAttribute("data-pdf-block-item");
-        const blockRect = block.getBoundingClientRect();
-        let blockTop = blockRect.top - containerRect.top;
-
-        // grid item: 같은 행 아이템은 skip (첫 번째 아이템만 처리)
-        if (isGridItem) {
-            if (Math.abs(blockTop - lastGridRowTop) < 2) continue;
-            lastGridRowTop = blockTop;
-        }
-
-        // grid item: 같은 행의 가장 높은 아이템 기준으로 row bottom 계산
-        let blockBottom = blockTop + blockRect.height;
-        if (isGridItem && block.parentElement) {
-            const siblings = block.parentElement.querySelectorAll<HTMLElement>(
-                "[data-pdf-block-item]"
-            );
-            for (const sib of siblings) {
-                const sibRect = sib.getBoundingClientRect();
-                const sibTop = sibRect.top - containerRect.top;
-                if (Math.abs(sibTop - blockTop) < 2) {
-                    blockBottom = Math.max(
-                        blockBottom,
-                        sibTop + sibRect.height
-                    );
-                }
-            }
-        }
-
-        const blockHeight = blockBottom - blockTop;
-
-        // 블록이 현재 페이지에 맞으면 skip
-        if (blockBottom <= currentPageBottom + 1) continue;
-
-        // 블록이 A4 한 페이지보다 큰 경우 → graceful degradation
-        if (blockHeight > pageHeight) {
-            while (currentPageBottom < blockBottom) {
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-            continue;
-        }
-
-        // 블록이 페이지 경계를 넘지만 한 페이지에 들어가는 크기 → spacer 삽입
-        const spacerHeight = currentPageBottom - blockTop;
-        if (spacerHeight > 0 && spacerHeight < pageHeight) {
-            block.parentElement?.insertBefore(
-                createSpacer(spacerHeight, isGridItem),
-                block
-            );
-            pageBreaks.push(currentPageBottom);
-            currentPageBottom += pageHeight;
-        } else {
-            while (currentPageBottom < blockTop) {
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-            if (
-                blockBottom > currentPageBottom + 1 &&
-                blockHeight <= pageHeight
-            ) {
-                const gap = currentPageBottom - blockTop;
-                if (gap > 0 && gap < pageHeight) {
-                    block.parentElement?.insertBefore(
-                        createSpacer(gap, isGridItem),
-                        block
-                    );
-                }
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-        }
-
-        // 보정: 블록이 삽입 후에도 다중 페이지를 넘을 수 있음
-        while (currentPageBottom < blockBottom) {
-            pageBreaks.push(currentPageBottom);
-            currentPageBottom += pageHeight;
-        }
-    }
-
-    return pageBreaks;
 }
 
 export default function PdfPreviewModal({
