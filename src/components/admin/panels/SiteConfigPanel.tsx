@@ -1,12 +1,13 @@
 "use client";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useRef, useState } from "react";
 import {
-    addSiteJobField,
-    deleteSiteJobField,
-    getSiteConfigBootstrap,
-    saveSiteConfig,
-    updateSiteJobField,
+    addSiteJobField as raw_addSiteJobField,
+    deleteSiteJobField as raw_deleteSiteJobField,
+    getSiteConfigBootstrap as raw_getSiteConfigBootstrap,
+    saveSiteConfig as raw_saveSiteConfig,
+    updateSiteJobField as raw_updateSiteJobField,
 } from "@/app/admin/actions/site-config";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
@@ -38,6 +39,12 @@ import {
     normalizeSeoConfig,
     type JobFieldSeoConfig,
 } from "@/lib/seo-config";
+import { bindContentAction } from "@/lib/admin-content-state";
+const addSiteJobField = bindContentAction(raw_addSiteJobField);
+const deleteSiteJobField = bindContentAction(raw_deleteSiteJobField);
+const getSiteConfigBootstrap = bindContentAction(raw_getSiteConfigBootstrap);
+const saveSiteConfig = bindContentAction(raw_saveSiteConfig);
+const updateSiteJobField = bindContentAction(raw_updateSiteJobField);
 
 type JobFieldItem = {
     id: string;
@@ -160,11 +167,13 @@ export default function SiteConfigPanel() {
     const [headerName, setHeaderName] = useState("");
     const [seoConfig, setSeoConfig] = useState<SeoFormState>({
         defaultTitle: "",
-        defaultDescription: "포트폴리오 & 기술 블로그",
+        defaultDescription: "",
         defaultOgImage: "",
         jobFields: {},
     });
     const [saving, setSaving] = useState(false);
+    const [configLoaded, setConfigLoaded] = useState(false);
+    const savedConfigRef = useRef<string | null>(null);
     const [status, setStatus] = useState<{
         type: "error" | "success";
         msg: string;
@@ -185,6 +194,32 @@ export default function SiteConfigPanel() {
     const [editingEmoji, setEditingEmoji] = useState("");
     const [editingPickerOpen, setEditingPickerOpen] = useState(false);
     const editingPickerRef = useRef<HTMLDivElement>(null);
+
+    const configSignature = JSON.stringify([
+        headerName,
+        colorScheme,
+        plainMode,
+        themeMode,
+        seoConfig,
+    ]);
+    useEffect(() => {
+        if (configLoaded && savedConfigRef.current === null)
+            savedConfigRef.current = configSignature;
+    }, [configLoaded, configSignature]);
+    const editingField = jobFields.find(
+        (field) => field.id === editingJobFieldId
+    );
+    useUnsavedWarning(
+        (savedConfigRef.current !== null &&
+            configSignature !== savedConfigRef.current) ||
+            Boolean(newName || newHeaderTitle) ||
+            Boolean(
+                editingField &&
+                (editingName !== editingField.name ||
+                    editingEmoji !== editingField.emoji ||
+                    editingHeaderTitle !== (editingField.headerTitle ?? ""))
+            )
+    );
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
@@ -241,6 +276,8 @@ export default function SiteConfigPanel() {
                         }));
                     }
                 }
+
+                setConfigLoaded(true);
             }
         );
     }, []);
@@ -412,6 +449,7 @@ export default function SiteConfigPanel() {
             return;
         }
 
+        savedConfigRef.current = configSignature;
         localStorage.setItem("folium_plain_mode", String(plainMode));
         setStatus({
             type: "success",

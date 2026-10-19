@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { getContentLocale } from "@/lib/content-locale";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Users } from "lucide-react";
@@ -148,7 +149,8 @@ export default async function PortfolioDetailContent({
         isV2
             ? normalizePortfolioCaseStudyContent(
                   project.content,
-                  getPortfolioCaseStudyStyle(item as PortfolioRawRow)
+                  getPortfolioCaseStudyStyle(item as PortfolioRawRow),
+                  getContentLocale()
               )
             : project.content
     );

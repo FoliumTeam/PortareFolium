@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
@@ -63,7 +68,7 @@ function buildStats(total: number, drafts: number): ContentStats {
     };
 }
 
-export async function getMainPanelBootstrap(): Promise<MainPanelBootstrap> {
+async function getMainPanelBootstrapInLocale(): Promise<MainPanelBootstrap> {
     await requireAdminSession();
 
     const [
@@ -108,4 +113,23 @@ export async function getMainPanelBootstrap(): Promise<MainPanelBootstrap> {
         jobFields,
         errors,
     };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getMainPanelBootstrap(
+    ...args: [
+        ...Parameters<typeof getMainPanelBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getMainPanelBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getMainPanelBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getMainPanelBootstrapInLocale(...values)
+    );
 }

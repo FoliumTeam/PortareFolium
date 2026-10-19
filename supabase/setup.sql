@@ -640,7 +640,7 @@ INSERT INTO site_config (key, value) VALUES
     ('seo_config',         '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
     ('resume_layout',      '"modern"'),
     -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 현재 버전으로 초기화
-    ('db_schema_version',  '"0.13.16"')
+    ('db_schema_version',  '"0.13.19"')
 ON CONFLICT (key) DO NOTHING;
 
 -- 030 · v0.13.16 · 언어별 콘텐츠 저장 공간 추가
@@ -778,3 +778,13 @@ GRANT SELECT ON TABLE post_tags_i18n, post_tag_counts_i18n, post_category_counts
 INSERT INTO site_config (key, value) VALUES ('db_schema_version', '"0.13.16"')
 ON CONFLICT (key) DO UPDATE SET value = '"0.13.16"';
 
+
+-- 031 · v0.13.19 · 이력서·소개 언어 사본 공개 상태 추가
+-- 원문 복사본의 검토 전 공개 방지와 기존 한국어 공개 유지
+
+ALTER TABLE resume_data ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE about_data ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE about_data_i18n ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT false;
+
+INSERT INTO site_config (key, value) VALUES ('db_schema_version', '"0.13.19"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.13.19"';

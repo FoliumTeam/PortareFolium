@@ -1,3 +1,5 @@
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import { LOCALES } from "@/lib/i18n";
 import { createHash, randomBytes } from "node:crypto";
 import { createJobFieldResumeView } from "@/lib/resume-job-field";
 import {
@@ -198,7 +200,42 @@ export async function getApplicationProfileByToken(
         .eq("public_token", token)
         .eq("status", "published")
         .maybeSingle();
-    return normalizeProfile(data);
+    if (data) return normalizeProfile(data);
+    const selected = getContentLocale();
+    for (const locale of LOCALES) {
+        if (locale === selected) continue;
+        const { data: identity } = await withContentLocale(locale, () =>
+            serverClient!
+                .from("application_profiles")
+                .select("id, public_token, parent_job_field")
+                .eq("public_token", token)
+                .eq("status", "published")
+                .maybeSingle()
+        );
+        if (!identity) continue;
+        const empty: ApplicationProfileSnapshot = {
+            jobField: identity.parent_job_field,
+            resume: {},
+            about: {},
+            portfolio: [],
+            posts: [],
+            sourceHash: "",
+        };
+        return {
+            ...identity,
+            name: "",
+            job_description: "",
+            status: "published",
+            version: 0,
+            base_snapshot: empty,
+            public_snapshot: empty,
+            overrides: EMPTY_APPLICATION_PROFILE_OVERRIDES,
+            published_at: null,
+            created_at: "",
+            updated_at: "",
+        } as ApplicationProfile;
+    }
+    return null;
 }
 
 export async function getApplicationProfileForAdmin(

@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
@@ -42,7 +47,7 @@ async function listSnapshots(
 }
 
 // snapshot content 목록 조회
-export async function listEditorSnapshotContents(
+async function listEditorSnapshotContentsInLocale(
     entityType: string,
     entitySlug: string
 ): Promise<string[]> {
@@ -61,7 +66,7 @@ export async function listEditorSnapshotContents(
 }
 
 // entity snapshot 개수 조회
-export async function countEditorSnapshots(
+async function countEditorSnapshotsInLocale(
     entityType: string,
     entitySlug: string
 ): Promise<number> {
@@ -78,7 +83,7 @@ export async function countEditorSnapshots(
 }
 
 // editor_states 초기 정리 + Initial snapshot 보장
-export async function initializeEditorSnapshots(
+async function initializeEditorSnapshotsInLocale(
     entityType: string,
     entitySlug: string,
     currentContent: string
@@ -115,7 +120,7 @@ export async function initializeEditorSnapshots(
 }
 
 // editor_states 단건 추가
-export async function createEditorSnapshot(
+async function createEditorSnapshotInLocale(
     entityType: string,
     entitySlug: string,
     label: "Auto-save" | "Bookmark" | "Initial",
@@ -156,7 +161,7 @@ export async function createEditorSnapshot(
 }
 
 // editor_states 단건 삭제
-export async function deleteEditorSnapshot(
+async function deleteEditorSnapshotInLocale(
     entityType: string,
     entitySlug: string,
     id: string
@@ -169,7 +174,7 @@ export async function deleteEditorSnapshot(
 }
 
 // editor_states label 기준 bulk delete
-export async function deleteEditorSnapshotsByLabel(
+async function deleteEditorSnapshotsByLabelInLocale(
     entityType: string,
     entitySlug: string,
     label: "Auto-save" | "Bookmark"
@@ -188,7 +193,7 @@ export async function deleteEditorSnapshotsByLabel(
 }
 
 // slug rename 시 snapshot content folder prefix 치환
-export async function rewriteEditorSnapshotUrls(
+async function rewriteEditorSnapshotUrlsInLocale(
     entityType: string,
     entitySlug: string,
     oldFolder: string,
@@ -221,4 +226,137 @@ export async function rewriteEditorSnapshotUrls(
             .update({ content: update.content })
             .eq("id", update.id);
     }
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function listEditorSnapshotContents(
+    ...args: [
+        ...Parameters<typeof listEditorSnapshotContentsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof listEditorSnapshotContentsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof listEditorSnapshotContentsInLocale>;
+    return withContentLocale(locale, () =>
+        listEditorSnapshotContentsInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function countEditorSnapshots(
+    ...args: [
+        ...Parameters<typeof countEditorSnapshotsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof countEditorSnapshotsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof countEditorSnapshotsInLocale>;
+    return withContentLocale(locale, () =>
+        countEditorSnapshotsInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function initializeEditorSnapshots(
+    ...args: [
+        ...Parameters<typeof initializeEditorSnapshotsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof initializeEditorSnapshotsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof initializeEditorSnapshotsInLocale>;
+    return withContentLocale(locale, () =>
+        initializeEditorSnapshotsInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function createEditorSnapshot(
+    ...args: [
+        ...Parameters<typeof createEditorSnapshotInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof createEditorSnapshotInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof createEditorSnapshotInLocale>;
+    return withContentLocale(locale, () =>
+        createEditorSnapshotInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deleteEditorSnapshot(
+    ...args: [
+        ...Parameters<typeof deleteEditorSnapshotInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof deleteEditorSnapshotInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deleteEditorSnapshotInLocale>;
+    return withContentLocale(locale, () =>
+        deleteEditorSnapshotInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deleteEditorSnapshotsByLabel(
+    ...args: [
+        ...Parameters<typeof deleteEditorSnapshotsByLabelInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof deleteEditorSnapshotsByLabelInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deleteEditorSnapshotsByLabelInLocale>;
+    return withContentLocale(locale, () =>
+        deleteEditorSnapshotsByLabelInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function rewriteEditorSnapshotUrls(
+    ...args: [
+        ...Parameters<typeof rewriteEditorSnapshotUrlsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof rewriteEditorSnapshotUrlsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof rewriteEditorSnapshotUrlsInLocale>;
+    return withContentLocale(locale, () =>
+        rewriteEditorSnapshotUrlsInLocale(...values)
+    );
 }

@@ -82,50 +82,7 @@ const getCachedSiteConfig = localizedCache(
         const { data } = await serverClient
             .from("site_config")
             .select("key, value");
-        const rows = (data ?? []) as { key: string; value: unknown }[];
-        const locale = getContentLocale();
-        if (locale === "ko") return rows;
-        const { data: translated } = await serverClient
-            .from("site_config_i18n")
-            .select("key, value")
-            .eq("lang", locale);
-        const overrides = new Map<string, unknown>(
-            (translated ?? []).map((row) => [String(row.key), row.value])
-        );
-        const textKeys = new Set([
-            "site_name",
-            "header_name",
-            "seo_config",
-            "navigation_config",
-            "footer_config",
-        ]);
-        return rows
-            .map((row) => {
-                if (overrides.has(row.key))
-                    return { ...row, value: overrides.get(row.key) };
-                if (textKeys.has(row.key))
-                    return {
-                        ...row,
-                        value: row.key === "site_name" ? "PortareFolium" : "",
-                    };
-                if (row.key === "job_fields" && Array.isArray(row.value))
-                    return {
-                        ...row,
-                        value: row.value.map(
-                            (field: Record<string, unknown>) => ({
-                                ...field,
-                                name: String(field.id),
-                                headerTitle: String(field.id),
-                            })
-                        ),
-                    };
-                return row;
-            })
-            .concat(
-                (translated ?? []).filter(
-                    (row) => !rows.some((source) => source.key === row.key)
-                )
-            );
+        return (data ?? []) as { key: string; value: unknown }[];
     },
     ["site-config"],
     PUBLIC_CONTENT_CACHE_OPTIONS
@@ -139,6 +96,7 @@ const getCachedResumeBasics = localizedCache(
         const { data } = await serverClient
             .from("resume_data")
             .select("data")
+            .eq("published", true)
             .eq("lang", "ko")
             .single();
         const basics = (data?.data as { basics?: ResumeBasics } | undefined)

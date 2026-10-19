@@ -84,9 +84,15 @@ export default async function ResumePageContent({
             serverClient
                 .from("resume_data")
                 .select("data")
+                .eq("published", true)
                 .eq("lang", "ko")
                 .single(),
-            serverClient.from("about_data").select("data").limit(1).single(),
+            serverClient
+                .from("about_data")
+                .select("data")
+                .eq("published", true)
+                .limit(1)
+                .single(),
         ]);
 
         if (layoutRes.data?.value) {

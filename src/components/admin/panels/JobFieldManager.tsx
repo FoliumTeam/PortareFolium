@@ -6,15 +6,19 @@ import data from "@emoji-mart/data";
 import { toast } from "sonner";
 import { Globe2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
-    addSiteJobField,
-    deleteSiteJobField,
-    updateSiteJobField,
+    addSiteJobField as raw_addSiteJobField,
+    deleteSiteJobField as raw_deleteSiteJobField,
+    updateSiteJobField as raw_updateSiteJobField,
 } from "@/app/admin/actions/site-config";
 import { dedupeJobFieldsById } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { bindContentAction } from "@/lib/admin-content-state";
+const addSiteJobField = bindContentAction(raw_addSiteJobField);
+const deleteSiteJobField = bindContentAction(raw_deleteSiteJobField);
+const updateSiteJobField = bindContentAction(raw_updateSiteJobField);
 
 export type JobFieldItem = {
     id: string;

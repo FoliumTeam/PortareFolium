@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import {
     revalidateHome,
@@ -48,7 +53,8 @@ type SaveSiteConfigInput = {
 };
 
 type SiteConfigActionResult =
-    { success: true } | { success: false; error: string };
+    | { success: true }
+    | { success: false; error: string };
 
 type SiteJobFieldActionResult =
     | {
@@ -138,7 +144,7 @@ async function getJobFieldConfig() {
 }
 
 // SiteConfigPanel 초기 데이터 조회
-export async function getSiteConfigBootstrap(): Promise<{
+async function getSiteConfigBootstrapInLocale(): Promise<{
     rows: { key: string; value: unknown }[];
 }> {
     await requireAdminSession();
@@ -205,7 +211,8 @@ async function applyJobFieldInheritance(parentId: string, newId: string) {
         .select("id, data");
     const portfolioToUpdate = (
         (portfolioItems as
-            { id: string; data: Record<string, unknown> | null }[] | null) ?? []
+            | { id: string; data: Record<string, unknown> | null }[]
+            | null) ?? []
     ).filter((item) => {
         const jobField = item.data?.jobField;
         return toStringArray(
@@ -342,7 +349,7 @@ async function deleteJobFieldCascade(targetId: string) {
     return { error: null };
 }
 
-export async function saveSiteConfig(
+async function saveSiteConfigInLocale(
     input: SaveSiteConfigInput
 ): Promise<SiteConfigActionResult> {
     await requireAdminSession();
@@ -414,7 +421,7 @@ export async function saveSiteConfig(
     }
 }
 
-export async function addSiteJobField(input: {
+async function addSiteJobFieldInLocale(input: {
     name: string;
     emoji: string;
     headerTitle: string;
@@ -491,7 +498,7 @@ export async function addSiteJobField(input: {
     }
 }
 
-export async function deleteSiteJobField(
+async function deleteSiteJobFieldInLocale(
     targetId: string
 ): Promise<SiteJobFieldActionResult> {
     await requireAdminSession();
@@ -557,7 +564,7 @@ export async function deleteSiteJobField(
     }
 }
 
-export async function updateSiteJobField(input: {
+async function updateSiteJobFieldInLocale(input: {
     id: string;
     name: string;
     emoji: string;
@@ -603,4 +610,92 @@ export async function updateSiteJobField(input: {
                 error instanceof Error ? error.message : "직무 분야 수정 실패",
         };
     }
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getSiteConfigBootstrap(
+    ...args: [
+        ...Parameters<typeof getSiteConfigBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getSiteConfigBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getSiteConfigBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getSiteConfigBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveSiteConfig(
+    ...args: [...Parameters<typeof saveSiteConfigInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof saveSiteConfigInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveSiteConfigInLocale>;
+    return withContentLocale(locale, () => saveSiteConfigInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function addSiteJobField(
+    ...args: [
+        ...Parameters<typeof addSiteJobFieldInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof addSiteJobFieldInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof addSiteJobFieldInLocale>;
+    return withContentLocale(locale, () => addSiteJobFieldInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deleteSiteJobField(
+    ...args: [
+        ...Parameters<typeof deleteSiteJobFieldInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof deleteSiteJobFieldInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deleteSiteJobFieldInLocale>;
+    return withContentLocale(locale, () =>
+        deleteSiteJobFieldInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function updateSiteJobField(
+    ...args: [
+        ...Parameters<typeof updateSiteJobFieldInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof updateSiteJobFieldInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof updateSiteJobFieldInLocale>;
+    return withContentLocale(locale, () =>
+        updateSiteJobFieldInLocale(...values)
+    );
 }

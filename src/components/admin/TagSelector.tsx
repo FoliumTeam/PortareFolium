@@ -7,7 +7,9 @@
  * 클릭으로 선택/해제하는 멀티 선택 UI.
  */
 import { useEffect, useState } from "react";
-import { listPublicTags } from "@/app/admin/actions/public-data";
+import { listContentTags } from "@/app/admin/actions/tags";
+import { bindContentAction } from "@/lib/admin-content-state";
+const listPublicTags = bindContentAction(listContentTags);
 
 interface Tag {
     slug: string;

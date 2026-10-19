@@ -321,7 +321,7 @@ function resetDb() {
 async function postChunkedContent(body: Record<string, unknown>) {
     const { POST } =
         await import("@/app/api/admin/posts/chunked-content/route");
-    return POST({ json: async () => body } as never);
+    return POST({ headers: new Headers(), json: async () => body } as never);
 }
 
 describe("post content size and chunk save safeguards", () => {

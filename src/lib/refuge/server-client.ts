@@ -30,7 +30,11 @@ type FilterOperator =
     | "is"
     | "not";
 type Filter = { column: string; operator: FilterOperator; value: unknown };
-type OrFilter = { column: string; operator: "eq" | "is"; value: unknown };
+type OrFilter = {
+    column: string;
+    operator: "eq" | "is" | "contains";
+    value: unknown;
+};
 type OrderRule = { column: string; ascending: boolean };
 type SelectOptions = { count?: "exact" | null; head?: boolean };
 type MaybePromise<T> = PromiseLike<T>;
@@ -106,6 +110,17 @@ function parseOrFilter(raw: string): OrFilter[] {
                     { column: eqMatch[1]!, operator: "eq", value: eqMatch[2]! },
                 ];
             }
+            const containsMatch = part.match(
+                /^([a-zA-Z0-9_]+)\.cs\.\{([^{}]+)\}$/
+            );
+            if (containsMatch)
+                return [
+                    {
+                        column: containsMatch[1]!,
+                        operator: "contains",
+                        value: [containsMatch[2]!],
+                    },
+                ];
             const isNullMatch = part.match(/^([a-zA-Z0-9_]+)\.is\.null$/);
             if (isNullMatch) {
                 return [

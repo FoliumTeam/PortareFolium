@@ -35,13 +35,19 @@ import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import {
-    deleteBookById,
-    getBooksPanelBootstrap,
-    saveBook,
-    setBookFeatured,
-    setBookPublished,
+    deleteBookById as raw_deleteBookById,
+    getBooksPanelBootstrap as raw_getBooksPanelBootstrap,
+    saveBook as raw_saveBook,
+    setBookFeatured as raw_setBookFeatured,
+    setBookPublished as raw_setBookPublished,
 } from "@/app/admin/actions/books";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { bindContentAction } from "@/lib/admin-content-state";
+const deleteBookById = bindContentAction(raw_deleteBookById);
+const getBooksPanelBootstrap = bindContentAction(raw_getBooksPanelBootstrap);
+const saveBook = bindContentAction(raw_saveBook);
+const setBookFeatured = bindContentAction(raw_setBookFeatured);
+const setBookPublished = bindContentAction(raw_setBookPublished);
 
 interface BookItem {
     id: string;

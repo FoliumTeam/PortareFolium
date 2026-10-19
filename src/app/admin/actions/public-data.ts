@@ -54,7 +54,7 @@ export async function searchPublicContent(
 
         if (safeJobField) {
             postQuery = postQuery.or(
-                `job_field.eq.${safeJobField},job_field.is.null`
+                `job_field.cs.{${safeJobField}},job_field.is.null`
             );
         }
 
@@ -68,7 +68,7 @@ export async function searchPublicContent(
 
         if (safeJobField) {
             portfolioQuery = portfolioQuery.or(
-                `job_field.eq.${safeJobField},job_field.is.null`
+                `job_field.cs.{${safeJobField}},job_field.is.null`
             );
         }
 

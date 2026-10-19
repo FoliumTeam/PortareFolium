@@ -10,6 +10,9 @@ const RESERVED_PUBLIC_JOB_FIELD_IDS = new Set([
     "books",
     "portfolio",
     "resume",
+    "ko",
+    "en",
+    "ja",
 ]);
 
 export type PublicJobField = {

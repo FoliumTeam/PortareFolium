@@ -13,19 +13,19 @@ import {
 } from "@/lib/orphan-cleanup";
 import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
-import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
+import { rewriteEditorSnapshotUrls as raw_rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
-    batchDeletePostsByIds,
-    batchRenamePostTitlesByRegex,
-    batchSetPostJobField,
-    batchSetPostPublished,
-    deletePostById,
-    getPostsPanelBootstrap,
-    savePost,
-    savePostTocStyle,
-    setPostPublished,
+    batchDeletePostsByIds as raw_batchDeletePostsByIds,
+    batchRenamePostTitlesByRegex as raw_batchRenamePostTitlesByRegex,
+    batchSetPostJobField as raw_batchSetPostJobField,
+    batchSetPostPublished as raw_batchSetPostPublished,
+    deletePostById as raw_deletePostById,
+    getPostsPanelBootstrap as raw_getPostsPanelBootstrap,
+    savePost as raw_savePost,
+    savePostTocStyle as raw_savePostTocStyle,
+    setPostPublished as raw_setPostPublished,
 } from "@/app/admin/actions/posts";
-import { createPostCategory } from "@/app/admin/actions/tags";
+import { createPostCategory as raw_createPostCategory } from "@/app/admin/actions/tags";
 import {
     Eye,
     EyeOff,
@@ -62,6 +62,23 @@ import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import { Badge } from "@/components/ui/badge";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { bindContentAction, getEditingLocale } from "@/lib/admin-content-state";
+import type { Locale } from "@/lib/i18n";
+const rewriteEditorSnapshotUrls = bindContentAction(
+    raw_rewriteEditorSnapshotUrls
+);
+const batchDeletePostsByIds = bindContentAction(raw_batchDeletePostsByIds);
+const batchRenamePostTitlesByRegex = bindContentAction(
+    raw_batchRenamePostTitlesByRegex
+);
+const batchSetPostJobField = bindContentAction(raw_batchSetPostJobField);
+const batchSetPostPublished = bindContentAction(raw_batchSetPostPublished);
+const deletePostById = bindContentAction(raw_deletePostById);
+const getPostsPanelBootstrap = bindContentAction(raw_getPostsPanelBootstrap);
+const savePost = bindContentAction(raw_savePost);
+const savePostTocStyle = bindContentAction(raw_savePostTocStyle);
+const setPostPublished = bindContentAction(raw_setPostPublished);
+const createPostCategory = bindContentAction(raw_createPostCategory);
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -166,10 +183,16 @@ async function sha256Hex(value: string): Promise<string> {
         .join("");
 }
 
-async function postChunkedContentRequest<T>(body: unknown): Promise<T> {
+async function postChunkedContentRequest<T>(
+    body: unknown,
+    locale: Locale
+): Promise<T> {
     const response = await fetch("/api/admin/posts/chunked-content", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "x-folium-content-locale": locale,
+        },
         body: JSON.stringify(body),
     });
     const json = (await response.json()) as T & { error?: string };
@@ -310,7 +333,8 @@ export default function PostsPanel({
         postId: string
     ): Promise<{ content: string; storageMode: PostContentStorageMode }> => {
         const response = await fetch(
-            `/api/admin/posts/chunked-content?postId=${encodeURIComponent(postId)}`
+            `/api/admin/posts/chunked-content?postId=${encodeURIComponent(postId)}`,
+            { headers: { "x-folium-content-locale": getEditingLocale() } }
         );
         const json = (await response.json()) as {
             success?: boolean;
@@ -443,6 +467,7 @@ export default function PostsPanel({
         payload: ReturnType<typeof buildPayload>,
         editTargetId?: string | null
     ): Promise<SavePostResult> => {
+        const locale = getEditingLocale();
         try {
             const chunks = splitUtf8Chunks(
                 payload.content,
@@ -453,32 +478,38 @@ export default function PostsPanel({
                 success: true;
                 revisionId: string;
                 post: Post;
-            }>({
-                action: "init",
-                payload: { ...payload, content: "" },
-                editTargetId,
-                contentHash,
-                contentSize: getUtf8ByteSize(payload.content),
-                chunkSize: POST_CONTENT_CHUNK_BYTES,
-                chunkCount: chunks.length,
-            });
+            }>(
+                {
+                    action: "init",
+                    payload: { ...payload, content: "" },
+                    editTargetId,
+                    contentHash,
+                    contentSize: getUtf8ByteSize(payload.content),
+                    chunkSize: POST_CONTENT_CHUNK_BYTES,
+                    chunkCount: chunks.length,
+                },
+                locale
+            );
 
             for (let index = 0; index < chunks.length; index += 1) {
                 const chunk = chunks[index] ?? "";
-                await postChunkedContentRequest<{ success: true }>({
-                    action: "chunk",
-                    revisionId: init.revisionId,
-                    chunkIndex: index,
-                    content: chunk,
-                    checksum: await sha256Hex(chunk),
-                });
+                await postChunkedContentRequest<{ success: true }>(
+                    {
+                        action: "chunk",
+                        revisionId: init.revisionId,
+                        chunkIndex: index,
+                        content: chunk,
+                        checksum: await sha256Hex(chunk),
+                    },
+                    locale
+                );
             }
 
             const committed = await postChunkedContentRequest<{
                 success: true;
                 post: Post;
                 storageMode: PostContentStorageMode;
-            }>({ action: "commit", revisionId: init.revisionId });
+            }>({ action: "commit", revisionId: init.revisionId }, locale);
 
             return {
                 success: true,

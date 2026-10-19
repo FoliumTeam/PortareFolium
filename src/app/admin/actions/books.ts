@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
@@ -45,7 +50,7 @@ type BookPayload = {
 };
 
 // BooksSubPanel 초기 데이터 조회
-export async function getBooksPanelBootstrap() {
+async function getBooksPanelBootstrapInLocale() {
     await requireAdminSession();
     if (!serverClient) {
         return {
@@ -78,7 +83,7 @@ export async function getBooksPanelBootstrap() {
 }
 
 // 도서 생성/수정
-export async function saveBook(
+async function saveBookInLocale(
     payload: BookPayload,
     editTargetId?: string | null
 ): Promise<
@@ -115,7 +120,7 @@ export async function saveBook(
 }
 
 // 도서 삭제
-export async function deleteBookById(
+async function deleteBookByIdInLocale(
     id: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -127,7 +132,7 @@ export async function deleteBookById(
 }
 
 // 도서 Published 토글
-export async function setBookPublished(
+async function setBookPublishedInLocale(
     id: string,
     slug: string,
     published: boolean
@@ -145,7 +150,7 @@ export async function setBookPublished(
 }
 
 // 도서 Featured 토글
-export async function setBookFeatured(
+async function setBookFeaturedInLocale(
     id: string,
     featured: boolean
 ): Promise<{ success: boolean; error?: string }> {
@@ -158,4 +163,85 @@ export async function setBookFeatured(
         .eq("id", id);
     if (error) return { success: false, error: error.message };
     return { success: true };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getBooksPanelBootstrap(
+    ...args: [
+        ...Parameters<typeof getBooksPanelBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getBooksPanelBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getBooksPanelBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getBooksPanelBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveBook(
+    ...args: [...Parameters<typeof saveBookInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof saveBookInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveBookInLocale>;
+    return withContentLocale(locale, () => saveBookInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deleteBookById(
+    ...args: [...Parameters<typeof deleteBookByIdInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof deleteBookByIdInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deleteBookByIdInLocale>;
+    return withContentLocale(locale, () => deleteBookByIdInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function setBookPublished(
+    ...args: [
+        ...Parameters<typeof setBookPublishedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof setBookPublishedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof setBookPublishedInLocale>;
+    return withContentLocale(locale, () => setBookPublishedInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function setBookFeatured(
+    ...args: [
+        ...Parameters<typeof setBookFeaturedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof setBookFeaturedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof setBookFeaturedInLocale>;
+    return withContentLocale(locale, () => setBookFeaturedInLocale(...values));
 }

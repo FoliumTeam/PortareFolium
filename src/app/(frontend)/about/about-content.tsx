@@ -42,6 +42,7 @@ export default async function AboutPageContent({
         const aboutRes = await serverClient
             .from("about_data")
             .select("data")
+            .eq("published", true)
             .limit(1)
             .single();
 

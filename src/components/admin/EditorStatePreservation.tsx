@@ -6,15 +6,24 @@ import { createPortal } from "react-dom";
 import { Clock3, FileClock, History, Save } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import {
-    createEditorSnapshot,
-    deleteEditorSnapshot,
-    deleteEditorSnapshotsByLabel,
-    initializeEditorSnapshots,
+    createEditorSnapshot as raw_createEditorSnapshot,
+    deleteEditorSnapshot as raw_deleteEditorSnapshot,
+    deleteEditorSnapshotsByLabel as raw_deleteEditorSnapshotsByLabel,
+    initializeEditorSnapshots as raw_initializeEditorSnapshots,
 } from "@/app/admin/actions/editor-states";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import { triggerSnapshotCleanup } from "@/lib/snapshot-cleanup";
 import StatePreviewModal from "@/components/admin/StatePreviewModal";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { bindContentAction } from "@/lib/admin-content-state";
+const createEditorSnapshot = bindContentAction(raw_createEditorSnapshot);
+const deleteEditorSnapshot = bindContentAction(raw_deleteEditorSnapshot);
+const deleteEditorSnapshotsByLabel = bindContentAction(
+    raw_deleteEditorSnapshotsByLabel
+);
+const initializeEditorSnapshots = bindContentAction(
+    raw_initializeEditorSnapshots
+);
 
 interface EditorSnapshot {
     id: string;

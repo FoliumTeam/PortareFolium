@@ -1,4 +1,5 @@
 "use client";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -36,15 +37,24 @@ import {
 } from "@/components/ui/collapsible";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
-    createPostCategory,
-    deletePostCategory,
-    deleteTagItem,
-    getTagsPanelBootstrap,
-    listPostsByCategoryName,
-    listPostsByTagSlug,
-    renamePostCategory,
-    saveTagItem,
+    createPostCategory as raw_createPostCategory,
+    deletePostCategory as raw_deletePostCategory,
+    deleteTagItem as raw_deleteTagItem,
+    getTagsPanelBootstrap as raw_getTagsPanelBootstrap,
+    listPostsByCategoryName as raw_listPostsByCategoryName,
+    listPostsByTagSlug as raw_listPostsByTagSlug,
+    renamePostCategory as raw_renamePostCategory,
+    saveTagItem as raw_saveTagItem,
 } from "@/app/admin/actions/tags";
+import { bindContentAction } from "@/lib/admin-content-state";
+const createPostCategory = bindContentAction(raw_createPostCategory);
+const deletePostCategory = bindContentAction(raw_deletePostCategory);
+const deleteTagItem = bindContentAction(raw_deleteTagItem);
+const getTagsPanelBootstrap = bindContentAction(raw_getTagsPanelBootstrap);
+const listPostsByCategoryName = bindContentAction(raw_listPostsByCategoryName);
+const listPostsByTagSlug = bindContentAction(raw_listPostsByTagSlug);
+const renamePostCategory = bindContentAction(raw_renamePostCategory);
+const saveTagItem = bindContentAction(raw_saveTagItem);
 
 type TagItem = {
     slug: string;
@@ -160,6 +170,7 @@ export default function TagsPanel() {
         color: "",
     });
     const [catForm, setCatForm] = useState("");
+    useUnsavedWarning(Boolean(form.name || form.slug || catForm));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);

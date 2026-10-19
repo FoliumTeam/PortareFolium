@@ -1,8 +1,12 @@
 "use client";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 // about_data 테이블 편집 + Job Field별 소개 관리
 import { useEffect, useRef, useState } from "react";
-import { getAboutBootstrap, saveAboutPanel } from "@/app/admin/actions/about";
+import {
+    getAboutBootstrap as raw_getAboutBootstrap,
+    saveAboutPanel as raw_saveAboutPanel,
+} from "@/app/admin/actions/about";
 import type {
     AboutData,
     AboutSectionKey,
@@ -29,6 +33,9 @@ import {
     UserRound,
 } from "lucide-react";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { bindContentAction } from "@/lib/admin-content-state";
+const getAboutBootstrap = bindContentAction(raw_getAboutBootstrap);
+const saveAboutPanel = bindContentAction(raw_saveAboutPanel);
 
 type JobFieldItem = { id: string; name: string; emoji: string };
 
@@ -82,6 +89,8 @@ export default function AboutPanel() {
     }>({});
     const [rowId, setRowId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [inputDirty, setInputDirty] = useState(false);
+    const savedManaged = useRef(JSON.stringify([[], {}]));
     const [status, setStatus] = useState<{
         type: "error" | "success";
         msg: string;
@@ -97,6 +106,12 @@ export default function AboutPanel() {
     >({});
     const [activeJobFieldId, setActiveJobFieldId] = useState<string | null>(
         null
+    );
+
+    useUnsavedWarning(
+        inputDirty ||
+            JSON.stringify([valuePillars, introductions]) !==
+                savedManaged.current
     );
 
     // uncontrolled refs (textarea undo 동작 보장)
@@ -128,6 +143,10 @@ export default function AboutPanel() {
                     if (el)
                         el.value = (d.competencySections?.[k] ?? []).join("\n");
                 });
+                savedManaged.current = JSON.stringify([
+                    d.valuePillars ?? [],
+                    d.introductions ?? {},
+                ]);
                 setIntroductions(d.introductions ?? {});
                 setValuePillars(d.valuePillars ?? []);
             }
@@ -258,6 +277,11 @@ export default function AboutPanel() {
         });
 
         if (result.success) {
+            savedManaged.current = JSON.stringify([
+                valuePillars,
+                introductions,
+            ]);
+            setInputDirty(false);
             if (result.aboutRowId) setRowId(result.aboutRowId);
         }
         setSaving(false);
@@ -285,7 +309,10 @@ export default function AboutPanel() {
         : undefined;
 
     return (
-        <div className="tablet:h-full tablet:overflow-y-auto space-y-5 pb-8">
+        <div
+            onChangeCapture={() => setInputDirty(true)}
+            className="tablet:h-full tablet:overflow-y-auto space-y-5 pb-8"
+        >
             <div className="border-b border-(--color-border) pb-5">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
                     Profile Content

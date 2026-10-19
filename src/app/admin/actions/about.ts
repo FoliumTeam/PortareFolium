@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import {
@@ -31,7 +36,7 @@ type AboutBootstrap = {
 };
 
 // AboutPanel 초기 데이터 조회
-export async function getAboutBootstrap(): Promise<AboutBootstrap> {
+async function getAboutBootstrapInLocale(): Promise<AboutBootstrap> {
     await requireAdminSession();
     if (!serverClient) {
         return {
@@ -93,7 +98,7 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
 }
 
 // About 콘텐츠 저장
-export async function saveAboutPanel(
+async function saveAboutPanelInLocale(
     input: SaveAboutInput
 ): Promise<SaveAboutResult> {
     await requireAdminSession();
@@ -140,7 +145,7 @@ export async function saveAboutPanel(
 }
 
 // Resume 공유 소개 저장
-export async function saveAboutIntroductions(
+async function saveAboutIntroductionsInLocale(
     input: SaveAboutIntroductionInput
 ): Promise<SaveAboutResult> {
     await requireAdminSession();
@@ -174,4 +179,56 @@ export async function saveAboutIntroductions(
             error: error instanceof Error ? error.message : "저장 실패",
         };
     }
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getAboutBootstrap(
+    ...args: [
+        ...Parameters<typeof getAboutBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getAboutBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getAboutBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getAboutBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveAboutPanel(
+    ...args: [...Parameters<typeof saveAboutPanelInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof saveAboutPanelInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveAboutPanelInLocale>;
+    return withContentLocale(locale, () => saveAboutPanelInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveAboutIntroductions(
+    ...args: [
+        ...Parameters<typeof saveAboutIntroductionsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof saveAboutIntroductionsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveAboutIntroductionsInLocale>;
+    return withContentLocale(locale, () =>
+        saveAboutIntroductionsInLocale(...values)
+    );
 }

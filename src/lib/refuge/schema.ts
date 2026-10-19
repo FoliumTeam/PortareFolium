@@ -43,8 +43,8 @@ export type RefugeRow = Record<string, unknown>;
 
 const REFUGE_TABLE_COLUMNS: Record<string, readonly string[]> = {
     site_config: ["key", "value", "updated_at"],
-    about_data: ["id", "data", "updated_at"],
-    resume_data: ["id", "lang", "data", "updated_at"],
+    about_data: ["id", "data", "published", "updated_at"],
+    resume_data: ["id", "lang", "data", "published", "updated_at"],
     posts: [
         "id",
         "slug",

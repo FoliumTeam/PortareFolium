@@ -5,6 +5,7 @@ import {
     DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { requireAdminSession } from "@/lib/server-admin";
+import { getStorageReferenceGuard } from "@/lib/storage-reference-guard";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
 import {
     R2PathPolicyError,
@@ -33,6 +34,7 @@ async function listFiles(prefix: string): Promise<string[]> {
 
 // 폴더 이동 (copy + delete)
 async function moveFolder(oldPrefix: string, newPrefix: string) {
+    const referenced = await getStorageReferenceGuard();
     const files = await listFiles(oldPrefix);
     if (files.length === 0) return;
 
@@ -49,11 +51,13 @@ async function moveFolder(oldPrefix: string, newPrefix: string) {
     }
 
     // copy 완료 후 원본 삭제
+    const removable = files.filter((key) => !referenced(key));
+    if (!removable.length) return;
     await r2Client.send(
         new DeleteObjectsCommand({
             Bucket: R2_BUCKET,
             Delete: {
-                Objects: files.map((key) => ({ Key: key })),
+                Objects: removable.map((key) => ({ Key: key })),
             },
         })
     );
@@ -61,7 +65,8 @@ async function moveFolder(oldPrefix: string, newPrefix: string) {
 
 // 폴더 삭제
 async function deleteFolder(prefix: string) {
-    const files = await listFiles(prefix);
+    const referenced = await getStorageReferenceGuard();
+    const files = (await listFiles(prefix)).filter((key) => !referenced(key));
     if (files.length === 0) return;
 
     await r2Client.send(
@@ -130,9 +135,11 @@ export async function POST(req: NextRequest) {
             return policyErrorResponse(err);
         }
         // S3 DeleteObjects 배치 한도 1000
+        const referenced = await getStorageReferenceGuard();
+        const removable = keys.filter((key) => !referenced(key));
         let deleted = 0;
-        for (let i = 0; i < keys.length; i += 1000) {
-            const chunk = keys.slice(i, i + 1000);
+        for (let i = 0; i < removable.length; i += 1000) {
+            const chunk = removable.slice(i, i + 1000);
             await r2Client.send(
                 new DeleteObjectsCommand({
                     Bucket: R2_BUCKET,

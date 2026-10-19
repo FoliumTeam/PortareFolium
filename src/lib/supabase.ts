@@ -10,10 +10,13 @@ const secret = process.env.SUPABASE_SECRET_KEY ?? "";
 const realServerClient: SupabaseClient | null =
     url && secret ? createClient(url, secret) : null;
 
-export const serverClient: SupabaseClient | null =
+export const unscopedServerClient: SupabaseClient | null =
     realServerClient || isSqliteRefugeMode()
-        ? createLocalizedClient(createRoutingServerClient(realServerClient))
+        ? createRoutingServerClient(realServerClient)
         : null;
+export const serverClient: SupabaseClient | null = unscopedServerClient
+    ? createLocalizedClient(unscopedServerClient)
+    : null;
 
 export const browserClient: SupabaseClient | null =
     url && publishable ? createClient(url, publishable) : null;

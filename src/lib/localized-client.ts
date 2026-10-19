@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getContentLocale } from "@/lib/content-locale";
 import type { Locale } from "@/lib/i18n";
+import { localizedConfigQuery } from "@/lib/localized-config-client";
 
 export const LOCALIZED_TABLES = [
     "about_data",
@@ -91,6 +92,8 @@ export const createLocalizedClient = (client: SupabaseClient): SupabaseClient =>
             }
             return (table: string) => {
                 const locale = getContentLocale();
+                if (table === "site_config" && locale !== "ko")
+                    return localizedConfigQuery(target, locale);
                 if (table === "resume_data") {
                     return scopeQuery(target.from(table), locale, table);
                 }

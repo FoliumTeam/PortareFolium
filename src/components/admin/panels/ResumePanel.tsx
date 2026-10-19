@@ -3,19 +3,19 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
-    getResumeBootstrap,
-    saveResumeBasicsPresentation,
-    saveResumePanel,
-    saveResumeTheme,
+    getResumeBootstrap as raw_getResumeBootstrap,
+    saveResumeBasicsPresentation as raw_saveResumeBasicsPresentation,
+    saveResumePanel as raw_saveResumePanel,
+    saveResumeTheme as raw_saveResumeTheme,
 } from "@/app/admin/actions/resume";
 import {
-    getPortfolioPanelBootstrap,
-    reorderFeaturedPortfolioItems,
-    setPortfolioFeatured,
+    getPortfolioPanelBootstrap as raw_getPortfolioPanelBootstrap,
+    reorderFeaturedPortfolioItems as raw_reorderFeaturedPortfolioItems,
+    setPortfolioFeatured as raw_setPortfolioFeatured,
 } from "@/app/admin/actions/portfolio";
 import {
-    getAboutBootstrap,
-    saveAboutIntroductions,
+    getAboutBootstrap as raw_getAboutBootstrap,
+    saveAboutIntroductions as raw_saveAboutIntroductions,
 } from "@/app/admin/actions/about";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField, normalizeUniqueJobFieldList } from "@/lib/job-field";
@@ -107,6 +107,22 @@ function normalizeSkills(resume: Resume): Resume {
     };
 }
 import { Switch } from "@/components/ui/switch";
+import { bindContentAction } from "@/lib/admin-content-state";
+const getResumeBootstrap = bindContentAction(raw_getResumeBootstrap);
+const saveResumeBasicsPresentation = bindContentAction(
+    raw_saveResumeBasicsPresentation
+);
+const saveResumePanel = bindContentAction(raw_saveResumePanel);
+const saveResumeTheme = bindContentAction(raw_saveResumeTheme);
+const getPortfolioPanelBootstrap = bindContentAction(
+    raw_getPortfolioPanelBootstrap
+);
+const reorderFeaturedPortfolioItems = bindContentAction(
+    raw_reorderFeaturedPortfolioItems
+);
+const setPortfolioFeatured = bindContentAction(raw_setPortfolioFeatured);
+const getAboutBootstrap = bindContentAction(raw_getAboutBootstrap);
+const saveAboutIntroductions = bindContentAction(raw_saveAboutIntroductions);
 
 type ResumeLayout = "classic" | "modern";
 
@@ -214,6 +230,7 @@ export default function ResumePanel() {
     const [featuredProjectsLoading, setFeaturedProjectsLoading] =
         useState(true);
     const [aboutData, setAboutData] = useState<AboutData | null>(null);
+    const savedAboutDataRef = useRef("{}");
     const [aboutRowId, setAboutRowId] = useState<string | null>(null);
     const [aboutSaving, setAboutSaving] = useState(false);
     // 직무 분야 필터 (null = 전체)
@@ -270,6 +287,7 @@ export default function ResumePanel() {
                 savedDataRef.current = JSON.stringify(loaded);
                 setResumeData(loaded);
             } else {
+                savedDataRef.current = JSON.stringify(defaultResume);
                 setResumeData(defaultResume);
             }
 
@@ -285,6 +303,7 @@ export default function ResumePanel() {
 
     useEffect(() => {
         getAboutBootstrap().then((result) => {
+            savedAboutDataRef.current = JSON.stringify(result.aboutData ?? {});
             setAboutData(result.aboutData ?? {});
             setAboutRowId(result.aboutRowId);
         });
@@ -325,7 +344,12 @@ export default function ResumePanel() {
         JSON.stringify(initialSectionLayout);
 
     // beforeunload + route navigation 가드
-    useUnsavedWarning(isDirty || isLayoutDirty);
+    useUnsavedWarning(
+        isDirty ||
+            isLayoutDirty ||
+            (aboutData !== null &&
+                JSON.stringify(aboutData) !== savedAboutDataRef.current)
+    );
 
     // 공개 화면의 disabled 상태와 관리자 편집 가능 여부 분리
     const sectionWrapperStyle = (key: string): React.CSSProperties => {
@@ -572,6 +596,7 @@ export default function ResumePanel() {
             setStatus({ type: "error", msg: result.error });
             return;
         }
+        savedAboutDataRef.current = JSON.stringify(aboutData);
         if (result.aboutRowId) setAboutRowId(result.aboutRowId);
         setStatus({
             type: "success",

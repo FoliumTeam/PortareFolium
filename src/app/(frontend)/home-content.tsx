@@ -69,6 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
         const { data } = await serverClient
             .from("about_data")
             .select("data")
+            .eq("published", true)
             .limit(1)
             .single();
         if (data?.data) {
@@ -99,7 +100,12 @@ export default async function HomePageContent({
 
     if (serverClient) {
         const [aboutRes, siteRes, resumeRes] = await Promise.all([
-            serverClient.from("about_data").select("data").limit(1).single(),
+            serverClient
+                .from("about_data")
+                .select("data")
+                .eq("published", true)
+                .limit(1)
+                .single(),
             serverClient
                 .from("site_config")
                 .select("value")
@@ -108,6 +114,7 @@ export default async function HomePageContent({
             serverClient
                 .from("resume_data")
                 .select("data")
+                .eq("published", true)
                 .eq("lang", "ko")
                 .single(),
         ]);

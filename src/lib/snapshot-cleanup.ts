@@ -1,7 +1,8 @@
+import { bindContentAction } from "@/lib/admin-content-state";
 // editor_states snapshot 조회 + snapshot 삭제 후 true-orphan cleanup helper
 import {
-    countEditorSnapshots,
-    listEditorSnapshotContents,
+    countEditorSnapshots as raw_countEditorSnapshots,
+    listEditorSnapshotContents as raw_listEditorSnapshotContents,
 } from "@/app/admin/actions/editor-states";
 import { cleanupTrueOrphans, type CleanupArgs } from "@/lib/orphan-cleanup";
 
@@ -41,3 +42,8 @@ export async function maybeCleanupOnOpen(
         // best-effort
     }
 }
+
+const countEditorSnapshots = bindContentAction(raw_countEditorSnapshots);
+const listEditorSnapshotContents = bindContentAction(
+    raw_listEditorSnapshotContents
+);

@@ -1,15 +1,16 @@
 "use client";
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-    createApplicationProfile,
-    getApplicationProfilesBootstrap,
-    publishApplicationProfile,
-    revokeApplicationProfile,
-    issueApplicationProfileDraftToken,
-    saveApplicationProfile,
-    updateApplicationProfileFromParent,
+    createApplicationProfile as raw_createApplicationProfile,
+    getApplicationProfilesBootstrap as raw_getApplicationProfilesBootstrap,
+    publishApplicationProfile as raw_publishApplicationProfile,
+    revokeApplicationProfile as raw_revokeApplicationProfile,
+    issueApplicationProfileDraftToken as raw_issueApplicationProfileDraftToken,
+    saveApplicationProfile as raw_saveApplicationProfile,
+    updateApplicationProfileFromParent as raw_updateApplicationProfileFromParent,
 } from "@/app/admin/actions/application-profiles";
 import {
     EMPTY_APPLICATION_PROFILE_OVERRIDES,
@@ -19,6 +20,26 @@ import {
 import JobFieldManager, {
     type JobFieldItem,
 } from "@/components/admin/panels/JobFieldManager";
+import { bindContentAction } from "@/lib/admin-content-state";
+const createApplicationProfile = bindContentAction(
+    raw_createApplicationProfile
+);
+const getApplicationProfilesBootstrap = bindContentAction(
+    raw_getApplicationProfilesBootstrap
+);
+const publishApplicationProfile = bindContentAction(
+    raw_publishApplicationProfile
+);
+const revokeApplicationProfile = bindContentAction(
+    raw_revokeApplicationProfile
+);
+const issueApplicationProfileDraftToken = bindContentAction(
+    raw_issueApplicationProfileDraftToken
+);
+const saveApplicationProfile = bindContentAction(raw_saveApplicationProfile);
+const updateApplicationProfileFromParent = bindContentAction(
+    raw_updateApplicationProfileFromParent
+);
 
 type ProfileWithStatus = ApplicationProfile & {
     needsUpdate: boolean;
@@ -54,6 +75,21 @@ export default function ApplicationProfilesPanel() {
     const selected = useMemo(
         () => profiles.find((profile) => profile.id === selectedId) ?? null,
         [profiles, selectedId]
+    );
+
+    useUnsavedWarning(
+        selected
+            ? name !== selected.name ||
+                  parentJobField !== selected.parent_job_field ||
+                  jobDescription !== selected.job_description ||
+                  JSON.stringify(overrides) !==
+                      JSON.stringify(selected.overrides)
+            : Boolean(
+                  name ||
+                  jobDescription ||
+                  JSON.stringify(overrides) !==
+                      JSON.stringify(EMPTY_APPLICATION_PROFILE_OVERRIDES)
+              )
     );
 
     const load = async () => {

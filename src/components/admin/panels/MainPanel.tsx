@@ -9,12 +9,14 @@ import {
     RefreshCw,
 } from "lucide-react";
 import {
-    getMainPanelBootstrap,
+    getMainPanelBootstrap as raw_getMainPanelBootstrap,
     type MainPanelBootstrap,
 } from "@/app/admin/actions/main";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { TabId } from "@/components/admin/AdminSidebar";
+import { bindContentAction } from "@/lib/admin-content-state";
+const getMainPanelBootstrap = bindContentAction(raw_getMainPanelBootstrap);
 
 type MainPanelProps = {
     refugeMode?: boolean;

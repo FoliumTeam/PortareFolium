@@ -1,6 +1,11 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
-import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath as revalidatePath } from "@/lib/localized-revalidate";
 import { requireAdminSession } from "@/lib/server-admin";
 import {
     createApplicationProfileToken,
@@ -64,7 +69,7 @@ async function listProfiles(): Promise<ApplicationProfile[]> {
 }
 
 // 지원 프로필 패널 초기 데이터 조회
-export async function getApplicationProfilesBootstrap(): Promise<{
+async function getApplicationProfilesBootstrapInLocale(): Promise<{
     profiles: (ApplicationProfile & {
         needsUpdate: boolean;
         publicUrl: string;
@@ -109,7 +114,7 @@ export async function getApplicationProfilesBootstrap(): Promise<{
 }
 
 // 새 JD 지원 프로필 생성
-export async function createApplicationProfile(
+async function createApplicationProfileInLocale(
     input: Omit<ApplicationProfileInput, "id" | "expectedVersion">
 ): Promise<ApplicationProfileResult> {
     await requireAdminSession();
@@ -149,7 +154,7 @@ export async function createApplicationProfile(
 }
 
 // JD별 수정사항 저장
-export async function saveApplicationProfile(
+async function saveApplicationProfileInLocale(
     input: ApplicationProfileInput
 ): Promise<ApplicationProfileResult> {
     await requireAdminSession();
@@ -185,7 +190,7 @@ export async function saveApplicationProfile(
 }
 
 // 최신 부모 직군 기준본 반영
-export async function updateApplicationProfileFromParent(
+async function updateApplicationProfileFromParentInLocale(
     id: string,
     expectedVersion: number
 ): Promise<ApplicationProfileResult> {
@@ -227,7 +232,7 @@ export async function updateApplicationProfileFromParent(
 }
 
 // 공개본 확정 또는 재생성
-export async function publishApplicationProfile(
+async function publishApplicationProfileInLocale(
     id: string,
     expectedVersion: number
 ): Promise<ApplicationProfileResult> {
@@ -261,7 +266,7 @@ export async function publishApplicationProfile(
 }
 
 // 공개 링크 폐기
-export async function revokeApplicationProfile(
+async function revokeApplicationProfileInLocale(
     id: string,
     expectedVersion: number
 ): Promise<ApplicationProfileResult> {
@@ -290,7 +295,7 @@ export async function revokeApplicationProfile(
 }
 
 // 특정 지원 프로필 초안 전용 MCP 토큰 발급
-export async function issueApplicationProfileDraftToken(
+async function issueApplicationProfileDraftTokenInLocale(
     id: string,
     durationMin = 60
 ): Promise<
@@ -310,4 +315,143 @@ export async function issueApplicationProfileDraftToken(
     return token
         ? { success: true, token }
         : { success: false, error: "토큰 발급 실패" };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getApplicationProfilesBootstrap(
+    ...args: [
+        ...Parameters<typeof getApplicationProfilesBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<
+    Awaited<ReturnType<typeof getApplicationProfilesBootstrapInLocale>>
+> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getApplicationProfilesBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getApplicationProfilesBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function createApplicationProfile(
+    ...args: [
+        ...Parameters<typeof createApplicationProfileInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof createApplicationProfileInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof createApplicationProfileInLocale>;
+    return withContentLocale(locale, () =>
+        createApplicationProfileInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveApplicationProfile(
+    ...args: [
+        ...Parameters<typeof saveApplicationProfileInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof saveApplicationProfileInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveApplicationProfileInLocale>;
+    return withContentLocale(locale, () =>
+        saveApplicationProfileInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function updateApplicationProfileFromParent(
+    ...args: [
+        ...Parameters<typeof updateApplicationProfileFromParentInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<
+    Awaited<ReturnType<typeof updateApplicationProfileFromParentInLocale>>
+> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof updateApplicationProfileFromParentInLocale>;
+    return withContentLocale(locale, () =>
+        updateApplicationProfileFromParentInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function publishApplicationProfile(
+    ...args: [
+        ...Parameters<typeof publishApplicationProfileInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof publishApplicationProfileInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof publishApplicationProfileInLocale>;
+    return withContentLocale(locale, () =>
+        publishApplicationProfileInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function revokeApplicationProfile(
+    ...args: [
+        ...Parameters<typeof revokeApplicationProfileInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof revokeApplicationProfileInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof revokeApplicationProfileInLocale>;
+    return withContentLocale(locale, () =>
+        revokeApplicationProfileInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function issueApplicationProfileDraftToken(
+    ...args: [
+        ...Parameters<typeof issueApplicationProfileDraftTokenInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<
+    Awaited<ReturnType<typeof issueApplicationProfileDraftTokenInLocale>>
+> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof issueApplicationProfileDraftTokenInLocale>;
+    return withContentLocale(locale, () =>
+        issueApplicationProfileDraftTokenInLocale(...values)
+    );
 }

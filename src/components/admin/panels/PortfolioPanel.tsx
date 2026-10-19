@@ -13,19 +13,19 @@ import {
 } from "@/lib/orphan-cleanup";
 import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
-import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
+import { rewriteEditorSnapshotUrls as raw_rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
-    batchSetPortfolioJobField,
-    batchSetPortfolioPublished,
-    deletePortfolioItemById,
-    getPortfolioItemContent,
-    getPortfolioPanelBootstrap,
-    reorderFeaturedPortfolioItems,
-    savePortfolioAiSection,
-    savePortfolioDesign,
-    savePortfolioItem,
-    setPortfolioFeatured,
-    setPortfolioPublished,
+    batchSetPortfolioJobField as raw_batchSetPortfolioJobField,
+    batchSetPortfolioPublished as raw_batchSetPortfolioPublished,
+    deletePortfolioItemById as raw_deletePortfolioItemById,
+    getPortfolioItemContent as raw_getPortfolioItemContent,
+    getPortfolioPanelBootstrap as raw_getPortfolioPanelBootstrap,
+    reorderFeaturedPortfolioItems as raw_reorderFeaturedPortfolioItems,
+    savePortfolioAiSection as raw_savePortfolioAiSection,
+    savePortfolioDesign as raw_savePortfolioDesign,
+    savePortfolioItem as raw_savePortfolioItem,
+    setPortfolioFeatured as raw_setPortfolioFeatured,
+    setPortfolioPublished as raw_setPortfolioPublished,
 } from "@/app/admin/actions/portfolio";
 import {
     Eye,
@@ -77,6 +77,29 @@ import {
     type PortfolioAdminItem,
     type PortfolioEditorForm,
 } from "@/lib/portfolio-admin";
+import { bindContentAction } from "@/lib/admin-content-state";
+const rewriteEditorSnapshotUrls = bindContentAction(
+    raw_rewriteEditorSnapshotUrls
+);
+const batchSetPortfolioJobField = bindContentAction(
+    raw_batchSetPortfolioJobField
+);
+const batchSetPortfolioPublished = bindContentAction(
+    raw_batchSetPortfolioPublished
+);
+const deletePortfolioItemById = bindContentAction(raw_deletePortfolioItemById);
+const getPortfolioItemContent = bindContentAction(raw_getPortfolioItemContent);
+const getPortfolioPanelBootstrap = bindContentAction(
+    raw_getPortfolioPanelBootstrap
+);
+const reorderFeaturedPortfolioItems = bindContentAction(
+    raw_reorderFeaturedPortfolioItems
+);
+const savePortfolioAiSection = bindContentAction(raw_savePortfolioAiSection);
+const savePortfolioDesign = bindContentAction(raw_savePortfolioDesign);
+const savePortfolioItem = bindContentAction(raw_savePortfolioItem);
+const setPortfolioFeatured = bindContentAction(raw_setPortfolioFeatured);
+const setPortfolioPublished = bindContentAction(raw_setPortfolioPublished);
 
 type PortfolioItem = PortfolioAdminItem;
 type ItemForm = PortfolioEditorForm;
@@ -439,7 +462,7 @@ export default function PortfolioPanel({
             setForm(persistedForm);
             setEditTarget(result.item);
             onEditPathChange?.(`edit/${result.item.slug}`);
-            setSuccess("저장 완료 · 공개 화면에 즉시 반영됩니다.");
+            setSuccess("저장 완료 · 현재 공개 상태 유지");
             void loadItems();
         }
     }, [form, editTarget]);
@@ -610,7 +633,8 @@ export default function PortfolioPanel({
                 </div>
                 <ContentEditorGuide kind="portfolio" />
                 <p className="text-center text-base text-(--color-muted)">
-                    저장하면 공개 화면에 즉시 반영됩니다.
+                    저장 시 현재 공개 상태 유지. 공개·비공개 전환은 목록에서
+                    선택.
                 </p>
 
                 {/* 제목 입력 */}
@@ -723,7 +747,8 @@ export default function PortfolioPanel({
                         </span>
                     ) : (
                         <span className="text-base text-(--color-muted)">
-                            저장하면 공개 화면에 즉시 반영됩니다.
+                            저장 시 현재 공개 상태 유지. 공개·비공개 전환은
+                            목록에서 선택.
                         </span>
                     )}
                     <div className="flex items-center gap-3">
