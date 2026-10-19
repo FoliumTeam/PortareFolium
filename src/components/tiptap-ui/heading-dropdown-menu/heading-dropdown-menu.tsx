@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback, useState } from "react";
 
@@ -87,7 +88,9 @@ export const HeadingDropdownMenu = forwardRef<
                 onOpenChange={handleOpenChange}
             >
                 <DropdownMenuTrigger asChild>
-                    <Button
+                    <LocalizedElement
+                        as={Button}
+                        translatedProps={["aria-label", "tooltip"]}
                         type="button"
                         variant="ghost"
                         data-active-state={isActive ? "on" : "off"}
@@ -109,7 +112,7 @@ export const HeadingDropdownMenu = forwardRef<
                                 <ChevronDownIcon className="tiptap-button-dropdown-small" />
                             </>
                         )}
-                    </Button>
+                    </LocalizedElement>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent align="start">

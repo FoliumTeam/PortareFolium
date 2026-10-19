@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { LocalizedText } from "@/components/LocalizedText";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
 
@@ -45,8 +46,12 @@ function CommandDialog({
     return (
         <Dialog {...props}>
             <DialogHeader className="sr-only">
-                <DialogTitle>{title}</DialogTitle>
-                <DialogDescription>{description}</DialogDescription>
+                <DialogTitle>
+                    <LocalizedText text={title} />
+                </DialogTitle>
+                <DialogDescription>
+                    <LocalizedText text={description} />
+                </DialogDescription>
             </DialogHeader>
             <DialogContent
                 className={cn("overflow-hidden p-0", className)}

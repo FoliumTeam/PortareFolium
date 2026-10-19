@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { SkillBadge } from "@/components/resume/SkillBadge";
@@ -322,27 +323,33 @@ export default function SkillEditorModal({
                 </button>
 
                 <h3 className="mb-4 text-lg font-bold text-(--color-foreground)">
-                    {originalCategoryIdx === null ? "스킬 추가" : "스킬 수정"}
+                    {originalCategoryIdx === null ? (
+                        <LocalizedText text={"스킬 추가"} />
+                    ) : (
+                        <LocalizedText text={"스킬 수정"} />
+                    )}
                 </h3>
 
                 {/* draft banner */}
                 {draftBanner && (
                     <div className="mb-4 flex items-center justify-between rounded-lg border border-yellow-400 bg-yellow-50 px-4 py-2 dark:bg-yellow-900/20">
                         <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                            임시 저장된 내용이 있습니다
+                            <LocalizedText
+                                text={"임시 저장된 내용이 있습니다"}
+                            />
                         </span>
                         <div className="flex gap-2">
                             <button
                                 onClick={loadDraft}
                                 className="rounded-lg bg-yellow-500 px-3 py-1 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
-                                이어서 작성
+                                <LocalizedText text={"이어서 작성"} />
                             </button>
                             <button
                                 onClick={deleteDraft}
                                 className="rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
-                                삭제
+                                <LocalizedText text={"삭제"} />
                             </button>
                         </div>
                     </div>
@@ -353,20 +360,24 @@ export default function SkillEditorModal({
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/40">
                         <div className="mx-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-6 shadow-xl">
                             <p className="mb-4 text-sm text-(--color-foreground)">
-                                변경 사항이 임시 저장됩니다. 나가시겠습니까?
+                                <LocalizedText
+                                    text={
+                                        "변경 사항이 임시 저장됩니다. 나가시겠습니까?"
+                                    }
+                                />
                             </p>
                             <div className="flex justify-end gap-2">
                                 <button
                                     onClick={() => setShowConfirm(false)}
                                     className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                 >
-                                    계속 작성
+                                    <LocalizedText text={"계속 작성"} />
                                 </button>
                                 <button
                                     onClick={exitWithDraft}
                                     className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    나가기
+                                    <LocalizedText text={"나가기"} />
                                 </button>
                             </div>
                         </div>
@@ -377,9 +388,11 @@ export default function SkillEditorModal({
                     {/* 이름 */}
                     <div className="flex flex-col space-y-1">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            이름 *
+                            <LocalizedText text={"이름 *"} />
                         </label>
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             value={form.name}
                             onChange={(e) =>
                                 updateForm({ name: e.target.value })
@@ -392,9 +405,11 @@ export default function SkillEditorModal({
                     {/* 카테고리 */}
                     <div className="flex flex-col space-y-1">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            카테고리
+                            <LocalizedText text={"카테고리"} />
                         </label>
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             list="skill-categories"
                             value={form.categoryName}
                             onChange={(e) =>
@@ -413,9 +428,11 @@ export default function SkillEditorModal({
                     {/* 숙련도 */}
                     <div className="flex flex-col space-y-1">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            숙련도
+                            <LocalizedText text={"숙련도"} />
                         </label>
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             value={form.level}
                             onChange={(e) =>
                                 updateForm({ level: e.target.value })
@@ -435,7 +452,7 @@ export default function SkillEditorModal({
                     {/* 연결 직장 */}
                     <div className="flex flex-col space-y-2">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            연결 직장
+                            <LocalizedText text={"연결 직장"} />
                         </label>
                         {workOptions.length > 0 ? (
                             <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-(--color-border) p-2">
@@ -473,7 +490,9 @@ export default function SkillEditorModal({
                             </div>
                         ) : (
                             <p className="text-xs text-(--color-muted)">
-                                등록된 직장이 없습니다
+                                <LocalizedText
+                                    text={"등록된 직장이 없습니다"}
+                                />
                             </p>
                         )}
                     </div>
@@ -481,7 +500,7 @@ export default function SkillEditorModal({
                     {/* 연결 프로젝트 */}
                     <div className="flex flex-col space-y-2">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            연결 프로젝트
+                            <LocalizedText text={"연결 프로젝트"} />
                         </label>
                         {projectOptions.length > 0 ? (
                             <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-(--color-border) p-2">
@@ -520,7 +539,9 @@ export default function SkillEditorModal({
                             </div>
                         ) : (
                             <p className="text-xs text-(--color-muted)">
-                                등록된 프로젝트가 없습니다
+                                <LocalizedText
+                                    text={"등록된 프로젝트가 없습니다"}
+                                />
                             </p>
                         )}
                     </div>
@@ -528,15 +549,17 @@ export default function SkillEditorModal({
                     {/* 아이콘 */}
                     <div className="flex flex-col space-y-2">
                         <label className="text-sm font-medium text-(--color-muted)">
-                            아이콘
+                            <LocalizedText text={"아이콘"} />
                         </label>
                         <div className="flex items-end gap-3">
                             <div className="flex flex-1 gap-2">
                                 <div className="flex flex-1 flex-col space-y-1">
                                     <label className="text-xs text-(--color-muted)">
-                                        Slug
+                                        <LocalizedText text={"Slug"} />
                                     </label>
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         value={form.iconSlug}
                                         onChange={(e) =>
                                             updateForm({
@@ -549,9 +572,11 @@ export default function SkillEditorModal({
                                 </div>
                                 <div className="flex flex-1 flex-col space-y-1">
                                     <label className="text-xs text-(--color-muted)">
-                                        색상
+                                        <LocalizedText text={"색상"} />
                                     </label>
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         value={form.iconColor}
                                         onChange={(e) =>
                                             updateForm({
@@ -566,9 +591,11 @@ export default function SkillEditorModal({
                         </div>
                         <div className="flex flex-col space-y-1">
                             <label className="text-xs text-(--color-muted)">
-                                이미지 URL
+                                <LocalizedText text={"이미지 URL"} />
                             </label>
-                            <input
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 value={form.iconUrl}
                                 onChange={(e) =>
                                     updateForm({ iconUrl: e.target.value })
@@ -594,14 +621,14 @@ export default function SkillEditorModal({
                         onClick={attemptClose}
                         className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                     >
-                        취소
+                        <LocalizedText text={"취소"} />
                     </button>
                     <button
                         disabled={!form.name.trim()}
                         onClick={handleSave}
                         className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                     >
-                        저장
+                        <LocalizedText text={"저장"} />
                     </button>
                 </div>
             </div>

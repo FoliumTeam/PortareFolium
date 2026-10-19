@@ -1,8 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { setContentDirty } from "@/lib/admin-content-state";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // dirty 상태에서 브라우저 이탈 방지
 export function useUnsavedWarning(isDirty: boolean) {
+    const owner = useRef({});
+    useEffect(() => {
+        const key = owner.current;
+        setContentDirty(key, isDirty);
+        return () => setContentDirty(key, false);
+    }, [isDirty]);
     const { confirm } = useConfirmDialog();
 
     useEffect(() => {

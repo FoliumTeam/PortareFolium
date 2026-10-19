@@ -1,19 +1,22 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { isSqliteRefugeMode, stableJson } from "@/lib/refuge/mode";
+import { getRefugeUniqueKeys } from "@/lib/refuge/constraints";
 import {
     appendRefugeJournal,
     listRefugeRows,
+    withRefugeWriteTransaction,
     writeRefugeRows,
 } from "@/lib/refuge/store";
 import {
     getRefugeIdentity,
     isRefugeQueryableTable,
     refugeTableHasColumn,
+    type RefugeJournalEntry,
     type RefugeRow,
 } from "@/lib/refuge/schema";
 
-type QueryError = { message: string };
+type QueryError = { message: string; code?: string };
 type QueryResponse<T> = {
     data: T | null;
     error: QueryError | null;
@@ -30,7 +33,11 @@ type FilterOperator =
     | "is"
     | "not";
 type Filter = { column: string; operator: FilterOperator; value: unknown };
-type OrFilter = { column: string; operator: "eq" | "is"; value: unknown };
+type OrFilter = {
+    column: string;
+    operator: "eq" | "is" | "contains";
+    value: unknown;
+};
 type OrderRule = { column: string; ascending: boolean };
 type SelectOptions = { count?: "exact" | null; head?: boolean };
 type MaybePromise<T> = PromiseLike<T>;
@@ -42,7 +49,18 @@ function getValue(row: RefugeRow, column: string): unknown {
     return row[column];
 }
 
-function valuesEqual(actual: unknown, expected: unknown): boolean {
+function valuesEqual(
+    actual: unknown,
+    expected: unknown,
+    column: string
+): boolean {
+    if (column === "data" && typeof expected === "string") {
+        try {
+            return stableJson(actual) === stableJson(JSON.parse(expected));
+        } catch {
+            return false;
+        }
+    }
     if (Array.isArray(actual)) return actual.includes(expected);
     return actual === expected;
 }
@@ -61,9 +79,9 @@ function matchesFilter(row: RefugeRow, filter: Filter): boolean {
     const actual = getValue(row, filter.column);
     switch (filter.operator) {
         case "eq":
-            return valuesEqual(actual, filter.value);
+            return valuesEqual(actual, filter.value, filter.column);
         case "neq":
-            return !valuesEqual(actual, filter.value);
+            return !valuesEqual(actual, filter.value, filter.column);
         case "lt":
             return compareValues(actual, filter.value) < 0;
         case "gt":
@@ -89,7 +107,7 @@ function matchesFilter(row: RefugeRow, filter: Filter): boolean {
                     ? actual != null
                     : actual !== value.value;
             }
-            return !valuesEqual(actual, value.value);
+            return !valuesEqual(actual, value.value, filter.column);
         }
     }
 }
@@ -106,6 +124,17 @@ function parseOrFilter(raw: string): OrFilter[] {
                     { column: eqMatch[1]!, operator: "eq", value: eqMatch[2]! },
                 ];
             }
+            const containsMatch = part.match(
+                /^([a-zA-Z0-9_]+)\.cs\.\{([^{}]+)\}$/
+            );
+            if (containsMatch)
+                return [
+                    {
+                        column: containsMatch[1]!,
+                        operator: "contains",
+                        value: [containsMatch[2]!],
+                    },
+                ];
             const isNullMatch = part.match(/^([a-zA-Z0-9_]+)\.is\.null$/);
             if (isNullMatch) {
                 return [
@@ -151,6 +180,24 @@ function applyOrdering(rows: RefugeRow[], orders: OrderRule[]): RefugeRow[] {
     });
 }
 
+// 일괄 자료 전체의 고유 키 충돌을 저장 전 검사
+function assertUniqueRows(table: string, rows: RefugeRow[]): void {
+    for (const keys of getRefugeUniqueKeys(table)) {
+        const seen = new Set<string>();
+        for (const row of rows) {
+            const values = keys.map((key) => row[key]);
+            if (values.some((value) => value == null)) continue;
+            const identity = stableJson(values);
+            if (seen.has(identity))
+                throw Object.assign(
+                    new Error(`${table} duplicate key: ${keys.join(",")}`),
+                    { code: "23505" }
+                );
+            seen.add(identity);
+        }
+    }
+}
+
 class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
     private mode: QueryMode = "select";
     private selectedFields: string | null = null;
@@ -165,6 +212,7 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
     private maybeSingleResult = false;
     private payload: RefugeRow | RefugeRow[] | null = null;
     private onConflict: string | null = null;
+    private pendingJournal: RefugeJournalEntry[] = [];
 
     constructor(
         private readonly table: string,
@@ -302,9 +350,19 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             const response = this.executeSync();
             return Promise.resolve(response);
         } catch (error) {
+            const code =
+                error &&
+                typeof error === "object" &&
+                "code" in error &&
+                typeof error.code === "string"
+                    ? error.code
+                    : undefined;
             return Promise.resolve({
                 data: null,
-                error: { message: (error as Error).message },
+                error: {
+                    message: (error as Error).message,
+                    ...(code ? { code } : {}),
+                },
                 count: null,
             });
         }
@@ -318,6 +376,21 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
                 count: null,
             };
         }
+        if (this.mode === "select") return this.executeRows();
+        return withRefugeWriteTransaction(() => {
+            this.pendingJournal = [];
+            const result = this.executeRows();
+            if (result.error)
+                throw Object.assign(new Error(result.error.message), {
+                    code: result.error.code,
+                });
+            for (const entry of this.pendingJournal) appendRefugeJournal(entry);
+            return result;
+        });
+    }
+
+    // 쓰기 잠금 안에서 최신 자료 조회와 조건 판정
+    private executeRows(): QueryResponse<unknown> {
         const existingRows = listRefugeRows(this.table);
         if (this.mode === "insert" || this.mode === "upsert") {
             return this.executeInsertOrUpsert(existingRows);
@@ -371,6 +444,10 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             const index = rows.findIndex(
                 (row) => this.resolveIdentity(row) === identity
             );
+            if (this.mode === "insert" && index >= 0)
+                throw Object.assign(new Error(`${this.table} duplicate key`), {
+                    code: "23505",
+                });
             const before = index >= 0 ? { ...rows[index]! } : null;
             if (index >= 0) rows[index] = { ...rows[index]!, ...nextRow };
             else rows.push(nextRow);
@@ -383,6 +460,7 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
                 after
             );
         }
+        assertUniqueRows(this.table, rows);
         writeRefugeRows(this.table, rows);
         return this.formatRows(changedRows);
     }
@@ -408,6 +486,7 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             this.journal("update", identity, row, after);
             return after;
         });
+        assertUniqueRows(this.table, rows);
         writeRefugeRows(this.table, rows);
         return this.formatRows(changedRows);
     }
@@ -436,6 +515,16 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
             projectRow(row, this.selectedFields)
         );
         if (this.singleResult || this.maybeSingleResult) {
+            if (projected.length > 1) {
+                return {
+                    data: null,
+                    error: {
+                        message: "Multiple rows returned",
+                        code: "PGRST116",
+                    },
+                    count,
+                };
+            }
             const first = projected[0] ?? null;
             if (!first && this.singleResult) {
                 return {
@@ -450,8 +539,12 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
     }
 
     private resolveIdentity(row: RefugeRow): string {
-        if (this.onConflict && row[this.onConflict] != null) {
-            return String(row[this.onConflict]);
+        if (this.onConflict) {
+            const values = this.onConflict
+                .split(",")
+                .map((column) => row[column.trim()]);
+            if (values.every((value) => value != null))
+                return values.map(String).join("::");
         }
         return getRefugeIdentity(this.table, row);
     }
@@ -462,7 +555,7 @@ class RefugeQueryBuilder implements MaybePromise<QueryResponse<unknown>> {
         before: RefugeRow | null,
         after: RefugeRow | null
     ): void {
-        appendRefugeJournal({
+        this.pendingJournal.push({
             id: randomUUID(),
             at: new Date().toISOString(),
             table: this.table,

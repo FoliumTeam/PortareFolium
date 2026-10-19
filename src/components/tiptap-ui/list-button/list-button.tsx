@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback } from "react";
 
@@ -96,7 +97,9 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
         }
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 variant="ghost"
                 data-active-state={isActive ? "on" : "off"}
@@ -116,7 +119,9 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
                     <>
                         <Icon className="tiptap-button-icon" />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <ListShortcutBadge
@@ -126,7 +131,7 @@ export const ListButton = forwardRef<HTMLButtonElement, ListButtonProps>(
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

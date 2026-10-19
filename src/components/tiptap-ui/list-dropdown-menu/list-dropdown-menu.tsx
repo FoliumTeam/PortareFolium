@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement } from "@/components/LocalizedText";
 
 import { useCallback, useState } from "react";
 import { type Editor } from "@tiptap/react";
@@ -86,7 +87,9 @@ export function ListDropdownMenu({
             onOpenChange={handleOnOpenChange}
         >
             <DropdownMenuTrigger asChild>
-                <Button
+                <LocalizedElement
+                    as={Button}
+                    translatedProps={["aria-label", "tooltip"]}
                     type="button"
                     variant="ghost"
                     data-active-state={isActive ? "on" : "off"}
@@ -100,7 +103,7 @@ export function ListDropdownMenu({
                 >
                     <Icon className="tiptap-button-icon" />
                     <ChevronDownIcon className="tiptap-button-dropdown-small" />
-                </Button>
+                </LocalizedElement>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="start">

@@ -1,13 +1,12 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Download, X, ChevronDown, Loader2 } from "lucide-react";
 import { PDF_COLOR_SCHEMES, type PdfColorScheme } from "@/lib/color-schemes";
 import { getPdfImageSource } from "@/lib/pdf-image-source";
-
-// A4 비율 (297mm / 210mm)
-const A4_RATIO = 297 / 210;
+import { paginateBlocks } from "@/lib/pdf-pagination";
 
 export interface PdfSection {
     key: string;
@@ -21,128 +20,6 @@ interface Props {
     contentRef: React.RefObject<HTMLElement | null>;
     fileName?: string;
     sections?: PdfSection[];
-}
-
-// spacer 생성 헬퍼
-function createSpacer(height: number, isGridItem: boolean): HTMLElement {
-    const spacer = document.createElement("div");
-    spacer.setAttribute("data-pdf-spacer", "true");
-    spacer.style.height = `${height}px`;
-    spacer.style.background = "transparent";
-    spacer.style.pointerEvents = "none";
-    // grid item spacer는 전체 열 span
-    if (isGridItem) spacer.style.gridColumn = "1 / -1";
-    return spacer;
-}
-
-// 블록 높이 측정 후 페이지 경계에서 잘리는 블록 앞에 spacer 삽입
-function paginateBlocks(container: HTMLElement): number[] {
-    const pageWidth = container.offsetWidth;
-    if (pageWidth === 0) return [];
-    const pageHeight = pageWidth * A4_RATIO;
-
-    // 기존 spacer 제거
-    container
-        .querySelectorAll("[data-pdf-spacer]")
-        .forEach((el) => el.remove());
-
-    const allBlocks = container.querySelectorAll<HTMLElement>(
-        "[data-pdf-block], [data-pdf-block-item]"
-    );
-    // container block이 block-type 자식을 가진 경우 container 제외 (자식이 개별 처리)
-    const blocks = Array.from(allBlocks).filter((block) => {
-        if (block.hasAttribute("data-pdf-block-item")) return true;
-        return !block.querySelector("[data-pdf-block], [data-pdf-block-item]");
-    });
-    if (blocks.length === 0) return [];
-
-    const containerRect = container.getBoundingClientRect();
-    const pageBreaks: number[] = [];
-    let currentPageBottom = pageHeight;
-    // grid row 중복 처리 방지용
-    let lastGridRowTop = -Infinity;
-
-    for (const block of blocks) {
-        const isGridItem = block.hasAttribute("data-pdf-block-item");
-        const blockRect = block.getBoundingClientRect();
-        let blockTop = blockRect.top - containerRect.top;
-
-        // grid item: 같은 행 아이템은 skip (첫 번째 아이템만 처리)
-        if (isGridItem) {
-            if (Math.abs(blockTop - lastGridRowTop) < 2) continue;
-            lastGridRowTop = blockTop;
-        }
-
-        // grid item: 같은 행의 가장 높은 아이템 기준으로 row bottom 계산
-        let blockBottom = blockTop + blockRect.height;
-        if (isGridItem && block.parentElement) {
-            const siblings = block.parentElement.querySelectorAll<HTMLElement>(
-                "[data-pdf-block-item]"
-            );
-            for (const sib of siblings) {
-                const sibRect = sib.getBoundingClientRect();
-                const sibTop = sibRect.top - containerRect.top;
-                if (Math.abs(sibTop - blockTop) < 2) {
-                    blockBottom = Math.max(
-                        blockBottom,
-                        sibTop + sibRect.height
-                    );
-                }
-            }
-        }
-
-        const blockHeight = blockBottom - blockTop;
-
-        // 블록이 현재 페이지에 맞으면 skip
-        if (blockBottom <= currentPageBottom + 1) continue;
-
-        // 블록이 A4 한 페이지보다 큰 경우 → graceful degradation
-        if (blockHeight > pageHeight) {
-            while (currentPageBottom < blockBottom) {
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-            continue;
-        }
-
-        // 블록이 페이지 경계를 넘지만 한 페이지에 들어가는 크기 → spacer 삽입
-        const spacerHeight = currentPageBottom - blockTop;
-        if (spacerHeight > 0 && spacerHeight < pageHeight) {
-            block.parentElement?.insertBefore(
-                createSpacer(spacerHeight, isGridItem),
-                block
-            );
-            pageBreaks.push(currentPageBottom);
-            currentPageBottom += pageHeight;
-        } else {
-            while (currentPageBottom < blockTop) {
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-            if (
-                blockBottom > currentPageBottom + 1 &&
-                blockHeight <= pageHeight
-            ) {
-                const gap = currentPageBottom - blockTop;
-                if (gap > 0 && gap < pageHeight) {
-                    block.parentElement?.insertBefore(
-                        createSpacer(gap, isGridItem),
-                        block
-                    );
-                }
-                pageBreaks.push(currentPageBottom);
-                currentPageBottom += pageHeight;
-            }
-        }
-
-        // 보정: 블록이 삽입 후에도 다중 페이지를 넘을 수 있음
-        while (currentPageBottom < blockBottom) {
-            pageBreaks.push(currentPageBottom);
-            currentPageBottom += pageHeight;
-        }
-    }
-
-    return pageBreaks;
 }
 
 export default function PdfPreviewModal({
@@ -266,7 +143,12 @@ export default function PdfPreviewModal({
                 },
             });
             const imgData = canvas.toDataURL("image/png");
-            const pdf = new jsPDF("p", "mm", "a4");
+            const pdf = new jsPDF({
+                orientation: "p",
+                unit: "mm",
+                format: "a4",
+                compress: true,
+            });
             const pageWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             const imgWidth = pageWidth;
@@ -307,7 +189,9 @@ export default function PdfPreviewModal({
             {/* 사이드바 컨트롤 */}
             <div className="relative z-10 flex w-72 shrink-0 flex-col border-r border-zinc-700 bg-zinc-900 text-white">
                 <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-3">
-                    <h2 className="text-sm font-semibold">PDF 내보내기</h2>
+                    <h2 className="text-sm font-semibold">
+                        <LocalizedText text={"PDF 내보내기"} />
+                    </h2>
                     <button
                         onClick={onClose}
                         className="rounded p-1 transition-colors hover:bg-zinc-700"
@@ -320,7 +204,7 @@ export default function PdfPreviewModal({
                     {/* 컬러 스킴 선택 */}
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-zinc-400">
-                            Color Scheme
+                            <LocalizedText text={"Color Scheme"} />
                         </label>
                         <div className="relative" ref={dropdownRef}>
                             <button
@@ -336,7 +220,13 @@ export default function PdfPreviewModal({
                                     }}
                                 />
                                 <span className="flex-1">
-                                    {currentScheme?.label ?? scheme}
+                                    {
+                                        <LocalizedText
+                                            text={
+                                                currentScheme?.label ?? scheme
+                                            }
+                                        />
+                                    }
                                 </span>
                                 <ChevronDown
                                     className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
@@ -359,7 +249,13 @@ export default function PdfPreviewModal({
                                                     backgroundColor: opt.swatch,
                                                 }}
                                             />
-                                            <span>{opt.label}</span>
+                                            <span>
+                                                {
+                                                    <LocalizedText
+                                                        text={opt.label}
+                                                    />
+                                                }
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -371,7 +267,7 @@ export default function PdfPreviewModal({
                     {sections && sections.length > 0 && (
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-zinc-400">
-                                Sections
+                                <LocalizedText text={"Sections"} />
                             </label>
                             <div className="space-y-1.5">
                                 {sections.map((s) => (
@@ -390,7 +286,9 @@ export default function PdfPreviewModal({
                                             }
                                             className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-white"
                                         />
-                                        <span>{s.label}</span>
+                                        <span>
+                                            {<LocalizedText text={s.label} />}
+                                        </span>
                                     </label>
                                 ))}
                             </div>
@@ -400,10 +298,15 @@ export default function PdfPreviewModal({
                     {/* 페이지 정보 */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-zinc-400">
-                            Pages
+                            <LocalizedText text={"Pages"} />
                         </label>
                         <p className="text-sm text-zinc-300">
-                            {totalPages} {totalPages === 1 ? "page" : "pages"}
+                            {totalPages}{" "}
+                            {totalPages === 1 ? (
+                                <LocalizedText text={"page"} />
+                            ) : (
+                                <LocalizedText text={"pages"} />
+                            )}
                         </p>
                     </div>
                 </div>
@@ -420,7 +323,11 @@ export default function PdfPreviewModal({
                         ) : (
                             <Download className="h-4 w-4" />
                         )}
-                        {generating ? "생성 중..." : "PDF 다운로드"}
+                        {generating ? (
+                            <LocalizedText text={"생성 중..."} />
+                        ) : (
+                            <LocalizedText text={"PDF 다운로드"} />
+                        )}
                     </button>
                 </div>
             </div>

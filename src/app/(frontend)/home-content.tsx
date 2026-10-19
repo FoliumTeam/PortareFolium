@@ -1,4 +1,7 @@
-import Link from "next/link";
+import { getContentLocale } from "@/lib/content-locale";
+
+import { serverT } from "@/lib/server-i18n";
+import Link, { PublicAnchor } from "@/components/PublicLink";
 import { serverClient } from "@/lib/supabase";
 import { formatPubDateKST } from "@/lib/blog";
 import type { Metadata } from "next";
@@ -69,6 +72,7 @@ export async function generateMetadata(): Promise<Metadata> {
         const { data } = await serverClient
             .from("about_data")
             .select("data")
+            .eq("published", true)
             .limit(1)
             .single();
         if (data?.data) {
@@ -99,7 +103,12 @@ export default async function HomePageContent({
 
     if (serverClient) {
         const [aboutRes, siteRes, resumeRes] = await Promise.all([
-            serverClient.from("about_data").select("data").limit(1).single(),
+            serverClient
+                .from("about_data")
+                .select("data")
+                .eq("published", true)
+                .limit(1)
+                .single(),
             serverClient
                 .from("site_config")
                 .select("value")
@@ -108,6 +117,7 @@ export default async function HomePageContent({
             serverClient
                 .from("resume_data")
                 .select("data")
+                .eq("published", true)
                 .eq("lang", "ko")
                 .single(),
         ]);
@@ -219,7 +229,10 @@ export default async function HomePageContent({
                     slug: p.slug,
                     title: p.title,
                     displayDescription: p.description?.trim() || "",
-                    pubDateFormatted: formatPubDateKST(new Date(p.pub_date)),
+                    pubDateFormatted: formatPubDateKST(
+                        new Date(p.pub_date),
+                        getContentLocale()
+                    ),
                     pubDateIso: new Date(p.pub_date).toISOString(),
                     category: p.category?.trim() ?? null,
                     thumbnailUrl: p.thumbnail || null,
@@ -233,14 +246,17 @@ export default async function HomePageContent({
     const heroDesc =
         fieldIntroduction?.description ??
         about.description ??
-        "포트폴리오와 기술 블로그가 함께하는 공간입니다.";
+        serverT("포트폴리오와 기술 블로그가 함께하는 공간입니다.");
     const valuePillars =
         fieldIntroduction?.valuePillars &&
         fieldIntroduction.valuePillars.length > 0
             ? fieldIntroduction.valuePillars
             : about.valuePillars && about.valuePillars.length > 0
               ? about.valuePillars
-              : PLACEHOLDER_VALUE_PILLARS;
+              : PLACEHOLDER_VALUE_PILLARS.map((pillar) => ({
+                    ...pillar,
+                    description: serverT(pillar.description),
+                }));
 
     return (
         <>
@@ -262,17 +278,17 @@ export default async function HomePageContent({
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                                Featured Work
+                                {serverT("Featured Work")}
                             </p>
                             <h2 className="text-3xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                                Portfolio
+                                {serverT("Portfolio")}
                             </h2>
                         </div>
                         <Link
                             href={`/${jobField}/portfolio`}
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                         >
-                            전체 보기
+                            {serverT("전체 보기")}
                             <svg
                                 className="h-4 w-4"
                                 fill="none"
@@ -301,10 +317,10 @@ export default async function HomePageContent({
                 <section className="border-t border-(--color-border) py-16">
                     <div className="mb-10">
                         <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                            Core Competencies
+                            {serverT("Core Competencies")}
                         </p>
                         <h2 className="text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                            핵심 역량
+                            {serverT("핵심 역량")}
                         </h2>
                     </div>
                     <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
@@ -348,17 +364,17 @@ export default async function HomePageContent({
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                                Experience
+                                {serverT("Experience")}
                             </p>
                             <h2 className="text-3xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                                Work
+                                {serverT("Work")}
                             </h2>
                         </div>
                         <Link
                             href={`/${jobField}/resume`}
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                         >
-                            전체 이력서 보기
+                            {serverT("전체 이력서 보기")}
                             <svg
                                 className="h-4 w-4"
                                 fill="none"
@@ -384,20 +400,20 @@ export default async function HomePageContent({
                                 {(w.startDate || w.endDate) && (
                                     <p className="mb-1 text-[0.8rem] font-bold tracking-widest text-(--color-muted) uppercase">
                                         {w.startDate ?? ""} ~{" "}
-                                        {w.endDate ?? "Present"}
+                                        {w.endDate ?? serverT("Present")}
                                     </p>
                                 )}
                                 {w.name && (
                                     <h3 className="text-2xl leading-tight font-black text-(--color-foreground)">
                                         {w.url ? (
-                                            <a
+                                            <PublicAnchor
                                                 href={w.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="transition-colors hover:underline"
                                             >
                                                 {w.name}
-                                            </a>
+                                            </PublicAnchor>
                                         ) : (
                                             w.name
                                         )}
@@ -420,17 +436,17 @@ export default async function HomePageContent({
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                                Latest Posts
+                                {serverT("Latest Posts")}
                             </p>
                             <h2 className="text-3xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                                Blog
+                                {serverT("Blog")}
                             </h2>
                         </div>
                         <Link
                             href={`/${jobField}/blog`}
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                         >
-                            전체 보기
+                            {serverT("전체 보기")}
                             <svg
                                 className="h-4 w-4"
                                 fill="none"

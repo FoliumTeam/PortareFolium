@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedRichText } from "@/components/LocalizedText";
 
 import { useContext, useRef, useState } from "react";
 import { Download } from "lucide-react";
@@ -31,8 +32,10 @@ export default function PdfExportButton({
                         onClick={() => setOpen(true)}
                         className="flex items-center gap-2 rounded-lg border border-(--color-border) px-3 py-2 text-sm font-medium text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                     >
-                        <Download className="h-4 w-4" />
-                        PDF 내보내기
+                        <LocalizedRichText
+                            text={"{0}PDF 내보내기"}
+                            values={[<Download className="h-4 w-4" />]}
+                        />
                     </button>
                 </div>
             )}

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
@@ -6,6 +7,7 @@ import { Editor } from "@tiptap/react";
 import katex from "katex";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { KTableControls } from "@/components/admin/table/KTableControls";
+import { getEditingLocale } from "@/lib/admin-content-state";
 
 // --- Tiptap UI Primitives ---
 import {
@@ -59,7 +61,9 @@ function ToolbarTooltip({
     return (
         <Tooltip>
             <TooltipTrigger asChild>{children}</TooltipTrigger>
-            <TooltipContent sideOffset={6}>{label}</TooltipContent>
+            <TooltipContent sideOffset={6}>
+                {<LocalizedText text={label} />}
+            </TooltipContent>
         </Tooltip>
     );
 }
@@ -106,8 +110,14 @@ function YoutubeInput({ editor }: { editor: Editor }) {
 
     return (
         <div ref={ref} className="relative">
-            <ToolbarTooltip label="YouTube 삽입">
-                <button
+            <LocalizedElement
+                as={ToolbarTooltip}
+                translatedProps={["label"]}
+                label="YouTube 삽입"
+            >
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
                     onClick={() => setOpen((v) => !v)}
                     aria-label="YouTube 삽입"
@@ -120,11 +130,13 @@ function YoutubeInput({ editor }: { editor: Editor }) {
                     >
                         <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                     </svg>
-                </button>
-            </ToolbarTooltip>
+                </LocalizedElement>
+            </LocalizedElement>
             {open && (
                 <div className="absolute top-full left-0 z-50 mt-1 flex gap-1 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
@@ -137,7 +149,7 @@ function YoutubeInput({ editor }: { editor: Editor }) {
                         onClick={handleInsert}
                         className="rounded bg-zinc-800 px-2 py-1 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 dark:bg-zinc-200 dark:text-zinc-900"
                     >
-                        삽입
+                        <LocalizedText text={"삽입"} />
                     </button>
                 </div>
             )}
@@ -188,8 +200,14 @@ function LatexInput({ editor }: { editor: Editor }) {
 
     return (
         <div ref={ref} className="relative">
-            <ToolbarTooltip label="수식 삽입">
-                <button
+            <LocalizedElement
+                as={ToolbarTooltip}
+                translatedProps={["label"]}
+                label="수식 삽입"
+            >
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
                     onClick={() => setOpen((v) => !v)}
                     aria-label="수식 삽입"
@@ -213,11 +231,13 @@ function LatexInput({ editor }: { editor: Editor }) {
                             ∑
                         </text>
                     </svg>
-                </button>
-            </ToolbarTooltip>
+                </LocalizedElement>
+            </LocalizedElement>
             {open && (
                 <div className="absolute top-full right-0 z-50 mt-1 w-80 rounded-lg border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
-                    <textarea
+                    <LocalizedElement
+                        as="textarea"
+                        translatedProps={["placeholder"]}
                         value={src}
                         onChange={(e) => setSrc(e.target.value)}
                         onKeyDown={(e) => {
@@ -238,13 +258,15 @@ function LatexInput({ editor }: { editor: Editor }) {
                     )}
                     <div className="mt-2 flex items-center justify-between">
                         <span className="text-xs text-zinc-400">
-                            Ctrl+Enter 삽입 · \alpha → α
+                            <LocalizedText
+                                text={"Ctrl+Enter 삽입 · \\alpha → α"}
+                            />
                         </span>
                         <button
                             onClick={handleInsert}
                             className="rounded bg-zinc-800 px-2 py-1 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 dark:bg-zinc-200 dark:text-zinc-900"
                         >
-                            삽입
+                            <LocalizedText text={"삽입"} />
                         </button>
                     </div>
                 </div>
@@ -258,16 +280,21 @@ function LatexInput({ editor }: { editor: Editor }) {
 // Accordion 삽입 버튼
 function AccordionInsert({ editor }: { editor: Editor }) {
     const handleInsert = () => {
+        const [title, content] = {
+            ko: ["아코디언 제목", "아코디언 내용"],
+            en: ["Accordion title", "Accordion content"],
+            ja: ["折りたたみの見出し", "折りたたみの内容"],
+        }[getEditingLocale()];
         editor
             .chain()
             .focus()
             .insertContent({
                 type: "accordion",
-                attrs: { title: "아코디언 제목" },
+                attrs: { title },
                 content: [
                     {
                         type: "paragraph",
-                        content: [{ type: "text", text: "아코디언 내용" }],
+                        content: [{ type: "text", text: content }],
                     },
                 ],
             })
@@ -275,8 +302,14 @@ function AccordionInsert({ editor }: { editor: Editor }) {
     };
 
     return (
-        <ToolbarTooltip label="아코디언 삽입">
-            <button
+        <LocalizedElement
+            as={ToolbarTooltip}
+            translatedProps={["label"]}
+            label="아코디언 삽입"
+        >
+            <LocalizedElement
+                as="button"
+                translatedProps={["aria-label"]}
                 className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-700"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleInsert}
@@ -297,8 +330,8 @@ function AccordionInsert({ editor }: { editor: Editor }) {
                     <rect x="3" y="16" width="18" height="4" rx="1" />
                     <path d="M19 12l-2-2m2 2l-2 2" />
                 </svg>
-            </button>
-        </ToolbarTooltip>
+            </LocalizedElement>
+        </LocalizedElement>
     );
 }
 
@@ -324,20 +357,28 @@ function ShowcaseTemplateInsert({
 
     return (
         <div ref={ref} className="relative">
-            <ToolbarTooltip label="사례 표현 삽입">
-                <button
+            <LocalizedElement
+                as={ToolbarTooltip}
+                translatedProps={["label"]}
+                label="사례 표현 삽입"
+            >
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     type="button"
                     onClick={() => setOpen((current) => !current)}
                     aria-label="사례 표현 삽입"
                     className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
                 >
                     ▦
-                </button>
-            </ToolbarTooltip>
+                </LocalizedElement>
+            </LocalizedElement>
             {open && (
                 <div className="absolute top-full right-0 z-50 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                     <p className="px-2 pt-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                        소스 편집으로 추가 후 미리보기
+                        <LocalizedText
+                            text={"소스 편집으로 추가 후 미리보기"}
+                        />
                     </p>
                     {templates.map((template) => (
                         <button
@@ -350,10 +391,10 @@ function ShowcaseTemplateInsert({
                             className="w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
                         >
                             <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                {template.label}
+                                {<LocalizedText text={template.label} />}
                             </span>
                             <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                {template.description}
+                                {<LocalizedText text={template.description} />}
                             </span>
                         </button>
                     ))}
@@ -464,8 +505,14 @@ export default function EditorToolbar({
                 {/* 8. Image + Source + Fullscreen */}
                 <ToolbarGroup>
                     {onImageUpload && (
-                        <ToolbarTooltip label="이미지 삽입">
-                            <button
+                        <LocalizedElement
+                            as={ToolbarTooltip}
+                            translatedProps={["label"]}
+                            label="이미지 삽입"
+                        >
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["aria-label"]}
                                 onClick={onImageUpload}
                                 disabled={sourceMode}
                                 aria-label="이미지 삽입"
@@ -493,14 +540,26 @@ export default function EditorToolbar({
                                     <circle cx="9" cy="9" r="2" />
                                     <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                                 </svg>
-                            </button>
-                        </ToolbarTooltip>
+                            </LocalizedElement>
+                        </LocalizedElement>
                     )}
                     {onSourceToggle && (
-                        <ToolbarTooltip
+                        <LocalizedElement
+                            as={ToolbarTooltip}
+                            messageProps={{
+                                label: sourceMode
+                                    ? { text: "미리보기 편집" }
+                                    : { text: "소스 편집" },
+                            }}
                             label={sourceMode ? "미리보기 편집" : "소스 편집"}
                         >
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": sourceMode
+                                        ? { text: "미리보기 편집" }
+                                        : { text: "소스 편집" },
+                                }}
                                 onClick={onSourceToggle}
                                 aria-label={
                                     sourceMode ? "미리보기 편집" : "소스 편집"
@@ -525,13 +584,25 @@ export default function EditorToolbar({
                                     <polyline points="16 18 22 12 16 6" />
                                     <polyline points="8 6 2 12 8 18" />
                                 </svg>
-                            </button>
-                        </ToolbarTooltip>
+                            </LocalizedElement>
+                        </LocalizedElement>
                     )}
-                    <ToolbarTooltip
+                    <LocalizedElement
+                        as={ToolbarTooltip}
+                        messageProps={{
+                            label: isFullscreen
+                                ? { text: "전체화면 종료" }
+                                : { text: "전체화면" },
+                        }}
                         label={isFullscreen ? "전체화면 종료" : "전체화면"}
                     >
-                        <button
+                        <LocalizedElement
+                            as="button"
+                            messageProps={{
+                                "aria-label": isFullscreen
+                                    ? { text: "전체화면 종료" }
+                                    : { text: "전체화면" },
+                            }}
                             onClick={onToggleFullscreen}
                             aria-label={
                                 isFullscreen ? "전체화면 종료" : "전체화면"
@@ -543,8 +614,8 @@ export default function EditorToolbar({
                             ) : (
                                 <Maximize2 size={16} />
                             )}
-                        </button>
-                    </ToolbarTooltip>
+                        </LocalizedElement>
+                    </LocalizedElement>
                 </ToolbarGroup>
             </Toolbar>
         </TooltipProvider>

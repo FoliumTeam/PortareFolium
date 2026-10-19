@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { useState, useEffect } from "react";
 
@@ -78,7 +79,9 @@ export default function ThemeToggle() {
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
         >
-            <button
+            <LocalizedElement
+                as="button"
+                translatedProps={["aria-label"]}
                 type="button"
                 onClick={() => setIsOpen((v) => !v)}
                 className="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"
@@ -131,7 +134,7 @@ export default function ThemeToggle() {
                         />
                     </svg>
                 )}
-            </button>
+            </LocalizedElement>
 
             {isOpen && (
                 <div
@@ -197,7 +200,7 @@ export default function ThemeToggle() {
                                         />
                                     </svg>
                                 )}
-                                {themeLabels[t]}
+                                {<LocalizedText text={themeLabels[t]} />}
                             </button>
                         ))}
                     </div>

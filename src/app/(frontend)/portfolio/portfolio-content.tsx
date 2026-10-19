@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
@@ -13,7 +14,7 @@ import {
 import { getPublicResumeBasics, getSiteConfig } from "@/lib/queries";
 import { getResumeProfileUrl } from "@/lib/resume-profile-preset";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
 import { ArrowUpRight, BookOpen, FileText, Star } from "lucide-react";
 
 interface BookItem {
@@ -55,9 +56,10 @@ export default async function PortfolioPageContent({
         configRows.find((row) => row.key === PORTFOLIO_AI_SECTION_CONFIG_KEY)
             ?.value
     );
-    const portfolioEyebrow = "Selected Work";
-    const portfolioIntroduction =
-        "프로젝트의 목표, 개인 책임, 핵심 구현과 확인 가능한 결과를 정리했습니다.";
+    const portfolioEyebrow = serverT("Selected Work");
+    const portfolioIntroduction = serverT(
+        "프로젝트의 목표, 개인 책임, 핵심 구현과 확인 가능한 결과를 정리했습니다."
+    );
     const portfolioBasePath =
         portfolioBasePathOverride ?? `/${jobField}/portfolio`;
 
@@ -121,7 +123,7 @@ export default async function PortfolioPageContent({
                         {portfolioEyebrow}
                     </p>
                     <h1 className="tablet:text-5xl text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                        Portfolio
+                        {serverT("Portfolio")}
                     </h1>
                     <p className="mt-4 text-lg leading-relaxed text-(--color-muted)">
                         {portfolioIntroduction}
@@ -132,7 +134,7 @@ export default async function PortfolioPageContent({
                             className="inline-flex items-center gap-2 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                             <FileText className="h-4 w-4" aria-hidden="true" />
-                            이력서
+                            {serverT("이력서")}
                         </Link>
                         {githubUrl && (
                             <a
@@ -141,7 +143,7 @@ export default async function PortfolioPageContent({
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                             >
-                                GitHub
+                                {serverT("GitHub")}
                                 <ArrowUpRight
                                     className="h-4 w-4"
                                     aria-hidden="true"
@@ -152,7 +154,7 @@ export default async function PortfolioPageContent({
                             href={`/${jobField}/about`}
                             className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
-                            Contact
+                            {serverT("Contact")}
                             <ArrowUpRight
                                 className="h-4 w-4"
                                 aria-hidden="true"
@@ -177,7 +179,7 @@ export default async function PortfolioPageContent({
                                     className="h-4 w-4"
                                     aria-hidden="true"
                                 />
-                                Books
+                                {serverT("Books")}
                             </h2>
                             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
                                 {publicBooks.map((book) => (

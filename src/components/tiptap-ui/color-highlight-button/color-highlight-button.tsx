@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback, useMemo } from "react";
 
@@ -134,7 +135,9 @@ export const ColorHighlightButton = forwardRef<
         }
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 variant="ghost"
                 data-active-state={isActive ? "on" : "off"}
@@ -161,7 +164,9 @@ export const ColorHighlightButton = forwardRef<
                             }
                         />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <ColorHighlightShortcutBadge
@@ -170,7 +175,7 @@ export const ColorHighlightButton = forwardRef<
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

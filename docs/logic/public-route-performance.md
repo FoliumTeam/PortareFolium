@@ -24,6 +24,15 @@
 5. Published content mutation마다 path와 `public-content` tag 동시 무효화
 6. query 추가 전 화면 필요 column과 독립 병렬 실행 가능성 확인
 
+## 언어별 내부 경로
+
+- 기존 공개 주소 유지, Proxy에서 `/{locale}/...` 내부 경로 선택
+- 공개 데이터 캐시 키에 언어 포함, 언어별 정적 HTML 독립 보관
+- 브라우저 언어·선택 쿠키 조회: Proxy와 관리자 경계로 한정
+- 콘텐츠 변경: 기존 주소와 세 언어 내부 주소·데이터 태그 함께 갱신
+- 상세 사전 생성: 번역 미작성 언어와 독립적인 완전한 경로 조합 반환
+- 상세 계약: [언어별 콘텐츠와 화면 언어](multilingual-content.md)
+
 ## 배포 검증
 
 ### build

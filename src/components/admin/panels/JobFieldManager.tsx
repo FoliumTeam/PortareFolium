@@ -1,20 +1,25 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useState } from "react";
-import Picker from "@emoji-mart/react";
+import Picker from "@/components/LocalizedEmojiPicker";
 import data from "@emoji-mart/data";
 import { toast } from "sonner";
 import { Globe2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
-    addSiteJobField,
-    deleteSiteJobField,
-    updateSiteJobField,
+    addSiteJobField as raw_addSiteJobField,
+    deleteSiteJobField as raw_deleteSiteJobField,
+    updateSiteJobField as raw_updateSiteJobField,
 } from "@/app/admin/actions/site-config";
 import { dedupeJobFieldsById } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { bindContentAction } from "@/lib/admin-content-state";
+const addSiteJobField = bindContentAction(raw_addSiteJobField);
+const deleteSiteJobField = bindContentAction(raw_deleteSiteJobField);
+const updateSiteJobField = bindContentAction(raw_updateSiteJobField);
 
 export type JobFieldItem = {
     id: string;
@@ -69,7 +74,7 @@ export default function JobFieldManager({
         });
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
         updateFields(result.jobFields);
@@ -77,7 +82,7 @@ export default function JobFieldManager({
         setNewHeaderTitle("");
         setNewEmoji("✨");
         setInheritFrom("");
-        toast.success("직무 분야 추가");
+        toast.success(<LocalizedText text={"직무 분야 추가"} />);
     };
 
     const save = async () => {
@@ -92,7 +97,7 @@ export default function JobFieldManager({
         });
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
         updateFields(result.jobFields);
@@ -100,7 +105,7 @@ export default function JobFieldManager({
             result.jobFields.find((field) => field.id === selected.id) ??
                 selected
         );
-        toast.success("직무 분야 저장");
+        toast.success(<LocalizedText text={"직무 분야 저장"} />);
     };
 
     const remove = async (field: JobFieldItem) => {
@@ -116,12 +121,12 @@ export default function JobFieldManager({
         const result = await deleteSiteJobField(field.id);
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
         updateFields(result.jobFields);
         if (selectedId === field.id) setSelectedId(null);
-        toast.success("직무 분야 삭제");
+        toast.success(<LocalizedText text={"직무 분야 삭제"} />);
     };
 
     return (
@@ -132,13 +137,17 @@ export default function JobFieldManager({
                 </span>
                 <div>
                     <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                        Job fields
+                        <LocalizedText text={"Job fields"} />
                     </p>
                     <h2 className="mt-1 text-xl font-bold text-(--color-foreground)">
-                        직무 분야
+                        <LocalizedText text={"직무 분야"} />
                     </h2>
                     <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                        공개 기본 프로필의 경로와 상속 기준을 관리합니다.
+                        <LocalizedText
+                            text={
+                                "공개 기본 프로필의 경로와 상속 기준을 관리합니다."
+                            }
+                        />
                     </p>
                 </div>
             </div>
@@ -147,11 +156,18 @@ export default function JobFieldManager({
                 <div className="space-y-3">
                     {jobFields.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-5 py-10 text-center text-sm text-(--color-muted)">
-                            등록된 직무 분야 없음
+                            <LocalizedText text={"등록된 직무 분야 없음"} />
                         </p>
                     ) : (
                         jobFields.map((field) => (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": {
+                                        text: "{0} 직무 분야 편집",
+                                        values: [field.name],
+                                    },
+                                }}
                                 type="button"
                                 key={field.id}
                                 aria-pressed={selectedId === field.id}
@@ -176,7 +192,7 @@ export default function JobFieldManager({
                                     </span>
                                 </span>
                                 <Pencil className="mt-1 h-4 w-4 text-(--color-muted)" />
-                            </button>
+                            </LocalizedElement>
                         ))
                     )}
                 </div>
@@ -186,7 +202,7 @@ export default function JobFieldManager({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between gap-3">
                                 <p className="font-semibold text-(--color-foreground)">
-                                    직무 분야 편집
+                                    <LocalizedText text={"직무 분야 편집"} />
                                 </p>
                                 <Button
                                     size="sm"
@@ -194,7 +210,8 @@ export default function JobFieldManager({
                                     onClick={() => void remove(selected)}
                                     disabled={saving}
                                 >
-                                    <Trash2 className="mr-1 h-4 w-4" /> 삭제
+                                    <Trash2 className="mr-1 h-4 w-4" />
+                                    <LocalizedText text={" 삭제"} />
                                 </Button>
                             </div>
                             <EmojiPicker
@@ -223,18 +240,21 @@ export default function JobFieldManager({
                                     !editingHeaderTitle.trim()
                                 }
                             >
-                                저장
+                                <LocalizedText text={"저장"} />
                             </Button>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <div>
                                 <p className="font-semibold text-(--color-foreground)">
-                                    새 직무 분야
+                                    <LocalizedText text={"새 직무 분야"} />
                                 </p>
                                 <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                                    기존 분야의 콘텐츠를 선택해 상속 시작점으로
-                                    사용 가능
+                                    <LocalizedText
+                                        text={
+                                            "기존 분야의 콘텐츠를 선택해 상속 시작점으로 사용 가능"
+                                        }
+                                    />
                                 </p>
                             </div>
                             <EmojiPicker
@@ -256,7 +276,7 @@ export default function JobFieldManager({
                             />
                             {jobFields.length > 0 && (
                                 <label className="grid gap-2 text-sm font-semibold text-(--color-foreground)">
-                                    상속 시작점
+                                    <LocalizedText text={"상속 시작점"} />
                                     <select
                                         value={inheritFrom}
                                         onChange={(event) =>
@@ -264,7 +284,9 @@ export default function JobFieldManager({
                                         }
                                         className="h-11 rounded-xl border border-(--color-border) bg-(--color-surface) px-3 text-sm font-normal"
                                     >
-                                        <option value="">없음</option>
+                                        <option value="">
+                                            <LocalizedText text={"없음"} />
+                                        </option>
                                         {jobFields.map((field) => (
                                             <option
                                                 key={field.id}
@@ -285,7 +307,8 @@ export default function JobFieldManager({
                                     !newHeaderTitle.trim()
                                 }
                             >
-                                <Plus className="mr-1 h-4 w-4" /> 직무 분야 추가
+                                <Plus className="mr-1 h-4 w-4" />
+                                <LocalizedText text={" 직무 분야 추가"} />
                             </Button>
                         </div>
                     )}
@@ -309,14 +332,18 @@ function FieldInputs({
     return (
         <>
             <div className="grid gap-2 text-sm font-semibold text-(--color-foreground)">
-                <Label>프로필 이름</Label>
+                <Label>
+                    <LocalizedText text={"프로필 이름"} />
+                </Label>
                 <Input
                     value={name}
                     onChange={(event) => onNameChange(event.target.value)}
                 />
             </div>
             <div className="grid gap-2 text-sm font-semibold text-(--color-foreground)">
-                <Label>Header 제목</Label>
+                <Label>
+                    <LocalizedText text={"Header 제목"} />
+                </Label>
                 <Input
                     value={headerTitle}
                     onChange={(event) =>
@@ -341,15 +368,19 @@ function EmojiPicker({
 }) {
     return (
         <div className="relative">
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label"]}
                 type="button"
                 variant="secondary"
                 onClick={onToggle}
                 aria-label="직무 분야 이모지 선택"
             >
                 <span className="text-xl">{value}</span>
-                <span className="ml-2">이모지</span>
-            </Button>
+                <span className="ml-2">
+                    <LocalizedText text={"이모지"} />
+                </span>
+            </LocalizedElement>
             {open && (
                 <div className="absolute top-12 left-0 z-50">
                     <Picker
@@ -357,7 +388,6 @@ function EmojiPicker({
                         onEmojiSelect={(emoji: { native: string }) =>
                             onSelect(emoji.native)
                         }
-                        locale="ko"
                         previewPosition="none"
                         skinTonePosition="none"
                     />

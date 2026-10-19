@@ -1,4 +1,6 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 // Snapshot 미리보기 모달 (markdown source / frontend render 전환)
 import { useState, useEffect, useMemo } from "react";
@@ -25,6 +27,7 @@ export default function StatePreviewModal({
     label,
     savedAt,
 }: StatePreviewModalProps) {
+    const { locale } = useUILocale();
     const [mode, setMode] = useState<PreviewMode>("render");
 
     // read-only Tiptap editor for frontend render
@@ -78,19 +81,21 @@ export default function StatePreviewModal({
                 <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                         <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                            {badgeText}
+                            {<LocalizedText text={badgeText} />}
                         </span>
                         <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                            {new Date(savedAt).toLocaleString()}
+                            {new Date(savedAt).toLocaleString(locale)}
                         </span>
                     </div>
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         onClick={onClose}
                         className="rounded p-1.5 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
                         aria-label="Close preview"
                     >
                         ✕
-                    </button>
+                    </LocalizedElement>
                 </div>
 
                 {/* 모드 전환 탭 */}
@@ -104,7 +109,7 @@ export default function StatePreviewModal({
                                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                         }`}
                     >
-                        렌더링 (Render)
+                        <LocalizedText text={"렌더링 (Render)"} />
                     </button>
                     <button
                         type="button"
@@ -115,7 +120,7 @@ export default function StatePreviewModal({
                                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                         }`}
                     >
-                        소스 (Source)
+                        <LocalizedText text={"소스 (Source)"} />
                     </button>
                 </div>
 

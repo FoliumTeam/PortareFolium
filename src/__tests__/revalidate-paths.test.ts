@@ -34,6 +34,14 @@ import {
     revalidateResume,
 } from "@/app/admin/actions/revalidate";
 
+const localizedPaths = (paths: string[]) =>
+    paths.flatMap((path) => [
+        path,
+        ...["ko", "en", "ja"].map(
+            (locale) => `/${locale}${path === "/" ? "" : path}`
+        ),
+    ]);
+
 describe("직무별 공개 경로 cache revalidation", () => {
     beforeEach(() => {
         mocks.revalidatePath.mockClear();
@@ -44,17 +52,19 @@ describe("직무별 공개 경로 cache revalidation", () => {
     it("Portfolio 상세와 목록의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidatePortfolioItem("its-api");
 
-        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
-            "/portfolio/its-api",
-            "/portfolio",
-            "/frontend/portfolio/its-api",
-            "/frontend/portfolio",
-            "/frontend",
-            "/game-design/portfolio/its-api",
-            "/game-design/portfolio",
-            "/game-design",
-            "/",
-        ]);
+        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(
+            localizedPaths([
+                "/portfolio/its-api",
+                "/portfolio",
+                "/frontend/portfolio/its-api",
+                "/frontend/portfolio",
+                "/frontend",
+                "/game-design/portfolio/its-api",
+                "/game-design/portfolio",
+                "/game-design",
+                "/",
+            ])
+        );
         expect(mocks.revalidateTag).toHaveBeenCalledWith(
             "public-content",
             "max"
@@ -64,17 +74,19 @@ describe("직무별 공개 경로 cache revalidation", () => {
     it("Blog 상세와 목록의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidatePost("example-post");
 
-        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
-            "/blog/example-post",
-            "/blog",
-            "/frontend/blog/example-post",
-            "/frontend/blog",
-            "/frontend",
-            "/game-design/blog/example-post",
-            "/game-design/blog",
-            "/game-design",
-            "/",
-        ]);
+        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(
+            localizedPaths([
+                "/blog/example-post",
+                "/blog",
+                "/frontend/blog/example-post",
+                "/frontend/blog",
+                "/frontend",
+                "/game-design/blog/example-post",
+                "/game-design/blog",
+                "/game-design",
+                "/",
+            ])
+        );
         expect(mocks.revalidateTag).toHaveBeenCalledWith(
             "public-content",
             "max"
@@ -84,13 +96,15 @@ describe("직무별 공개 경로 cache revalidation", () => {
     it("Resume의 등록 직무 분야 경로를 갱신한다", async () => {
         await revalidateResume();
 
-        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
-            "/resume",
-            "/frontend/resume",
-            "/frontend",
-            "/game-design/resume",
-            "/game-design",
-        ]);
+        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(
+            localizedPaths([
+                "/resume",
+                "/frontend/resume",
+                "/frontend",
+                "/game-design/resume",
+                "/game-design",
+            ])
+        );
         expect(mocks.revalidateTag).toHaveBeenCalledWith(
             "public-content",
             "max"
@@ -100,14 +114,16 @@ describe("직무별 공개 경로 cache revalidation", () => {
     it("About Me와 등록 직무 분야 landing 경로를 갱신한다", async () => {
         await revalidateAbout();
 
-        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
-            "/about",
-            "/frontend/about",
-            "/frontend",
-            "/game-design/about",
-            "/game-design",
-            "/",
-        ]);
+        expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(
+            localizedPaths([
+                "/about",
+                "/frontend/about",
+                "/frontend",
+                "/game-design/about",
+                "/game-design",
+                "/",
+            ])
+        );
         expect(mocks.revalidateTag).toHaveBeenCalledWith(
             "public-content",
             "max"

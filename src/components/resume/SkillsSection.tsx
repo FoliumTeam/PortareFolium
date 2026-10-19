@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { ResumeSkill } from "@/types/resume";
 import { SkillBadge, getSimpleIcon } from "@/components/resume/SkillBadge";
 
@@ -6,13 +7,13 @@ interface Props {
     label?: string;
 }
 
-export default function SkillsSection({ skills, label = "기술" }: Props) {
+export default function SkillsSection({ skills, label }: Props) {
     if (skills.length === 0) return null;
 
     return (
         <section className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {label}
+                {label ?? serverT("기술")}
             </h2>
             <div className="space-y-3">
                 {skills.map((skill, index) => {

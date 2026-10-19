@@ -101,6 +101,31 @@ export function initializeRefugeDatabase(database: DatabaseSync): void {
     `);
 }
 
+// 읽기 전 쓰기 잠금과 중첩 호출의 동일 트랜잭션 사용
+export function withRefugeWriteTransaction<T>(
+    action: () => T,
+    database = getRefugeDatabase()
+): T {
+    if (database.isTransaction) return action();
+    database.exec("BEGIN IMMEDIATE");
+    let journalLength: number | null | undefined;
+    try {
+        journalLength = fs.existsSync(REFUGE_JOURNAL_PATH)
+            ? fs.statSync(REFUGE_JOURNAL_PATH).size
+            : null;
+        const result = action();
+        database.exec("COMMIT");
+        return result;
+    } catch (error) {
+        if (database.isTransaction) database.exec("ROLLBACK");
+        if (journalLength !== undefined && fs.existsSync(REFUGE_JOURNAL_PATH)) {
+            if (journalLength === null) fs.unlinkSync(REFUGE_JOURNAL_PATH);
+            else fs.truncateSync(REFUGE_JOURNAL_PATH, journalLength);
+        }
+        throw error;
+    }
+}
+
 export function replaceRefugeTableRows(
     database: DatabaseSync,
     table: string,
@@ -113,18 +138,13 @@ export function replaceRefugeTableRows(
         INSERT INTO refuge_rows (table_name, identity, row_json, updated_at)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
+    withRefugeWriteTransaction(() => {
         deleteRows.run(table);
         for (const row of rows) {
             const identity = getRefugeIdentity(table, row);
             insertRow.run(table, identity, JSON.stringify(row));
         }
-        database.exec("COMMIT");
-    } catch (error) {
-        database.exec("ROLLBACK");
-        throw error;
-    }
+    }, database);
 }
 
 export function listRefugeRows(table: string): RefugeRow[] {

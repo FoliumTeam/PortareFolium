@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import ResumeTrainingEditor from "@/components/admin/resume/ResumeTrainingEditor";
 import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { loadUIMessages } from "@/lib/ui-messages";
 import type { Resume } from "@/types/resume";
 
 function EditorFixture() {
@@ -64,4 +66,53 @@ describe("ResumeTrainingEditor", () => {
             visible: true,
         });
     });
+
+    it.each([
+        ["en", "Add training", "Training", "Course name", "Organizer"],
+        ["ja", "研修を追加", "研修", "課程名", "主催"],
+    ] as const)(
+        "%s 편집 문구만 번역하고 교육 이름·주최·사용자 지정 제목 원문 보존",
+        async (locale, add, section, course, organizer) => {
+            render(
+                <LocaleProvider
+                    initialLocale={locale}
+                    initialMessages={await loadUIMessages(locale)}
+                >
+                    <EditorFixture />
+                </LocaleProvider>
+            );
+            expect(
+                screen.getByRole("heading", { name: section })
+            ).toBeVisible();
+            fireEvent.click(screen.getByRole("button", { name: add }));
+            const field = (label: string) =>
+                within(
+                    screen.getByText(label, { selector: "label", exact: true })
+                        .parentElement!
+                ).getByRole("textbox");
+            fireEvent.change(
+                field(
+                    locale === "en"
+                        ? "Public section title"
+                        : "公開セクション名"
+                ),
+                { target: { value: "저장" } }
+            );
+            fireEvent.change(field(course), { target: { value: "저장" } });
+            fireEvent.change(field(organizer), {
+                target: { value: "日本 교육 C++ / C# / TypeScript" },
+            });
+
+            const training = JSON.parse(
+                screen.getByTestId("training-state").textContent ?? "{}"
+            ) as NonNullable<Resume["training"]>;
+            expect(training.label).toBe("저장");
+            expect(training.entries[0]).toMatchObject({
+                title: "저장",
+                organizer: "日本 교육 C++ / C# / TypeScript",
+                jobField: ["game"],
+                visible: false,
+            });
+        }
+    );
 });

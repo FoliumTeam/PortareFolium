@@ -1,6 +1,7 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
-import Picker from "@emoji-mart/react";
+import Picker from "@/components/LocalizedEmojiPicker";
 import data from "@emoji-mart/data";
 import { useState } from "react";
 
@@ -22,9 +23,11 @@ export const InputField = ({
     return (
         <div className="flex flex-col space-y-1">
             <label className="text-sm font-medium text-(--color-muted)">
-                {label}
+                {<LocalizedText text={label} />}
             </label>
-            <input
+            <LocalizedElement
+                as="input"
+                translatedProps={["placeholder"]}
                 type={type}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
@@ -53,9 +56,11 @@ export const TextAreaField = ({
     return (
         <div className="flex flex-col space-y-1">
             <label className="text-sm font-medium text-(--color-muted)">
-                {label}
+                {<LocalizedText text={label} />}
             </label>
-            <textarea
+            <LocalizedElement
+                as="textarea"
+                translatedProps={["placeholder"]}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
@@ -77,17 +82,21 @@ export const SectionEmojiSelector = ({
 
     return (
         <div className="relative mr-3 inline-block">
-            <button
+            <LocalizedElement
+                as="button"
+                translatedProps={["title"]}
                 type="button"
                 onClick={() => setShowPicker((current) => !current)}
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-(--color-border) bg-(--color-surface-subtle) text-base transition-colors hover:bg-(--color-border)"
                 title="이모지 선택"
             >
                 {value || "➕"}
-            </button>
+            </LocalizedElement>
             {showPicker ? (
                 <>
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         aria-label="이모지 선택 닫기"
                         className="fixed inset-0 z-40 cursor-default"

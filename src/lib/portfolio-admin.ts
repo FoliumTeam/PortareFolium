@@ -1,4 +1,5 @@
 import { normalizeUniqueJobFieldList } from "@/lib/job-field";
+import type { Locale } from "@/lib/i18n";
 import { EDITABLE_PORTFOLIO_DATA_KEYS } from "@/types/portfolio";
 import type {
     PortfolioCredit,
@@ -138,10 +139,86 @@ export const PORTFOLIO_WEB_CASE_STUDY_TEMPLATE = `## [업무 성과 1]
 ### 결과와 근거
 [결과]`;
 
-export const getPortfolioCaseStudyTemplate = (jobField: string[]): string =>
-    jobField.includes("game") && !jobField.includes("web")
-        ? PORTFOLIO_GAME_CASE_STUDY_TEMPLATE
-        : PORTFOLIO_WEB_CASE_STUDY_TEMPLATE;
+const CASE_STUDY_COPY = {
+    en: {
+        game: {
+            title: "Gameplay goal",
+            headings: [
+                "Goals and constraints",
+                "My role",
+                "Implementation",
+                "Game impact",
+            ],
+            prompts: [
+                "The player experience to create and constraints to address",
+                "My responsibilities and collaboration boundaries",
+                "Key technical decisions and implementation",
+                "Changes verified through gameplay, readability, or production",
+            ],
+        },
+        web: {
+            title: "Project result",
+            headings: [
+                "Context and goals",
+                "Scope of responsibility",
+                "Implementation",
+                "Results and evidence",
+            ],
+            prompts: [
+                "The business or user problem and success criteria",
+                "My responsibilities and collaboration boundaries",
+                "Verified implementation, collaboration, or operational work",
+                "Measurements, releases, operational records, or verification methods",
+            ],
+        },
+    },
+    ja: {
+        game: {
+            title: "ゲームプレイの目標",
+            headings: ["目標と制約", "担当範囲", "主な実装", "ゲームへの効果"],
+            prompts: [
+                "実現したいプレイヤー体験と解決すべき制約",
+                "自分の責任範囲と共同作業の境界",
+                "重要な技術判断と実装の過程",
+                "プレイ・視認性・制作の過程で確認できた変化",
+            ],
+        },
+        web: {
+            title: "業務の成果",
+            headings: ["背景と目標", "担当範囲", "実装", "結果と根拠"],
+            prompts: [
+                "業務または利用者の課題と成功の基準",
+                "自分の責任範囲と共同作業の境界",
+                "事実で確認できる実装・協業・運用の行動",
+                "測定値・公開物・運用記録・確認方法",
+            ],
+        },
+    },
+} as const;
+
+export const getPortfolioCaseStudyTemplate = (
+    jobField: string[],
+    locale: Locale = "ko"
+): string => {
+    const style =
+        jobField.includes("game") && !jobField.includes("web") ? "game" : "web";
+    if (locale === "ko")
+        return style === "game"
+            ? PORTFOLIO_GAME_CASE_STUDY_TEMPLATE
+            : PORTFOLIO_WEB_CASE_STUDY_TEMPLATE;
+    const copy = CASE_STUDY_COPY[locale][style];
+    return [1, 2]
+        .map((number) =>
+            [
+                `## [${copy.title} ${number}]`,
+                ...copy.headings.flatMap((heading, index) => [
+                    `### ${heading}`,
+                    `[${copy.prompts[index]}]`,
+                ]),
+            ].join("\n\n")
+        )
+        .join("\n\n");
+};
 
 export const EMPTY_PORTFOLIO_FORM: PortfolioEditorForm = {
     slug: "",
@@ -297,13 +374,14 @@ export const itemToPortfolioForm = (
 
 export const createPortfolioTemplateForm = (
     orderIdx: number,
-    jobField: string[]
+    jobField: string[],
+    locale: Locale = "ko"
 ): PortfolioEditorForm => ({
     ...EMPTY_PORTFOLIO_FORM,
     order_idx: orderIdx,
     jobField: [...jobField],
     caseStudyVersion: 2,
-    content: getPortfolioCaseStudyTemplate(jobField),
+    content: getPortfolioCaseStudyTemplate(jobField, locale),
     published: false,
     platforms: [],
     ownership: [],

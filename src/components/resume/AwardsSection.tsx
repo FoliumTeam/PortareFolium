@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { Search } from "lucide-react";
 import type { ResumeAward } from "@/types/resume";
 import EducationMetadata from "@/components/resume/EducationMetadata";
@@ -56,8 +57,10 @@ export default function AwardsSection({
                                     src={image}
                                     alt={
                                         award.image
-                                            ? `${title || "수상"} 증서`
-                                            : "수상 증서 예시"
+                                            ? serverT("{0} 증서", [
+                                                  title || { text: "수상" },
+                                              ])
+                                            : serverT("수상 증서 예시")
                                     }
                                     width={210}
                                     height={297}

@@ -1,4 +1,6 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
 import { useEffect, useState } from "react";
 import { Download, Plus, RefreshCw, Trash2 } from "lucide-react";
@@ -18,6 +20,7 @@ type StatusMessage = {
 };
 
 export default function SnapshotsPanel() {
+    const { locale } = useUILocale();
     const { confirm } = useConfirmDialog();
     const [snapshots, setSnapshots] = useState<DatabaseSnapshot[]>([]);
     const [loading, setLoading] = useState(true);
@@ -90,7 +93,7 @@ export default function SnapshotsPanel() {
     const handleDeleteSnapshot = async (snapshot: DatabaseSnapshot) => {
         const ok = await confirm({
             title: "DB Snapshot 삭제",
-            description: `이 Snapshot을 삭제하시겠습니까?\n시각: ${new Date(snapshot.created_at).toLocaleString("ko-KR")}`,
+            description: `이 Snapshot을 삭제하시겠습니까?\n시각: ${new Date(snapshot.created_at).toLocaleString(locale)}`,
             confirmText: "삭제",
             cancelText: "취소",
             variant: "destructive",
@@ -119,21 +122,62 @@ export default function SnapshotsPanel() {
             <div className="sticky top-0 z-10 shrink-0 space-y-4 bg-(--color-surface) pb-3">
                 <div>
                     <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                        DB 스냅샷
+                        <LocalizedText text={"DB 스냅샷"} />
                     </h2>
+                    <div className="my-3 rounded-xl border border-(--color-border) p-4">
+                        <a
+                            className="inline-flex items-center gap-2 font-semibold underline"
+                            href="/api/orireki-export"
+                            download
+                        >
+                            <Download size={16} />
+                            <LocalizedText text={" Orireki로 내보내기"} />
+                        </a>
+                        <p className="mt-2 text-sm text-(--color-muted)">
+                            <LocalizedText
+                                text={
+                                    "콘텐츠·설정·소유 미디어를 담은 ZIP 다운로드. 인증 정보·관리 토큰 제외. Orireki의 가져오기 화면에서 검사 후 Draft로 이전 가능. 원본 사이트 변경 없음."
+                                }
+                            />
+                        </p>
+                    </div>
                     <div className="space-y-1 text-sm text-(--color-muted)">
                         <p>
-                            <code>Take snapshot</code>은 현재{" "}
-                            <code>public</code> schema 전체를 JSON으로
-                            저장합니다.
+                            <LocalizedRichText
+                                text={
+                                    "{0}은 현재 {1} schema 전체를 JSON으로 저장합니다."
+                                }
+                                values={[
+                                    <code>
+                                        <LocalizedText text={"Take snapshot"} />
+                                    </code>,
+                                    <code>
+                                        <LocalizedText text={"public"} />
+                                    </code>,
+                                ]}
+                            />
                         </p>
                         <p>
-                            <code>storage</code> 이미지와 <code>auth</code>{" "}
-                            데이터는 포함되지 않습니다.
+                            <LocalizedRichText
+                                text={
+                                    "{0} 이미지와 {1} 데이터는 포함되지 않습니다."
+                                }
+                                values={[
+                                    <code>
+                                        <LocalizedText text={"storage"} />
+                                    </code>,
+                                    <code>
+                                        <LocalizedText text={"auth"} />
+                                    </code>,
+                                ]}
+                            />
                         </p>
                         <p>
-                            페이지 내 미리보기는 제공하지 않고, 생성 시각 확인과
-                            JSON 다운로드만 지원합니다.
+                            <LocalizedText
+                                text={
+                                    "페이지 내 미리보기는 제공하지 않고, 생성 시각 확인과 JSON 다운로드만 지원합니다."
+                                }
+                            />
                         </p>
                     </div>
                 </div>
@@ -151,7 +195,11 @@ export default function SnapshotsPanel() {
                             }`}
                         />
                         <span className="whitespace-nowrap">
-                            {loading ? "새로고침 중..." : "새로고침"}
+                            {loading ? (
+                                <LocalizedText text={"새로고침 중..."} />
+                            ) : (
+                                <LocalizedText text={"새로고침"} />
+                            )}
                         </span>
                     </Button>
 
@@ -163,7 +211,11 @@ export default function SnapshotsPanel() {
                     >
                         <Plus className="mr-2 h-4 w-4 shrink-0" />
                         <span className="whitespace-nowrap">
-                            {creating ? "생성 중..." : "Take snapshot"}
+                            {creating ? (
+                                <LocalizedText text={"생성 중..."} />
+                            ) : (
+                                <LocalizedText text={"Take snapshot"} />
+                            )}
                         </span>
                     </Button>
                 </div>
@@ -175,7 +227,7 @@ export default function SnapshotsPanel() {
                             status.ok ? "text-green-600" : "text-red-500",
                         ].join(" ")}
                     >
-                        {status.text}
+                        {<LocalizedText text={status.text} />}
                     </p>
                 )}
             </div>
@@ -183,7 +235,9 @@ export default function SnapshotsPanel() {
             <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
                 {snapshots.length === 0 && !loading && (
                     <p className="text-sm text-(--color-muted)">
-                        저장된 DB Snapshot이 없습니다.
+                        <LocalizedText
+                            text={"저장된 DB Snapshot이 없습니다."}
+                        />
                     </p>
                 )}
 
@@ -199,14 +253,22 @@ export default function SnapshotsPanel() {
                                         {snapshot.filename}
                                     </p>
                                     <p className="text-xs text-(--color-muted)">
-                                        생성 시각:{" "}
-                                        {new Date(
-                                            snapshot.created_at
-                                        ).toLocaleString("ko-KR")}
+                                        <LocalizedRichText
+                                            text={"생성 시각: {0}"}
+                                            values={[
+                                                new Date(
+                                                    snapshot.created_at
+                                                ).toLocaleString(locale),
+                                            ]}
+                                        />
                                     </p>
                                     <p className="text-xs text-(--color-muted)">
-                                        포함 테이블:{" "}
-                                        {snapshot.table_names.length}개
+                                        <LocalizedRichText
+                                            text={"포함 테이블: {0}개"}
+                                            values={[
+                                                snapshot.table_names.length,
+                                            ]}
+                                        />
                                     </p>
                                 </div>
 
@@ -227,9 +289,15 @@ export default function SnapshotsPanel() {
                                     >
                                         <Download className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">
-                                            {downloadingId === snapshot.id
-                                                ? "다운로드 준비 중..."
-                                                : "다운로드"}
+                                            {downloadingId === snapshot.id ? (
+                                                <LocalizedText
+                                                    text={"다운로드 준비 중..."}
+                                                />
+                                            ) : (
+                                                <LocalizedText
+                                                    text={"다운로드"}
+                                                />
+                                            )}
                                         </span>
                                     </Button>
 
@@ -247,9 +315,13 @@ export default function SnapshotsPanel() {
                                     >
                                         <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">
-                                            {deletingId === snapshot.id
-                                                ? "삭제 중..."
-                                                : "삭제"}
+                                            {deletingId === snapshot.id ? (
+                                                <LocalizedText
+                                                    text={"삭제 중..."}
+                                                />
+                                            ) : (
+                                                <LocalizedText text={"삭제"} />
+                                            )}
                                         </span>
                                     </Button>
                                 </div>

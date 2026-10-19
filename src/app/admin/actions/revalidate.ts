@@ -1,5 +1,6 @@
 "use server";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { revalidateLocalizedPath as revalidatePath } from "@/lib/localized-revalidate";
 import { requireAdminSession } from "@/lib/server-admin";
 import { getPublicJobFields } from "@/lib/public-job-field";
 import { PUBLIC_CONTENT_CACHE_TAG } from "@/lib/queries";

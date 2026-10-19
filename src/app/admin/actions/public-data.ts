@@ -1,9 +1,13 @@
 "use server";
+import { withActionLocale } from "@/lib/action-locale";
+import { withContentLocale } from "@/lib/content-locale";
+import { isLocale, type Locale } from "@/lib/i18n";
 
 import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { getSqliteRefugeSchemaVersion } from "@/lib/refuge/sqlite-migrations";
 import { serverClient } from "@/lib/supabase";
 import { sanitizePublicJobField } from "@/lib/public-job-field";
+import { requireAdminSession } from "@/lib/server-admin";
 
 // PostgREST ilike pattern wildcard escape
 function escapeLikePattern(value: string): string {
@@ -14,88 +18,105 @@ function escapeLikePattern(value: string): string {
 export async function listPublicTags(): Promise<
     { slug: string; name: string; color: string | null }[]
 > {
-    if (!serverClient) return [];
+    return withActionLocale("public", async () => {
+        if (!serverClient) return [];
 
-    const { data } = await serverClient
-        .from("tags")
-        .select("slug, name, color")
-        .order("slug");
+        const { data } = await serverClient
+            .from("tags")
+            .select("slug, name, color")
+            .order("slug");
 
-    return (
-        (data as
-            | { slug: string; name: string; color: string | null }[]
-            | null) ?? []
-    );
+        return (
+            (data as
+                | { slug: string; name: string; color: string | null }[]
+                | null) ?? []
+        );
+    });
 }
 
 // 공개 검색 결과 조회
 export async function searchPublicContent(
     query: string,
-    jobField: string
+    jobField: string,
+    locale?: Locale
 ): Promise<{ slug: string; title: string; type: "post" | "portfolio" }[]> {
-    if (!serverClient || !query.trim()) return [];
+    if (locale !== undefined && !isLocale(locale))
+        throw new Error("Unsupported locale");
+    const read = async () => {
+        if (!serverClient || !query.trim()) return [];
 
-    const q = escapeLikePattern(query.trim().toLowerCase());
-    const safeJobField = sanitizePublicJobField(jobField);
-    if (safeJobField === null) return [];
+        const q = escapeLikePattern(query.trim().toLowerCase());
+        const safeJobField = sanitizePublicJobField(jobField);
+        if (safeJobField === null) return [];
 
-    // let 바인딩으로 조건부 체이닝 가능하게 함
-    let postQuery = serverClient
-        .from("posts")
-        .select("slug, title")
-        .eq("published", true)
-        .ilike("title", `%${q}%`)
-        .order("pub_date", { ascending: false })
-        .limit(5);
+        // let 바인딩으로 조건부 체이닝 가능하게 함
+        let postQuery = serverClient
+            .from("posts")
+            .select("slug, title")
+            .eq("published", true)
+            .ilike("title", `%${q}%`)
+            .order("pub_date", { ascending: false })
+            .limit(5);
 
-    if (safeJobField) {
-        postQuery = postQuery.or(
-            `job_field.eq.${safeJobField},job_field.is.null`
-        );
-    }
+        if (safeJobField) {
+            postQuery = postQuery.or(
+                `job_field.cs.{${safeJobField}},job_field.is.null`
+            );
+        }
 
-    let portfolioQuery = serverClient
-        .from("portfolio_items")
-        .select("slug, title")
-        .eq("published", true)
-        .ilike("title", `%${q}%`)
-        .order("order_idx", { ascending: true })
-        .limit(5);
+        let portfolioQuery = serverClient
+            .from("portfolio_items")
+            .select("slug, title")
+            .eq("published", true)
+            .ilike("title", `%${q}%`)
+            .order("order_idx", { ascending: true })
+            .limit(5);
 
-    if (safeJobField) {
-        portfolioQuery = portfolioQuery.or(
-            `job_field.eq.${safeJobField},job_field.is.null`
-        );
-    }
+        if (safeJobField) {
+            portfolioQuery = portfolioQuery.or(
+                `job_field.cs.{${safeJobField}},job_field.is.null`
+            );
+        }
 
-    const [postsRes, portfolioRes] = await Promise.all([
-        postQuery,
-        portfolioQuery,
-    ]);
+        const [postsRes, portfolioRes] = await Promise.all([
+            postQuery,
+            portfolioQuery,
+        ]);
 
-    const items: { slug: string; title: string; type: "post" | "portfolio" }[] =
-        [];
+        const items: {
+            slug: string;
+            title: string;
+            type: "post" | "portfolio";
+        }[] = [];
 
-    if (postsRes.data) {
-        items.push(
-            ...postsRes.data.map((item) => ({ ...item, type: "post" as const }))
-        );
-    }
+        if (postsRes.data) {
+            items.push(
+                ...postsRes.data.map((item) => ({
+                    ...item,
+                    type: "post" as const,
+                }))
+            );
+        }
 
-    if (portfolioRes.data) {
-        items.push(
-            ...portfolioRes.data.map((item) => ({
-                ...item,
-                type: "portfolio" as const,
-            }))
-        );
-    }
+        if (portfolioRes.data) {
+            items.push(
+                ...portfolioRes.data.map((item) => ({
+                    ...item,
+                    type: "portfolio" as const,
+                }))
+            );
+        }
 
-    return items;
+        return items;
+    };
+    return locale === undefined
+        ? withActionLocale("public", read)
+        : withContentLocale(locale, read);
 }
 
 // 관리자 프로필 이미지 조회
 export async function getAdminProfileImage(): Promise<string> {
+    await requireAdminSession();
     if (!serverClient) return "";
 
     const { data } = await serverClient

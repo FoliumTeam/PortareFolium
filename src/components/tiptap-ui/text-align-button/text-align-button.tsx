@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback } from "react";
 
@@ -109,7 +110,9 @@ export const TextAlignButton = forwardRef<
         const RenderIcon = CustomIcon ?? Icon;
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 disabled={!canAlign}
                 variant="ghost"
@@ -129,7 +132,9 @@ export const TextAlignButton = forwardRef<
                     <>
                         <RenderIcon className="tiptap-button-icon" />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <TextAlignShortcutBadge
@@ -139,7 +144,7 @@ export const TextAlignButton = forwardRef<
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

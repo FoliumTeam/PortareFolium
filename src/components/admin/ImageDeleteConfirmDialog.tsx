@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import {
     Dialog,
@@ -37,10 +38,10 @@ export default function ImageDeleteConfirmDialog({
                 <div className="bg-white dark:bg-zinc-950">
                     <DialogHeader className="px-6 pt-6 text-left">
                         <DialogTitle className="text-xl text-zinc-950 dark:text-zinc-50">
-                            {title}
+                            {<LocalizedText text={title} />}
                         </DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-                            {description}
+                            {<LocalizedText text={description} />}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -48,7 +49,9 @@ export default function ImageDeleteConfirmDialog({
                         {images.length <= 1 ? (
                             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
+                                <LocalizedElement
+                                    as="img"
+                                    translatedProps={["alt"]}
                                     src={images[0] ?? ""}
                                     alt="삭제 대상 이미지 미리보기"
                                     className="block h-auto w-full"
@@ -62,7 +65,14 @@ export default function ImageDeleteConfirmDialog({
                                         className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
                                     >
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
+                                        <LocalizedElement
+                                            as="img"
+                                            messageProps={{
+                                                alt: {
+                                                    text: "삭제 대상 이미지 {0}",
+                                                    values: [index + 1],
+                                                },
+                                            }}
                                             src={src}
                                             alt={`삭제 대상 이미지 ${index + 1}`}
                                             className="block h-auto w-full"
@@ -79,7 +89,7 @@ export default function ImageDeleteConfirmDialog({
                             onClick={() => onOpenChange(false)}
                             className="rounded-xl bg-zinc-200 px-4 py-2 text-sm font-medium whitespace-nowrap text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-600"
                         >
-                            취소
+                            <LocalizedText text={"취소"} />
                         </button>
                         <button
                             type="button"
@@ -89,7 +99,7 @@ export default function ImageDeleteConfirmDialog({
                             }}
                             className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium whitespace-nowrap text-white hover:bg-red-500"
                         >
-                            {confirmLabel}
+                            {<LocalizedText text={confirmLabel} />}
                         </button>
                     </DialogFooter>
                 </div>

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback } from "react";
 
@@ -92,7 +93,9 @@ export const CodeBlockButton = forwardRef<
         }
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["tooltip", "aria-label"]}
                 type="button"
                 variant="ghost"
                 data-active-state={isActive ? "on" : "off"}
@@ -112,7 +115,9 @@ export const CodeBlockButton = forwardRef<
                     <>
                         <Icon className="tiptap-button-icon" />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <CodeBlockShortcutBadge
@@ -121,7 +126,7 @@ export const CodeBlockButton = forwardRef<
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

@@ -1,3 +1,6 @@
+vi.mock("@/lib/storage-reference-guard", () => ({
+    getStorageReferenceGuard: vi.fn(async () => () => false),
+}));
 import {
     CopyObjectCommand,
     DeleteObjectsCommand,

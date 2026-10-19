@@ -49,13 +49,19 @@ type ResumeSectionLabelSource = {
 export function getResumeSectionLabel(
     key: string,
     section?: ResumeSectionLabelSource,
-    qualifier?: string
+    qualifier?: string,
+    translate: (text: string) => string = (text) => text
 ): string {
-    const baseLabel =
-        section?.label?.trim() ||
-        defaultSectionLabels[key] ||
-        key.charAt(0).toUpperCase() + key.slice(1);
-    const label = qualifier ? `${qualifier} ${baseLabel}` : baseLabel;
+    const customLabel = section?.label;
+    const baseLabel = customLabel?.trim()
+        ? customLabel
+        : translate(
+              defaultSectionLabels[key] ||
+                  key.charAt(0).toUpperCase() + key.slice(1)
+          );
+    const label = qualifier
+        ? `${translate(qualifier)} ${baseLabel}`
+        : baseLabel;
     if (section?.showEmoji !== true) return label;
     return `${section.emoji || "➕"} ${label}`;
 }

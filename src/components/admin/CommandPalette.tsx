@@ -1,4 +1,6 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
+
 // ⌘K / Ctrl+K 커맨드 팔레트
 
 import { useEffect } from "react";
@@ -87,7 +89,9 @@ export default function CommandPalette({
     };
 
     return (
-        <CommandDialog
+        <LocalizedElement
+            as={CommandDialog}
+            translatedProps={["title", "description"]}
             open={open}
             onOpenChange={onOpenChange}
             title="커맨드 팔레트"
@@ -95,10 +99,20 @@ export default function CommandPalette({
             showCloseButton={false}
             className="max-w-lg bg-(--color-surface-subtle)"
         >
-            <CommandInput placeholder="명령 검색..." />
+            <LocalizedElement
+                as={CommandInput}
+                translatedProps={["placeholder"]}
+                placeholder="명령 검색..."
+            />
             <CommandList>
-                <CommandEmpty>결과 없음</CommandEmpty>
-                <CommandGroup heading="탐색">
+                <CommandEmpty>
+                    <LocalizedText text={"결과 없음"} />
+                </CommandEmpty>
+                <LocalizedElement
+                    as={CommandGroup}
+                    translatedProps={["heading"]}
+                    heading="탐색"
+                >
                     {navCommands.map((cmd) => {
                         const Icon = cmd.icon;
                         return (
@@ -107,12 +121,18 @@ export default function CommandPalette({
                                 onSelect={() => handleSelect(cmd.tab)}
                             >
                                 <Icon className="h-4 w-4" />
-                                <span>{cmd.label}</span>
+                                <span>
+                                    {<LocalizedText text={cmd.label} />}
+                                </span>
                             </CommandItem>
                         );
                     })}
-                </CommandGroup>
-                <CommandGroup heading="액션">
+                </LocalizedElement>
+                <LocalizedElement
+                    as={CommandGroup}
+                    translatedProps={["heading"]}
+                    heading="액션"
+                >
                     {ACTION_COMMANDS.map((cmd) => {
                         const Icon = cmd.icon;
                         return (
@@ -121,12 +141,14 @@ export default function CommandPalette({
                                 onSelect={() => handleSelect(cmd.tab)}
                             >
                                 <Icon className="h-4 w-4" />
-                                <span>{cmd.label}</span>
+                                <span>
+                                    {<LocalizedText text={cmd.label} />}
+                                </span>
                             </CommandItem>
                         );
                     })}
-                </CommandGroup>
+                </LocalizedElement>
             </CommandList>
-        </CommandDialog>
+        </LocalizedElement>
     );
 }

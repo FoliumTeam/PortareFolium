@@ -1,3 +1,4 @@
+import { LocalizedElement } from "@/components/LocalizedText";
 import { languages as languageData } from "countries-list";
 import type { ResumeLanguage } from "@/types/resume";
 
@@ -107,7 +108,18 @@ export default function LanguagesSection({
                             }
                         >
                             {flagSrc ? (
-                                <img
+                                <LocalizedElement
+                                    as="img"
+                                    messageProps={{
+                                        alt: {
+                                            text: "{0} 국기",
+                                            values: [
+                                                language.language ?? {
+                                                    text: "언어",
+                                                },
+                                            ],
+                                        },
+                                    }}
                                     src={flagSrc}
                                     alt={`${language.language ?? "언어"} 국기`}
                                     width={40}
@@ -115,12 +127,14 @@ export default function LanguagesSection({
                                     className="h-7 w-10 shrink-0 rounded-sm object-cover shadow-sm"
                                 />
                             ) : (
-                                <span
+                                <LocalizedElement
+                                    as="span"
+                                    translatedProps={["aria-label"]}
                                     className="flex h-7 w-10 shrink-0 items-center justify-center rounded-sm border border-(--color-border) text-xs font-bold text-(--color-muted)"
                                     aria-label="국기 정보 없음"
                                 >
                                     —
-                                </span>
+                                </LocalizedElement>
                             )}
                             <div className="min-w-0">
                                 {language.language ? (

@@ -1,4 +1,11 @@
 "use client";
+import { formatBirthDateForUI } from "@/lib/resume-display";
+import { useUITranslation } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { Fragment, type ReactNode } from "react";
 import type {
@@ -15,10 +22,7 @@ import {
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
-import {
-    formatResumeBirthDate,
-    formatResumeMilitary,
-} from "@/lib/resume-basics-presentation";
+import { formatResumeMilitary } from "@/lib/resume-basics-presentation";
 import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { ResumeProfileIcon } from "@/components/resume/ResumeProfileIcon";
 
@@ -31,13 +35,14 @@ interface Props {
 }
 
 // 날짜 포맷
-const formatDateRange = (
+const formatDateRangeValue = (
     startDate?: string,
     endDate?: string,
-    hideDays?: boolean
+    hideDays?: boolean,
+    ongoing = "진행 중"
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || ongoing}`;
 };
 
 // Layout editor 전용 sync preview — markdown 렌더링, portfolio fetch 스킵
@@ -48,15 +53,21 @@ export default function ResumeModernPreview({
     basicsPresentation,
     activeJobField,
 }: Props) {
+    const uiT = useUITranslation();
+    const formatDateRange = (
+        startDate?: string,
+        endDate?: string,
+        hideDays?: boolean
+    ) => formatDateRangeValue(startDate, endDate, hideDays, uiT("진행 중"));
     const basics = resume.basics ?? {};
     const visible = basicsPresentation.visibility;
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
 
     const getLabel = (key: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
-            | { emoji?: string; showEmoji?: boolean }
+            | { emoji?: string; showEmoji?: boolean; label?: string }
             | undefined;
-        return getResumeSectionLabel(key, sec);
+        return getResumeSectionLabel(key, sec, undefined, uiT);
     };
 
     const sectionH2 = (title: string) => (
@@ -122,7 +133,10 @@ export default function ResumeModernPreview({
                             className={`${idx === 0 ? "pr-4" : idx === sorted.length - 1 ? "pl-4" : "px-4"}`}
                         >
                             <p className="mb-0.5 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                                PHASE {phase.phase}
+                                <LocalizedRichText
+                                    text={"PHASE {0}"}
+                                    values={[phase.phase]}
+                                />
                             </p>
                             {phase.name ? (
                                 <h3 className="mb-1 text-base font-bold text-(--color-foreground)">
@@ -202,7 +216,9 @@ export default function ResumeModernPreview({
     const renderProjects = () => (
         <section key="projects" className="mb-10">
             {sectionH2(
-                `${activeJobField ? "대표 " : ""}${getLabel("projects")}`
+                activeJobField
+                    ? uiT("대표 {0}", [getLabel("projects")])
+                    : getLabel("projects")
             )}
             <div className="grid grid-cols-1 gap-4">
                 {(resume.projects?.entries ?? []).map((p, idx) => (
@@ -451,9 +467,9 @@ export default function ResumeModernPreview({
               basics.location.region,
               basics.location.postalCode,
               basics.location.countryCode === "KR"
-                  ? "대한민국"
+                  ? uiT("대한민국")
                   : basics.location.countryCode === "US"
-                    ? "미국"
+                    ? uiT("미국")
                     : basics.location.countryCode,
           ]
               .filter(Boolean)
@@ -470,14 +486,15 @@ export default function ResumeModernPreview({
         metadataItems.push({ label: "웹사이트", value: basics.url });
     }
     if (visible.location && location) {
-        metadataItems.push({ label: "위치", value: location });
+        metadataItems.push({ label: "주소", value: location });
     }
     if (visible.birthDate && basics.birthDate) {
         metadataItems.push({
             label: "생년월일",
-            value: formatResumeBirthDate(
+            value: formatBirthDateForUI(
                 basics.birthDate,
-                basicsPresentation.personalDetailPreset
+                basicsPresentation.personalDetailPreset,
+                uiT
             ),
         });
     }
@@ -528,7 +545,7 @@ export default function ResumeModernPreview({
                         {metadataItems.map((item) => (
                             <div key={item.label} className="min-w-0">
                                 <p className="text-xs font-bold tracking-[0.14em] text-(--color-muted) uppercase">
-                                    {item.label}
+                                    {<LocalizedText text={item.label} />}
                                 </p>
                                 <div className="mt-1 text-base break-words text-(--color-foreground)">
                                     {item.value}

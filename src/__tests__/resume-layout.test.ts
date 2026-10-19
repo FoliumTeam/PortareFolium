@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { Resume } from "@/types/resume";
 import {
     DEFAULT_RESUME_LAYOUT,
@@ -42,6 +42,77 @@ describe("getResumeSectionLabel", () => {
         expect(getResumeSectionLabel("training", { label: "직무 교육" })).toBe(
             "직무 교육"
         );
+    });
+
+    it.each([
+        ["en", "Training", "Save"],
+        ["ja", "研修", "保存"],
+    ])(
+        "%s 기본 교육 이름만 번역하고 사용자 지정 이름 보존",
+        (_locale, training, save) => {
+            const messages: Record<string, string> = {
+                교육: training,
+                저장: save,
+            };
+            const translate = vi.fn((text: string) => messages[text] ?? text);
+
+            expect(
+                getResumeSectionLabel(
+                    "training",
+                    undefined,
+                    undefined,
+                    translate
+                )
+            ).toBe(training);
+            expect(
+                getResumeSectionLabel(
+                    "training",
+                    { label: "저장" },
+                    undefined,
+                    translate
+                )
+            ).toBe("저장");
+            expect(translate).not.toHaveBeenCalledWith("저장");
+        }
+    );
+
+    it("빈 사용자 지정 이름은 번역된 기본 교육 이름으로 복구", () => {
+        const translate = (text: string) =>
+            text === "교육" ? "Training" : text;
+        expect(
+            getResumeSectionLabel(
+                "training",
+                { label: "  " },
+                undefined,
+                translate
+            )
+        ).toBe("Training");
+    });
+
+    it("비어 있지 않은 사용자 지정 이름의 양끝 공백까지 원문 보존", () => {
+        expect(
+            getResumeSectionLabel(
+                "training",
+                { label: "  저장  " },
+                undefined,
+                () => "Save"
+            )
+        ).toBe("  저장  ");
+    });
+
+    it("사용자 지정 이름에 qualifier 번역과 emoji 순서만 적용", () => {
+        const messages: Record<string, string> = {
+            대표: "Featured",
+            저장: "Save",
+        };
+        expect(
+            getResumeSectionLabel(
+                "training",
+                { label: "저장", emoji: "📚", showEmoji: true },
+                "대표",
+                (text) => messages[text] ?? text
+            )
+        ).toBe("📚 Featured 저장");
     });
 });
 

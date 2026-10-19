@@ -1,3 +1,5 @@
+import { withContentLocale } from "@/lib/content-locale";
+import { isLocale } from "@/lib/i18n";
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/server-admin";
@@ -276,7 +278,7 @@ async function handleCommit(body: CommitBody) {
     });
 }
 
-export async function GET(req: NextRequest) {
+async function getContent(req: NextRequest) {
     const authError = await assertAdmin();
     if (authError) return authError;
     if (!serverClient) return jsonError("serverClient 없음", 500);
@@ -299,7 +301,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, ...result });
 }
 
-export async function POST(req: NextRequest) {
+async function postContent(req: NextRequest) {
     const authError = await assertAdmin();
     if (authError) return authError;
 
@@ -308,4 +310,16 @@ export async function POST(req: NextRequest) {
     if (body.action === "chunk") return handleChunk(body);
     if (body.action === "commit") return handleCommit(body);
     return jsonError("알 수 없는 action", 400);
+}
+
+// 인증 검사를 포함한 각 요청의 콘텐츠 언어 고정
+export async function GET(req: NextRequest) {
+    const locale = req.headers.get("x-folium-content-locale") ?? "ko";
+    if (!isLocale(locale)) return jsonError("Unsupported locale", 400);
+    return withContentLocale(locale, () => getContent(req));
+}
+export async function POST(req: NextRequest) {
+    const locale = req.headers.get("x-folium-content-locale") ?? "ko";
+    if (!isLocale(locale)) return jsonError("Unsupported locale", 400);
+    return withContentLocale(locale, () => postContent(req));
 }

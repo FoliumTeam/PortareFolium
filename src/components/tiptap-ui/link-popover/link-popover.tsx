@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
@@ -82,7 +83,9 @@ export interface LinkPopoverProps
 export const LinkButton = forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, children, ...props }, ref) => {
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 className={className}
                 variant="ghost"
@@ -94,7 +97,7 @@ export const LinkButton = forwardRef<HTMLButtonElement, ButtonProps>(
                 {...props}
             >
                 {children || <LinkIcon className="tiptap-button-icon" />}
-            </Button>
+            </LocalizedElement>
         );
     }
 );
@@ -133,7 +136,9 @@ const LinkMain: React.FC<LinkMainProps> = ({
                 }}
             >
                 <CardItemGroup orientation="horizontal">
-                    <Input
+                    <LocalizedElement
+                        as={Input}
+                        translatedProps={["placeholder"]}
                         type="url"
                         placeholder="링크 붙여넣기..."
                         value={url}
@@ -147,7 +152,9 @@ const LinkMain: React.FC<LinkMainProps> = ({
                     />
 
                     <ButtonGroup>
-                        <Button
+                        <LocalizedElement
+                            as={Button}
+                            translatedProps={["aria-label", "tooltip"]}
                             type="button"
                             onClick={setLink}
                             aria-label="링크 적용"
@@ -156,14 +163,16 @@ const LinkMain: React.FC<LinkMainProps> = ({
                             variant="ghost"
                         >
                             <CornerDownLeftIcon className="tiptap-button-icon" />
-                        </Button>
+                        </LocalizedElement>
                     </ButtonGroup>
 
                     <Separator />
 
                     <ButtonGroup>
                         <ButtonGroup>
-                            <Button
+                            <LocalizedElement
+                                as={Button}
+                                translatedProps={["aria-label", "tooltip"]}
                                 type="button"
                                 onClick={openLink}
                                 aria-label="새 창에서 열기"
@@ -172,11 +181,13 @@ const LinkMain: React.FC<LinkMainProps> = ({
                                 variant="ghost"
                             >
                                 <ExternalLinkIcon className="tiptap-button-icon" />
-                            </Button>
+                            </LocalizedElement>
                         </ButtonGroup>
 
                         <ButtonGroup>
-                            <Button
+                            <LocalizedElement
+                                as={Button}
+                                translatedProps={["aria-label", "tooltip"]}
                                 type="button"
                                 onClick={removeLink}
                                 aria-label="링크 제거"
@@ -185,7 +196,7 @@ const LinkMain: React.FC<LinkMainProps> = ({
                                 variant="ghost"
                             >
                                 <TrashIcon className="tiptap-button-icon" />
-                            </Button>
+                            </LocalizedElement>
                         </ButtonGroup>
                     </ButtonGroup>
                 </CardItemGroup>
@@ -281,7 +292,9 @@ export const LinkPopover = forwardRef<HTMLButtonElement, LinkPopoverProps>(
         return (
             <Popover open={isOpen} onOpenChange={handleOnOpenChange}>
                 <PopoverTrigger asChild>
-                    <LinkButton
+                    <LocalizedElement
+                        as={LinkButton}
+                        translatedProps={["aria-label"]}
                         disabled={!canSet}
                         data-active-state={isActive ? "on" : "off"}
                         data-disabled={!canSet}
@@ -292,7 +305,7 @@ export const LinkPopover = forwardRef<HTMLButtonElement, LinkPopoverProps>(
                         ref={ref}
                     >
                         {children ?? <Icon className="tiptap-button-icon" />}
-                    </LinkButton>
+                    </LocalizedElement>
                 </PopoverTrigger>
 
                 <PopoverContent>

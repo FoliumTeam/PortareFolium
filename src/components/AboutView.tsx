@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { PublicJobField } from "@/lib/public-job-field";
 import type { AboutData, ValuePillar } from "@/types/about";
 import type { ResumeBasics, ResumeBasicsPresentation } from "@/types/resume";
@@ -61,7 +62,7 @@ export default function AboutView({
     const sections = data.sections ?? {};
     const competencySections = data.competencySections ?? {};
     const profileEmoji = jobField.emoji;
-    const profileLabel = `${jobField.name.toUpperCase()} PROFILE`;
+    const profileLabel = serverT("{0} PROFILE", [jobField.name.toUpperCase()]);
     const location = basics.location
         ? [
               basics.location.address,
@@ -70,9 +71,9 @@ export default function AboutView({
               basics.location.region,
               basics.location.postalCode,
               basics.location.countryCode === "KR"
-                  ? "대한민국"
+                  ? serverT("대한민국")
                   : basics.location.countryCode === "US"
-                    ? "미국"
+                    ? serverT("미국")
                     : basics.location.countryCode,
           ]
               .filter(Boolean)
@@ -93,7 +94,7 @@ export default function AboutView({
                 : undefined,
         },
         {
-            label: "위치",
+            label: "주소",
             value: visible.location ? location : undefined,
             href: undefined,
         },
@@ -129,7 +130,9 @@ export default function AboutView({
                             />
                             <img
                                 src={resolvedProfileImage}
-                                alt={`${basics.name || "프로필"} 사진`}
+                                alt={serverT("{0} 사진", [
+                                    basics.name || { text: "프로필" },
+                                ])}
                                 width={144}
                                 height={144}
                                 className={`tablet:h-36 tablet:w-36 relative h-28 w-28 object-cover ring-4 ring-(--color-accent)/30 ${
@@ -171,7 +174,7 @@ export default function AboutView({
                             const content = (
                                 <>
                                     <span className="text-[11px] font-bold tracking-[0.14em] text-(--color-muted) uppercase">
-                                        {label}
+                                        {serverT(label)}
                                     </span>
                                     <span className="mt-1 truncate text-sm font-semibold text-(--color-foreground)">
                                         {value}
@@ -218,7 +221,9 @@ export default function AboutView({
                                     href={profile.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    aria-label={`${brand.label} 프로필 열기`}
+                                    aria-label={serverT("{0} 프로필 열기", [
+                                        brand.label,
+                                    ])}
                                     style={{
                                         backgroundColor: brand.backgroundColor,
                                         color: brand.foregroundColor,
@@ -240,16 +245,18 @@ export default function AboutView({
                 <section className="mt-14" aria-labelledby="about-values-title">
                     <div className="mb-6">
                         <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                            How I Work
+                            {serverT("How I Work")}
                         </p>
                         <h2
                             id="about-values-title"
                             className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
                         >
-                            일하는 방식
+                            {serverT("일하는 방식")}
                         </h2>
                         <p className="mt-2 text-base leading-7 text-(--color-muted)">
-                            경험을 구현과 운영으로 연결할 때 지키는 기준
+                            {serverT(
+                                "경험을 구현과 운영으로 연결할 때 지키는 기준"
+                            )}
                         </p>
                     </div>
                     <div className="tablet:grid-cols-3 grid gap-4">
@@ -283,13 +290,13 @@ export default function AboutView({
                 >
                     <div className="mb-7">
                         <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                            Evidence
+                            {serverT("Evidence")}
                         </p>
                         <h2
                             id="about-experience-title"
                             className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
                         >
-                            경험으로 증명한 일
+                            {serverT("경험으로 증명한 일")}
                         </h2>
                     </div>
                     <div className="tablet:grid-cols-2 grid gap-5">
@@ -314,10 +321,19 @@ export default function AboutView({
                                         </span>
                                         <div>
                                             <p className="text-xs font-bold tracking-[0.14em] text-(--color-accent) uppercase">
-                                                {category}
+                                                {Object.hasOwn(
+                                                    sectionPresentation,
+                                                    category
+                                                )
+                                                    ? serverT(category)
+                                                    : category}
                                             </p>
                                             <h3 className="mt-1 text-lg font-bold text-(--color-foreground)">
-                                                {presentation.label}
+                                                {sectionPresentation[category]
+                                                    ? serverT(
+                                                          presentation.label
+                                                      )
+                                                    : presentation.label}
                                             </h3>
                                         </div>
                                     </div>
@@ -353,13 +369,13 @@ export default function AboutView({
                 >
                     <div className="mb-7">
                         <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                            Strengths
+                            {serverT("Strengths")}
                         </p>
                         <h2
                             id="about-competencies-title"
                             className="mt-2 text-3xl font-black tracking-tight text-(--color-foreground)"
                         >
-                            문제를 푸는 방식
+                            {serverT("문제를 푸는 방식")}
                         </h2>
                     </div>
                     <div className="tablet:grid-cols-2 grid gap-5">
@@ -377,7 +393,12 @@ export default function AboutView({
                                             "✨"}
                                     </span>
                                     <h3 className="text-lg font-black text-(--color-foreground)">
-                                        {category}
+                                        {Object.hasOwn(
+                                            competencyPresentation,
+                                            category
+                                        )
+                                            ? serverT(category)
+                                            : category}
                                     </h3>
                                 </div>
                                 <ul className="mt-5 space-y-3">

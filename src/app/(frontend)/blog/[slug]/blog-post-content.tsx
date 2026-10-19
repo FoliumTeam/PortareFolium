@@ -1,4 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { getContentLocale } from "@/lib/content-locale";
+
+import { serverT } from "@/lib/server-i18n";
+import { notFound } from "next/navigation";
 import {
     getPost,
     getTags,
@@ -13,7 +16,8 @@ import GithubToc from "@/components/GithubToc";
 import MermaidRenderer from "@/components/MermaidRenderer";
 import ImageLightbox from "@/components/ImageLightbox";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { isGifUrl } from "@/lib/image-url";
@@ -47,11 +51,13 @@ type BlogPostContentProps = {
 export default async function BlogPostContent({
     slug,
     jobField,
-    blogBasePath = "/blog",
+    blogBasePath: basePathOverride,
     postOverride,
 }: BlogPostContentProps) {
+    const blogBasePath =
+        basePathOverride ?? (jobField ? `/${jobField}/blog` : "/blog");
     const post = postOverride ?? (await getPost(slug));
-    if (!post) redirect(blogBasePath);
+    if (!post) return <MissingContentRedirect href={blogBasePath} />;
     if (
         jobField &&
         !postOverride &&
@@ -105,7 +111,7 @@ export default async function BlogPostContent({
                     className="mb-8 inline-flex items-center gap-2 rounded-xl border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                    Blog 목록
+                    {serverT("Blog 목록")}
                 </Link>
 
                 {post.thumbnail && (
@@ -141,7 +147,7 @@ export default async function BlogPostContent({
                             className="text-sm font-medium text-(--color-muted)"
                             dateTime={pubDate.toISOString()}
                         >
-                            {formatPubDateKST(pubDate)}
+                            {formatPubDateKST(pubDate, getContentLocale())}
                         </time>
                         {tagDisplay.length > 0 && (
                             <>
@@ -151,7 +157,7 @@ export default async function BlogPostContent({
                                 />
                                 <div
                                     className="flex flex-wrap gap-1.5"
-                                    aria-label="태그"
+                                    aria-label={serverT("태그")}
                                 >
                                     {tagDisplay.map((t) => (
                                         <Link
@@ -191,7 +197,10 @@ export default async function BlogPostContent({
             {(tocStyle === "hover" || tocStyle === "both") && (
                 <TableOfContents entries={tocEntries} />
             )}
-            <MermaidRenderer selector=".post-content" label="blog post" />
+            <MermaidRenderer
+                selector=".post-content"
+                label={serverT("blog post")}
+            />
             <ImageLightbox contentSelector=".post-content" />
         </div>
     );

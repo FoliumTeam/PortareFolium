@@ -1,8 +1,12 @@
 "use client";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageSquare, Copy, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getEditingLocale } from "@/lib/admin-content-state";
+import type { Locale } from "@/lib/i18n";
+import { normalizeUIMessage, type UIMessages } from "@/lib/ui-messages";
 
 const GET_PORTFOLIO_PROMPT = (
     origin: string
@@ -128,18 +132,114 @@ Task:
 제공되는 changelog 마크다운 파일을 읽고, changelog에 기록된 각 날짜마다, 무슨 작업을 했고 어떤 난관(hardships)을 겪었으며 어떻게 해결했는지 설명하는 상세한 기술 블로그 포스트를 작성해줘.
 문맥 파악 및 스타일 참고를 위해 먼저 Gold Standard References 항목들을 읽어본 후, \`create_post\` 툴을 사용하여 각 블로그 포스트를 데이터베이스에 저장해줘.`;
 
+const CONTENT_LANGUAGE_GUIDANCE: Record<Locale, string> = {
+    ko: `콘텐츠 작성 언어: 한국어 (ko)
+- 제목·설명·본문·새 이미지 설명의 한국어 작성
+- tools/list와 get_schema로 각 도구의 lang 지원 여부 확인
+- lang 지원 도구의 모든 읽기·쓰기 요청에서 arguments 최상위에 lang: "ko" 지정, data 내부 배치 금지
+- lang 미지원 도구에는 lang 추가 금지, 생략 시 ko 기본값 주의
+- API 키·JSON 키·enum·숫자·경로·기존 코드 예시 보존
+- 저장 뒤 같은 lang로 다시 조회해 저장 언어와 필드 확인`,
+    en: `Content language: English (en)
+- Write titles, descriptions, body content, and new image descriptions in English.
+- Use tools/list and get_schema to check which tools support lang.
+- For every read or write request to a tool supporting lang, set lang: "en" at the top level of arguments, outside data.
+- Do not add lang to unsupported tools. Omitting lang defaults to ko.
+- Preserve API keys, JSON keys, enums, numbers, paths, and existing code examples.
+- After saving, retrieve the entry with the same lang to verify its language and fields.`,
+    ja: `コンテンツの言語：日本語 (ja)
+- タイトル、説明、本文、新しく作成する画像の説明は日本語で記述してください。
+- tools/list と get_schema で各ツールの lang 対応を確認してください。
+- lang 対応ツールのすべての読み書きリクエストで、arguments の最上位に lang: "ja" を指定し、data の中には入れないでください。
+- lang 非対応ツールには追加しないでください。省略時は ko になります。
+- API キー、JSON キー、enum、数値、パス、既存のコード例は維持してください。
+- 保存後は同じ lang で再取得し、保存言語と各フィールドを確認してください。`,
+};
+
+// 코드 예시 원문을 보존한 콘텐츠 언어별 안내 생성
+const getLocalizedPrompt = (
+    source: string,
+    messages: UIMessages,
+    origin: string,
+    locale: Locale
+): string => {
+    const translated = messages[normalizeUIMessage(source)];
+    const codeBlocks = source.match(/```[\s\S]*?```/g) ?? [];
+    let blockIndex = 0;
+    let prompt = (translated ?? source).replace(
+        /```[\s\S]*?```/g,
+        (block) => codeBlocks[blockIndex++] ?? block
+    );
+    const postOptions = source.match(
+        /- published: false[\s\S]*?(?=\n\nGold Standard References)/
+    )?.[0];
+    if (postOptions) {
+        prompt = prompt.replace(normalizeUIMessage(postOptions), postOptions);
+    }
+    if (locale === "en") {
+        prompt = prompt.replace(
+            "Write blog posts in friendly, engaging Korean.",
+            "Write blog posts in friendly, engaging English."
+        );
+    } else if (locale === "ja") {
+        prompt = prompt.replace(
+            "ブログ記事は、読者に親しみやすく興味を引く韓国語で執筆してください。",
+            "ブログ記事は、読者に親しみやすく興味を引く日本語で執筆してください。"
+        );
+    }
+    return `${prompt.replace(/\{0\}/g, () => origin)}\n\n${CONTENT_LANGUAGE_GUIDANCE[locale]}`;
+};
+
+// 화면 언어와 독립적인 콘텐츠 언어 사전 조회
+const getPromptDefaults = async (origin: string, locale: Locale) => {
+    const messages: UIMessages =
+        locale === "en"
+            ? (await import("@/lib/locales/en-e.json")).default
+            : locale === "ja"
+              ? (await import("@/lib/locales/ja-e.json")).default
+              : {};
+    return {
+        blog: getLocalizedPrompt(
+            GET_DEFAULT_PROMPT("{0}"),
+            messages,
+            origin,
+            locale
+        ),
+        portfolio: getLocalizedPrompt(
+            GET_PORTFOLIO_PROMPT("{0}"),
+            messages,
+            origin,
+            locale
+        ),
+    };
+};
+
 export default function PromptLibraryPanel() {
     const [promptText, setPromptText] = useState("");
     const [portfolioPromptText, setPortfolioPromptText] = useState("");
     const [origin, setOrigin] = useState("");
     const [copied, setCopied] = useState(false);
     const [portfolioCopied, setPortfolioCopied] = useState(false);
+    const promptRevision = useRef(0);
+    const portfolioPromptRevision = useRef(0);
 
     useEffect(() => {
+        let active = true;
         const currentOrigin = window.location.origin;
         setOrigin(currentOrigin);
-        setPromptText(GET_DEFAULT_PROMPT(currentOrigin));
-        setPortfolioPromptText(GET_PORTFOLIO_PROMPT(currentOrigin));
+        void getPromptDefaults(currentOrigin, getEditingLocale())
+            .then((defaults) => {
+                if (!active) return;
+                if (promptRevision.current === 0) setPromptText(defaults.blog);
+                if (portfolioPromptRevision.current === 0)
+                    setPortfolioPromptText(defaults.portfolio);
+            })
+            .catch((error) =>
+                console.error("[PromptLibraryPanel::loadDefaults]", error)
+            );
+        return () => {
+            active = false;
+        };
     }, []);
 
     const handleCopy = async () => {
@@ -152,8 +252,18 @@ export default function PromptLibraryPanel() {
         }
     };
 
-    const handleReset = () => {
-        setPromptText(GET_DEFAULT_PROMPT(origin));
+    const handleReset = async () => {
+        const revision = ++promptRevision.current;
+        try {
+            const defaults = await getPromptDefaults(
+                origin,
+                getEditingLocale()
+            );
+            if (revision === promptRevision.current)
+                setPromptText(defaults.blog);
+        } catch (error) {
+            console.error("[PromptLibraryPanel::handleReset]", error);
+        }
     };
 
     const handlePortfolioCopy = async () => {
@@ -166,20 +276,32 @@ export default function PromptLibraryPanel() {
         }
     };
 
-    const handlePortfolioReset = () => {
-        setPortfolioPromptText(GET_PORTFOLIO_PROMPT(origin));
+    const handlePortfolioReset = async () => {
+        const revision = ++portfolioPromptRevision.current;
+        try {
+            const defaults = await getPromptDefaults(
+                origin,
+                getEditingLocale()
+            );
+            if (revision === portfolioPromptRevision.current)
+                setPortfolioPromptText(defaults.portfolio);
+        } catch (error) {
+            console.error("[PromptLibraryPanel::handlePortfolioReset]", error);
+        }
     };
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden pb-12">
             <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pb-4">
                 <h1 className="text-3xl font-bold text-(--color-foreground)">
-                    프롬프트 라이브러리
+                    <LocalizedText text={"프롬프트 라이브러리"} />
                 </h1>
                 <p className="mt-2 text-(--color-muted)">
-                    AI 에이전트(Cursor, Claude Code 등)에게 주입하여 MCP
-                    엔드포인트를 효과적으로 활용할 수 있게 해주는 프롬프트
-                    템플릿입니다.
+                    <LocalizedText
+                        text={
+                            "AI 에이전트(Cursor, Claude Code 등)에게 주입하여 MCP 엔드포인트를 효과적으로 활용할 수 있게 해주는 프롬프트 템플릿입니다."
+                        }
+                    />
                 </p>
             </div>
 
@@ -188,21 +310,26 @@ export default function PromptLibraryPanel() {
                     <div className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5 text-(--color-accent)" />
                         <h2 className="text-xl font-medium">
-                            개발 일지 블로그 포스트 변환
+                            <LocalizedText
+                                text={"개발 일지 블로그 포스트 변환"}
+                            />
                         </h2>
                     </div>
                     <p className="text-sm text-(--color-muted)">
-                        Changelog 형태의 개발 일지 마크다운 파일을 입력하면,
-                        AI가 날짜별로 상세한 블로그 포스트 초안을 작성하여
-                        데이터베이스에 일괄 저장합니다. 토큰은 보안을 위해 직접
-                        발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
-                        위치에 붙여넣어주세요.
+                        <LocalizedRichText
+                            text={
+                                "Changelog 형태의 개발 일지 마크다운 파일을 입력하면, AI가 날짜별로 상세한 블로그 포스트 초안을 작성하여 데이터베이스에 일괄 저장합니다. 토큰은 보안을 위해 직접 발급받아 {0} 위치에 붙여넣어주세요."
+                            }
+                            values={[
+                                <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>,
+                            ]}
+                        />
                     </p>
 
                     <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
                         <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
                             <span className="text-xs font-medium text-(--color-muted)">
-                                System Prompt
+                                <LocalizedText text={"System Prompt"} />
                             </span>
                             <div className="flex items-center gap-2">
                                 <Button
@@ -212,7 +339,7 @@ export default function PromptLibraryPanel() {
                                     className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
                                 >
                                     <RotateCcw className="mr-1 h-3 w-3" />
-                                    초기화
+                                    <LocalizedText text={"초기화"} />
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -225,13 +352,16 @@ export default function PromptLibraryPanel() {
                                     ) : (
                                         <Copy className="mr-1 h-3 w-3" />
                                     )}
-                                    복사
+                                    <LocalizedText text={"복사"} />
                                 </Button>
                             </div>
                         </div>
                         <textarea
                             value={promptText}
-                            onChange={(e) => setPromptText(e.target.value)}
+                            onChange={(e) => {
+                                promptRevision.current += 1;
+                                setPromptText(e.target.value);
+                            }}
                             className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
                             spellCheck={false}
                         />
@@ -242,21 +372,24 @@ export default function PromptLibraryPanel() {
                     <div className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5 text-(--color-accent)" />
                         <h2 className="text-xl font-medium">
-                            포트폴리오 아이템 생성
+                            <LocalizedText text={"포트폴리오 아이템 생성"} />
                         </h2>
                     </div>
                     <p className="text-sm text-(--color-muted)">
-                        프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가 개인
-                        기여와 검증 근거 중심의 v2 사례 연구를 작성하여
-                        데이터베이스에 저장합니다. 토큰은 보안을 위해 직접
-                        발급받아 <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>{" "}
-                        위치에 붙여넣어주세요.
+                        <LocalizedRichText
+                            text={
+                                "프로젝트 소스코드·README·CHANGELOG를 입력하면, AI가 개인 기여와 검증 근거 중심의 v2 사례 연구를 작성하여 데이터베이스에 저장합니다. 토큰은 보안을 위해 직접 발급받아 {0} 위치에 붙여넣어주세요."
+                            }
+                            values={[
+                                <code>&lt;YOUR_AGENT_TOKEN_HERE&gt;</code>,
+                            ]}
+                        />
                     </p>
 
                     <div className="overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-subtle)">
                         <div className="tablet:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-(--color-border) bg-[rgba(0,0,0,0.02)] px-2 py-2 dark:bg-[rgba(255,255,255,0.02)]">
                             <span className="text-xs font-medium text-(--color-muted)">
-                                System Prompt
+                                <LocalizedText text={"System Prompt"} />
                             </span>
                             <div className="flex items-center gap-2">
                                 <Button
@@ -266,7 +399,7 @@ export default function PromptLibraryPanel() {
                                     className="h-7 px-2 text-xs text-(--color-muted) hover:text-(--color-foreground)"
                                 >
                                     <RotateCcw className="mr-1 h-3 w-3" />
-                                    초기화
+                                    <LocalizedText text={"초기화"} />
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -279,15 +412,16 @@ export default function PromptLibraryPanel() {
                                     ) : (
                                         <Copy className="mr-1 h-3 w-3" />
                                     )}
-                                    복사
+                                    <LocalizedText text={"복사"} />
                                 </Button>
                             </div>
                         </div>
                         <textarea
                             value={portfolioPromptText}
-                            onChange={(e) =>
-                                setPortfolioPromptText(e.target.value)
-                            }
+                            onChange={(e) => {
+                                portfolioPromptRevision.current += 1;
+                                setPortfolioPromptText(e.target.value);
+                            }}
                             className="min-h-[400px] w-full resize-y bg-transparent p-4 text-sm whitespace-pre-wrap text-(--color-foreground) focus:outline-none"
                             spellCheck={false}
                         />

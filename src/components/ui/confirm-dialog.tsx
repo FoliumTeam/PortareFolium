@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import {
     createContext,
@@ -108,11 +109,15 @@ export function ConfirmDialogProvider({
                 <CustomConfirmDialogContent>
                     <CustomConfirmDialogHeader>
                         <CustomConfirmDialogTitle>
-                            {dialogState.title}
+                            {<LocalizedText text={dialogState.title} />}
                         </CustomConfirmDialogTitle>
                         {dialogState.description ? (
                             <CustomConfirmDialogDescription>
-                                {dialogState.description}
+                                {
+                                    <LocalizedText
+                                        text={dialogState.description}
+                                    />
+                                }
                             </CustomConfirmDialogDescription>
                         ) : null}
                     </CustomConfirmDialogHeader>
@@ -120,13 +125,13 @@ export function ConfirmDialogProvider({
                         <CustomConfirmDialogCancel
                             onClick={() => closeDialog(false)}
                         >
-                            {dialogState.cancelText}
+                            {<LocalizedText text={dialogState.cancelText} />}
                         </CustomConfirmDialogCancel>
                         <CustomConfirmDialogAction
                             onClick={() => closeDialog(true)}
                             destructive={dialogState.variant === "destructive"}
                         >
-                            {dialogState.confirmText}
+                            {<LocalizedText text={dialogState.confirmText} />}
                         </CustomConfirmDialogAction>
                     </CustomConfirmDialogFooter>
                 </CustomConfirmDialogContent>

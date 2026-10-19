@@ -1,4 +1,7 @@
+import { serverT } from "@/lib/server-i18n";
 import { unstable_cache } from "next/cache";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import type { Locale } from "@/lib/i18n";
 import { evaluate } from "@mdx-js/mdx";
 import * as runtime from "react/jsx-runtime";
 import rehypeShiki from "@shikijs/rehype";
@@ -32,7 +35,7 @@ function YouTube({ id }: { id?: string }) {
                 data-lightbox-open="youtube"
                 data-youtube-id={id}
                 className="absolute top-3 right-3 z-10 rounded-lg bg-black/75 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-                aria-label="영상 확대 보기"
+                aria-label={serverT("영상 확대 보기")}
             >
                 Lightbox
             </button>
@@ -167,19 +170,21 @@ function normalizeUnsafeMdx(chunk: string): string {
 // 모듈 레벨 선언 — slug + content가 실제 cache key의 일부로 포함됨
 // 클로저 방식(매 호출마다 새 함수 생성)은 content가 key에서 누락되어 stale 결과를 서빙
 const _renderCached = unstable_cache(
-    async (_slug: string, content: string) => renderMarkdown(content),
-    ["mdx-html-v4"],
+    async (_slug: string, content: string, locale: Locale) =>
+        withContentLocale(locale, () => renderMarkdown(content)),
+    ["mdx-html-v5"],
     { revalidate: false }
 );
 
 // slug + content를 key로 MDX 렌더링 결과 캐싱
 export function getCachedMarkdown(
     slug: string,
-    content: string
+    content: string,
+    locale: Locale = getContentLocale()
 ): Promise<string> {
     return process.env.NODE_ENV === "development"
-        ? renderMarkdown(content)
-        : _renderCached(slug, content);
+        ? withContentLocale(locale, () => renderMarkdown(content))
+        : _renderCached(slug, content, locale);
 }
 
 export async function renderMarkdown(content: string): Promise<string> {
@@ -258,6 +263,6 @@ export async function renderMarkdown(content: string): Promise<string> {
                 `[mdx-debug] cause.raisedAt ${err.cause.raisedAt} (position within JSX expression)`
             );
         }
-        return `<p class="text-red-500">MDX 렌더링 중 오류가 발생했습니다: ${(e as Error).message}</p>`;
+        return `<p class="text-red-500">${serverT("MDX 렌더링 중 오류가 발생했습니다: {0}", [(e as Error).message])}</p>`;
     }
 }

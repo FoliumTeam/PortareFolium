@@ -1,3 +1,5 @@
+import { PublicAnchor } from "@/components/PublicLink";
+import { serverT } from "@/lib/server-i18n";
 import type { ResumeProject } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
 import { getPortfolioItem } from "@/lib/queries";
@@ -12,7 +14,7 @@ import { ArrowUpRight, ExternalLinkIcon } from "lucide-react";
 
 // 날짜 포맷
 const formatDateRange = (startDate?: string, endDate?: string): string =>
-    `${startDate || ""} ~ ${endDate || "진행 중"}`;
+    `${startDate || ""} ~ ${endDate || serverT("진행 중")}`;
 
 const getProjectTypeBadge = (projectType: PortfolioProject["projectType"]) =>
     projectType === "work"
@@ -70,7 +72,7 @@ const getFeaturedPortfolioProjects = async (
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
 export default async function ProjectsSection({
     projects,
-    label = "프로젝트",
+    label,
     badge,
     portfolioBasePath = "/portfolio",
     compact = false,
@@ -86,20 +88,21 @@ export default async function ProjectsSection({
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-(--color-border) pb-2">
                     <div>
                         <h2 className="text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                            {label}
+                            {label ?? serverT("프로젝트")}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            포트폴리오에서 지정한 순서대로 대표 프로젝트 최대
-                            5건을 요약했습니다.
+                            {serverT(
+                                "포트폴리오에서 지정한 순서대로 대표 프로젝트 최대 5건을 요약했습니다."
+                            )}
                         </p>
                     </div>
-                    <a
+                    <PublicAnchor
                         href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3.5 py-2 text-sm font-bold text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        포트폴리오 전체 보기
+                        {serverT("포트폴리오 전체 보기")}
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                    </a>
+                    </PublicAnchor>
                 </div>
                 <div className="space-y-3">
                     {compactProjects.map((project) => {
@@ -120,10 +123,13 @@ export default async function ProjectsSection({
                                 className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 transition-colors hover:border-(--color-accent)"
                                 data-pdf-block-item
                             >
-                                <a
+                                <PublicAnchor
                                     href={`${portfolioBasePath}/${project.slug}`}
                                     className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
-                                    aria-label={`${project.title} 프로젝트 기록 보기`}
+                                    aria-label={serverT(
+                                        "{0} 프로젝트 기록 보기",
+                                        [project.title]
+                                    )}
                                 />
                                 <div className="flex items-start gap-4">
                                     {thumbnailSource ? (
@@ -132,7 +138,9 @@ export default async function ProjectsSection({
                                                 src={thumbnailSource}
                                                 alt={
                                                     media?.alt ||
-                                                    `${project.title} 대표 이미지`
+                                                    serverT("{0} 대표 이미지", [
+                                                        project.title,
+                                                    ])
                                                 }
                                                 className="h-full w-full object-cover"
                                                 loading="lazy"
@@ -144,7 +152,9 @@ export default async function ProjectsSection({
                                             <span
                                                 className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ${projectTypeBadge.className}`}
                                             >
-                                                {projectTypeBadge.label}
+                                                {serverT(
+                                                    projectTypeBadge.label
+                                                )}
                                             </span>
                                             <h3 className="text-lg font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                                 {project.title}
@@ -165,7 +175,7 @@ export default async function ProjectsSection({
                                             </p>
                                         )}
                                         <span className="tablet:hidden mt-2 inline-flex items-center gap-1 text-sm font-bold text-(--color-accent)">
-                                            상세 보기
+                                            {serverT("상세 보기")}
                                             <ArrowUpRight
                                                 className="h-3.5 w-3.5"
                                                 aria-hidden="true"
@@ -173,7 +183,7 @@ export default async function ProjectsSection({
                                         </span>
                                     </div>
                                     <span className="tablet:inline-flex hidden shrink-0 items-center gap-1 text-sm font-bold text-(--color-accent)">
-                                        상세 보기
+                                        {serverT("상세 보기")}
                                         <ArrowUpRight
                                             className="h-3.5 w-3.5"
                                             aria-hidden="true"
@@ -223,7 +233,7 @@ export default async function ProjectsSection({
             <h2
                 className={`mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase ${badge ? "flex items-center gap-3" : ""}`}
             >
-                {label}
+                {label ?? serverT("프로젝트")}
                 {badge ? (
                     <span className="rounded-lg bg-(--color-accent) px-3 py-0.5 text-xs font-bold tracking-widest text-(--color-on-accent) normal-case">
                         {badge}
@@ -249,10 +259,13 @@ export default async function ProjectsSection({
                             data-pdf-block-item
                         >
                             {project.portfolioSlug ? (
-                                <a
+                                <PublicAnchor
                                     href={`${portfolioBasePath}/${project.portfolioSlug}`}
                                     className="absolute inset-0 z-10 rounded-lg focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-surface) focus-visible:outline-none"
-                                    aria-label={`${project.name ?? "프로젝트"} 프로젝트 기록 보기`}
+                                    aria-label={serverT(
+                                        "{0} 프로젝트 기록 보기",
+                                        [project.name ?? { text: "프로젝트" }]
+                                    )}
                                 />
                             ) : null}
                             {/* Thumbnail */}
@@ -262,7 +275,11 @@ export default async function ProjectsSection({
                                         src={imageSource}
                                         alt={
                                             media?.alt ||
-                                            `${project.name ?? "프로젝트"} 대표 이미지`
+                                            serverT("{0} 대표 이미지", [
+                                                project.name ?? {
+                                                    text: "프로젝트",
+                                                },
+                                            ])
                                         }
                                         className="h-full w-full object-cover"
                                         loading="lazy"
@@ -277,14 +294,14 @@ export default async function ProjectsSection({
                                     >
                                         {project.url &&
                                         !project.portfolioSlug ? (
-                                            <a
+                                            <PublicAnchor
                                                 href={project.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-(--color-link) no-underline hover:opacity-80"
                                             >
                                                 {project.name}
-                                            </a>
+                                            </PublicAnchor>
                                         ) : (
                                             project.name
                                         )}
@@ -309,7 +326,12 @@ export default async function ProjectsSection({
                                         {[
                                             pf?.ownership[0],
                                             pf?.teamSize
-                                                ? `${pf.teamSize}인`
+                                                ? serverT(
+                                                      pf.teamSize === 1
+                                                          ? "1인"
+                                                          : "{0}인",
+                                                      [pf.teamSize]
+                                                  )
                                                 : null,
                                         ]
                                             .filter(Boolean)
@@ -383,7 +405,7 @@ export default async function ProjectsSection({
                                 {/* GitHub */}
                                 {sourceLink ? (
                                     <div className="relative z-20 mt-auto pt-2">
-                                        <a
+                                        <PublicAnchor
                                             href={sourceLink.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -405,7 +427,7 @@ export default async function ProjectsSection({
                                             <span className="ml-1">
                                                 <ExternalLinkIcon className="h-3.5 w-3.5" />
                                             </span>
-                                        </a>
+                                        </PublicAnchor>
                                     </div>
                                 ) : null}
                             </div>

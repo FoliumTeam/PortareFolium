@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ChainedCommands } from "@tiptap/core";
@@ -77,7 +78,9 @@ function IconTooltip({
     return (
         <Tooltip>
             <TooltipTrigger asChild>{children}</TooltipTrigger>
-            <TooltipContent sideOffset={6}>{label}</TooltipContent>
+            <TooltipContent sideOffset={6}>
+                {<LocalizedText text={label} />}
+            </TooltipContent>
         </Tooltip>
     );
 }
@@ -96,8 +99,14 @@ function ToolbarButton({
     destructive?: boolean;
 }) {
     return (
-        <IconTooltip label={label}>
-            <button
+        <LocalizedElement
+            as={IconTooltip}
+            translatedProps={["label"]}
+            label={label}
+        >
+            <LocalizedElement
+                as="button"
+                translatedProps={["aria-label"]}
                 type="button"
                 aria-label={label}
                 onMouseDown={(event) => event.preventDefault()}
@@ -110,8 +119,8 @@ function ToolbarButton({
                 }
             >
                 {children}
-            </button>
-        </IconTooltip>
+            </LocalizedElement>
+        </LocalizedElement>
     );
 }
 
@@ -131,8 +140,14 @@ function PopoverShell({
 
     return (
         <div ref={ref} className="relative">
-            <IconTooltip label={title}>
-                <button
+            <LocalizedElement
+                as={IconTooltip}
+                translatedProps={["label"]}
+                label={title}
+            >
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     type="button"
                     aria-label={title}
                     onMouseDown={(event) => event.preventDefault()}
@@ -140,8 +155,8 @@ function PopoverShell({
                     className={iconButtonClassName}
                 >
                     {button}
-                </button>
-            </IconTooltip>
+                </LocalizedElement>
+            </LocalizedElement>
             {open && (
                 <div
                     className={`absolute top-full z-[100] mt-1 w-72 rounded-lg border border-zinc-200 bg-white p-3 text-sm shadow-xl dark:border-zinc-700 dark:bg-zinc-800 ${
@@ -169,8 +184,14 @@ function PopoverIconButton({
     style?: React.CSSProperties;
 }) {
     return (
-        <IconTooltip label={label}>
-            <button
+        <LocalizedElement
+            as={IconTooltip}
+            translatedProps={["label"]}
+            label={label}
+        >
+            <LocalizedElement
+                as="button"
+                translatedProps={["aria-label"]}
                 type="button"
                 aria-label={label}
                 onMouseDown={(event) => event.preventDefault()}
@@ -179,8 +200,8 @@ function PopoverIconButton({
                 style={style}
             >
                 {children}
-            </button>
-        </IconTooltip>
+            </LocalizedElement>
+        </LocalizedElement>
     );
 }
 
@@ -241,10 +262,15 @@ function KTableInsertPopover({ editor }: { editor: Editor }) {
     ];
 
     return (
-        <PopoverShell title="표 삽입" button={<Table2 className="h-4 w-4" />}>
+        <LocalizedElement
+            as={PopoverShell}
+            translatedProps={["title"]}
+            title="표 삽입"
+            button={<Table2 className="h-4 w-4" />}
+        >
             <div className="space-y-2">
                 <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                    표 크기 선택
+                    <LocalizedText text={"표 크기 선택"} />
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     {presets.map((preset) => (
@@ -263,28 +289,32 @@ function KTableInsertPopover({ editor }: { editor: Editor }) {
                             }
                             className="rounded border border-zinc-200 px-2 py-1 text-left whitespace-nowrap hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:hover:border-indigo-400"
                         >
-                            {preset.label}
+                            {<LocalizedText text={preset.label} />}
                         </button>
                     ))}
                 </div>
             </div>
-        </PopoverShell>
+        </LocalizedElement>
     );
 }
 
 function KTablePropertiesPopover({ editor }: { editor: Editor }) {
     return (
-        <PopoverShell
+        <LocalizedElement
+            as={PopoverShell}
+            translatedProps={["title"]}
             title="표 설정"
             button={<Settings2 className="h-4 w-4" />}
             align="right"
         >
             <div className="space-y-3">
                 <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                    표 전체 설정
+                    <LocalizedText text={"표 전체 설정"} />
                 </p>
                 <div className="grid grid-cols-4 gap-2">
-                    <PopoverIconButton
+                    <LocalizedElement
+                        as={PopoverIconButton}
+                        translatedProps={["label"]}
                         label="테두리 표시"
                         onClick={() =>
                             run(editor, (chain) =>
@@ -295,8 +325,10 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                         }
                     >
                         <Table2 className="h-4 w-4" />
-                    </PopoverIconButton>
-                    <PopoverIconButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={PopoverIconButton}
+                        translatedProps={["label"]}
                         label="테두리 숨김"
                         onClick={() =>
                             run(editor, (chain) =>
@@ -307,43 +339,56 @@ function KTablePropertiesPopover({ editor }: { editor: Editor }) {
                         }
                     >
                         <Table2 className="h-4 w-4 opacity-45" />
-                    </PopoverIconButton>
-                    <PopoverIconButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={PopoverIconButton}
+                        translatedProps={["label"]}
                         label="첫 행을 머리글로 전환"
                         onClick={() =>
                             run(editor, (chain) => chain.toggleHeaderRow())
                         }
                     >
                         <PanelTop className="h-4 w-4" />
-                    </PopoverIconButton>
-                    <PopoverIconButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={PopoverIconButton}
+                        translatedProps={["label"]}
                         label="첫 열을 머리글로 전환"
                         onClick={() =>
                             run(editor, (chain) => chain.toggleHeaderColumn())
                         }
                     >
                         <PanelLeft className="h-4 w-4" />
-                    </PopoverIconButton>
+                    </LocalizedElement>
                 </div>
             </div>
-        </PopoverShell>
+        </LocalizedElement>
     );
 }
 
 function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
     return (
-        <PopoverShell
+        <LocalizedElement
+            as={PopoverShell}
+            translatedProps={["title"]}
             title="셀 설정"
             button={<PaintBucket className="h-4 w-4" />}
         >
             <div className="space-y-3">
                 <div>
                     <p className="mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                        셀 배경색
+                        <LocalizedText text={"셀 배경색"} />
                     </p>
                     <div className="flex flex-wrap gap-1">
                         {CELL_COLORS.map((color) => (
-                            <PopoverIconButton
+                            <LocalizedElement
+                                as={PopoverIconButton}
+                                messageProps={{
+                                    label: {
+                                        text: "셀 배경색: {0}",
+                                        values: [{ text: color.label }],
+                                    },
+                                }}
                                 key={color.label}
                                 label={`셀 배경색: ${color.label}`}
                                 onClick={() => {
@@ -357,14 +402,16 @@ function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
                                 className="h-6 w-6 transition-transform hover:scale-110"
                                 style={{ backgroundColor: color.hex }}
                             >
-                                <span className="sr-only">{color.label}</span>
-                            </PopoverIconButton>
+                                <span className="sr-only">
+                                    {<LocalizedText text={color.label} />}
+                                </span>
+                            </LocalizedElement>
                         ))}
                     </div>
                 </div>
                 <div>
                     <p className="mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                        셀 텍스트 정렬
+                        <LocalizedText text={"셀 텍스트 정렬"} />
                     </p>
                     <div className="grid grid-cols-4 gap-1">
                         {[
@@ -394,7 +441,7 @@ function KTableCellPropertiesPopover({ editor }: { editor: Editor }) {
                     </div>
                 </div>
             </div>
-        </PopoverShell>
+        </LocalizedElement>
     );
 }
 
@@ -422,77 +469,95 @@ export function KTableControls({ editor }: { editor: Editor }) {
                 <>
                     <KTablePropertiesPopover editor={editor} />
                     <KTableCellPropertiesPopover editor={editor} />
-                    <ToolbarButton
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.addRowAfter())
                         }
                         label="현재 행 아래에 새 행 추가"
                     >
                         <ArrowDown className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.addRowBefore())
                         }
                         label="현재 행 위에 새 행 추가"
                     >
                         <ArrowUp className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.deleteRow())
                         }
                         label="현재 행 삭제"
                     >
                         <Rows3 className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.addColumnAfter())
                         }
                         label="현재 열 오른쪽에 새 열 추가"
                     >
                         <ArrowRight className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.addColumnBefore())
                         }
                         label="현재 열 왼쪽에 새 열 추가"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.deleteColumn())
                         }
                         label="현재 열 삭제"
                     >
                         <Columns3 className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.mergeCells())
                         }
                         label="선택한 셀 병합"
                     >
                         <Merge className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() =>
                             run(editor, (chain) => chain.splitCell())
                         }
                         label="병합된 셀 분할"
                     >
                         <Split className="h-4 w-4" />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={ToolbarButton}
+                        translatedProps={["label"]}
                         onClick={() => void handleDeleteTable()}
                         label="표 전체 삭제"
                         destructive
                     >
                         <Trash2 className="h-4 w-4" />
-                    </ToolbarButton>
+                    </LocalizedElement>
                 </>
             )}
         </TooltipProvider>

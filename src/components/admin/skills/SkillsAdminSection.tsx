@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedElement,
+    LocalizedText,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { SkillIcon } from "@/components/resume/SkillBadge";
@@ -10,7 +15,7 @@ import {
 import SkillEditorModal from "@/components/admin/skills/SkillEditorModal";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Resume, ResumeSkillKeyword } from "@/types/resume";
-import Picker from "@emoji-mart/react";
+import Picker from "@/components/LocalizedEmojiPicker";
 import data from "@emoji-mart/data";
 
 // 섹션 이모지 선택 (ResumePanel에서 동일 패턴 사용)
@@ -24,13 +29,15 @@ function SectionEmojiSelector({
     const [showPicker, setShowPicker] = useState(false);
     return (
         <div className="relative mr-3 inline-block">
-            <button
+            <LocalizedElement
+                as="button"
+                translatedProps={["title"]}
                 onClick={() => setShowPicker(!showPicker)}
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-(--color-border) bg-(--color-surface-subtle) text-base transition-colors hover:bg-(--color-border)"
                 title="이모지 선택"
             >
                 {value || "➕"}
-            </button>
+            </LocalizedElement>
             {showPicker && (
                 <>
                     <div
@@ -554,7 +561,7 @@ export default function SkillsAdminSection({
                         {s.level && (
                             <div className="flex items-center gap-2">
                                 <span className="w-16 shrink-0 text-xs text-(--color-muted)">
-                                    숙련도
+                                    <LocalizedText text={"숙련도"} />
                                 </span>
                                 <span className="rounded bg-(--color-surface-subtle) px-1.5 py-0.5 text-xs text-(--color-muted)">
                                     {s.level}
@@ -564,17 +571,19 @@ export default function SkillsAdminSection({
                         {/* 카테고리 */}
                         <div className="flex items-center gap-2">
                             <span className="w-16 shrink-0 text-xs text-(--color-muted)">
-                                카테고리
+                                <LocalizedText text={"카테고리"} />
                             </span>
                             <span className="rounded bg-(--color-accent)/10 px-1.5 py-0.5 text-xs text-(--color-accent)">
-                                {s.categoryName || "(미분류)"}
+                                {s.categoryName || (
+                                    <LocalizedText text={"(미분류)"} />
+                                )}
                             </span>
                         </div>
                         {/* 직무 분야 */}
                         {s.jobField && (
                             <div className="flex items-center gap-2">
                                 <span className="w-16 shrink-0 text-xs text-(--color-muted)">
-                                    직무
+                                    <LocalizedText text={"직무"} />
                                 </span>
                                 <JobFieldBadges
                                     value={s.jobField}
@@ -586,7 +595,7 @@ export default function SkillsAdminSection({
                         {workRefs.length > 0 && (
                             <div className="flex items-start gap-2">
                                 <span className="mt-0.5 w-16 shrink-0 text-xs text-(--color-muted)">
-                                    직장
+                                    <LocalizedText text={"직장"} />
                                 </span>
                                 <div className="flex flex-wrap gap-1">
                                     {workRefs.map((ref, i) => (
@@ -604,7 +613,7 @@ export default function SkillsAdminSection({
                         {projectRefs.length > 0 && (
                             <div className="flex items-start gap-2">
                                 <span className="mt-0.5 w-16 shrink-0 text-xs text-(--color-muted)">
-                                    프로젝트
+                                    <LocalizedText text={"프로젝트"} />
                                 </span>
                                 <div className="flex flex-wrap gap-1">
                                     {projectRefs.map((ref, i) => (
@@ -642,14 +651,14 @@ export default function SkillsAdminSection({
                             }}
                             className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
-                            수정
+                            <LocalizedText text={"수정"} />
                         </button>
                         {/* 삭제 */}
                         <button
                             onClick={() => handleDelete(s.categoryIdx, s.kwIdx)}
                             className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                         >
-                            삭제
+                            <LocalizedText text={"삭제"} />
                         </button>
                     </div>
                 </div>
@@ -668,7 +677,9 @@ export default function SkillsAdminSection({
             level: {
                 label: "숙련도",
                 input: (
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         autoFocus
                         list="batch-level-list"
                         value={batchValue}
@@ -681,7 +692,9 @@ export default function SkillsAdminSection({
             category: {
                 label: "카테고리",
                 input: (
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         autoFocus
                         list="batch-category-list"
                         value={batchValue}
@@ -700,7 +713,9 @@ export default function SkillsAdminSection({
                         onChange={(e) => setBatchValue(e.target.value)}
                         className="rounded border border-(--color-border) bg-(--color-surface) px-2 py-1 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                     >
-                        <option value="">전체</option>
+                        <option value="">
+                            <LocalizedText text={"전체"} />
+                        </option>
                         {jobFields.map((jf) => (
                             <option key={jf.id} value={jf.id}>
                                 {jf.name}
@@ -715,14 +730,14 @@ export default function SkillsAdminSection({
         return (
             <div className="flex items-center gap-2">
                 <span className="text-sm text-(--color-muted)">
-                    {config.label}:
+                    {<LocalizedText text={config.label} />}:
                 </span>
                 {config.input}
                 <button
                     onClick={applyBatchAction}
                     className="rounded bg-green-500 px-3 py-1 text-sm font-semibold text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
-                    적용
+                    <LocalizedText text={"적용"} />
                 </button>
                 <button
                     onClick={() => {
@@ -731,7 +746,7 @@ export default function SkillsAdminSection({
                     }}
                     className="rounded bg-(--color-surface-subtle) px-2 py-1 text-sm text-(--color-muted) transition-opacity hover:opacity-70"
                 >
-                    취소
+                    <LocalizedText text={"취소"} />
                 </button>
             </div>
         );
@@ -767,7 +782,7 @@ export default function SkillsAdminSection({
                                 });
                             }}
                         />
-                        스킬 (Skills)
+                        <LocalizedText text={"스킬 (Skills)"} />
                     </h3>
                     <div className="ml-4 flex items-center gap-2">
                         <Switch
@@ -787,12 +802,12 @@ export default function SkillsAdminSection({
                             htmlFor="show-emojis-skills"
                             className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                         >
-                            이모지 표시
+                            <LocalizedText text={"이모지 표시"} />
                         </label>
                     </div>
                     <div className="ml-4 flex items-center gap-2">
                         <label className="text-sm font-medium text-(--color-muted) select-none">
-                            기본 정렬
+                            <LocalizedText text={"기본 정렬"} />
                         </label>
                         <select
                             value={
@@ -809,10 +824,18 @@ export default function SkillsAdminSection({
                             }
                             className="rounded-md border border-(--color-border) bg-(--color-surface-subtle) px-2 py-1 text-xs text-(--color-muted) focus:outline-none"
                         >
-                            <option value="by-job-field">직무 분야별</option>
-                            <option value="by-experience">경력별</option>
-                            <option value="by-category">카테고리별</option>
-                            <option value="by-project">프로젝트별</option>
+                            <option value="by-job-field">
+                                <LocalizedText text={"직무 분야별"} />
+                            </option>
+                            <option value="by-experience">
+                                <LocalizedText text={"경력별"} />
+                            </option>
+                            <option value="by-category">
+                                <LocalizedText text={"카테고리별"} />
+                            </option>
+                            <option value="by-project">
+                                <LocalizedText text={"프로젝트별"} />
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -826,7 +849,7 @@ export default function SkillsAdminSection({
                     }}
                     className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                 >
-                    + 스킬 추가
+                    <LocalizedText text={"+ 스킬 추가"} />
                 </button>
             </div>
 
@@ -840,7 +863,7 @@ export default function SkillsAdminSection({
                         onChange={toggleSelectAll}
                         className="h-4 w-4 cursor-pointer accent-(--color-accent)"
                     />
-                    전체 선택
+                    <LocalizedText text={"전체 선택"} />
                 </label>
                 <div className="h-4 w-px bg-(--color-border)" />
                 <select
@@ -850,15 +873,21 @@ export default function SkillsAdminSection({
                     }
                     className="rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                 >
-                    <option value="category">카테고리별</option>
-                    <option value="alpha">이름순</option>
+                    <option value="category">
+                        <LocalizedText text={"카테고리별"} />
+                    </option>
+                    <option value="alpha">
+                        <LocalizedText text={"이름순"} />
+                    </option>
                 </select>
                 <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
                     className="rounded-lg border border-(--color-border) bg-transparent px-3 py-1.5 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                 >
-                    <option value="all">전체</option>
+                    <option value="all">
+                        <LocalizedText text={"전체"} />
+                    </option>
                     {categoryNames.map((c) => (
                         <option key={c} value={c}>
                             {c}
@@ -871,7 +900,10 @@ export default function SkillsAdminSection({
             {someSelected && (
                 <div className="flex flex-wrap items-center gap-3 rounded-lg border border-(--color-accent)/40 bg-(--color-accent)/5 px-4 py-2.5">
                     <span className="shrink-0 text-sm font-semibold text-(--color-foreground)">
-                        {selectedKeys.size}개 선택됨
+                        <LocalizedRichText
+                            text={"{0}개 선택됨"}
+                            values={[selectedKeys.size]}
+                        />
                     </span>
                     <div className="h-4 w-px shrink-0 bg-(--color-border)" />
 
@@ -885,7 +917,7 @@ export default function SkillsAdminSection({
                                 }}
                                 className="rounded bg-(--color-surface-subtle) px-3 py-1 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-border)"
                             >
-                                숙련도 변경
+                                <LocalizedText text={"숙련도 변경"} />
                             </button>
                             <button
                                 onClick={() => {
@@ -894,7 +926,7 @@ export default function SkillsAdminSection({
                                 }}
                                 className="rounded bg-(--color-surface-subtle) px-3 py-1 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-border)"
                             >
-                                직무 분야
+                                <LocalizedText text={"직무 분야"} />
                             </button>
                             <button
                                 onClick={() => {
@@ -903,13 +935,13 @@ export default function SkillsAdminSection({
                                 }}
                                 className="rounded bg-(--color-surface-subtle) px-3 py-1 text-sm font-medium text-(--color-foreground) transition-colors hover:bg-(--color-border)"
                             >
-                                카테고리 변경
+                                <LocalizedText text={"카테고리 변경"} />
                             </button>
                             <button
                                 onClick={handleBatchDelete}
                                 className="rounded bg-red-600 px-3 py-1 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                             >
-                                삭제
+                                <LocalizedText text={"삭제"} />
                             </button>
                         </div>
                     )}
@@ -922,7 +954,7 @@ export default function SkillsAdminSection({
                         onClick={clearSelection}
                         className="ml-auto shrink-0 text-sm text-(--color-muted) underline-offset-2 hover:underline"
                     >
-                        선택 해제
+                        <LocalizedText text={"선택 해제"} />
                     </button>
                 </div>
             )}
@@ -934,10 +966,12 @@ export default function SkillsAdminSection({
                     className="flex cursor-pointer items-center gap-3 rounded-lg border border-yellow-400 bg-yellow-50 px-4 py-2.5 dark:bg-yellow-900/20"
                 >
                     <span className="rounded bg-yellow-500 px-1.5 py-0.5 text-xs font-semibold text-white">
-                        임시 저장
+                        <LocalizedText text={"임시 저장"} />
                     </span>
                     <span className="font-semibold text-yellow-800 dark:text-yellow-200">
-                        {draftInfo.kwData.name || "(이름 없음)"}
+                        {draftInfo.kwData.name || (
+                            <LocalizedText text={"(이름 없음)"} />
+                        )}
                     </span>
                     <span className="text-xs text-yellow-600 dark:text-yellow-300">
                         {draftInfo.categoryName}
@@ -984,7 +1018,7 @@ export default function SkillsAdminSection({
                     : sorted.map(renderSkillRow)}
                 {sorted.length === 0 && !draftInfo && (
                     <p className="py-4 text-center text-sm text-(--color-muted)">
-                        등록된 스킬이 없습니다
+                        <LocalizedText text={"등록된 스킬이 없습니다"} />
                     </p>
                 )}
             </div>
@@ -995,7 +1029,10 @@ export default function SkillsAdminSection({
                     onClick={() => setShowCategoryManager(!showCategoryManager)}
                     className="text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                 >
-                    {showCategoryManager ? "▲" : "▼"} 카테고리 관리
+                    <LocalizedRichText
+                        text={"{0} 카테고리 관리"}
+                        values={[showCategoryManager ? "▲" : "▼"]}
+                    />
                 </button>
                 {showCategoryManager && (
                     <div className="mt-3 space-y-2">
@@ -1004,7 +1041,9 @@ export default function SkillsAdminSection({
                                 key={idx}
                                 className="flex items-center gap-2 rounded-lg border border-(--color-border) bg-transparent px-3 py-2"
                             >
-                                <input
+                                <LocalizedElement
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={cat.name ?? ""}
                                     onChange={(e) =>
                                         updateCategory(
@@ -1016,7 +1055,9 @@ export default function SkillsAdminSection({
                                     placeholder="카테고리명"
                                     className="w-40 rounded border border-(--color-border) bg-transparent px-2 py-1 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                                 />
-                                <input
+                                <LocalizedElement
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={cat.iconSlug ?? ""}
                                     onChange={(e) =>
                                         updateCategory(
@@ -1028,7 +1069,9 @@ export default function SkillsAdminSection({
                                     placeholder="Slug"
                                     className="w-28 rounded border border-(--color-border) bg-transparent px-2 py-1 text-xs text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                                 />
-                                <input
+                                <LocalizedElement
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={cat.iconColor ?? ""}
                                     onChange={(e) =>
                                         updateCategory(
@@ -1041,9 +1084,21 @@ export default function SkillsAdminSection({
                                     className="w-20 rounded border border-(--color-border) bg-transparent px-2 py-1 text-xs text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                                 />
                                 <span className="text-xs text-(--color-muted)">
-                                    {(cat.keywords ?? []).length}개
+                                    <LocalizedRichText
+                                        text={"{0}개"}
+                                        values={[(cat.keywords ?? []).length]}
+                                    />
                                 </span>
-                                <button
+                                <LocalizedElement
+                                    as="button"
+                                    messageProps={{
+                                        title:
+                                            (cat.keywords ?? []).length > 0
+                                                ? {
+                                                      text: "스킬이 있는 카테고리는 삭제할 수 없습니다",
+                                                  }
+                                                : { text: "카테고리 삭제" },
+                                    }}
                                     onClick={() => deleteCategory(idx)}
                                     disabled={(cat.keywords ?? []).length > 0}
                                     title={
@@ -1053,13 +1108,13 @@ export default function SkillsAdminSection({
                                     }
                                     className="rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    삭제
-                                </button>
+                                    <LocalizedText text={"삭제"} />
+                                </LocalizedElement>
                             </div>
                         ))}
                         {(resumeData.skills?.entries ?? []).length === 0 && (
                             <p className="text-sm text-(--color-muted)">
-                                카테고리 없음
+                                <LocalizedText text={"카테고리 없음"} />
                             </p>
                         )}
                     </div>

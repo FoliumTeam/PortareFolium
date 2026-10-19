@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -138,22 +143,27 @@ export const ResumeBasicsPresentationSection = ({
         >
             <div>
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    Resume appearance
+                    <LocalizedText text={"Resume appearance"} />
                 </p>
                 <h3 className="mt-1 text-xl font-bold text-(--color-foreground)">
-                    표시와 디자인
+                    <LocalizedText text={"표시와 디자인"} />
                 </h3>
                 <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
-                    완성형 preset과 공개 설정으로 직무별 Resume 상단을
-                    관리합니다.
+                    <LocalizedText
+                        text={
+                            "완성형 preset과 공개 설정으로 직무별 Resume 상단을 관리합니다."
+                        }
+                    />
                 </p>
             </div>
 
             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                 <p className="text-base font-semibold text-(--color-foreground)">
-                    직무 분야별 설정
+                    <LocalizedText text={"직무 분야별 설정"} />
                 </p>
-                <div
+                <LocalizedElement
+                    as="div"
+                    translatedProps={["aria-label"]}
                     className="mt-3 flex flex-wrap gap-2"
                     aria-label="개인 정보 표시 직무 분야"
                 >
@@ -163,7 +173,14 @@ export const ResumeBasicsPresentationSection = ({
                             presentation.jobFields?.[jobField.id]
                         );
                         return (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": {
+                                        text: "{0} 개인 정보 표시 설정 선택",
+                                        values: [jobField.name],
+                                    },
+                                }}
                                 key={jobField.id}
                                 type="button"
                                 aria-pressed={selected}
@@ -178,25 +195,39 @@ export const ResumeBasicsPresentationSection = ({
                                 {jobField.emoji ? `${jobField.emoji} ` : ""}
                                 {jobField.name}
                                 <span className="ml-2 text-xs opacity-80">
-                                    {independent ? "독립" : "공통"}
+                                    {independent ? (
+                                        <LocalizedText text={"독립"} />
+                                    ) : (
+                                        <LocalizedText text={"공통"} />
+                                    )}
                                 </span>
-                            </button>
+                            </LocalizedElement>
                         );
                     })}
-                </div>
+                </LocalizedElement>
                 {!activeJobField ? (
                     <p className="mt-4 text-sm text-(--color-muted)">
-                        Admin Config에서 직무 분야를 추가하면 표시 설정을 분리할
-                        수 있습니다.
+                        <LocalizedText
+                            text={
+                                "Admin Config에서 직무 분야를 추가하면 표시 설정을 분리할 수 있습니다."
+                            }
+                        />
                     </p>
                 ) : hasOverride ? (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-3">
                         <div>
                             <p className="text-sm font-semibold text-(--color-foreground)">
-                                {activeJobField.name} 독립 설정 사용 중
+                                <LocalizedRichText
+                                    text={"{0} 독립 설정 사용 중"}
+                                    values={[activeJobField.name]}
+                                />
                             </p>
                             <p className="mt-1 text-xs text-(--color-muted)">
-                                공통값과 별도로 공개 항목과 preset을 관리합니다.
+                                <LocalizedText
+                                    text={
+                                        "공통값과 별도로 공개 항목과 preset을 관리합니다."
+                                    }
+                                />
                             </p>
                         </div>
                         <button
@@ -205,18 +236,24 @@ export const ResumeBasicsPresentationSection = ({
                             disabled={saving}
                             className="rounded-lg border border-(--color-border) px-3 py-2 text-sm font-semibold text-(--color-foreground) disabled:opacity-50"
                         >
-                            공통값으로 되돌리기
+                            <LocalizedText text={"공통값으로 되돌리기"} />
                         </button>
                     </div>
                 ) : (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-(--color-border) bg-(--color-surface) p-3">
                         <div>
                             <p className="text-sm font-semibold text-(--color-foreground)">
-                                {activeJobField.name} 공통 설정 사용 중
+                                <LocalizedRichText
+                                    text={"{0} 공통 설정 사용 중"}
+                                    values={[activeJobField.name]}
+                                />
                             </p>
                             <p className="mt-1 text-xs text-(--color-muted)">
-                                현재 공통 preset과 공개 항목을 그대로
-                                사용합니다.
+                                <LocalizedText
+                                    text={
+                                        "현재 공통 preset과 공개 항목을 그대로 사용합니다."
+                                    }
+                                />
                             </p>
                         </div>
                         <button
@@ -232,7 +269,7 @@ export const ResumeBasicsPresentationSection = ({
                             disabled={saving}
                             className="rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) disabled:opacity-50"
                         >
-                            독립 설정 만들기
+                            <LocalizedText text={"독립 설정 만들기"} />
                         </button>
                     </div>
                 )}
@@ -242,15 +279,19 @@ export const ResumeBasicsPresentationSection = ({
                 <div className="flex items-center justify-between gap-3">
                     <div>
                         <p className="text-base font-semibold text-(--color-foreground)">
-                            Modern 상단 preset
+                            <LocalizedText text={"Modern 상단 preset"} />
                         </p>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            선택 즉시 저장하고 공개 Resume에 반영합니다.
+                            <LocalizedText
+                                text={
+                                    "선택 즉시 저장하고 공개 Resume에 반영합니다."
+                                }
+                            />
                         </p>
                     </div>
                     {saving ? (
                         <span className="text-sm font-medium text-(--color-muted)">
-                            저장 중...
+                            <LocalizedText text={"저장 중..."} />
                         </span>
                     ) : null}
                 </div>
@@ -275,15 +316,19 @@ export const ResumeBasicsPresentationSection = ({
                             >
                                 <PresetPreview />
                                 <span className="mt-3 flex items-center gap-2 text-sm font-semibold text-(--color-foreground)">
-                                    {preset.title}
+                                    {<LocalizedText text={preset.title} />}
                                     {preset.recommended ? (
                                         <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-bold text-white">
-                                            추천
+                                            <LocalizedText text={"추천"} />
                                         </span>
                                     ) : null}
                                 </span>
                                 <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                    {preset.description}
+                                    {
+                                        <LocalizedText
+                                            text={preset.description}
+                                        />
+                                    }
                                 </span>
                             </button>
                         );
@@ -293,7 +338,7 @@ export const ResumeBasicsPresentationSection = ({
 
             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                 <p className="text-base font-semibold text-(--color-foreground)">
-                    개인 사항 표시 방식
+                    <LocalizedText text={"개인 사항 표시 방식"} />
                 </p>
                 <div className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-3">
                     {detailPresets.map((preset) => {
@@ -318,10 +363,14 @@ export const ResumeBasicsPresentationSection = ({
                                 }`}
                             >
                                 <span className="text-sm font-semibold text-(--color-foreground)">
-                                    {preset.title}
+                                    {<LocalizedText text={preset.title} />}
                                 </span>
                                 <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                    {preset.description}
+                                    {
+                                        <LocalizedText
+                                            text={preset.description}
+                                        />
+                                    }
                                 </span>
                             </button>
                         );
@@ -331,10 +380,12 @@ export const ResumeBasicsPresentationSection = ({
 
             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                 <p className="text-base font-semibold text-(--color-foreground)">
-                    공개 항목
+                    <LocalizedText text={"공개 항목"} />
                 </p>
                 <p className="mt-1 text-sm text-(--color-muted)">
-                    생년월일과 병역 사항은 기본 비공개입니다.
+                    <LocalizedText
+                        text={"생년월일과 병역 사항은 기본 비공개입니다."}
+                    />
                 </p>
                 <div className="tablet:grid-cols-2 mt-4 grid grid-cols-1 gap-3">
                     {RESUME_BASICS_VISIBILITY_KEYS.map((key) => (
@@ -343,7 +394,7 @@ export const ResumeBasicsPresentationSection = ({
                             className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2.5"
                         >
                             <span className="text-sm font-medium text-(--color-foreground)">
-                                {visibilityLabels[key]}
+                                {<LocalizedText text={visibilityLabels[key]} />}
                             </span>
                             <Switch
                                 checked={activePresentation.visibility[key]}
