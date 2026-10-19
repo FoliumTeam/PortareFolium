@@ -5,6 +5,7 @@ import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { getSqliteRefugeSchemaVersion } from "@/lib/refuge/sqlite-migrations";
 import { serverClient } from "@/lib/supabase";
 import { sanitizePublicJobField } from "@/lib/public-job-field";
+import { requireAdminSession } from "@/lib/server-admin";
 
 // PostgREST ilike pattern wildcard escape
 function escapeLikePattern(value: string): string {
@@ -107,6 +108,7 @@ export async function searchPublicContent(
 
 // 관리자 프로필 이미지 조회
 export async function getAdminProfileImage(): Promise<string> {
+    await requireAdminSession();
     if (!serverClient) return "";
 
     const { data } = await serverClient
