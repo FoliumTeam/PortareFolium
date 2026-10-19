@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createRoutingServerClient } from "@/lib/refuge/server-client";
 import { isSqliteRefugeMode } from "@/lib/refuge/mode";
+import { createLocalizedClient } from "@/lib/localized-client";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
@@ -11,7 +12,7 @@ const realServerClient: SupabaseClient | null =
 
 export const serverClient: SupabaseClient | null =
     realServerClient || isSqliteRefugeMode()
-        ? createRoutingServerClient(realServerClient)
+        ? createLocalizedClient(createRoutingServerClient(realServerClient))
         : null;
 
 export const browserClient: SupabaseClient | null =

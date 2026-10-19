@@ -1,3 +1,5 @@
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import { isLocale } from "@/lib/i18n";
 import { serverClient } from "@/lib/supabase";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
@@ -175,8 +177,8 @@ export async function handleGetSchema(): Promise<unknown> {
             "get_portfolio_item({ slug: string })",
             "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx? })",
             "update_portfolio_item({ slug*, ...partial_fields })",
-            "get_resume({ lang?: 'ko' })",
-            "update_resume({ lang?: 'ko', data: Partial<Resume> })",
+            "get_resume({ lang?: 'ko' | 'en' | 'ja' })",
+            "update_resume({ lang?: 'ko' | 'en' | 'ja', data: Partial<Resume> })",
         ],
         posts: {
             slug: "unique, required",
@@ -659,9 +661,9 @@ export async function handleGetResume(args: {
     if (!serverClient)
         throw new Error("[mcp-tools::handleGetResume] serverClient 없음");
 
-    const lang = args.lang ?? "ko";
-    if (lang !== "ko") {
-        throw new Error("[mcp-tools::handleGetResume] ko resume만 지원");
+    const lang = args.lang ?? getContentLocale();
+    if (!isLocale(lang)) {
+        throw new Error("[mcp-tools::handleGetResume] 지원하지 않는 언어");
     }
 
     const { data, error } = await serverClient
@@ -682,9 +684,9 @@ export async function handleUpdateResume(args: {
     if (!serverClient)
         throw new Error("[mcp-tools::handleUpdateResume] serverClient 없음");
 
-    const lang = args.lang ?? "ko";
-    if (lang !== "ko") {
-        throw new Error("[mcp-tools::handleUpdateResume] ko resume만 지원");
+    const lang = args.lang ?? getContentLocale();
+    if (!isLocale(lang)) {
+        throw new Error("[mcp-tools::handleUpdateResume] 지원하지 않는 언어");
     }
 
     const { data: current } = await serverClient
@@ -693,16 +695,15 @@ export async function handleUpdateResume(args: {
         .eq("lang", lang)
         .single();
 
-    if (!current)
-        throw new Error(`[mcp-tools::handleUpdateResume] lang 없음: ${lang}`);
-
     // 섹션별 deep-merge: 기존 data + args.data
-    const merged = { ...(current.data as object), ...args.data };
+    const merged = { ...((current?.data ?? {}) as object), ...args.data };
 
     const { data: updated, error } = await serverClient
         .from("resume_data")
-        .update({ data: merged, updated_at: new Date().toISOString() })
-        .eq("lang", lang)
+        .upsert(
+            { lang, data: merged, updated_at: new Date().toISOString() },
+            { onConflict: "lang" }
+        )
         .select("id, lang")
         .single();
 
@@ -918,7 +919,7 @@ const PORTFOLIO_DATA_INPUT_SCHEMA = {
     additionalProperties: true,
 } as const;
 
-export const MCP_TOOLS = [
+const BASE_MCP_TOOLS = [
     {
         name: "get_schema",
         description: "AI 에이전트용 데이터 스키마 가이드 반환",
@@ -1068,7 +1069,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko"] },
+                lang: { type: "string", enum: ["ko", "en", "ja"] },
             },
         },
     },
@@ -1078,7 +1079,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko"] },
+                lang: { type: "string", enum: ["ko", "en", "ja"] },
                 data: {
                     type: "object",
                     description: "Resume 객체 (부분 업데이트 가능)",
@@ -1114,7 +1115,7 @@ export const MCP_TOOLS = [
 ] as const;
 
 // 툴 이름 → 핸들러 디스패치
-export async function dispatchTool(
+async function dispatchToolInLocale(
     name: string,
     args: Record<string, unknown>,
     permissions: AgentTokenPermissions | null = null
@@ -1176,4 +1177,33 @@ export async function dispatchTool(
         default:
             throw new Error(`[mcp-tools::dispatchTool] 알 수 없는 툴: ${name}`);
     }
+}
+
+export const MCP_TOOLS = BASE_MCP_TOOLS.map((tool) => ({
+    ...tool,
+    inputSchema: {
+        ...tool.inputSchema,
+        properties: {
+            ...tool.inputSchema.properties,
+            lang: {
+                type: "string",
+                enum: ["ko", "en", "ja"],
+                description: "콘텐츠 언어, 생략 시 ko",
+            },
+        },
+    },
+}));
+
+// 도구 호출 전체의 콘텐츠 언어 격리
+export async function dispatchTool(
+    name: string,
+    args: Record<string, unknown>,
+    permissions: AgentTokenPermissions | null = null
+): Promise<unknown> {
+    const lang = args.lang ?? "ko";
+    if (!isLocale(lang)) throw new Error("Unsupported locale");
+    const { lang: _lang, ...fields } = args;
+    return withContentLocale(lang, () =>
+        dispatchToolInLocale(name, fields, permissions)
+    );
 }

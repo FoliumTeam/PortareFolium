@@ -16,6 +16,17 @@ export const REFUGE_SUPPORTED_TABLES = [
     "database_snapshots",
     "admin_login_attempts",
     "application_profiles",
+    "about_data_i18n",
+    "posts_i18n",
+    "portfolio_items_i18n",
+    "books_i18n",
+    "editor_states_i18n",
+    "post_content_revisions_i18n",
+    "post_content_chunks_i18n",
+    "tags_i18n",
+    "post_categories_i18n",
+    "application_profiles_i18n",
+    "site_config_i18n",
 ] as const;
 
 export const REFUGE_LOCAL_ONLY_TABLES = ["admin_login_attempts"] as const;
@@ -152,7 +163,11 @@ const REFUGE_TABLE_COLUMNS: Record<string, readonly string[]> = {
 };
 
 export function refugeTableHasColumn(table: string, column: string): boolean {
-    return REFUGE_TABLE_COLUMNS[table]?.includes(column) ?? true;
+    return (
+        (table.endsWith("_i18n") && column === "lang") ||
+        (REFUGE_TABLE_COLUMNS[table.replace(/_i18n$/, "")]?.includes(column) ??
+            true)
+    );
 }
 
 export function sanitizeRefugeRowForReplay(
@@ -160,9 +175,13 @@ export function sanitizeRefugeRowForReplay(
     row: RefugeRow | null | undefined
 ): RefugeRow | null | undefined {
     if (!row) return row;
-    const columns = REFUGE_TABLE_COLUMNS[table];
+    const base = table.endsWith("_i18n") ? table.slice(0, -5) : table;
+    const columns = REFUGE_TABLE_COLUMNS[base];
     if (!columns) return row;
-    const allowed = new Set(columns);
+    const allowed = new Set([
+        ...columns,
+        ...(table.endsWith("_i18n") ? ["lang"] : []),
+    ]);
     return Object.fromEntries(
         Object.entries(row).filter(
             ([key]) => allowed.has(key) && key !== "content_mode"
@@ -222,7 +241,12 @@ const TABLE_IDENTITY_KEYS: Record<string, string[]> = {
 };
 
 export function getRefugeIdentity(table: string, row: RefugeRow): string {
-    const keys = TABLE_IDENTITY_KEYS[table] ?? ["id"];
+    const localized = table.endsWith("_i18n");
+    const base = localized ? table.slice(0, -5) : table;
+    const keys = [
+        ...(localized ? ["lang"] : []),
+        ...(TABLE_IDENTITY_KEYS[base] ?? ["id"]),
+    ];
     const parts = keys.map((key) => row[key]);
     if (parts.every((value) => value != null && value !== "")) {
         return parts.map((value) => String(value)).join("::");
