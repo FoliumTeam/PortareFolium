@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 
-import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { useUILocale } from "@/components/LocaleProvider";
 import { LocalizedText } from "@/components/LocalizedText";
+import { LanguageDropdown } from "@/components/LanguageDropdown";
 import { withoutLanguageQuery } from "@/lib/query-language";
 
 // 공개 전환은 이전 페이지·사전 로딩 자료를 폐기한 전체 요청
 export const LanguageSelector = ({ admin = false }: { admin?: boolean }) => {
     const { locale, changing, error, changeLocale } = useUILocale();
     const [ready, setReady] = useState(false);
+    const errorId = useId();
     useEffect(() => setReady(true), []);
     const label =
         locale === "ko"
@@ -18,17 +19,17 @@ export const LanguageSelector = ({ admin = false }: { admin?: boolean }) => {
               ? "表示言語"
               : "Display language";
     return (
-        <label className="flex items-center gap-2 text-sm text-(--color-foreground)">
-            {admin && <span>{label}</span>}
-            <select
+        <div className="relative shrink-0">
+            <LanguageDropdown
                 disabled={!ready || changing}
-                aria-label={label}
+                label={label}
                 value={locale}
-                className="rounded-md border border-(--color-border) bg-(--color-surface) px-2 py-2 text-sm"
-                onChange={async (event) => {
-                    const changed = await changeLocale(
-                        event.target.value as Locale
-                    );
+                compact
+                descriptionId={error ? errorId : undefined}
+                onValueChange={async (nextLocale) => {
+                    const changed = await changeLocale(nextLocale, {
+                        apply: admin,
+                    });
                     if (changed && !admin) {
                         const next = withoutLanguageQuery(window.location.href);
                         if (next !== window.location.href)
@@ -36,18 +37,16 @@ export const LanguageSelector = ({ admin = false }: { admin?: boolean }) => {
                         else window.location.reload();
                     }
                 }}
-            >
-                {LOCALES.map((value) => (
-                    <option key={value} value={value}>
-                        {LOCALE_LABELS[value]}
-                    </option>
-                ))}
-            </select>
+            />
             {error && (
-                <span role="alert" className="text-red-600 dark:text-red-400">
+                <span
+                    id={errorId}
+                    role="alert"
+                    className="absolute top-full right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-red-500/40 bg-(--color-surface) p-3 text-sm text-red-600 dark:text-red-400"
+                >
                     <LocalizedText text={error} />
                 </span>
             )}
-        </label>
+        </div>
     );
 };

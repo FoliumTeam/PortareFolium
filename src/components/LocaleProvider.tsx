@@ -23,8 +23,10 @@ const LocaleContext = createContext({
     isChangingLocale: (): boolean => false,
     provided: false,
     error: "",
-    changeLocale: async (_locale: Locale, _options?: { persist?: boolean }) =>
-        true,
+    changeLocale: async (
+        _locale: Locale,
+        _options?: { persist?: boolean; apply?: boolean }
+    ) => true,
 });
 
 // 화면 문구의 언어와 관리자 입력 상태의 독립 유지
@@ -45,7 +47,7 @@ export const LocaleProvider = ({
     const isChangingLocale = useCallback(() => pendingChanges.current > 0, []);
     const changeLocale = async (
         next: Locale,
-        options?: { persist?: boolean }
+        options?: { persist?: boolean; apply?: boolean }
     ) => {
         pendingChanges.current += 1;
         setChanging(true);
@@ -54,9 +56,11 @@ export const LocaleProvider = ({
             const nextMessages = await loadUIMessages(next);
             if (options?.persist !== false)
                 document.cookie = `${UI_LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-            document.documentElement.lang = next;
-            setLocale(next);
-            setMessages(nextMessages);
+            if (options?.apply !== false) {
+                document.documentElement.lang = next;
+                setLocale(next);
+                setMessages(nextMessages);
+            }
             return true;
         } catch {
             setError("화면 언어를 불러오지 못했습니다. 다시 선택하세요.");

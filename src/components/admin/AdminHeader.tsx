@@ -1,8 +1,9 @@
 "use client";
 import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
-import { Search } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface AdminHeaderProps {
     timeLeft: number;
@@ -32,13 +33,13 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
     return (
         <header className="tablet:px-6 flex h-14 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-3">
-            <div className="tablet:gap-4 flex items-center gap-2">
+            <div className="tablet:gap-4 flex min-w-0 items-center gap-2">
                 {onMenuOpen && (
                     <LocalizedElement
                         as="button"
                         translatedProps={["aria-label"]}
                         onClick={onMenuOpen}
-                        className="tablet:hidden rounded-md p-1.5 text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                        className="tablet:hidden flex min-h-11 min-w-11 items-center justify-center rounded-md p-1.5 text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                         aria-label="메뉴 열기"
                     >
                         <svg
@@ -97,21 +98,24 @@ export default function AdminHeader({
                         </svg>
                     </LocalizedElement>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                     <span
-                        className="h-2 w-2 rounded-full bg-(--color-accent) ring-2 ring-(--color-accent)/25"
+                        className="tablet:block hidden h-2 w-2 shrink-0 rounded-full bg-(--color-accent) ring-2 ring-(--color-accent)/25"
                         aria-hidden="true"
                     />
-                    <span className="text-base font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                        <LocalizedText text={"Admin 대시보드"} />
+                    <span className="truncate text-base font-(--font-display) font-black tracking-tight text-(--color-foreground)">
+                        <span className="tablet:hidden">Admin</span>
+                        <span className="tablet:inline hidden">
+                            <LocalizedText text={"Admin 대시보드"} />
+                        </span>
                     </span>
                 </div>
             </div>
-            <div className="tablet:gap-3 flex items-center gap-2">
+            <div className="tablet:gap-3 flex shrink-0 items-center gap-1">
                 {/* 세션 타이머 pill */}
                 <span
                     className={[
-                        "rounded-md px-2 py-0.5 font-mono text-xs tabular-nums",
+                        "tablet:inline-flex hidden rounded-md px-2 py-0.5 font-mono text-xs tabular-nums",
                         timeLeft <= 5 * 60 * 1000
                             ? "bg-red-500/10 text-red-500"
                             : "bg-(--color-surface-subtle) text-(--color-muted)",
@@ -120,24 +124,41 @@ export default function AdminHeader({
                     {formatRemaining(timeLeft)}
                 </span>
                 {onCommandOpen && (
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label", "title"]}
+                        aria-label="Search"
+                        title="Search"
                         onClick={onCommandOpen}
-                        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
                         <Search className="h-4 w-4" />
                         <kbd className="tablet:inline-flex hidden rounded border border-(--color-border) px-1.5 py-0.5 font-mono text-[10px]">
                             <LocalizedText text={"⌘K"} />
                         </kbd>
-                    </button>
+                    </LocalizedElement>
                 )}
-                <ThemeToggle />
+                <div className="[&_button]:min-h-11 [&_button]:min-w-11">
+                    <ThemeToggle />
+                </div>
+                <LanguageSelector admin />
                 {/* 로그아웃 버튼 */}
-                <button
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label", "title"]}
+                    aria-label="로그아웃"
+                    title="로그아웃"
                     onClick={onLogout}
-                    className="rounded-md border border-(--color-border) px-3 py-1.5 text-xs font-semibold text-(--color-muted) transition-colors hover:border-red-400/60 hover:bg-red-500/8 hover:text-red-500"
+                    className="tablet:w-auto tablet:px-3 flex min-h-11 w-11 items-center justify-center rounded-md border border-(--color-border) p-2 text-xs font-semibold text-(--color-muted) transition-colors hover:border-red-400/60 hover:bg-red-500/8 hover:text-red-500"
                 >
-                    <LocalizedText text={"로그아웃"} />
-                </button>
+                    <LogOut
+                        className="tablet:hidden size-4"
+                        aria-hidden="true"
+                    />
+                    <span className="tablet:inline hidden">
+                        <LocalizedText text={"로그아웃"} />
+                    </span>
+                </LocalizedElement>
             </div>
         </header>
     );

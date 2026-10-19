@@ -22,7 +22,6 @@ import DebugPanel from "@/components/admin/panels/DebugPanel";
 import ApplicationProfilesPanel from "@/components/admin/panels/ApplicationProfilesPanel";
 import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
 import { ContentLanguageSelector } from "@/components/admin/ContentLanguageSelector";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { LanguageVariantTools } from "@/components/admin/LanguageVariantTools";
 import type { VariantKind } from "@/lib/content-variants";
 
@@ -225,11 +224,10 @@ export default function AdminDashboard({
                 sidebarVisible={sidebarVisible}
                 onToggleSidebar={() => setSidebarVisible((v) => !v)}
             />
-            <div className="flex shrink-0 items-center justify-between gap-3 bg-(--color-surface) pr-4">
+            <div className="shrink-0 bg-(--color-surface)">
                 <ContentLanguageSelector
                     onChange={() => setTabKey((value) => value + 1)}
                 />
-                <LanguageSelector admin />
             </div>
             {(
                 [

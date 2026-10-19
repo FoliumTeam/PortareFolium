@@ -1,11 +1,6 @@
 import { createElement } from "react";
-import {
-    act,
-    cleanup,
-    fireEvent,
-    render,
-    screen,
-} from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     bindContentAction,
@@ -211,7 +206,7 @@ describe("콘텐츠 언어 선택의 저장 보호", () => {
     it("미저장 상태에서 언어 선택 차단 후 원복 시 허용", () => {
         const owner = createOwner();
         render(createElement(ContentLanguageSelector, { onChange: vi.fn() }));
-        const selector = screen.getByRole("combobox", { name: "콘텐츠 언어" });
+        const selector = screen.getByRole("button", { name: "콘텐츠 언어" });
 
         act(() => setContentDirty(owner, true));
         expect(selector).toBeDisabled();
@@ -225,9 +220,13 @@ describe("콘텐츠 언어 선택의 저장 보호", () => {
         const onChange = vi.fn();
         void bindContentAction(() => pending.promise)();
         render(createElement(ContentLanguageSelector, { onChange }));
-        const selector = screen.getByRole("combobox", { name: "콘텐츠 언어" });
+        const selector = screen.getByRole("button", { name: "콘텐츠 언어" });
 
-        fireEvent.change(selector, { target: { value: "en" } });
+        const user = userEvent.setup();
+        await user.click(selector);
+        await user.click(
+            screen.getByRole("menuitemradio", { name: "English" })
+        );
         expect(selector).toBeDisabled();
         expect(getEditingLocale()).toBe("ko");
         expect(onChange).not.toHaveBeenCalled();
@@ -248,9 +247,11 @@ describe("콘텐츠 언어 선택의 저장 보호", () => {
         const onChange = vi.fn();
         void bindContentAction(() => pending.promise)();
         render(createElement(ContentLanguageSelector, { onChange }));
-        const selector = screen.getByRole("combobox", { name: "콘텐츠 언어" });
+        const selector = screen.getByRole("button", { name: "콘텐츠 언어" });
 
-        fireEvent.change(selector, { target: { value: "ja" } });
+        const user = userEvent.setup();
+        await user.click(selector);
+        await user.click(screen.getByRole("menuitemradio", { name: "日本語" }));
         act(() => setContentDirty(owner, true));
         await act(async () => {
             pending.resolve();
@@ -259,7 +260,7 @@ describe("콘텐츠 언어 선택의 저장 보호", () => {
 
         expect(getEditingLocale()).toBe("ko");
         expect(onChange).not.toHaveBeenCalled();
-        expect(selector).toHaveValue("ko");
+        expect(selector).toHaveAttribute("data-locale", "ko");
         expect(selector).toBeDisabled();
     });
 });

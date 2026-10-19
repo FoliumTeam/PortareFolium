@@ -1,5 +1,10 @@
 import { expect, test as base } from "@playwright/test";
 import { CONTENT_LOCALE_COOKIE, UI_LOCALE_COOKIE } from "../../src/lib/i18n";
+import {
+    displayLanguageName,
+    contentLanguageName,
+    selectLanguage,
+} from "../helpers/language";
 
 const test = base.extend<{ runtimeErrors: string[] }>({
     runtimeErrors: [
@@ -16,9 +21,6 @@ const test = base.extend<{ runtimeErrors: string[] }>({
     ],
 });
 
-const displayLanguageName = /^(화면 언어|Display language|表示言語)$/;
-const contentLanguageName =
-    /^(콘텐츠 언어|Content language|入力するコンテンツの言語)$/;
 const emailSelector = '[data-resume-section="basics"] input[type="email"]';
 const uiLabels = {
     ko: { title: "이력서 편집", basics: "기본 정보", save: "변경사항 저장" },
@@ -79,15 +81,13 @@ for (const contentLocale of ["ko", "en", "ja"] as const) {
             await route.continue();
         });
         await email.fill(changed);
-        const contentLanguage = page.getByRole("combobox", {
+        const contentLanguage = page.getByRole("button", {
             name: contentLanguageName,
         });
         await expect(contentLanguage).toBeDisabled();
 
         for (const locale of ["en", "ja", "ko"] as const) {
-            await page
-                .getByRole("combobox", { name: displayLanguageName })
-                .selectOption(locale);
+            await selectLanguage(page, "display", locale);
             await expect(page.locator("html")).toHaveAttribute("lang", locale);
             await expect(
                 page.getByRole("heading", {
@@ -110,7 +110,10 @@ for (const contentLocale of ["ko", "en", "ja"] as const) {
                 })
             ).toBeEnabled();
             await expect(email).toHaveValue(changed);
-            await expect(contentLanguage).toHaveValue(contentLocale);
+            await expect(contentLanguage).toHaveAttribute(
+                "data-locale",
+                contentLocale
+            );
             await expect(contentLanguage).toBeDisabled();
             await expect(page).toHaveURL(/\/admin#resume$/);
         }
@@ -128,26 +131,59 @@ test("콘텐츠 언어 선택을 새로고침 후 복원하고 화면 언어 독
     const email = page.locator(emailSelector);
     await expect(email).toBeVisible();
     const original = await email.inputValue();
-    await page
-        .getByRole("combobox", { name: displayLanguageName })
-        .selectOption("ja");
-    const contentLanguage = page.getByRole("combobox", {
+    await selectLanguage(page, "display", "ja");
+    const contentLanguage = page.getByRole("button", {
         name: contentLanguageName,
     });
 
-    await contentLanguage.selectOption("en");
-    await expect(contentLanguage).toHaveValue("en");
+    await selectLanguage(page, "content", "en");
+    await expect(contentLanguage).toHaveAttribute("data-locale", "en");
     await expect(contentLanguage).toBeEnabled();
     await page.reload({ waitUntil: "domcontentloaded" });
 
     await expect(email).toBeVisible();
-    await expect(contentLanguage).toHaveValue("en");
+    await expect(contentLanguage).toHaveAttribute("data-locale", "en");
     await expect(
-        page.getByRole("combobox", { name: displayLanguageName })
-    ).toHaveValue("ja");
+        page.getByRole("button", { name: displayLanguageName })
+    ).toHaveAttribute("data-locale", "ja");
     await expect(page.locator("html")).toHaveAttribute("lang", "ja");
-    await contentLanguage.selectOption("ko");
-    await expect(contentLanguage).toHaveValue("ko");
+    await selectLanguage(page, "content", "ko");
+    await expect(contentLanguage).toHaveAttribute("data-locale", "ko");
     await expect(email).toHaveValue(original);
+    await expect(page).toHaveURL(/\/admin#resume$/);
+});
+
+test("390px 관리자 Header의 테마와 로그아웃 사이에서 표시 언어 선택", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(emailSelector)).toBeVisible();
+    const header = page.locator("header").first();
+    const display = header.getByRole("button", { name: displayLanguageName });
+    const content = page.getByRole("button", { name: contentLanguageName });
+    await expect(display).toBeInViewport();
+    await expect(
+        header.getByRole("button", { name: contentLanguageName })
+    ).toHaveCount(0);
+    const labels = await header
+        .getByRole("button")
+        .evaluateAll((buttons) =>
+            buttons.map(
+                (button) =>
+                    button.getAttribute("aria-label") ||
+                    button.textContent?.trim()
+            )
+        );
+    const themeIndex = labels.indexOf("테마 선택");
+    const displayIndex = labels.indexOf("화면 언어");
+    const logoutIndex = labels.indexOf("로그아웃");
+    expect(themeIndex).toBeGreaterThanOrEqual(0);
+    expect(displayIndex).toBeGreaterThan(themeIndex);
+    expect(logoutIndex).toBeGreaterThan(displayIndex);
+
+    await selectLanguage(page, "display", "ja");
+    await expect(display).toHaveAttribute("data-locale", "ja");
+    await expect(content).toHaveAttribute("data-locale", "ko");
     await expect(page).toHaveURL(/\/admin#resume$/);
 });

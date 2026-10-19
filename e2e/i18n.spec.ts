@@ -1,5 +1,6 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { UI_LOCALE_COOKIE, type Locale } from "../src/lib/i18n";
+import { displayLanguageName, selectLanguage } from "./helpers/language";
 
 const test = base.extend<{ runtimeErrors: string[] }>({
     runtimeErrors: [
@@ -16,7 +17,6 @@ const test = base.extend<{ runtimeErrors: string[] }>({
     ],
 });
 
-const displayLanguageName = /^(화면 언어|Display language|表示言語)$/;
 const navigation = {
     ko: { resume: "이력서", portfolio: "포트폴리오", blog: "블로그" },
     en: { resume: "Resume", portfolio: "Portfolio", blog: "Blog" },
@@ -25,13 +25,13 @@ const navigation = {
 
 const expectHeaderLanguage = async (page: Page, locale: Locale) => {
     const header = page.locator("#site-header");
-    const selector = header.getByRole("combobox", {
+    const selector = header.getByRole("button", {
         name: displayLanguageName,
     });
     if (!(await selector.isVisible())) {
         await header.getByRole("button", { expanded: false }).click();
     }
-    await expect(selector).toHaveValue(locale);
+    await expect(selector).toHaveAttribute("data-locale", locale);
     for (const label of Object.values(navigation[locale])) {
         await expect(
             header.getByRole("link", { name: label, exact: true })
@@ -73,9 +73,7 @@ test.describe("언어별 공개 화면", () => {
         for (const locale of ["en", "ko", "ja"] as const) {
             await Promise.all([
                 page.waitForEvent("domcontentloaded"),
-                page
-                    .getByRole("combobox", { name: displayLanguageName })
-                    .selectOption(locale),
+                selectLanguage(page, "display", locale),
             ]);
             await expect(page.locator("html")).toHaveAttribute("lang", locale);
             await expectHeaderLanguage(page, locale);
@@ -95,7 +93,7 @@ test.describe("언어별 공개 화면", () => {
         await page.goto("/web/resume");
         const originalURL = page.url();
         const header = page.locator("#site-header");
-        const selector = header.getByRole("combobox", {
+        const selector = header.getByRole("button", {
             name: displayLanguageName,
         });
         await expect(selector).toBeHidden();
@@ -104,7 +102,7 @@ test.describe("언어별 공개 화면", () => {
 
         await Promise.all([
             page.waitForEvent("domcontentloaded"),
-            selector.selectOption("en"),
+            selectLanguage(page, "display", "en"),
         ]);
 
         await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -210,9 +208,7 @@ test.describe("주소로 지정한 공개 언어", () => {
 
             await Promise.all([
                 page.waitForEvent("domcontentloaded"),
-                page
-                    .getByRole("combobox", { name: displayLanguageName })
-                    .selectOption(selected),
+                selectLanguage(page, "display", selected),
             ]);
 
             await expect(page.locator("html")).toHaveAttribute(

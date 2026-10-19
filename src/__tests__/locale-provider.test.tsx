@@ -38,6 +38,15 @@ const LocaleProbe = () => {
             <button
                 onClick={async () =>
                     setResult(
+                        String(await changeLocale("ja", { apply: false }))
+                    )
+                }
+            >
+                새 문서에서 선택
+            </button>
+            <button
+                onClick={async () =>
+                    setResult(
                         String(await changeLocale("ja", { persist: false }))
                     )
                 }
@@ -78,6 +87,21 @@ afterEach(() => {
 });
 
 describe("자동 언어 감지와 직접 선택 저장의 구분", () => {
+    it("공개 화면의 전체 이동 준비는 쿠키만 바꾸고 현재 문서 언어·문구 보존", async () => {
+        renderProvider();
+        fireEvent.click(
+            screen.getByRole("button", { name: "새 문서에서 선택" })
+        );
+        await waitFor(() =>
+            expect(screen.getByTestId("result")).toHaveTextContent("true")
+        );
+        expect(document.cookie).toContain(`${UI_LOCALE_COOKIE}=ja`);
+        expect(document.documentElement).toHaveAttribute("lang", "en");
+        expect(screen.getByTestId("locale")).toHaveTextContent("en");
+        expect(screen.getByTestId("message")).toHaveTextContent(
+            "English label"
+        );
+    });
     it("자동 감지로 화면과 문서 언어를 바꿔도 선택 쿠키 생성 제외", async () => {
         document.cookie = `${UI_LOCALE_COOKIE}=; Path=/; Max-Age=0`;
         renderProvider();
@@ -116,7 +140,7 @@ describe("자동 언어 감지와 직접 선택 저장의 구분", () => {
 });
 
 describe("번역 파일 로딩과 미저장 입력 보존", () => {
-    it.each(["자동 감지", "직접 선택"])(
+    it.each(["자동 감지", "직접 선택", "새 문서에서 선택"])(
         "%s 로딩 실패 시 기존 화면·쿠키·미저장 입력 보존",
         async (button) => {
             mocks.loadUIMessages.mockRejectedValueOnce(
