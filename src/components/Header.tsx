@@ -10,6 +10,8 @@ import Link from "next/link";
 import type { ThemeMode } from "@/lib/theme-mode";
 import type { PublicJobField } from "@/lib/public-job-field";
 import { getHeaderBrandLabel } from "@/lib/header-brand";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { publicPath } from "@/lib/i18n";
 
 export default function Header({
     headerName,
@@ -23,7 +25,7 @@ export default function Header({
     themeMode?: ThemeMode;
 }) {
     const [open, setOpen] = useState(false);
-    const pathname = usePathname();
+    const pathname = publicPath(usePathname());
     const firstPathSegment = pathname.split("/")[1] ?? "";
     const currentJobField = jobFields.find(
         (field) => field.id === firstPathSegment
@@ -178,6 +180,7 @@ export default function Header({
                         </svg>
                     </a>
                     {themeMode === "system" && <ThemeToggle />}
+                    <LanguageSelector />
                     <UserMenu />
                 </div>
             </nav>

@@ -1,3 +1,5 @@
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import type { Locale } from "@/lib/i18n";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { serverClient } from "@/lib/supabase";
@@ -11,14 +13,30 @@ const PUBLIC_CONTENT_CACHE_OPTIONS = {
     tags: [PUBLIC_CONTENT_CACHE_TAG],
 };
 
+// 언어를 명시적 캐시 인수에 포함한 요청 간 저장
+const localizedCache = <Args extends unknown[], Result>(
+    action: (...args: Args) => Promise<Result>,
+    keys: string[],
+    options: typeof PUBLIC_CONTENT_CACHE_OPTIONS
+) => {
+    const cached = unstable_cache(
+        (locale: Locale, ...args: Args) =>
+            withContentLocale(locale, () => action(...args)),
+        keys,
+        options
+    );
+    return (...args: Args) => cached(getContentLocale(), ...args);
+};
+
 // request 단위 포스트 조회 캐싱 (generateMetadata + page 컴포넌트 중복 DB 호출 제거)
-const getCachedPost = unstable_cache(
+const getCachedPost = localizedCache(
     async (slug: string) => {
         if (!serverClient) return null;
         const { data } = await serverClient
             .from("posts")
             .select("*")
             .eq("slug", slug)
+            .eq("published", true)
             .single();
         if (!data) return data;
         const { content } = await readPostContentById(
@@ -45,7 +63,7 @@ const getPortfolioItemUncached = async (slug: string) => {
 };
 
 // 배포 환경의 공개 포트폴리오 아이템 조회 캐싱
-const getCachedPortfolioItem = unstable_cache(
+const getCachedPortfolioItem = localizedCache(
     getPortfolioItemUncached,
     ["portfolio-item"],
     PUBLIC_CONTENT_CACHE_OPTIONS
@@ -58,13 +76,56 @@ export const getPortfolioItem = cache(
 );
 
 // 전체 site_config 조회 캐싱 (root layout, frontend layout, 페이지 간 중복 제거)
-const getCachedSiteConfig = unstable_cache(
+const getCachedSiteConfig = localizedCache(
     async () => {
         if (!serverClient) return [] as { key: string; value: unknown }[];
         const { data } = await serverClient
             .from("site_config")
             .select("key, value");
-        return (data ?? []) as { key: string; value: unknown }[];
+        const rows = (data ?? []) as { key: string; value: unknown }[];
+        const locale = getContentLocale();
+        if (locale === "ko") return rows;
+        const { data: translated } = await serverClient
+            .from("site_config_i18n")
+            .select("key, value")
+            .eq("lang", locale);
+        const overrides = new Map<string, unknown>(
+            (translated ?? []).map((row) => [String(row.key), row.value])
+        );
+        const textKeys = new Set([
+            "site_name",
+            "header_name",
+            "seo_config",
+            "navigation_config",
+            "footer_config",
+        ]);
+        return rows
+            .map((row) => {
+                if (overrides.has(row.key))
+                    return { ...row, value: overrides.get(row.key) };
+                if (textKeys.has(row.key))
+                    return {
+                        ...row,
+                        value: row.key === "site_name" ? "PortareFolium" : "",
+                    };
+                if (row.key === "job_fields" && Array.isArray(row.value))
+                    return {
+                        ...row,
+                        value: row.value.map(
+                            (field: Record<string, unknown>) => ({
+                                ...field,
+                                name: String(field.id),
+                                headerTitle: String(field.id),
+                            })
+                        ),
+                    };
+                return row;
+            })
+            .concat(
+                (translated ?? []).filter(
+                    (row) => !rows.some((source) => source.key === row.key)
+                )
+            );
     },
     ["site-config"],
     PUBLIC_CONTENT_CACHE_OPTIONS
@@ -72,7 +133,7 @@ const getCachedSiteConfig = unstable_cache(
 
 export const getSiteConfig = cache(getCachedSiteConfig);
 
-const getCachedResumeBasics = unstable_cache(
+const getCachedResumeBasics = localizedCache(
     async (): Promise<ResumeBasics> => {
         if (!serverClient) return {};
         const { data } = await serverClient
@@ -91,7 +152,7 @@ const getCachedResumeBasics = unstable_cache(
 export const getPublicResumeBasics = cache(getCachedResumeBasics);
 
 // generateMetadata 전용 — content 제외 경량 쿼리
-const getCachedPostMeta = unstable_cache(
+const getCachedPostMeta = localizedCache(
     async (slug: string) => {
         if (!serverClient) return null;
         const { data } = await serverClient
@@ -100,6 +161,7 @@ const getCachedPostMeta = unstable_cache(
                 "title, meta_title, meta_description, og_image, thumbnail, description, category, slug"
             )
             .eq("slug", slug)
+            .eq("published", true)
             .single();
         return data;
     },
@@ -110,7 +172,7 @@ const getCachedPostMeta = unstable_cache(
 export const getPostMeta = cache(getCachedPostMeta);
 
 // generateMetadata 전용 — content 제외 경량 쿼리
-const getCachedPortfolioItemMeta = unstable_cache(
+const getCachedPortfolioItemMeta = localizedCache(
     async (slug: string) => {
         if (!serverClient) return null;
         const { data } = await serverClient
@@ -149,7 +211,7 @@ export async function getAllPortfolioSlugs() {
 }
 
 // generateMetadata 전용 — content 제외 경량 쿼리
-const getCachedBookMeta = unstable_cache(
+const getCachedBookMeta = localizedCache(
     async (slug: string) => {
         if (!serverClient) return null;
         const { data } = await serverClient
@@ -158,6 +220,7 @@ const getCachedBookMeta = unstable_cache(
                 "title, meta_title, meta_description, og_image, cover_url, description, slug"
             )
             .eq("slug", slug)
+            .eq("published", true)
             .single();
         return data;
     },
@@ -167,13 +230,14 @@ const getCachedBookMeta = unstable_cache(
 
 export const getBookMeta = cache(getCachedBookMeta);
 
-const getCachedBook = unstable_cache(
+const getCachedBook = localizedCache(
     async (slug: string) => {
         if (!serverClient) return null;
         const { data } = await serverClient
             .from("books")
             .select("*")
             .eq("slug", slug)
+            .eq("published", true)
             .single();
         return data;
     },
@@ -194,7 +258,7 @@ export async function getAllBookSlugs() {
 }
 
 // tags 전체 조회 캐싱
-const getCachedTags = unstable_cache(
+const getCachedTags = localizedCache(
     async () => {
         if (!serverClient)
             return [] as { slug: string; name: string; color: string | null }[];

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Users } from "lucide-react";
@@ -130,12 +130,15 @@ type PortfolioDetailContentProps = {
 export default async function PortfolioDetailContent({
     slug,
     jobField,
-    portfolioBasePath = "/portfolio",
+    portfolioBasePath: basePathOverride,
     itemOverride,
     preview = false,
 }: PortfolioDetailContentProps) {
+    const portfolioBasePath =
+        basePathOverride ??
+        (jobField ? `/${jobField}/portfolio` : "/portfolio");
     const item = itemOverride ?? (await getPortfolioItem(slug));
-    if (!item) notFound();
+    if (!item) redirect(portfolioBasePath);
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
     if (jobField && !matchesPortfolioJobField(project, jobField)) notFound();

@@ -1,3 +1,4 @@
+import { revalidateLocalizedPath as revalidatePath } from "@/lib/localized-revalidate";
 import { getContentLocale, withContentLocale } from "@/lib/content-locale";
 import { isLocale } from "@/lib/i18n";
 import { serverClient } from "@/lib/supabase";
@@ -62,7 +63,7 @@ const toPersistedPortfolioJobField = (value: unknown): unknown => {
 };
 
 const revalidateMcpPortfolio = async (slug: string) => {
-    const { revalidatePath, revalidateTag } = await import("next/cache");
+    const { revalidateTag } = await import("next/cache");
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
     const jobFields = await getPublicJobFields();
@@ -76,7 +77,7 @@ const revalidateMcpPortfolio = async (slug: string) => {
 };
 
 const revalidateMcpResume = async () => {
-    const { revalidatePath, revalidateTag } = await import("next/cache");
+    const { revalidateTag } = await import("next/cache");
     revalidatePath("/resume");
     const jobFields = await getPublicJobFields();
     for (const jobField of jobFields) {
@@ -442,7 +443,6 @@ export async function handleUpdatePost(args: {
     if (error)
         throw new Error(`[mcp-tools::handleUpdatePost] ${error.message}`);
 
-    const { revalidatePath } = await import("next/cache");
     revalidatePath(`/blog/${slug}`);
     revalidatePath("/blog");
 
@@ -516,7 +516,6 @@ export async function handleRenamePostSlug(args: {
         throw new Error(`[mcp-tools::handleRenamePostSlug] ${error.message}`);
     }
 
-    const { revalidatePath } = await import("next/cache");
     revalidatePath(`/blog/${currentSlug}`);
     revalidatePath(`/blog/${newSlug}`);
     revalidatePath("/blog");

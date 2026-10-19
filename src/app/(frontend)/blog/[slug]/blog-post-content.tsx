@@ -47,9 +47,11 @@ type BlogPostContentProps = {
 export default async function BlogPostContent({
     slug,
     jobField,
-    blogBasePath = "/blog",
+    blogBasePath: basePathOverride,
     postOverride,
 }: BlogPostContentProps) {
+    const blogBasePath =
+        basePathOverride ?? (jobField ? `/${jobField}/blog` : "/blog");
     const post = postOverride ?? (await getPost(slug));
     if (!post) redirect(blogBasePath);
     if (
