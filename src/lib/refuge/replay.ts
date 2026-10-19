@@ -17,10 +17,7 @@ type ReplayTarget = {
 };
 
 // PostgreSQL 고유 키와 이력서의 언어별 고유 키 사용
-const getReplayTarget = (
-    table: string,
-    row: RefugeRow | null | undefined
-): ReplayTarget => {
+const getReplayColumns = (table: string): string[] => {
     const localized = table.endsWith("_i18n");
     const base = table.replace(/_i18n$/, "");
     const baseColumns =
@@ -37,7 +34,17 @@ const getReplayTarget = (
                     : base === "post_content_chunks"
                       ? ["revision_id", "chunk_index"]
                       : ["id"];
-    const columns = [...(localized ? ["lang"] : []), ...baseColumns];
+    return [...(localized ? ["lang"] : []), ...baseColumns];
+};
+
+// 언어와 모든 고유 키를 보유한 대상만 사용
+const getReplayTarget = (
+    table: string,
+    row: RefugeRow | null | undefined
+): ReplayTarget => {
+    const localized = table.endsWith("_i18n");
+    const base = table.replace(/_i18n$/, "");
+    const columns = getReplayColumns(table);
     const values = columns.map((column) => row?.[column]);
     if (
         values.some(
@@ -81,18 +88,20 @@ const normalizeEntry = (entry: RefugeJournalEntry): RefugeJournalEntry => ({
     after: normalizeRow(entry.table, entry.after),
 });
 
-// 임시 ID를 제외한 이력서의 실제 변경 내용 비교
+// 서버 관리 updated_at과 임시 이력서 ID를 제외한 실제 자료 비교
 const rowsMatch = (
     table: string,
     current: RefugeRow | null,
     expected: RefugeRow | null
 ): boolean => {
     if (!current || !expected) return current === expected;
-    if (table === "resume_data" && !("id" in expected)) {
-        const { id: _id, ...fields } = current;
-        return stableJson(fields) === stableJson(expected);
+    const { updated_at: _currentUpdatedAt, ...currentFields } = current;
+    const { updated_at: _expectedUpdatedAt, ...expectedFields } = expected;
+    if (table === "resume_data" && !("id" in expectedFields)) {
+        const { id: _id, ...fields } = currentFields;
+        return stableJson(fields) === stableJson(expectedFields);
     }
-    return stableJson(current) === stableJson(expected);
+    return stableJson(currentFields) === stableJson(expectedFields);
 };
 
 // 값 안의 구분자와 언어를 구별하는 조회 캐시 키
@@ -113,6 +122,32 @@ const fetchCurrentRow = async (
         throw new Error(`${target.table}:${target.identity} ${error.message}`);
     return (data as RefugeRow | null) ?? null;
 };
+
+// 고유 키 순서로 500행씩 조회한 복구 전 전체 백업
+export async function readReplaySnapshot(
+    client: SupabaseClient
+): Promise<Record<string, RefugeRow[]>> {
+    const tables: Record<string, RefugeRow[]> = {};
+    for (const table of REFUGE_REPLAY_TABLES) {
+        const rows: RefugeRow[] = [];
+        for (let offset = 0; ; offset += 500) {
+            let query = client.from(table).select("*");
+            for (const column of getReplayColumns(table))
+                query = query.order(column, { ascending: true });
+            const { data, error } = await query.range(offset, offset + 499);
+            if (error || !data)
+                throw new Error(
+                    `${table} snapshot failed: ${error?.message ?? "missing rows"}`
+                );
+            rows.push(...(data as RefugeRow[]));
+            if (rows.length > 100000)
+                throw new Error(`${table} snapshot exceeds 100000 rows`);
+            if (data.length < 500) break;
+        }
+        tables[table] = rows;
+    }
+    return tables;
+}
 
 // 원격 자료와 journal의 변경 전 상태를 비교한 복구 계획
 export async function buildReplayPlan(
@@ -167,6 +202,20 @@ export async function buildReplayPlan(
         const current = simulatedRows.has(key)
             ? (simulatedRows.get(key) ?? null)
             : await fetchCurrentRow(client, target);
+        const nextKey = cacheKey(nextTarget);
+        if (entry.after && nextKey !== key) {
+            const destination = simulatedRows.has(nextKey)
+                ? (simulatedRows.get(nextKey) ?? null)
+                : await fetchCurrentRow(client, nextTarget);
+            if (destination) {
+                conflicts.push({
+                    table: entry.table,
+                    identity: nextTarget.identity,
+                    reason: "Supabase destination row exists for local identity change",
+                });
+                continue;
+            }
+        }
         const reason = !entry.before
             ? current !== null
                 ? "Supabase row exists for local insert"
@@ -188,9 +237,9 @@ export async function buildReplayPlan(
                 continue;
             }
         }
-        if (cacheKey(nextTarget) !== key) simulatedRows.set(key, null);
+        if (nextKey !== key) simulatedRows.set(key, null);
         simulatedRows.set(
-            cacheKey(nextTarget),
+            nextKey,
             entry.operation === "delete" ? null : (entry.after ?? null)
         );
     }
@@ -221,6 +270,19 @@ export async function applyJournal(
                 entry.after ?? entry.before
             ),
         }));
+    if (
+        entries.some(
+            ({ target, nextTarget }) =>
+                cacheKey(target) !== cacheKey(nextTarget)
+        )
+    ) {
+        const plan = await buildReplayPlan(client, journal, options);
+        const conflict = plan.conflicts[0];
+        if (conflict)
+            throw new Error(
+                `${conflict.table}:${conflict.identity} ${conflict.reason} before apply`
+            );
+    }
     for (const { entry, target, nextTarget } of entries) {
         if (!options.localWins) {
             const current = await fetchCurrentRow(client, target);
@@ -249,6 +311,10 @@ export async function applyJournal(
         }
         if (!entry.after) continue;
         if (cacheKey(target) !== cacheKey(nextTarget)) {
+            if (await fetchCurrentRow(client, nextTarget))
+                throw new Error(
+                    `${entry.table}:${nextTarget.identity} destination row exists before apply`
+                );
             let query = client.from(entry.table).update(entry.after);
             target.columns.forEach((column, index) => {
                 query = query.eq(column, target.values[index]);
@@ -259,6 +325,14 @@ export async function applyJournal(
                     `${entry.table}:${target.identity} ${error.message}`
                 );
             if (data) continue;
+            const { error: insertError } = await client
+                .from(entry.table)
+                .insert(entry.after);
+            if (insertError)
+                throw new Error(
+                    `${entry.table}:${nextTarget.identity} ${insertError.message}`
+                );
+            continue;
         }
         const { error } = await client.from(entry.table).upsert(entry.after, {
             onConflict: nextTarget.columns.join(","),

@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { applyJournal, buildReplayPlan } from "@/lib/refuge/replay";
+import {
+    applyJournal,
+    buildReplayPlan,
+    readReplaySnapshot,
+} from "@/lib/refuge/replay";
 import {
     getRefugeIdentity,
     type RefugeJournalEntry,
@@ -9,7 +13,17 @@ import {
 } from "@/lib/refuge/schema";
 
 // 실제 DB 접근 없이 필터·복합 고유 키·이력서 UUID 제약을 적용하는 가짜 DB
-const fakeDatabase = (initial: Record<string, RefugeRow[]>) => {
+const fakeDatabase = (
+    initial: Record<string, RefugeRow[]>,
+    options: {
+        triggerUpdatedAt?: boolean;
+        afterWrite?: (
+            tables: Record<string, RefugeRow[]>,
+            writeCount: number
+        ) => void;
+        readError?: { table: string; offset: number };
+    } = {}
+) => {
     const tables = structuredClone(initial);
     const writes: { table: string; payload?: RefugeRow; columns?: string }[] =
         [];
@@ -20,53 +34,122 @@ const fakeDatabase = (initial: Record<string, RefugeRow[]>) => {
             let payload: RefugeRow = {};
             let columns = "";
             const filters: [string, unknown][] = [];
+            const orders: string[] = [];
+            let offset = 0;
+            let end: number | undefined;
+            const base = table.replace(/_i18n$/, "");
+            const prefix = table.endsWith("_i18n") ? ["lang"] : [];
+            const expected = [
+                ...prefix,
+                ...(table === "about_data_i18n"
+                    ? []
+                    : ["posts", "portfolio_items", "books", "tags"].includes(
+                            base
+                        )
+                      ? ["slug"]
+                      : base === "post_categories"
+                        ? ["name"]
+                        : base === "site_config"
+                          ? ["key"]
+                          : base === "resume_data"
+                            ? ["lang"]
+                            : base === "post_content_chunks"
+                              ? ["revision_id", "chunk_index"]
+                              : ["id"]),
+            ];
+            const constraints = [expected];
+            if (
+                [
+                    "posts",
+                    "portfolio_items",
+                    "books",
+                    "about_data",
+                    "resume_data",
+                ].includes(base)
+            )
+                constraints.push([...prefix, "id"]);
+            const hasDuplicate = (rows: RefugeRow[]) =>
+                constraints.some((keys) =>
+                    rows.some(
+                        (row, index) =>
+                            keys.every((key) => row[key] != null) &&
+                            rows
+                                .slice(index + 1)
+                                .some((other) =>
+                                    keys.every((key) => row[key] === other[key])
+                                )
+                    )
+                );
+            const stamp = (row: RefugeRow) => {
+                if (options.triggerUpdatedAt && "updated_at" in row)
+                    row.updated_at = new Date(
+                        Date.UTC(2026, 9, 19, 0, 0, writes.length + 1)
+                    ).toISOString();
+                return row;
+            };
             const execute = () => {
                 const rows = tables[table] ?? [];
                 const matches = (row: RefugeRow) =>
                     filters.every(([column, value]) => row[column] === value);
-                if (mode === "select")
-                    return { data: rows.filter(matches), error: null };
+                if (mode === "select") {
+                    if (
+                        options.readError?.table === table &&
+                        options.readError.offset === offset
+                    )
+                        return {
+                            data: [],
+                            error: { message: "snapshot read failed" },
+                        };
+                    const selected = rows.filter(matches).sort((a, b) => {
+                        for (const column of orders) {
+                            const result = String(a[column]).localeCompare(
+                                String(b[column])
+                            );
+                            if (result) return result;
+                        }
+                        return 0;
+                    });
+                    return {
+                        data: selected.slice(
+                            offset,
+                            end === undefined ? undefined : end + 1
+                        ),
+                        error: null,
+                    };
+                }
                 if (mode === "delete") {
                     writes.push({ table });
                     tables[table] = rows.filter((row) => !matches(row));
+                    options.afterWrite?.(tables, writes.length);
                     return { data: [], error: null };
                 }
                 if (mode === "update") {
-                    writes.push({ table, payload: { ...payload } });
                     const changed: RefugeRow[] = [];
-                    tables[table] = rows.map((row) => {
+                    const nextRows = rows.map((row) => {
                         if (!matches(row)) return row;
-                        const next = { ...row, ...payload };
+                        const next = stamp({ ...row, ...payload });
                         changed.push(next);
                         return next;
                     });
+                    if (hasDuplicate(nextRows))
+                        return {
+                            data: [],
+                            error: {
+                                message:
+                                    "duplicate key value violates unique constraint",
+                            },
+                        };
+                    tables[table] = nextRows;
+                    writes.push({ table, payload: { ...payload } });
+                    options.afterWrite?.(tables, writes.length);
                     return { data: changed, error: null };
                 }
-                const base = table.replace(/_i18n$/, "");
-                const expected = [
-                    ...(table.endsWith("_i18n") ? ["lang"] : []),
-                    ...(table === "about_data_i18n"
-                        ? []
-                        : [
-                                "posts",
-                                "portfolio_items",
-                                "books",
-                                "tags",
-                            ].includes(base)
-                          ? ["slug"]
-                          : base === "post_categories"
-                            ? ["name"]
-                            : base === "site_config"
-                              ? ["key"]
-                              : base === "resume_data"
-                                ? ["lang"]
-                                : base === "post_content_chunks"
-                                  ? ["revision_id", "chunk_index"]
-                                  : ["id"]),
-                ];
                 if (
-                    expected.length !== columns.split(",").length ||
-                    !expected.every((key) => columns.split(",").includes(key))
+                    mode === "upsert" &&
+                    (expected.length !== columns.split(",").length ||
+                        !expected.every((key) =>
+                            columns.split(",").includes(key)
+                        ))
                 ) {
                     return {
                         data: [],
@@ -85,19 +168,42 @@ const fakeDatabase = (initial: Record<string, RefugeRow[]>) => {
                         },
                     };
                 }
-                writes.push({ table, payload: { ...payload }, columns });
-                const index = rows.findIndex((row) =>
-                    expected.every((key) => row[key] === payload[key])
-                );
+                const index =
+                    mode === "insert"
+                        ? -1
+                        : rows.findIndex((row) =>
+                              expected.every((key) => row[key] === payload[key])
+                          );
                 const next = { ...(rows[index] ?? {}), ...payload };
                 if (table === "resume_data") next.id ??= randomUUID();
-                if (index >= 0) rows[index] = next;
-                else rows.push(next);
-                tables[table] = rows;
+                if (index >= 0) stamp(next);
+                const nextRows = [...rows];
+                if (index >= 0) nextRows[index] = next;
+                else nextRows.push(next);
+                if (hasDuplicate(nextRows))
+                    return {
+                        data: [],
+                        error: {
+                            message:
+                                "duplicate key value violates unique constraint",
+                        },
+                    };
+                writes.push({ table, payload: { ...payload }, columns });
+                tables[table] = nextRows;
+                options.afterWrite?.(tables, writes.length);
                 return { data: [next], error: null };
             };
             const query = {
                 select: () => query,
+                order: (column: string) => {
+                    orders.push(column);
+                    return query;
+                },
+                range: async (start: number, last: number) => {
+                    offset = start;
+                    end = last;
+                    return execute();
+                },
                 eq: (column: string, value: unknown) => {
                     filters.push([column, value]);
                     return query;
@@ -115,6 +221,11 @@ const fakeDatabase = (initial: Record<string, RefugeRow[]>) => {
                     mode = "upsert";
                     payload = row;
                     columns = options.onConflict;
+                    return query;
+                },
+                insert: (row: RefugeRow) => {
+                    mode = "insert";
+                    payload = row;
                     return query;
                 },
                 maybeSingle: async () => {
@@ -377,5 +488,322 @@ describe("다국어 refuge 복구", () => {
         ).toHaveLength(1);
         await applyJournal(database.client, journal, { localWins: true });
         expect(database.tables.about_data_i18n).toEqual([local, ja]);
+    });
+
+    it("서버 자동 updated_at 변경 뒤에도 연속 본문·공개 상태 복구 완료", async () => {
+        const before = {
+            id: "post",
+            slug: "same",
+            lang: "en",
+            content: "Before",
+            published: false,
+            updated_at: "2026-10-01T00:00:00Z",
+        };
+        const first = {
+            ...before,
+            content: "First",
+            updated_at: "2026-10-02T00:00:00Z",
+        };
+        const last = {
+            ...first,
+            content: "Last",
+            published: true,
+            updated_at: "2026-10-03T00:00:00Z",
+        };
+        const ja = { ...before, lang: "ja" };
+        const database = fakeDatabase(
+            { posts_i18n: [before, ja] },
+            { triggerUpdatedAt: true }
+        );
+        const journal = [
+            entry("posts_i18n", before, first),
+            entry("posts_i18n", first, last),
+        ];
+        expect(
+            (await buildReplayPlan(database.client, journal)).conflicts
+        ).toEqual([]);
+        await applyJournal(database.client, journal);
+        expect(database.writes).toHaveLength(2);
+        expect(database.tables.posts_i18n[0]).toMatchObject({
+            content: "Last",
+            published: true,
+        });
+        expect(database.tables.posts_i18n[0].updated_at).not.toBe(
+            last.updated_at
+        );
+        expect(database.tables.posts_i18n[1]).toEqual(ja);
+    });
+
+    it("최상위 updated_at만 달라진 원격 행은 내용 충돌에서 제외", async () => {
+        const before = {
+            id: "post",
+            slug: "same",
+            lang: "en",
+            content: "Before",
+            updated_at: "local-time",
+        };
+        const database = fakeDatabase(
+            { posts_i18n: [{ ...before, updated_at: "server-time" }] },
+            { triggerUpdatedAt: true }
+        );
+        const journal = [
+            entry("posts_i18n", before, { ...before, content: "After" }),
+        ];
+        expect(
+            (await buildReplayPlan(database.client, journal)).conflicts
+        ).toEqual([]);
+        await applyJournal(database.client, journal);
+        expect(database.tables.posts_i18n[0].content).toBe("After");
+    });
+
+    it.each([
+        { content: "Remote body" },
+        { published: true },
+        { data: { updated_at: "Remote content metadata" } },
+    ])(
+        "updated_at 차이를 허용해도 실제 본문·공개 상태·중첩 자료 변경 거부: %j",
+        async (change) => {
+            const before = {
+                id: "portfolio",
+                slug: "same",
+                lang: "en",
+                content: "Before",
+                published: false,
+                data: { updated_at: "Content metadata" },
+                updated_at: "local-time",
+            };
+            const database = fakeDatabase({
+                portfolio_items_i18n: [
+                    { ...before, ...change, updated_at: "server-time" },
+                ],
+            });
+            const journal = [
+                entry("portfolio_items_i18n", before, {
+                    ...before,
+                    content: "Local",
+                }),
+            ];
+            expect(
+                (await buildReplayPlan(database.client, journal)).conflicts
+            ).toHaveLength(1);
+            await expect(
+                applyJournal(database.client, journal)
+            ).rejects.toThrow("drift before apply");
+            expect(database.writes).toEqual([]);
+        }
+    );
+
+    it("서버 trigger와 함께 발생한 외부 본문 수정은 다음 쓰기 전 거부", async () => {
+        const before = {
+            id: "post",
+            slug: "same",
+            lang: "en",
+            content: "Before",
+            updated_at: "original",
+        };
+        const first = {
+            ...before,
+            content: "First",
+            updated_at: "first-local-time",
+        };
+        const database = fakeDatabase(
+            { posts_i18n: [before] },
+            {
+                triggerUpdatedAt: true,
+                afterWrite(tables, count) {
+                    if (count === 1)
+                        tables.posts_i18n[0].content = "Concurrent remote edit";
+                },
+            }
+        );
+        const journal = [
+            entry("posts_i18n", before, first),
+            entry("posts_i18n", first, { ...first, content: "Last" }),
+        ];
+        await expect(applyJournal(database.client, journal)).rejects.toThrow(
+            "drift before apply"
+        );
+        expect(database.writes).toHaveLength(1);
+        expect(database.tables.posts_i18n[0].content).toBe(
+            "Concurrent remote edit"
+        );
+    });
+
+    it.each([false, true])(
+        "rename 목적지 기존 자료는 localWins=%s에서도 전체 적용 전 충돌",
+        async (localWins) => {
+            const source = {
+                id: "source",
+                slug: "old",
+                lang: "en",
+                title: "Source",
+            };
+            const destination = {
+                id: "destination",
+                slug: "new",
+                lang: "en",
+                title: "Destination",
+            };
+            const ja = { ...destination, lang: "ja" };
+            const config = { key: "site_name", value: "Before" };
+            const database = fakeDatabase({
+                posts_i18n: [source, destination, ja],
+                site_config: [config],
+            });
+            const journal = [
+                entry("site_config", config, { ...config, value: "Local" }),
+                entry("posts_i18n", source, { ...source, slug: "new" }),
+            ];
+            const plan = await buildReplayPlan(database.client, journal, {
+                localWins,
+            });
+            expect(plan.conflicts[0]?.reason).toContain(
+                "destination row exists"
+            );
+            await expect(
+                applyJournal(database.client, journal, { localWins })
+            ).rejects.toThrow("destination row exists");
+            expect(database.writes).toEqual([]);
+            expect(database.tables.posts_i18n).toEqual([
+                source,
+                destination,
+                ja,
+            ]);
+            expect(database.tables.site_config).toEqual([config]);
+        }
+    );
+
+    it("분류명 변경의 목적지 분류 충돌도 사전 거부", async () => {
+        const source = { name: "Old", lang: "en" };
+        const destination = { name: "New", lang: "en" };
+        const database = fakeDatabase({
+            post_categories_i18n: [source, destination],
+        });
+        const journal = [
+            entry("post_categories_i18n", source, { ...source, name: "New" }),
+        ];
+        expect(
+            (
+                await buildReplayPlan(database.client, journal, {
+                    localWins: true,
+                })
+            ).conflicts[0]?.reason
+        ).toContain("destination row exists");
+        await expect(
+            applyJournal(database.client, journal, { localWins: true })
+        ).rejects.toThrow("destination row exists");
+        expect(database.writes).toEqual([]);
+    });
+
+    it("사전 검사 후 새로 생긴 rename 목적지도 쓰기 직전 거부", async () => {
+        const source = {
+            id: "source",
+            slug: "old",
+            lang: "en",
+            title: "Source",
+        };
+        const destination = {
+            id: "destination",
+            slug: "new",
+            lang: "en",
+            title: "Concurrent destination",
+        };
+        const config = { key: "site_name", value: "Before" };
+        const database = fakeDatabase(
+            { posts_i18n: [source], site_config: [config] },
+            {
+                afterWrite(tables, count) {
+                    if (count === 1) tables.posts_i18n.push(destination);
+                },
+            }
+        );
+        const journal = [
+            entry("site_config", config, { ...config, value: "Local" }),
+            entry("posts_i18n", source, { ...source, slug: "new" }),
+        ];
+        await expect(
+            applyJournal(database.client, journal, { localWins: true })
+        ).rejects.toThrow("destination row exists");
+        expect(database.writes).toHaveLength(1);
+        expect(database.tables.posts_i18n).toEqual([source, destination]);
+    });
+
+    it("rename 원본 부재의 재생성 경쟁에서도 새 목적지 자료 덮어쓰기 차단", async () => {
+        const source = {
+            id: "source",
+            slug: "old",
+            lang: "en",
+            title: "Source",
+        };
+        const destination = {
+            id: "destination",
+            slug: "new",
+            lang: "en",
+            title: "Concurrent destination",
+        };
+        const database = fakeDatabase(
+            { posts_i18n: [] },
+            {
+                afterWrite(tables, count) {
+                    if (count === 1) tables.posts_i18n.push(destination);
+                },
+            }
+        );
+        const journal = [
+            entry("posts_i18n", source, { ...source, slug: "new" }),
+        ];
+        await expect(
+            applyJournal(database.client, journal, { localWins: true })
+        ).rejects.toThrow("duplicate key");
+        expect(database.tables.posts_i18n).toEqual([destination]);
+    });
+
+    it("복구 전 백업에 1000행을 넘는 언어별 이력 전체 포함", async () => {
+        const rows = Array.from({ length: 1210 }, (_, index) => ({
+            id: `post-${String(Math.floor(index / 2)).padStart(4, "0")}`,
+            slug: `post-${String(Math.floor(index / 2)).padStart(4, "0")}`,
+            lang: index % 2 === 0 ? "en" : "ja",
+            content: `Body ${index}`,
+        }));
+        const database = fakeDatabase({ posts_i18n: [...rows].reverse() });
+        const snapshot = await readReplaySnapshot(database.client);
+        expect(snapshot.posts_i18n).toHaveLength(1210);
+        expect(
+            new Set(snapshot.posts_i18n.map((row) => `${row.lang}:${row.id}`))
+                .size
+        ).toBe(1210);
+        expect(snapshot.posts_i18n.map((row) => row.content).sort()).toEqual(
+            rows.map((row) => row.content).sort()
+        );
+        expect(database.writes).toEqual([]);
+    });
+
+    it("복구 전 백업의 다음 페이지 오류 시 불완전한 결과 반환 거부", async () => {
+        const rows = Array.from({ length: 501 }, (_, index) => ({
+            id: String(index),
+        }));
+        const database = fakeDatabase(
+            { post_content_revisions_i18n: rows },
+            { readError: { table: "post_content_revisions_i18n", offset: 500 } }
+        );
+        await expect(readReplaySnapshot(database.client)).rejects.toThrow(
+            "snapshot read failed"
+        );
+        expect(database.writes).toEqual([]);
+    });
+
+    it("복구 전 백업 행 제한 초과 시 조용한 잘림 대신 오류 반환", async () => {
+        const query = {
+            select: () => query,
+            order: () => query,
+            range: async () => ({
+                data: Array.from({ length: 500 }, (_, index) => ({
+                    id: index,
+                })),
+                error: null,
+            }),
+        };
+        const client = { from: () => query } as unknown as SupabaseClient;
+        await expect(readReplaySnapshot(client)).rejects.toThrow("100000");
     });
 });

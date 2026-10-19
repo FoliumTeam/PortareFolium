@@ -7,16 +7,16 @@ import {
     REFUGE_MANIFEST_PATH,
     REFUGE_MODE_PATH,
 } from "../src/lib/refuge/paths";
-import { buildReplayPlan, applyJournal } from "../src/lib/refuge/replay";
+import {
+    buildReplayPlan,
+    applyJournal,
+    readReplaySnapshot,
+} from "../src/lib/refuge/replay";
 import {
     getRefugeJournalHeadHash,
     readRefugeJournal,
 } from "../src/lib/refuge/store";
-import {
-    REFUGE_REPLAY_TABLES,
-    type RefugeManifest,
-    type RefugeRow,
-} from "../src/lib/refuge/schema";
+import { type RefugeManifest } from "../src/lib/refuge/schema";
 
 function hasArg(name: string): boolean {
     return process.argv.includes(name);
@@ -30,12 +30,7 @@ function getClient(): SupabaseClient {
 }
 
 async function snapshotSupabase(client: SupabaseClient): Promise<string> {
-    const tables: Record<string, RefugeRow[]> = {};
-    for (const table of REFUGE_REPLAY_TABLES) {
-        const { data, error } = await client.from(table).select("*");
-        if (error) throw new Error(`${table}: ${error.message}`);
-        tables[table] = (data ?? []) as RefugeRow[];
-    }
+    const tables = await readReplaySnapshot(client);
     const filePath = path.join(
         REFUGE_DIR,
         `pre-push-snapshot-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
