@@ -1,3 +1,4 @@
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 import { FilePenLine, Settings2, UploadCloud } from "lucide-react";
 
 type ContentEditorGuideProps = {
@@ -12,7 +13,14 @@ export const ContentEditorGuide = ({ kind }: ContentEditorGuideProps) => {
             : "설정에서 요약·대표 이미지·직무 분야를 확인";
 
     return (
-        <section
+        <LocalizedElement
+            as="section"
+            messageProps={{
+                "aria-label": {
+                    text: "{0} 작성 순서",
+                    values: [{ text: label }],
+                },
+            }}
             aria-label={`${label} 작성 순서`}
             className="tablet:grid-cols-3 mb-3 grid gap-2 rounded-xl border border-(--color-accent)/25 bg-(--color-accent)/5 p-3"
         >
@@ -43,14 +51,14 @@ export const ContentEditorGuide = ({ kind }: ContentEditorGuideProps) => {
                     />
                     <div>
                         <p className="text-xs font-bold text-(--color-foreground)">
-                            {title}
+                            {<LocalizedText text={title} />}
                         </p>
                         <p className="mt-0.5 text-xs leading-5 text-(--color-muted)">
-                            {description}
+                            {<LocalizedText text={description} />}
                         </p>
                     </div>
                 </div>
             ))}
-        </section>
+        </LocalizedElement>
     );
 };

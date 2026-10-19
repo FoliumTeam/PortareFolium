@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useMemo, useRef, useState } from "react";
 import { type Editor } from "@tiptap/react";
@@ -79,7 +80,9 @@ export const ColorHighlightPopoverButton = forwardRef<
     HTMLButtonElement,
     ButtonProps
 >(({ className, children, ...props }, ref) => (
-    <Button
+    <LocalizedElement
+        as={Button}
+        translatedProps={["aria-label", "tooltip"]}
         type="button"
         className={className}
         variant="ghost"
@@ -92,7 +95,7 @@ export const ColorHighlightPopoverButton = forwardRef<
         {...props}
     >
         {children ?? <HighlighterIcon className="tiptap-button-icon" />}
-    </Button>
+    </LocalizedElement>
 ));
 
 ColorHighlightPopoverButton.displayName = "ColorHighlightPopoverButton";
@@ -144,7 +147,15 @@ export function ColorHighlightPopoverContent({
                     <ButtonGroup>
                         {colors.map((color, index) => (
                             <ButtonGroup key={color.value}>
-                                <ColorHighlightButton
+                                <LocalizedElement
+                                    as={ColorHighlightButton}
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "{0} 형광펜 색상",
+                                            values: [{ text: color.label }],
+                                        },
+                                        tooltip: { text: color.label },
+                                    }}
                                     editor={editor}
                                     highlightColor={
                                         useColorValue
@@ -162,7 +173,9 @@ export function ColorHighlightPopoverContent({
                     </ButtonGroup>
                     <Separator />
                     <ButtonGroup>
-                        <Button
+                        <LocalizedElement
+                            as={Button}
+                            translatedProps={["aria-label", "tooltip"]}
                             onClick={handleRemoveHighlight}
                             aria-label="형광펜 제거"
                             tooltip="형광펜 제거"
@@ -173,7 +186,7 @@ export function ColorHighlightPopoverContent({
                             data-highlighted={selectedIndex === colors.length}
                         >
                             <BanIcon className="tiptap-button-icon" />
-                        </Button>
+                        </LocalizedElement>
                     </ButtonGroup>
                 </CardItemGroup>
             </CardBody>
@@ -209,7 +222,9 @@ export function ColorHighlightPopover({
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <ColorHighlightPopoverButton
+                <LocalizedElement
+                    as={ColorHighlightPopoverButton}
+                    translatedProps={["aria-label", "tooltip"]}
                     disabled={!canColorHighlight}
                     data-active-state={isActive ? "on" : "off"}
                     data-disabled={!canColorHighlight}
@@ -219,15 +234,19 @@ export function ColorHighlightPopover({
                     {...props}
                 >
                     <Icon className="tiptap-button-icon" />
-                </ColorHighlightPopoverButton>
+                </LocalizedElement>
             </PopoverTrigger>
-            <PopoverContent aria-label="형광펜 색상">
+            <LocalizedElement
+                as={PopoverContent}
+                translatedProps={["aria-label"]}
+                aria-label="형광펜 색상"
+            >
                 <ColorHighlightPopoverContent
                     editor={editor}
                     colors={colors}
                     useColorValue={useColorValue}
                 />
-            </PopoverContent>
+            </LocalizedElement>
         </Popover>
     );
 }

@@ -1,4 +1,6 @@
 "use client";
+import { useUILocale, useUITranslation } from "@/components/LocaleProvider";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
 import {
     Fragment,
@@ -79,8 +81,8 @@ const DEFAULT_EXPORT_RESOLUTION: GanttChartExportResolutionLabel = "1080p";
 const TASK_COLUMN_WIDTH = 448;
 const CHART_FIXED_HORIZONTAL_SPACE = TASK_COLUMN_WIDTH + 88;
 
-const formatDateTime = (value: string) =>
-    new Date(value).toLocaleString("ko-KR");
+const formatDateTime = (value: string, locale: string) =>
+    new Date(value).toLocaleString(locale);
 const formatDateLabel = (value: string) => value.replace(/-/g, ".");
 const buildDownloadName = (title: string) => {
     const normalized = title
@@ -151,6 +153,7 @@ const GanttChartPreview = ({
     columnSpan: GanttChartColumnSpan;
     showComments: boolean;
 }) => {
+    const uiT = useUITranslation();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const [measuredHeight, setMeasuredHeight] = useState(0);
     const { days, months } = buildGanttTimeline(archive.tasks);
@@ -210,9 +213,14 @@ const GanttChartPreview = ({
                     {archive.title}
                 </h3>
                 <p className="text-sm" style={{ color: AXIS_COLOR }}>
-                    {archive.tasks.length}개 task ·{" "}
-                    {formatDateLabel(days[0]?.key ?? "")} -{" "}
-                    {formatDateLabel(days[days.length - 1]?.key ?? "")}
+                    <LocalizedRichText
+                        text={"{0}개 task · {1} - {2}"}
+                        values={[
+                            archive.tasks.length,
+                            formatDateLabel(days[0]?.key ?? ""),
+                            formatDateLabel(days[days.length - 1]?.key ?? ""),
+                        ]}
+                    />
                 </p>
             </div>
             <div
@@ -227,10 +235,13 @@ const GanttChartPreview = ({
                         className="text-xs font-semibold tracking-[0.24em] uppercase"
                         style={{ color: AXIS_COLOR }}
                     >
-                        Tasks
+                        <LocalizedText text={"Tasks"} />
                     </p>
                     <p className="text-sm" style={{ color: AXIS_COLOR }}>
-                        전체 기간 {days.length}일
+                        <LocalizedRichText
+                            text={"전체 기간 {0}일"}
+                            values={[days.length]}
+                        />
                     </p>
                 </div>
                 <div className="space-y-3">
@@ -257,13 +268,16 @@ const GanttChartPreview = ({
                                     style={{ width: column.span * dayWidth }}
                                 >
                                     <p className="truncate text-xs font-semibold text-slate-700">
-                                        {column.label}
+                                        {<LocalizedText text={column.label} />}
                                     </p>
                                     <p
                                         className="truncate text-[10px]"
                                         style={{ color: AXIS_COLOR }}
                                     >
-                                        {column.weekdayLabel}
+                                        {column.weekdayLabel
+                                            .split("-")
+                                            .map((day) => uiT(day))
+                                            .join("–")}
                                     </p>
                                 </div>
                             ))}
@@ -311,9 +325,14 @@ const GanttChartPreview = ({
                                     className="truncate text-xs"
                                     style={{ color: AXIS_COLOR }}
                                 >
-                                    {formatDateLabel(task.startDate)} –{" "}
-                                    {formatDateLabel(task.endDate)} · {taskDays}
-                                    일
+                                    <LocalizedRichText
+                                        text={"{0} – {1} · {2}일"}
+                                        values={[
+                                            formatDateLabel(task.startDate),
+                                            formatDateLabel(task.endDate),
+                                            taskDays,
+                                        ]}
+                                    />
                                 </p>
                                 {showComments && task.comment && (
                                     <p className="text-xs text-slate-400">
@@ -389,7 +408,10 @@ const GanttChartPreview = ({
                                                         color: "rgba(255,255,255,0.75)",
                                                     }}
                                                 >
-                                                    {taskDays}d
+                                                    <LocalizedRichText
+                                                        text={"{0}d"}
+                                                        values={[taskDays]}
+                                                    />
                                                 </span>
                                             )}
                                         </>
@@ -405,6 +427,7 @@ const GanttChartPreview = ({
 };
 
 const GanttChartPanel = () => {
+    const { locale } = useUILocale();
     const { confirm } = useConfirmDialog();
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const chartRef = useRef<HTMLDivElement | null>(null);
@@ -825,7 +848,7 @@ const GanttChartPanel = () => {
             <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pt-1 pb-4">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-2xl font-bold text-(--color-foreground)">
-                        Gantt Chart
+                        <LocalizedText text={"Gantt Chart"} />
                     </h2>
                     <div className="flex flex-wrap items-center gap-2">
                         <Button
@@ -843,7 +866,11 @@ const GanttChartPanel = () => {
                                 className={`mr-1.5 h-4 w-4 shrink-0 ${loading ? "animate-spin" : ""}`}
                             />
                             <span className="whitespace-nowrap">
-                                {loading ? "새로고침 중..." : "새로고침"}
+                                {loading ? (
+                                    <LocalizedText text={"새로고침 중..."} />
+                                ) : (
+                                    <LocalizedText text={"새로고침"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -859,7 +886,7 @@ const GanttChartPanel = () => {
                         >
                             <Plus className="mr-1.5 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
-                                새 차트 생성
+                                <LocalizedText text={"새 차트 생성"} />
                             </span>
                         </Button>
                         <Button
@@ -870,29 +897,45 @@ const GanttChartPanel = () => {
                         >
                             <Download className="mr-1.5 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
-                                {exporting ? "JPG 생성 중..." : "JPG export"}
+                                {exporting ? (
+                                    <LocalizedText text={"JPG 생성 중..."} />
+                                ) : (
+                                    <LocalizedText text={"JPG export"} />
+                                )}
                             </span>
                         </Button>
                     </div>
                 </div>
                 <div className="space-y-1 text-sm text-(--color-muted)">
                     <p>
-                        "새 차트 생성" 버튼으로 차트를 생성하거나 CSV로 불러올
-                        수 있습니다. CSV 헤더:{" "}
-                        <code>
-                            task name,category,start date,end date,comment
-                        </code>
+                        <LocalizedRichText
+                            text={
+                                '"새 차트 생성" 버튼으로 차트를 생성하거나 CSV로 불러올 수 있습니다. CSV 헤더: {0}'
+                            }
+                            values={[
+                                <code>
+                                    <LocalizedText
+                                        text={
+                                            "task name,category,start date,end date,comment"
+                                        }
+                                    />
+                                </code>,
+                            ]}
+                        />
                     </p>
                     <p>
-                        preview는 기본적으로 전체 폭 fit 상태로 열리며, wheel로
-                        zoom, drag로 pan 이동이 가능합니다.
+                        <LocalizedText
+                            text={
+                                "preview는 기본적으로 전체 폭 fit 상태로 열리며, wheel로 zoom, drag로 pan 이동이 가능합니다."
+                            }
+                        />
                     </p>
                 </div>
                 {status && (
                     <p
                         className={`mt-3 text-sm font-medium ${status.ok ? "text-green-600" : "text-red-500"}`}
                     >
-                        {status.text}
+                        {<LocalizedText text={status.text} />}
                     </p>
                 )}
             </div>
@@ -904,10 +947,13 @@ const GanttChartPanel = () => {
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <h3 className="text-sm font-semibold text-(--color-foreground)">
-                                        Archive
+                                        <LocalizedText text={"Archive"} />
                                     </h3>
                                     <p className="mt-1 text-xs text-(--color-muted)">
-                                        저장된 chart {archives.length}개
+                                        <LocalizedRichText
+                                            text={"저장된 chart {0}개"}
+                                            values={[archives.length]}
+                                        />
                                     </p>
                                 </div>
                                 {selectedIds.size > 0 && (
@@ -923,7 +969,7 @@ const GanttChartPanel = () => {
                                     >
                                         <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">
-                                            선택 삭제
+                                            <LocalizedText text={"선택 삭제"} />
                                         </span>
                                     </Button>
                                 )}
@@ -937,14 +983,20 @@ const GanttChartPanel = () => {
                                     onChange={toggleSelectAll}
                                     className="h-4 w-4 cursor-pointer rounded"
                                 />
-                                <span>전체 선택</span>
+                                <span>
+                                    <LocalizedText text={"전체 선택"} />
+                                </span>
                             </label>
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto p-3">
                             {!loading && archives.length === 0 && (
                                 <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-4 py-6">
                                     <p className="text-sm text-(--color-muted)">
-                                        저장된 Gantt Chart archive가 없습니다
+                                        <LocalizedText
+                                            text={
+                                                "저장된 Gantt Chart archive가 없습니다"
+                                            }
+                                        />
                                     </p>
                                 </div>
                             )}
@@ -990,12 +1042,18 @@ const GanttChartPanel = () => {
                                                         {archive.title}
                                                     </p>
                                                     <p className="mt-1 text-xs text-(--color-muted)">
-                                                        task{" "}
-                                                        {archive.tasks.length}개
+                                                        <LocalizedRichText
+                                                            text={"task {0}개"}
+                                                            values={[
+                                                                archive.tasks
+                                                                    .length,
+                                                            ]}
+                                                        />
                                                     </p>
                                                     <p className="text-xs text-(--color-muted)">
                                                         {formatDateTime(
-                                                            archive.createdAt
+                                                            archive.createdAt,
+                                                            locale
                                                         )}
                                                     </p>
                                                 </button>
@@ -1035,11 +1093,16 @@ const GanttChartPanel = () => {
                             <div className="flex min-h-0 flex-1 items-center justify-center px-6">
                                 <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-6 py-8 text-center">
                                     <p className="text-base font-semibold text-(--color-foreground)">
-                                        Gantt Chart 프리뷰 없음
+                                        <LocalizedText
+                                            text={"Gantt Chart 프리뷰 없음"}
+                                        />
                                     </p>
                                     <p className="mt-2 text-sm text-(--color-muted)">
-                                        차트를 생성하거나 archive에서 chart를
-                                        선택하세요
+                                        <LocalizedText
+                                            text={
+                                                "차트를 생성하거나 archive에서 chart를 선택하세요"
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
@@ -1050,7 +1113,9 @@ const GanttChartPanel = () => {
                                         <div className="flex min-w-max items-end gap-3">
                                             <div className="w-40 shrink-0 space-y-2">
                                                 <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                    Chart Title
+                                                    <LocalizedText
+                                                        text={"Chart Title"}
+                                                    />
                                                 </label>
                                                 <input
                                                     type="text"
@@ -1069,7 +1134,9 @@ const GanttChartPanel = () => {
                                             </div>
                                             <div className="shrink-0 space-y-2">
                                                 <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                    Bar Shape
+                                                    <LocalizedText
+                                                        text={"Bar Shape"}
+                                                    />
                                                 </label>
                                                 <select
                                                     value={
@@ -1086,16 +1153,22 @@ const GanttChartPanel = () => {
                                                     className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:outline-none"
                                                 >
                                                     <option value="rounded">
-                                                        Rounded
+                                                        <LocalizedText
+                                                            text={"Rounded"}
+                                                        />
                                                     </option>
                                                     <option value="square">
-                                                        Square
+                                                        <LocalizedText
+                                                            text={"Square"}
+                                                        />
                                                     </option>
                                                 </select>
                                             </div>
                                             <div className="shrink-0 space-y-2">
                                                 <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                    Column Width
+                                                    <LocalizedText
+                                                        text={"Column Width"}
+                                                    />
                                                 </label>
                                                 <select
                                                     value={columnSpan}
@@ -1124,9 +1197,19 @@ const GanttChartPanel = () => {
                                                                 value={span}
                                                             >
                                                                 {span}{" "}
-                                                                {span === 1
-                                                                    ? "day"
-                                                                    : "days"}
+                                                                {span === 1 ? (
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "day"
+                                                                        }
+                                                                    />
+                                                                ) : (
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "days"
+                                                                        }
+                                                                    />
+                                                                )}
                                                             </option>
                                                         )
                                                     )}
@@ -1134,7 +1217,11 @@ const GanttChartPanel = () => {
                                             </div>
                                             <div className="shrink-0 space-y-2">
                                                 <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                    Export Resolution
+                                                    <LocalizedText
+                                                        text={
+                                                            "Export Resolution"
+                                                        }
+                                                    />
                                                 </label>
                                                 <select
                                                     value={
@@ -1166,7 +1253,11 @@ const GanttChartPanel = () => {
                                                                 }
                                                             >
                                                                 {
-                                                                    resolution.label
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            resolution.label
+                                                                        }
+                                                                    />
                                                                 }
                                                             </option>
                                                         )
@@ -1175,7 +1266,9 @@ const GanttChartPanel = () => {
                                             </div>
                                             <div className="shrink-0 space-y-2">
                                                 <label className="block text-xs font-semibold tracking-[0.2em] text-(--color-muted) uppercase">
-                                                    Aspect Ratio
+                                                    <LocalizedText
+                                                        text={"Aspect Ratio"}
+                                                    />
                                                 </label>
                                                 <select
                                                     value={aspectRatioLabel}
@@ -1204,7 +1297,13 @@ const GanttChartPanel = () => {
                                                                     ratio.label
                                                                 }
                                                             >
-                                                                {ratio.label}
+                                                                {
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            ratio.label
+                                                                        }
+                                                                    />
+                                                                }
                                                             </option>
                                                         )
                                                     )}
@@ -1221,7 +1320,9 @@ const GanttChartPanel = () => {
                                             >
                                                 <Palette className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                                 <span className="whitespace-nowrap">
-                                                    Category Colors
+                                                    <LocalizedText
+                                                        text={"Category Colors"}
+                                                    />
                                                 </span>
                                             </Button>
                                             <Button
@@ -1236,10 +1337,20 @@ const GanttChartPanel = () => {
                                                 }
                                             >
                                                 <span className="whitespace-nowrap">
-                                                    Comments{" "}
-                                                    {showComments
-                                                        ? "ON"
-                                                        : "OFF"}
+                                                    <LocalizedRichText
+                                                        text={"Comments {0}"}
+                                                        values={[
+                                                            showComments ? (
+                                                                <LocalizedText
+                                                                    text={"ON"}
+                                                                />
+                                                            ) : (
+                                                                <LocalizedText
+                                                                    text={"OFF"}
+                                                                />
+                                                            ),
+                                                        ]}
+                                                    />
                                                 </span>
                                             </Button>
                                             <div className="flex shrink-0 items-center gap-2">
@@ -1248,7 +1359,9 @@ const GanttChartPanel = () => {
                                                     onClick={handleFitZoom}
                                                     className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                                                 >
-                                                    Fit
+                                                    <LocalizedText
+                                                        text={"Fit"}
+                                                    />
                                                 </Button>
                                                 <Button
                                                     size="sm"
@@ -1286,21 +1399,45 @@ const GanttChartPanel = () => {
                                                     className="bg-green-600 text-white hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
                                                     <span className="whitespace-nowrap">
-                                                        {savingSettings
-                                                            ? "저장 중..."
-                                                            : "설정 저장"}
+                                                        {savingSettings ? (
+                                                            <LocalizedText
+                                                                text={
+                                                                    "저장 중..."
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <LocalizedText
+                                                                text={
+                                                                    "설정 저장"
+                                                                }
+                                                            />
+                                                        )}
                                                     </span>
                                                 </Button>
                                             </div>
                                         </div>
                                     </div>
                                     <p className="mt-2 text-xs text-(--color-muted)">
-                                        zoom {(zoom * 100).toFixed(0)}% · drag로
-                                        이동 · wheel로 확대/축소 · column{" "}
-                                        {columnSpan}{" "}
-                                        {columnSpan === 1 ? "day" : "days"} ·
-                                        aspect ratio {aspectRatioLabel} · export{" "}
-                                        {exportResolutionLabel}
+                                        <LocalizedRichText
+                                            text={
+                                                "zoom {0}% · drag로 이동 · wheel로 확대/축소 · column {1} {2} · aspect ratio {3} · export {4}"
+                                            }
+                                            values={[
+                                                (zoom * 100).toFixed(0),
+                                                columnSpan,
+                                                columnSpan === 1 ? (
+                                                    <LocalizedText
+                                                        text={"day"}
+                                                    />
+                                                ) : (
+                                                    <LocalizedText
+                                                        text={"days"}
+                                                    />
+                                                ),
+                                                aspectRatioLabel,
+                                                exportResolutionLabel,
+                                            ]}
+                                        />
                                     </p>
                                 </div>
                                 <div

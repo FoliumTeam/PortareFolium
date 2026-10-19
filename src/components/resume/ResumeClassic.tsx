@@ -1,13 +1,13 @@
+import { formatBirthDateForUI } from "@/lib/resume-display";
+
+import { serverT } from "@/lib/server-i18n";
 import { Fragment } from "react";
 import type {
     Resume,
     ResumeBasicsPresentation,
     ResumeCoreCompetency,
 } from "@/types/resume";
-import {
-    formatResumeBirthDate,
-    formatResumeMilitary,
-} from "@/lib/resume-basics-presentation";
+import { formatResumeMilitary } from "@/lib/resume-basics-presentation";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
@@ -36,7 +36,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || serverT("진행 중")}`;
 };
 
 export default async function ResumeClassic({
@@ -53,9 +53,10 @@ export default async function ResumeClassic({
         visible.birthDate && basics.birthDate
             ? {
                   label: "생년월일",
-                  value: formatResumeBirthDate(
+                  value: formatBirthDateForUI(
                       basics.birthDate,
-                      basicsPresentation.personalDetailPreset
+                      basicsPresentation.personalDetailPreset,
+                      serverT
                   ),
               }
             : null,
@@ -77,7 +78,7 @@ export default async function ResumeClassic({
         const sec = (resume as Record<string, unknown>)[key] as
             | { emoji?: string; showEmoji?: boolean }
             | undefined;
-        return getResumeSectionLabel(key, sec, qualifier);
+        return getResumeSectionLabel(key, sec, qualifier, serverT);
     };
 
     const workEntries = resume.work?.entries ?? [];
@@ -98,7 +99,7 @@ export default async function ResumeClassic({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("coreCompetencies")}
+                {serverT(getLabel("coreCompetencies"))}
             </h2>
             <div className="grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
@@ -162,7 +163,7 @@ export default async function ResumeClassic({
     const renderWork = () => (
         <section key="work" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("work")}
+                {serverT(getLabel("work"))}
             </h2>
             {workEntries.map((workItem, wIdx) => (
                 <div
@@ -249,7 +250,7 @@ export default async function ResumeClassic({
     const renderEducation = () => (
         <section key="education" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("education")}
+                {serverT(getLabel("education"))}
             </h2>
             {(resume.education?.entries ?? []).map((education, idx) => (
                 <div
@@ -293,17 +294,20 @@ export default async function ResumeClassic({
                     )}
                     {education.gpa != null ? (
                         <div className="mt-1 text-sm text-(--color-muted)">
-                            GPA: {education.gpa.toFixed(2)} /{" "}
+                            {serverT("GPA: ")}
+                            {education.gpa.toFixed(2)} /{" "}
                             {(education.gpaMax ?? 4.5).toFixed(2)}
                         </div>
                     ) : education.score ? (
                         <div className="mt-1 text-sm text-(--color-muted)">
-                            GPA: {education.score}
+                            {serverT("GPA: ")}
+                            {education.score}
                         </div>
                     ) : null}
                     {education.courses && education.courses.length > 0 ? (
                         <div className="mt-1 text-sm text-(--color-muted)">
-                            Courses: {education.courses.join(", ")}
+                            {serverT("Courses: ")}
+                            {education.courses.join(", ")}
                         </div>
                     ) : null}
                 </div>
@@ -326,7 +330,7 @@ export default async function ResumeClassic({
     const renderGeneric = (key: string, items: Record<string, unknown>[]) => (
         <section key={key} className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel(key)}
+                {serverT(getLabel(key))}
             </h2>
             {items.map((genericItem, idx) => (
                 <div
@@ -514,7 +518,7 @@ export default async function ResumeClassic({
                         {visible.email && basics.email ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                                    Email
+                                    {serverT("Email")}
                                 </strong>
                                 <a
                                     href={`mailto:${basics.email}`}
@@ -527,7 +531,7 @@ export default async function ResumeClassic({
                         {visible.phone && basics.phone ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                                    Phone
+                                    {serverT("Phone")}
                                 </strong>
                                 <span className="text-base break-all text-(--color-link)">
                                     {basics.phone}
@@ -537,7 +541,7 @@ export default async function ResumeClassic({
                         {visible.url && basics.url ? (
                             <div className="flex flex-col gap-0.5">
                                 <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                                    Website
+                                    {serverT("Website")}
                                 </strong>
                                 <a
                                     href={basics.url}
@@ -555,7 +559,7 @@ export default async function ResumeClassic({
                 {personalDetails.length > 0 ? (
                     <div className="flex flex-col gap-1.5">
                         <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                            개인 사항
+                            {serverT("개인 사항")}
                         </strong>
                         {personalDetails.map((detail) => (
                             <div
@@ -563,7 +567,7 @@ export default async function ResumeClassic({
                                 className="flex flex-col gap-0.5"
                             >
                                 <span className="text-xs font-semibold text-(--color-muted)">
-                                    {detail.label}
+                                    {serverT(detail.label)}
                                 </span>
                                 <span className="text-base text-(--color-foreground)">
                                     {detail.value}
@@ -577,7 +581,7 @@ export default async function ResumeClassic({
                 {visible.location && basics.location ? (
                     <div className="flex flex-col gap-0.5">
                         <strong className="text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                            Location
+                            {serverT("Location")}
                         </strong>
                         <div className="text-base text-(--color-foreground)">
                             {[
@@ -600,7 +604,7 @@ export default async function ResumeClassic({
                 basics.profiles.length > 0 ? (
                     <div className="flex flex-col gap-0.5">
                         <strong className="mb-0.5 block text-[0.75rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                            Profiles
+                            {serverT("Profiles")}
                         </strong>
                         {basics.profiles.map((profile, idx) => (
                             <div

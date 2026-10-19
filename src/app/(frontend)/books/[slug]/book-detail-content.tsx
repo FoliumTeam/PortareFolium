@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { notFound, redirect } from "next/navigation";
 import { getBook, getBookMeta, getAllBookSlugs } from "@/lib/queries";
 import { getCachedMarkdown } from "@/lib/markdown";
@@ -61,7 +62,7 @@ export default async function BookDetailContent({
                     className="mb-8 inline-flex items-center gap-2 rounded-xl border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:border-(--color-accent) hover:text-(--color-accent)"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                    Portfolio 목록
+                    {serverT("Portfolio 목록")}
                 </Link>
 
                 <header className="mb-8 flex gap-6">
@@ -134,7 +135,10 @@ export default async function BookDetailContent({
                 entries={tocEntries}
                 contentSelector=".book-markdoc-body"
             />
-            <MermaidRenderer selector=".book-markdoc-body" label="book slug" />
+            <MermaidRenderer
+                selector=".book-markdoc-body"
+                label={serverT("book slug")}
+            />
         </div>
     );
 }

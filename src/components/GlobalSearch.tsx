@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { searchPublicContent } from "@/app/admin/actions/public-data";
@@ -72,7 +73,9 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
         <div ref={containerRef} className="relative">
             {/* 검색 아이콘 버튼 */}
             {!open && (
-                <button
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     type="button"
                     onClick={handleOpen}
                     className="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"
@@ -91,13 +94,15 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
                     </svg>
-                </button>
+                </LocalizedElement>
             )}
 
             {/* 검색 input + dropdown */}
             {open && (
                 <div className="flex items-center gap-2">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         ref={inputRef}
                         type="text"
                         value={query}
@@ -105,7 +110,9 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                         placeholder="Search..."
                         className="w-48 rounded-xl border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                     />
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         onClick={() => {
                             setOpen(false);
@@ -128,7 +135,7 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                                 d="M6 18L18 6M6 6l12 12"
                             />
                         </svg>
-                    </button>
+                    </LocalizedElement>
                 </div>
             )}
 
@@ -156,18 +163,18 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                                 />
                             </svg>
-                            Searching...
+                            <LocalizedText text={"Searching..."} />
                         </div>
                     ) : results.length === 0 ? (
                         <p className="px-3 py-2 text-sm text-(--color-muted)">
-                            No results found.
+                            <LocalizedText text={"No results found."} />
                         </p>
                     ) : (
                         <>
                             {posts.length > 0 && (
                                 <div>
                                     <p className="px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                                        Posts
+                                        <LocalizedText text={"Posts"} />
                                     </p>
                                     {posts.map((r) => (
                                         <a
@@ -190,7 +197,7 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                                     }
                                 >
                                     <p className="px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                                        Portfolio
+                                        <LocalizedText text={"Portfolio"} />
                                     </p>
                                     {portfolios.map((r) => (
                                         <a

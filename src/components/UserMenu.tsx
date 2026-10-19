@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedElement,
+    LocalizedText,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useRef, useState } from "react";
 import { getAdminProfileImage } from "@/app/admin/actions/public-data";
@@ -68,7 +73,9 @@ export default function UserMenu() {
                 onClick={() => setOpen((v) => !v)}
                 className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-(--color-border) transition-colors hover:border-(--color-accent)"
             >
-                <img
+                <LocalizedElement
+                    as="img"
+                    translatedProps={["alt"]}
                     src={profileImg}
                     alt="프로필"
                     className="h-full w-full object-cover"
@@ -88,7 +95,7 @@ export default function UserMenu() {
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
                         >
                             <Settings className="h-4 w-4" />
-                            Admin
+                            <LocalizedText text={"Admin"} />
                         </Link>
                         <button
                             type="button"
@@ -98,8 +105,10 @@ export default function UserMenu() {
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-(--color-surface-subtle)"
                         >
-                            <LogOut className="h-4 w-4" />
-                            로그아웃
+                            <LocalizedRichText
+                                text={"{0}로그아웃"}
+                                values={[<LogOut className="h-4 w-4" />]}
+                            />
                         </button>
                     </div>
                 </div>

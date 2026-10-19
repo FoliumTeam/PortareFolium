@@ -1,3 +1,6 @@
+import { getContentLocale } from "@/lib/content-locale";
+
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import { serverClient } from "@/lib/supabase";
 import { formatPubDateKST } from "@/lib/blog";
@@ -48,7 +51,10 @@ export default async function BlogListContent({
             slug: post.slug,
             title: post.title,
             displayDescription: post.description?.trim() ?? "",
-            pubDateFormatted: formatPubDateKST(new Date(post.pub_date)),
+            pubDateFormatted: formatPubDateKST(
+                new Date(post.pub_date),
+                getContentLocale()
+            ),
             pubDateIso: post.pub_date,
             category: post.category?.trim() ?? null,
             tags: post.tags,
@@ -101,7 +107,10 @@ export default async function BlogListContent({
                     slug: post.slug,
                     title: post.title,
                     displayDescription,
-                    pubDateFormatted: formatPubDateKST(pubDate),
+                    pubDateFormatted: formatPubDateKST(
+                        pubDate,
+                        getContentLocale()
+                    ),
                     pubDateIso: pubDate.toISOString(),
                     category: post.category?.trim() ?? null,
                     tags: tagList,
@@ -142,11 +151,12 @@ export default async function BlogListContent({
             {postItems.length === 0 ? (
                 <>
                     <h1 className="mb-6 text-3xl font-bold text-(--color-foreground)">
-                        Blog
+                        {serverT("Blog")}
                     </h1>
                     <p className="text-(--color-muted)">
-                        아직 작성된 포스트가 없습니다. 어드민(/admin)에서
-                        포스트를 추가해 보세요.
+                        {serverT(
+                            "아직 작성된 포스트가 없습니다. 어드민(/admin)에서 포스트를 추가해 보세요."
+                        )}
                     </p>
                 </>
             ) : (

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -316,11 +317,14 @@ export default function VideoGifPanel() {
             <div className="flex shrink-0 items-start justify-between gap-4 pb-3">
                 <div>
                     <h2 className="text-3xl font-bold text-(--color-foreground)">
-                        Video → GIF
+                        <LocalizedText text={"Video → GIF"} />
                     </h2>
                     <p className="text-sm text-(--color-muted)">
-                        짧은 작업 영상으로 GIF를 만듭니다. 원본과 결과물은 자동
-                        저장되지 않습니다.
+                        <LocalizedText
+                            text={
+                                "짧은 작업 영상으로 GIF를 만듭니다. 원본과 결과물은 자동 저장되지 않습니다."
+                            }
+                        />
                     </p>
                 </div>
                 {sourceUrl && (
@@ -329,7 +333,7 @@ export default function VideoGifPanel() {
                         onClick={handleReset}
                         className="rounded-lg border border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                     >
-                        새로 만들기
+                        <LocalizedText text={"새로 만들기"} />
                     </button>
                 )}
             </div>
@@ -386,7 +390,11 @@ export default function VideoGifPanel() {
                                                         : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
                                                 ].join(" ")}
                                             >
-                                                {error ?? status}
+                                                {
+                                                    <LocalizedText
+                                                        text={error ?? status}
+                                                    />
+                                                }
                                             </div>
                                         )}
                                     </div>
@@ -395,14 +403,26 @@ export default function VideoGifPanel() {
                                         onClick={handleRememberSettings}
                                         className="shrink-0 rounded-lg border border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                                     >
-                                        마지막 설정 기억하기
+                                        <LocalizedText
+                                            text={"마지막 설정 기억하기"}
+                                        />
                                     </button>
                                 </>
                             ) : (
                                 <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 text-sm text-(--color-muted)">
-                                    {sourceUrl && !preferencesLoaded
-                                        ? "기억한 마지막 설정을 불러오는 중입니다."
-                                        : "비디오를 선택하면 trim, crop, FPS, 해상도 설정이 활성화됩니다."}
+                                    {sourceUrl && !preferencesLoaded ? (
+                                        <LocalizedText
+                                            text={
+                                                "기억한 마지막 설정을 불러오는 중입니다."
+                                            }
+                                        />
+                                    ) : (
+                                        <LocalizedText
+                                            text={
+                                                "비디오를 선택하면 trim, crop, FPS, 해상도 설정이 활성화됩니다."
+                                            }
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>

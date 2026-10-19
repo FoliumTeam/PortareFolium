@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import { getServerUIMessages } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import Script from "next/script";
 import "@/styles/global.css";
@@ -75,10 +76,13 @@ export default async function RootLayout({
                 />
             </head>
             <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
-                <LocaleProvider initialLocale={locale}>
+                <LocaleProvider
+                    initialLocale={locale}
+                    initialMessages={getServerUIMessages(locale)}
+                >
                     <AuthSessionProvider>{children}</AuthSessionProvider>
+                    <Toaster />
                 </LocaleProvider>
-                <Toaster />
                 {process.env.VERCEL && (
                     <>
                         <SpeedInsights />

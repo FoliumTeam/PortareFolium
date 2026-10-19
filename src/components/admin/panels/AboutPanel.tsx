@@ -1,4 +1,10 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
+
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 // about_data 테이블 편집 + Job Field별 소개 관리
@@ -58,10 +64,10 @@ function AboutSection({
                 </span>
                 <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-(--color-foreground)">
-                        {title}
+                        {<LocalizedText text={title} />}
                     </h3>
                     <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                        {description}
+                        {<LocalizedText text={description} />}
                     </p>
                 </div>
             </div>
@@ -315,63 +321,81 @@ export default function AboutPanel() {
         >
             <div className="border-b border-(--color-border) pb-5">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    Profile Content
+                    <LocalizedText text={"Profile Content"} />
                 </p>
                 <h2 className="mt-2 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                    About 관리
+                    <LocalizedText text={"About 관리"} />
                 </h2>
                 <p className="mt-2 text-sm text-(--color-muted)">
-                    공통 프로필과 직무 분야별 소개·핵심 가치·경험을 분리해
-                    관리합니다.
+                    <LocalizedText
+                        text={
+                            "공통 프로필과 직무 분야별 소개·핵심 가치·경험을 분리해 관리합니다."
+                        }
+                    />
                 </p>
             </div>
 
-            <AboutSection
+            <LocalizedElement
+                as={AboutSection}
+                translatedProps={["title", "description"]}
                 Icon={UserRound}
                 title="공통 기본 정보"
                 description="사진·이름·연락처·외부 프로필은 Resume 기본 정보의 단일 데이터입니다. About은 같은 값을 자동으로 사용합니다."
             >
                 <div className="tablet:flex-row tablet:items-center flex flex-col gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                     {resumeBasics.image ? (
-                        <img
+                        <LocalizedElement
+                            as="img"
+                            translatedProps={["alt"]}
                             src={resumeBasics.image}
                             alt="Resume 기본 정보 프로필 사진"
                             className="h-16 w-16 rounded-xl object-cover"
                         />
                     ) : (
                         <span className="flex h-16 w-16 items-center justify-center rounded-xl bg-(--color-surface) text-xs text-(--color-muted)">
-                            사진 없음
+                            <LocalizedText text={"사진 없음"} />
                         </span>
                     )}
                     <div className="min-w-0 flex-1">
                         <p className="text-base font-semibold text-(--color-foreground)">
-                            {resumeBasics.name?.trim() || "이름 미입력"}
+                            {resumeBasics.name?.trim() || (
+                                <LocalizedText text={"이름 미입력"} />
+                            )}
                         </p>
                         <p className="mt-1 text-sm text-(--color-muted)">
                             {[resumeBasics.email, resumeBasics.phone]
                                 .filter(Boolean)
-                                .join(" · ") || "연락처 미입력"}
+                                .join(" · ") || (
+                                <LocalizedText text={"연락처 미입력"} />
+                            )}
                         </p>
                         <p className="mt-1 text-xs text-(--color-muted)">
-                            외부 프로필 {resumeBasics.profiles?.length ?? 0}개
+                            <LocalizedRichText
+                                text={"외부 프로필 {0}개"}
+                                values={[resumeBasics.profiles?.length ?? 0]}
+                            />
                         </p>
                     </div>
                     <a
                         href="#resume"
                         className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
-                        Resume 기본 정보 열기
+                        <LocalizedText text={"Resume 기본 정보 열기"} />
                     </a>
                 </div>
-            </AboutSection>
+            </LocalizedElement>
 
-            <AboutSection
+            <LocalizedElement
+                as={AboutSection}
+                translatedProps={["title", "description"]}
                 Icon={Globe2}
                 title="직무 분야 콘텐츠"
                 description="선택한 직무 분야의 Landing과 About 콘텐츠만 편집합니다. 직무 분야별 값은 다른 공개 프로필에 섞이지 않습니다."
             >
                 <div className="tablet:grid-cols-3 grid gap-3">
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         onClick={() => setActiveJobFieldId(null)}
                         aria-label="공통 기본 콘텐츠 편집"
@@ -382,17 +406,26 @@ export default function AboutPanel() {
                             <Layers3 className="h-5 w-5" />
                         </span>
                         <span className="mt-4 block text-sm font-semibold text-(--color-foreground)">
-                            공통 기본값
+                            <LocalizedText text={"공통 기본값"} />
                         </span>
                         <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                            별도 콘텐츠가 없는 직무 분야의 fallback
+                            <LocalizedText
+                                text={"별도 콘텐츠가 없는 직무 분야의 fallback"}
+                            />
                         </span>
-                    </button>
+                    </LocalizedElement>
                     {jobFields.map((field) => {
                         const isolated = Boolean(introductions[field.id]);
                         const selected = activeJobFieldId === field.id;
                         return (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": {
+                                        text: "{0} 직무 분야 콘텐츠 편집",
+                                        values: [field.name],
+                                    },
+                                }}
                                 key={field.id}
                                 type="button"
                                 onClick={() => setActiveJobFieldId(field.id)}
@@ -408,22 +441,33 @@ export default function AboutPanel() {
                                     <span
                                         className={`rounded-full px-2 py-0.5 text-xs ${isolated ? "bg-green-500/12 text-green-700 dark:text-green-400" : "bg-(--color-surface) text-(--color-muted)"}`}
                                     >
-                                        {isolated
-                                            ? "독립 콘텐츠"
-                                            : "공통값 사용"}
+                                        {isolated ? (
+                                            <LocalizedText
+                                                text={"독립 콘텐츠"}
+                                            />
+                                        ) : (
+                                            <LocalizedText
+                                                text={"공통값 사용"}
+                                            />
+                                        )}
                                     </span>
                                 </span>
                                 <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                    /{field.id} 공개 프로필
+                                    <LocalizedRichText
+                                        text={"/{0} 공개 프로필"}
+                                        values={[field.id]}
+                                    />
                                 </span>
-                            </button>
+                            </LocalizedElement>
                         );
                     })}
                 </div>
-            </AboutSection>
+            </LocalizedElement>
 
             {activeJobFieldId === null ? (
-                <AboutSection
+                <LocalizedElement
+                    as={AboutSection}
+                    translatedProps={["title", "description"]}
                     Icon={Sparkles}
                     title="공통 기본 콘텐츠"
                     description="직무 분야의 독립 콘텐츠를 만들기 전까지 Landing과 About에 표시되는 기본 내용입니다."
@@ -431,7 +475,7 @@ export default function AboutPanel() {
                     <div className="tablet:grid-cols-2 grid gap-3">
                         <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                             <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                메인 소개
+                                <LocalizedText text={"메인 소개"} />
                             </label>
                             <textarea
                                 ref={descriptionRef}
@@ -441,7 +485,7 @@ export default function AboutPanel() {
                         </div>
                         <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                             <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                보조 소개
+                                <LocalizedText text={"보조 소개"} />
                             </label>
                             <textarea
                                 ref={descriptionSubRef}
@@ -450,9 +494,20 @@ export default function AboutPanel() {
                             />
                         </div>
                     </div>
-                </AboutSection>
+                </LocalizedElement>
             ) : activeField && activeIntroduction ? (
-                <AboutSection
+                <LocalizedElement
+                    as={AboutSection}
+                    messageProps={{
+                        title: {
+                            text: "{0} {1} 독립 콘텐츠",
+                            values: [activeField.emoji, activeField.name],
+                        },
+                        description: {
+                            text: "/{0} Landing과 About에만 적용되는 소개입니다.",
+                            values: [activeField.id],
+                        },
+                    }}
                     Icon={Sparkles}
                     title={`${activeField.emoji} ${activeField.name} 독립 콘텐츠`}
                     description={`/${activeField.id} Landing과 About에만 적용되는 소개입니다.`}
@@ -465,13 +520,13 @@ export default function AboutPanel() {
                             className="bg-red-600 text-white hover:bg-red-500"
                         >
                             <RotateCcw size={13} />
-                            공통값으로 되돌리기
+                            <LocalizedText text={"공통값으로 되돌리기"} />
                         </Button>
                     </div>
                     <div className="tablet:grid-cols-2 grid gap-3">
                         <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                             <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                메인 소개
+                                <LocalizedText text={"메인 소개"} />
                             </label>
                             <textarea
                                 rows={4}
@@ -488,7 +543,7 @@ export default function AboutPanel() {
                         </div>
                         <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                             <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                보조 소개
+                                <LocalizedText text={"보조 소개"} />
                             </label>
                             <textarea
                                 rows={4}
@@ -504,9 +559,17 @@ export default function AboutPanel() {
                             />
                         </div>
                     </div>
-                </AboutSection>
+                </LocalizedElement>
             ) : activeField ? (
-                <AboutSection
+                <LocalizedElement
+                    as={AboutSection}
+                    translatedProps={["description"]}
+                    messageProps={{
+                        title: {
+                            text: "{0} {1} 콘텐츠",
+                            values: [activeField.emoji, activeField.name],
+                        },
+                    }}
                     Icon={Sparkles}
                     title={`${activeField.emoji} ${activeField.name} 콘텐츠`}
                     description="현재 공통 기본값을 사용 중입니다. 독립 콘텐츠를 만들면 이 직무 분야만 따로 편집할 수 있습니다."
@@ -517,14 +580,16 @@ export default function AboutPanel() {
                         }
                         className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                     >
-                        독립 콘텐츠 만들기
+                        <LocalizedText text={"독립 콘텐츠 만들기"} />
                     </Button>
-                </AboutSection>
+                </LocalizedElement>
             ) : null}
 
             {activeJobFieldId === null ? (
                 <>
-                    <AboutSection
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["title", "description"]}
                         Icon={Sparkles}
                         title="공통 Landing 핵심 가치"
                         description="직무 분야가 별도 핵심 가치를 갖지 않을 때 표시되는 기본 3개 항목입니다."
@@ -537,9 +602,19 @@ export default function AboutPanel() {
                                 >
                                     <div className="mb-3 flex items-center justify-between">
                                         <p className="text-sm font-semibold text-(--color-foreground)">
-                                            핵심 가치 {index + 1}
+                                            <LocalizedRichText
+                                                text={"핵심 가치 {0}"}
+                                                values={[index + 1]}
+                                            />
                                         </p>
-                                        <button
+                                        <LocalizedElement
+                                            as="button"
+                                            messageProps={{
+                                                "aria-label": {
+                                                    text: "핵심 가치 {0} 삭제",
+                                                    values: [index + 1],
+                                                },
+                                            }}
                                             type="button"
                                             onClick={() =>
                                                 setValuePillars((current) =>
@@ -553,7 +628,7 @@ export default function AboutPanel() {
                                             aria-label={`핵심 가치 ${index + 1} 삭제`}
                                         >
                                             <Trash2 size={12} />
-                                        </button>
+                                        </LocalizedElement>
                                     </div>
                                     <div className="space-y-3">
                                         {(
@@ -565,7 +640,11 @@ export default function AboutPanel() {
                                         ).map(([label, key]) => (
                                             <div key={key}>
                                                 <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                    {label}
+                                                    {
+                                                        <LocalizedText
+                                                            text={label}
+                                                        />
+                                                    }
                                                 </label>
                                                 <input
                                                     value={pillar[key]}
@@ -611,11 +690,13 @@ export default function AboutPanel() {
                                 }
                                 className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                             >
-                                핵심 가치 추가
+                                <LocalizedText text={"핵심 가치 추가"} />
                             </Button>
                         )}
-                    </AboutSection>
-                    <AboutSection
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["title", "description"]}
                         Icon={BriefcaseBusiness}
                         title="공통 경험"
                         description="한 줄이 About의 한 항목입니다. 비어 있는 분야는 공개하지 않습니다."
@@ -627,9 +708,11 @@ export default function AboutPanel() {
                                     className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                 >
                                     <label className="text-sm font-semibold text-(--color-foreground)">
-                                        {key}
+                                        {<LocalizedText text={key} />}
                                     </label>
-                                    <textarea
+                                    <LocalizedElement
+                                        as="textarea"
+                                        translatedProps={["placeholder"]}
                                         ref={(element) => {
                                             sectionRefs.current[key] = element;
                                         }}
@@ -640,8 +723,10 @@ export default function AboutPanel() {
                                 </div>
                             ))}
                         </div>
-                    </AboutSection>
-                    <AboutSection
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["title", "description"]}
                         Icon={Brain}
                         title="공통 역량"
                         description="한 줄이 About의 한 항목입니다. 직무 분야별 override가 없는 경우에 사용됩니다."
@@ -653,9 +738,11 @@ export default function AboutPanel() {
                                     className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                 >
                                     <label className="text-sm font-semibold text-(--color-foreground)">
-                                        {key}
+                                        {<LocalizedText text={key} />}
                                     </label>
-                                    <textarea
+                                    <LocalizedElement
+                                        as="textarea"
+                                        translatedProps={["placeholder"]}
                                         ref={(element) => {
                                             competencyRefs.current[key] =
                                                 element;
@@ -669,11 +756,19 @@ export default function AboutPanel() {
                                 </div>
                             ))}
                         </div>
-                    </AboutSection>
+                    </LocalizedElement>
                 </>
             ) : activeField && activeIntroduction ? (
                 <>
-                    <AboutSection
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["description"]}
+                        messageProps={{
+                            title: {
+                                text: "{0} Landing 핵심 가치",
+                                values: [activeField.name],
+                            },
+                        }}
                         Icon={Sparkles}
                         title={`${activeField.name} Landing 핵심 가치`}
                         description="이 직무 분야 Landing에만 표시되는 3개 항목입니다."
@@ -692,7 +787,10 @@ export default function AboutPanel() {
                                         className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                     >
                                         <p className="mb-3 text-sm font-semibold text-(--color-foreground)">
-                                            핵심 가치 {index + 1}
+                                            <LocalizedRichText
+                                                text={"핵심 가치 {0}"}
+                                                values={[index + 1]}
+                                            />
                                         </p>
                                         <div className="space-y-3">
                                             {(
@@ -704,7 +802,11 @@ export default function AboutPanel() {
                                             ).map(([label, key]) => (
                                                 <div key={key}>
                                                     <label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                        {label}
+                                                        {
+                                                            <LocalizedText
+                                                                text={label}
+                                                            />
+                                                        }
                                                     </label>
                                                     <input
                                                         value={pillar[key]}
@@ -726,8 +828,16 @@ export default function AboutPanel() {
                                 );
                             })}
                         </div>
-                    </AboutSection>
-                    <AboutSection
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["description"]}
+                        messageProps={{
+                            title: {
+                                text: "{0} 경험",
+                                values: [activeField.name],
+                            },
+                        }}
                         Icon={BriefcaseBusiness}
                         title={`${activeField.name} 경험`}
                         description="이 직무 분야의 About에만 표시되는 경험입니다."
@@ -739,7 +849,7 @@ export default function AboutPanel() {
                                     className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                 >
                                     <label className="text-sm font-semibold text-(--color-foreground)">
-                                        {key}
+                                        {<LocalizedText text={key} />}
                                     </label>
                                     <textarea
                                         rows={4}
@@ -761,8 +871,16 @@ export default function AboutPanel() {
                                 </div>
                             ))}
                         </div>
-                    </AboutSection>
-                    <AboutSection
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as={AboutSection}
+                        translatedProps={["description"]}
+                        messageProps={{
+                            title: {
+                                text: "{0} 역량",
+                                values: [activeField.name],
+                            },
+                        }}
                         Icon={Brain}
                         title={`${activeField.name} 역량`}
                         description="이 직무 분야의 About에만 표시되는 역량입니다."
@@ -774,7 +892,7 @@ export default function AboutPanel() {
                                     className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4"
                                 >
                                     <label className="text-sm font-semibold text-(--color-foreground)">
-                                        {key}
+                                        {<LocalizedText text={key} />}
                                     </label>
                                     <textarea
                                         rows={4}
@@ -795,7 +913,7 @@ export default function AboutPanel() {
                                 </div>
                             ))}
                         </div>
-                    </AboutSection>
+                    </LocalizedElement>
                 </>
             ) : null}
 
@@ -805,12 +923,14 @@ export default function AboutPanel() {
                     <span
                         className={`text-sm ${status.type === "error" ? "text-red-500" : "text-green-600"}`}
                     >
-                        {status.msg}
+                        {<LocalizedText text={status.msg} />}
                     </span>
                 )}
                 {!status && (
                     <span className="text-sm text-(--color-muted)">
-                        About 페이지에 즉시 반영됩니다.
+                        <LocalizedText
+                            text={"About 페이지에 즉시 반영됩니다."}
+                        />
                     </span>
                 )}
                 <Button
@@ -819,7 +939,11 @@ export default function AboutPanel() {
                     disabled={saving}
                     className="shrink-0 bg-green-500 px-8 text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
-                    {saving ? "저장 중..." : "변경사항 저장"}
+                    {saving ? (
+                        <LocalizedText text={"저장 중..."} />
+                    ) : (
+                        <LocalizedText text={"변경사항 저장"} />
+                    )}
                 </Button>
             </AdminSaveBar>
         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import {
     dedupeJobFieldsById,
@@ -26,7 +27,7 @@ export function JobFieldSelector({
     return (
         <div className="flex flex-col space-y-1">
             <label className="text-sm font-medium text-(--color-muted)">
-                직무 분야
+                <LocalizedText text={"직무 분야"} />
             </label>
             <div className="flex flex-wrap gap-2">
                 {fieldOptions.map((f) => {
@@ -53,7 +54,7 @@ export function JobFieldSelector({
                 })}
                 {fieldOptions.length === 0 && (
                     <span className="text-sm text-(--color-muted)">
-                        등록된 직무 분야 없음
+                        <LocalizedText text={"등록된 직무 분야 없음"} />
                     </span>
                 )}
             </div>

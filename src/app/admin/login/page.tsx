@@ -6,6 +6,7 @@ import { getAdminCredentialSetup } from "@/lib/admin-credentials";
 import { getSafeAdminReturnUrl } from "@/lib/admin-return-url";
 import { getEffectiveAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
+import { withActionLocale } from "@/lib/action-locale";
 
 export const metadata: Metadata = {
     title: "Admin Login",
@@ -34,11 +35,13 @@ export default async function AdminLoginPage({
 
     let siteName = "";
     if (serverClient) {
-        const { data } = await serverClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "site_name")
-            .single();
+        const { data } = await withActionLocale("public", async () =>
+            serverClient!
+                .from("site_config")
+                .select("value")
+                .eq("key", "site_name")
+                .single()
+        );
         if (data?.value) {
             let v = data.value;
             if (typeof v === "string" && v.startsWith('"')) {

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { Search } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -33,7 +34,9 @@ export default function AdminHeader({
         <header className="tablet:px-6 flex h-14 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-3">
             <div className="tablet:gap-4 flex items-center gap-2">
                 {onMenuOpen && (
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         onClick={onMenuOpen}
                         className="tablet:hidden rounded-md p-1.5 text-(--color-muted) hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                         aria-label="메뉴 열기"
@@ -51,11 +54,17 @@ export default function AdminHeader({
                                 d="M4 6h16M4 12h16M4 18h16"
                             />
                         </svg>
-                    </button>
+                    </LocalizedElement>
                 )}
                 {/* 데스크톱 사이드바 토글 */}
                 {onToggleSidebar && (
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        messageProps={{
+                            "aria-label": sidebarVisible
+                                ? { text: "사이드바 숨기기" }
+                                : { text: "사이드바 보이기" },
+                        }}
                         onClick={onToggleSidebar}
                         className="tablet:block hidden rounded-md bg-(--color-surface-subtle) p-1.5 text-(--color-muted) transition-colors hover:bg-(--color-border) hover:text-(--color-foreground)"
                         aria-label={
@@ -86,7 +95,7 @@ export default function AdminHeader({
                                 />
                             )}
                         </svg>
-                    </button>
+                    </LocalizedElement>
                 )}
                 <div className="flex items-center gap-2">
                     <span
@@ -94,7 +103,7 @@ export default function AdminHeader({
                         aria-hidden="true"
                     />
                     <span className="text-base font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                        Admin 대시보드
+                        <LocalizedText text={"Admin 대시보드"} />
                     </span>
                 </div>
             </div>
@@ -117,7 +126,7 @@ export default function AdminHeader({
                     >
                         <Search className="h-4 w-4" />
                         <kbd className="tablet:inline-flex hidden rounded border border-(--color-border) px-1.5 py-0.5 font-mono text-[10px]">
-                            ⌘K
+                            <LocalizedText text={"⌘K"} />
                         </kbd>
                     </button>
                 )}
@@ -127,7 +136,7 @@ export default function AdminHeader({
                     onClick={onLogout}
                     className="rounded-md border border-(--color-border) px-3 py-1.5 text-xs font-semibold text-(--color-muted) transition-colors hover:border-red-400/60 hover:bg-red-500/8 hover:text-red-500"
                 >
-                    로그아웃
+                    <LocalizedText text={"로그아웃"} />
                 </button>
             </div>
         </header>

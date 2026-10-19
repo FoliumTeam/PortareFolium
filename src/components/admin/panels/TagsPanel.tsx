@@ -1,4 +1,11 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
+
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useMemo, useState } from "react";
@@ -148,8 +155,8 @@ function getSortLabel(order: SortOrder): string {
     return order === "az" ? "A→Z" : "Z→A";
 }
 
-function formatPostDate(value: string): string {
-    return new Intl.DateTimeFormat("ko-KR", {
+function formatPostDate(value: string, locale: string): string {
+    return new Intl.DateTimeFormat(locale, {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -157,6 +164,7 @@ function formatPostDate(value: string): string {
 }
 
 export default function TagsPanel() {
+    const { locale } = useUILocale();
     const { confirm } = useConfirmDialog();
     const [tab, setTab] = useState<ActiveTab>("tags");
     const [tags, setTags] = useState<TagItem[]>([]);
@@ -542,7 +550,7 @@ export default function TagsPanel() {
         if (state.loading) {
             return (
                 <p className="mt-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-3 text-sm text-(--color-muted)">
-                    포스트 불러오는 중...
+                    <LocalizedText text={"포스트 불러오는 중..."} />
                 </p>
             );
         }
@@ -550,7 +558,7 @@ export default function TagsPanel() {
         if (state.error) {
             return (
                 <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-                    {state.error}
+                    {<LocalizedText text={state.error} />}
                 </p>
             );
         }
@@ -558,7 +566,9 @@ export default function TagsPanel() {
         if (!state.posts || state.posts.length === 0) {
             return (
                 <p className="mt-4 rounded-xl border border-dashed border-(--color-border) bg-(--color-surface) p-3 text-sm text-(--color-muted)">
-                    이 항목을 사용하는 포스트가 없습니다.
+                    <LocalizedText
+                        text={"이 항목을 사용하는 포스트가 없습니다."}
+                    />
                 </p>
             );
         }
@@ -566,7 +576,9 @@ export default function TagsPanel() {
         return (
             <div className="mt-4 space-y-2">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    Used posts · pub_date 최신순 · 최대 20개
+                    <LocalizedText
+                        text={"Used posts · pub_date 최신순 · 최대 20개"}
+                    />
                 </p>
                 <ScrollArea
                     className="max-h-72 rounded-xl border border-(--color-border) bg-(--color-surface)"
@@ -595,19 +607,37 @@ export default function TagsPanel() {
                                                     : "border-amber-700 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-600 dark:text-white"
                                             }
                                         >
-                                            {post.published
-                                                ? "Published"
-                                                : "Draft"}
+                                            {post.published ? (
+                                                <LocalizedText
+                                                    text={"Published"}
+                                                />
+                                            ) : (
+                                                <LocalizedText text={"Draft"} />
+                                            )}
                                         </Badge>
                                     </div>
                                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-(--color-muted)">
                                         <span>
-                                            pub_date{" "}
-                                            {formatPostDate(post.pub_date)}
+                                            <LocalizedRichText
+                                                text={"pub_date {0}"}
+                                                values={[
+                                                    formatPostDate(
+                                                        post.pub_date,
+                                                        locale
+                                                    ),
+                                                ]}
+                                            />
                                         </span>
                                         <span>
-                                            updated_at{" "}
-                                            {formatPostDate(post.updated_at)}
+                                            <LocalizedRichText
+                                                text={"updated_at {0}"}
+                                                values={[
+                                                    formatPostDate(
+                                                        post.updated_at,
+                                                        locale
+                                                    ),
+                                                ]}
+                                            />
                                         </span>
                                     </div>
                                     <div className="mt-3 flex flex-wrap justify-end gap-2">
@@ -619,7 +649,9 @@ export default function TagsPanel() {
                                         >
                                             <ExternalLink className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                포스트 보기
+                                                <LocalizedText
+                                                    text={"포스트 보기"}
+                                                />
                                             </span>
                                         </Button>
                                         <Button
@@ -632,7 +664,9 @@ export default function TagsPanel() {
                                         >
                                             <Pencil className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                포스트 편집
+                                                <LocalizedText
+                                                    text={"포스트 편집"}
+                                                />
                                             </span>
                                         </Button>
                                     </div>
@@ -660,15 +694,21 @@ export default function TagsPanel() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <DialogHeader className="text-left">
                             <p className="text-xs font-bold tracking-[0.18em] text-(--color-muted) uppercase">
-                                Tag editor
+                                <LocalizedText text={"Tag editor"} />
                             </p>
                             <DialogTitle className="text-xl font-bold text-(--color-foreground)">
-                                {editSlug === "new"
-                                    ? "새 태그 추가"
-                                    : "태그 수정"}
+                                {editSlug === "new" ? (
+                                    <LocalizedText text={"새 태그 추가"} />
+                                ) : (
+                                    <LocalizedText text={"태그 수정"} />
+                                )}
                             </DialogTitle>
                             <DialogDescription className="text-(--color-muted)">
-                                이름, slug, 색상을 한 번에 관리합니다.
+                                <LocalizedText
+                                    text={
+                                        "이름, slug, 색상을 한 번에 관리합니다."
+                                    }
+                                />
                             </DialogDescription>
                         </DialogHeader>
                         <Button
@@ -677,7 +717,9 @@ export default function TagsPanel() {
                             className={secondaryButtonClassName}
                         >
                             <X className="h-4 w-4" />
-                            <span className="whitespace-nowrap">편집 닫기</span>
+                            <span className="whitespace-nowrap">
+                                <LocalizedText text={"편집 닫기"} />
+                            </span>
                         </Button>
                     </div>
 
@@ -685,9 +727,11 @@ export default function TagsPanel() {
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-1 block text-sm font-semibold text-(--color-foreground)">
-                                    표시 이름
+                                    <LocalizedText text={"표시 이름"} />
                                 </label>
-                                <Input
+                                <LocalizedElement
+                                    as={Input}
+                                    translatedProps={["placeholder"]}
                                     value={form.name}
                                     onChange={(event) =>
                                         setForm((current) => ({
@@ -704,9 +748,15 @@ export default function TagsPanel() {
 
                             <div>
                                 <label className="mb-1 block text-sm font-semibold text-(--color-foreground)">
-                                    slug
+                                    <LocalizedText text={"slug"} />
                                 </label>
-                                <Input
+                                <LocalizedElement
+                                    as={Input}
+                                    messageProps={{
+                                        placeholder: toSlug(form.name) || {
+                                            text: "자동 생성",
+                                        },
+                                    }}
                                     value={form.slug}
                                     onChange={(event) =>
                                         setForm((current) => ({
@@ -719,16 +769,22 @@ export default function TagsPanel() {
                                     }
                                 />
                                 <p className="mt-1 text-xs text-(--color-muted)">
-                                    URL과 데이터 식별자로 사용됩니다.
+                                    <LocalizedText
+                                        text={
+                                            "URL과 데이터 식별자로 사용됩니다."
+                                        }
+                                    />
                                 </p>
                             </div>
 
                             <div>
                                 <label className="mb-1 block text-sm font-semibold text-(--color-foreground)">
-                                    색상 값
+                                    <LocalizedText text={"색상 값"} />
                                 </label>
                                 <div className="tablet:flex-row flex flex-col gap-2">
-                                    <Input
+                                    <LocalizedElement
+                                        as={Input}
+                                        translatedProps={["placeholder"]}
                                         value={form.color}
                                         onChange={(event) => {
                                             const value = event.target.value;
@@ -754,7 +810,7 @@ export default function TagsPanel() {
                                             }}
                                         />
                                         <span className="text-xs font-semibold whitespace-nowrap text-(--color-muted)">
-                                            미리보기
+                                            <LocalizedText text={"미리보기"} />
                                         </span>
                                     </div>
                                 </div>
@@ -764,7 +820,7 @@ export default function TagsPanel() {
                         <div className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
                             <div>
                                 <p className="text-sm font-semibold text-(--color-foreground)">
-                                    빠른 색상 선택
+                                    <LocalizedText text={"빠른 색상 선택"} />
                                 </p>
                                 <div className="mt-3 grid grid-cols-2 gap-2">
                                     {COLOR_PRESETS.map((preset) => (
@@ -779,7 +835,11 @@ export default function TagsPanel() {
                                                 backgroundColor: preset.value,
                                             }}
                                         >
-                                            {preset.label}
+                                            {
+                                                <LocalizedText
+                                                    text={preset.label}
+                                                />
+                                            }
                                         </button>
                                     ))}
                                 </div>
@@ -793,7 +853,9 @@ export default function TagsPanel() {
                                     >
                                         <ChevronDown className="h-4 w-4" />
                                         <span className="whitespace-nowrap">
-                                            OKLCH Picker 열기
+                                            <LocalizedText
+                                                text={"OKLCH Picker 열기"}
+                                            />
                                         </span>
                                     </Button>
                                 </CollapsibleTrigger>
@@ -801,7 +863,11 @@ export default function TagsPanel() {
                                     <div className="mt-3 space-y-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4">
                                         <div>
                                             <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Lightness</span>
+                                                <span>
+                                                    <LocalizedText
+                                                        text={"Lightness"}
+                                                    />
+                                                </span>
                                                 <span>{oklchL.toFixed(3)}</span>
                                             </div>
                                             <input
@@ -829,7 +895,11 @@ export default function TagsPanel() {
                                         </div>
                                         <div>
                                             <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Chroma</span>
+                                                <span>
+                                                    <LocalizedText
+                                                        text={"Chroma"}
+                                                    />
+                                                </span>
                                                 <span>{oklchC.toFixed(3)}</span>
                                             </div>
                                             <input
@@ -857,7 +927,11 @@ export default function TagsPanel() {
                                         </div>
                                         <div>
                                             <div className="mb-1 flex justify-between text-xs text-(--color-muted)">
-                                                <span>Hue</span>
+                                                <span>
+                                                    <LocalizedText
+                                                        text={"Hue"}
+                                                    />
+                                                </span>
                                                 <span>
                                                     {oklchH.toFixed(0)}°
                                                 </span>
@@ -900,7 +974,11 @@ export default function TagsPanel() {
                         >
                             <Save className="h-4 w-4" />
                             <span className="whitespace-nowrap">
-                                {saving ? "태그 저장 중..." : "태그 저장"}
+                                {saving ? (
+                                    <LocalizedText text={"태그 저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"태그 저장"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -909,7 +987,9 @@ export default function TagsPanel() {
                             className={secondaryButtonClassName}
                         >
                             <X className="h-4 w-4" />
-                            <span className="whitespace-nowrap">취소</span>
+                            <span className="whitespace-nowrap">
+                                <LocalizedText text={"취소"} />
+                            </span>
                         </Button>
                     </div>
                 </section>
@@ -932,17 +1012,31 @@ export default function TagsPanel() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <DialogHeader className="text-left">
                             <p className="text-xs font-bold tracking-[0.18em] text-(--color-muted) uppercase">
-                                Category editor
+                                <LocalizedText text={"Category editor"} />
                             </p>
                             <DialogTitle className="text-xl font-bold text-(--color-foreground)">
-                                {editCat === "new"
-                                    ? "새 카테고리 추가"
-                                    : "카테고리 이름 변경"}
+                                {editCat === "new" ? (
+                                    <LocalizedText text={"새 카테고리 추가"} />
+                                ) : (
+                                    <LocalizedText
+                                        text={"카테고리 이름 변경"}
+                                    />
+                                )}
                             </DialogTitle>
                             <DialogDescription className="text-(--color-muted)">
-                                {editCat === "new"
-                                    ? "포스트에 아직 쓰이지 않은 카테고리도 먼저 등록할 수 있습니다."
-                                    : "기존 포스트의 category 값도 새 이름으로 함께 변경됩니다."}
+                                {editCat === "new" ? (
+                                    <LocalizedText
+                                        text={
+                                            "포스트에 아직 쓰이지 않은 카테고리도 먼저 등록할 수 있습니다."
+                                        }
+                                    />
+                                ) : (
+                                    <LocalizedText
+                                        text={
+                                            "기존 포스트의 category 값도 새 이름으로 함께 변경됩니다."
+                                        }
+                                    />
+                                )}
                             </DialogDescription>
                         </DialogHeader>
                         <Button
@@ -951,14 +1045,18 @@ export default function TagsPanel() {
                             className={secondaryButtonClassName}
                         >
                             <X className="h-4 w-4" />
-                            <span className="whitespace-nowrap">편집 닫기</span>
+                            <span className="whitespace-nowrap">
+                                <LocalizedText text={"편집 닫기"} />
+                            </span>
                         </Button>
                     </div>
                     <div className="mt-5">
                         <label className="mb-1 block text-sm font-semibold text-(--color-foreground)">
-                            카테고리 이름
+                            <LocalizedText text={"카테고리 이름"} />
                         </label>
-                        <Input
+                        <LocalizedElement
+                            as={Input}
+                            translatedProps={["placeholder"]}
                             value={catForm}
                             onChange={(event) => setCatForm(event.target.value)}
                             autoFocus
@@ -982,9 +1080,13 @@ export default function TagsPanel() {
                         >
                             <Save className="h-4 w-4" />
                             <span className="whitespace-nowrap">
-                                {saving
-                                    ? "카테고리 저장 중..."
-                                    : "카테고리 저장"}
+                                {saving ? (
+                                    <LocalizedText
+                                        text={"카테고리 저장 중..."}
+                                    />
+                                ) : (
+                                    <LocalizedText text={"카테고리 저장"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -993,7 +1095,9 @@ export default function TagsPanel() {
                             className={secondaryButtonClassName}
                         >
                             <X className="h-4 w-4" />
-                            <span className="whitespace-nowrap">취소</span>
+                            <span className="whitespace-nowrap">
+                                <LocalizedText text={"취소"} />
+                            </span>
                         </Button>
                     </div>
                 </section>
@@ -1010,14 +1114,17 @@ export default function TagsPanel() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] text-(--color-muted) uppercase">
-                            Content taxonomy
+                            <LocalizedText text={"Content taxonomy"} />
                         </p>
                         <h2 className="mt-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                            태그 · 카테고리 관리
+                            <LocalizedText text={"태그 · 카테고리 관리"} />
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            포스트 분류에 쓰이는 태그와 카테고리를 이 패널에서
-                            관리합니다.
+                            <LocalizedText
+                                text={
+                                    "포스트 분류에 쓰이는 태그와 카테고리를 이 패널에서 관리합니다."
+                                }
+                            />
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -1033,7 +1140,11 @@ export default function TagsPanel() {
                                 }`}
                             />
                             <span className="whitespace-nowrap">
-                                {loading ? "새로고침 중..." : "목록 새로고침"}
+                                {loading ? (
+                                    <LocalizedText text={"새로고침 중..."} />
+                                ) : (
+                                    <LocalizedText text={"목록 새로고침"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -1043,9 +1154,11 @@ export default function TagsPanel() {
                         >
                             <Plus className="h-4 w-4" />
                             <span className="whitespace-nowrap">
-                                {tab === "tags"
-                                    ? "새 태그 추가"
-                                    : "새 카테고리 추가"}
+                                {tab === "tags" ? (
+                                    <LocalizedText text={"새 태그 추가"} />
+                                ) : (
+                                    <LocalizedText text={"새 카테고리 추가"} />
+                                )}
                             </span>
                         </Button>
                     </div>
@@ -1062,14 +1175,18 @@ export default function TagsPanel() {
                         }`}
                     >
                         <span className="flex items-center gap-2 text-sm font-bold whitespace-nowrap">
-                            <Tag className="h-4 w-4" />
-                            태그 관리
+                            <LocalizedRichText
+                                text={"{0}태그 관리"}
+                                values={[<Tag className="h-4 w-4" />]}
+                            />
                         </span>
                         <span className="mt-2 block text-2xl font-black">
                             {tags.length}
                         </span>
                         <span className="text-xs opacity-80">
-                            생성, 수정, 색상 변경, 삭제
+                            <LocalizedText
+                                text={"생성, 수정, 색상 변경, 삭제"}
+                            />
                         </span>
                     </button>
                     <button
@@ -1082,14 +1199,18 @@ export default function TagsPanel() {
                         }`}
                     >
                         <span className="flex items-center gap-2 text-sm font-bold whitespace-nowrap">
-                            <FolderOpen className="h-4 w-4" />
-                            카테고리 관리
+                            <LocalizedRichText
+                                text={"{0}카테고리 관리"}
+                                values={[<FolderOpen className="h-4 w-4" />]}
+                            />
                         </span>
                         <span className="mt-2 block text-2xl font-black">
                             {categories.length}
                         </span>
                         <span className="text-xs opacity-80">
-                            생성, 이름 변경, 사용 포스트 확인, 삭제
+                            <LocalizedText
+                                text={"생성, 이름 변경, 사용 포스트 확인, 삭제"}
+                            />
                         </span>
                     </button>
                 </div>
@@ -1097,7 +1218,14 @@ export default function TagsPanel() {
                 <div className="laptop:flex-row laptop:items-center laptop:justify-between flex flex-col gap-3 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-3">
                     <div className="relative min-w-0 flex-1">
                         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-(--color-muted)" />
-                        <Input
+                        <LocalizedElement
+                            as={Input}
+                            messageProps={{
+                                placeholder:
+                                    tab === "tags"
+                                        ? { text: "태그 이름 또는 slug 검색" }
+                                        : { text: "카테고리 이름 검색" },
+                            }}
                             value={tab === "tags" ? tagSearch : catSearch}
                             onChange={(event) =>
                                 tab === "tags"
@@ -1137,10 +1265,14 @@ export default function TagsPanel() {
                             <ArrowDownAZ className="h-4 w-4" />
                         )}
                         <span className="whitespace-nowrap">
-                            정렬:{" "}
-                            {tab === "tags"
-                                ? getSortLabel(tagSort)
-                                : getSortLabel(catSort)}
+                            <LocalizedRichText
+                                text={"정렬: {0}"}
+                                values={[
+                                    tab === "tags"
+                                        ? getSortLabel(tagSort)
+                                        : getSortLabel(catSort),
+                                ]}
+                            />
                         </span>
                     </Button>
                 </div>
@@ -1148,12 +1280,12 @@ export default function TagsPanel() {
 
             {error && (
                 <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-                    {error}
+                    {<LocalizedText text={error} />}
                 </div>
             )}
             {success && (
                 <div className="rounded-xl border border-green-300 bg-green-50 p-3 text-sm font-medium text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300">
-                    {success}
+                    {<LocalizedText text={success} />}
                 </div>
             )}
 
@@ -1161,16 +1293,22 @@ export default function TagsPanel() {
                 <div className="space-y-4">
                     {loading ? (
                         <p className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 text-sm text-(--color-muted)">
-                            태그를 불러오는 중...
+                            <LocalizedText text={"태그를 불러오는 중..."} />
                         </p>
                     ) : sortedTags.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) p-6 text-center">
                             <Tag className="mx-auto h-8 w-8 text-(--color-muted)" />
                             <p className="mt-3 font-semibold text-(--color-foreground)">
-                                표시할 태그가 없습니다.
+                                <LocalizedText
+                                    text={"표시할 태그가 없습니다."}
+                                />
                             </p>
                             <p className="mt-1 text-sm text-(--color-muted)">
-                                검색어를 지우거나 새 태그를 추가하세요.
+                                <LocalizedText
+                                    text={
+                                        "검색어를 지우거나 새 태그를 추가하세요."
+                                    }
+                                />
                             </p>
                         </div>
                     ) : (
@@ -1198,10 +1336,18 @@ export default function TagsPanel() {
                                                     variant="secondary"
                                                     className="max-w-full break-all"
                                                 >
-                                                    slug: {tag.slug}
+                                                    <LocalizedRichText
+                                                        text={"slug: {0}"}
+                                                        values={[tag.slug]}
+                                                    />
                                                 </Badge>
                                                 <Badge variant="secondary">
-                                                    사용 포스트 {tag.count}개
+                                                    <LocalizedRichText
+                                                        text={
+                                                            "사용 포스트 {0}개"
+                                                        }
+                                                        values={[tag.count]}
+                                                    />
                                                 </Badge>
                                                 {tag.color && (
                                                     <Badge
@@ -1229,9 +1375,19 @@ export default function TagsPanel() {
                                                 <Eye className="h-4 w-4" />
                                             )}
                                             <span className="whitespace-nowrap">
-                                                {revealedTags.has(tag.slug)
-                                                    ? "사용 포스트 숨기기"
-                                                    : "사용 포스트 보기"}
+                                                {revealedTags.has(tag.slug) ? (
+                                                    <LocalizedText
+                                                        text={
+                                                            "사용 포스트 숨기기"
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <LocalizedText
+                                                        text={
+                                                            "사용 포스트 보기"
+                                                        }
+                                                    />
+                                                )}
                                             </span>
                                         </Button>
                                         <Button
@@ -1242,7 +1398,9 @@ export default function TagsPanel() {
                                         >
                                             <Pencil className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                태그 수정
+                                                <LocalizedText
+                                                    text={"태그 수정"}
+                                                />
                                             </span>
                                         </Button>
                                         <Button
@@ -1256,7 +1414,9 @@ export default function TagsPanel() {
                                         >
                                             <Trash2 className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                태그 삭제
+                                                <LocalizedText
+                                                    text={"태그 삭제"}
+                                                />
                                             </span>
                                         </Button>
                                     </div>
@@ -1273,17 +1433,22 @@ export default function TagsPanel() {
                 <div className="space-y-4">
                     {loading ? (
                         <p className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 text-sm text-(--color-muted)">
-                            카테고리를 불러오는 중...
+                            <LocalizedText text={"카테고리를 불러오는 중..."} />
                         </p>
                     ) : sortedCats.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) p-6 text-center">
                             <FolderOpen className="mx-auto h-8 w-8 text-(--color-muted)" />
                             <p className="mt-3 font-semibold text-(--color-foreground)">
-                                표시할 카테고리가 없습니다.
+                                <LocalizedText
+                                    text={"표시할 카테고리가 없습니다."}
+                                />
                             </p>
                             <p className="mt-1 text-sm text-(--color-muted)">
-                                포스트에 category 값을 추가하면 이 목록에
-                                표시됩니다.
+                                <LocalizedText
+                                    text={
+                                        "포스트에 category 값을 추가하면 이 목록에 표시됩니다."
+                                    }
+                                />
                             </p>
                         </div>
                     ) : (
@@ -1303,8 +1468,14 @@ export default function TagsPanel() {
                                             </h3>
                                             <div className="mt-2">
                                                 <Badge variant="secondary">
-                                                    사용 포스트 {category.count}
-                                                    개
+                                                    <LocalizedRichText
+                                                        text={
+                                                            "사용 포스트 {0}개"
+                                                        }
+                                                        values={[
+                                                            category.count,
+                                                        ]}
+                                                    />
                                                 </Badge>
                                             </div>
                                         </div>
@@ -1330,9 +1501,19 @@ export default function TagsPanel() {
                                             <span className="whitespace-nowrap">
                                                 {revealedCategories.has(
                                                     category.name
-                                                )
-                                                    ? "사용 포스트 숨기기"
-                                                    : "사용 포스트 보기"}
+                                                ) ? (
+                                                    <LocalizedText
+                                                        text={
+                                                            "사용 포스트 숨기기"
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <LocalizedText
+                                                        text={
+                                                            "사용 포스트 보기"
+                                                        }
+                                                    />
+                                                )}
                                             </span>
                                         </Button>
                                         <Button
@@ -1345,7 +1526,9 @@ export default function TagsPanel() {
                                         >
                                             <Pencil className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                카테고리 이름 변경
+                                                <LocalizedText
+                                                    text={"카테고리 이름 변경"}
+                                                />
                                             </span>
                                         </Button>
                                         <Button
@@ -1359,7 +1542,9 @@ export default function TagsPanel() {
                                         >
                                             <Trash2 className="h-4 w-4" />
                                             <span className="whitespace-nowrap">
-                                                카테고리 삭제
+                                                <LocalizedText
+                                                    text={"카테고리 삭제"}
+                                                />
                                             </span>
                                         </Button>
                                     </div>

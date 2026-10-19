@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 type ImageAlign = "left" | "center" | "right";
 
 // 마크다운 본문 img 요소 대체 — 서버 renderToString 호환, 지연 로딩 적용
@@ -43,7 +44,7 @@ export default function MarkdownImage({
                             href={sourceUrl}
                             className="ml-1 underline-offset-4 hover:underline"
                         >
-                            {sourceLabel ?? "출처"}
+                            {sourceLabel ?? serverT("출처")}
                         </a>
                     )}
                 </figcaption>

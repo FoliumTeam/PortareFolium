@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toSlug } from "@/lib/slug";
@@ -396,7 +401,7 @@ export default function BooksSubPanel({
                         onClick={handleBack}
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        ← 목록
+                        <LocalizedText text={"← 목록"} />
                     </button>
                     <button
                         disabled={!form.published}
@@ -405,24 +410,33 @@ export default function BooksSubPanel({
                         }
                         className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        <ExternalLink size={15} />
-                        미리보기
+                        <LocalizedRichText
+                            text={"{0}미리보기"}
+                            values={[<ExternalLink size={15} />]}
+                        />
                     </button>
                     <button
                         onClick={() => setMetadataOpen(true)}
                         className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        <Settings size={15} />
-                        설정
+                        <LocalizedRichText
+                            text={"{0}설정"}
+                            values={[<Settings size={15} />]}
+                        />
                     </button>
                 </div>
                 <p className="text-xs text-(--color-muted)">
-                    저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
-                    즉시 제공됩니다.
+                    <LocalizedText
+                        text={
+                            "저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게 즉시 제공됩니다."
+                        }
+                    />
                 </p>
 
                 {/* 제목 입력 */}
-                <input
+                <LocalizedElement
+                    as="input"
+                    translatedProps={["placeholder"]}
                     type="text"
                     value={form.title}
                     onChange={(e) => {
@@ -445,7 +459,9 @@ export default function BooksSubPanel({
 
                 {/* 본문 에디터 */}
                 <div className="tablet:min-h-0 min-h-[400px] flex-1">
-                    <RichMarkdownEditor
+                    <LocalizedElement
+                        as={RichMarkdownEditor}
+                        translatedProps={["placeholder"]}
                         value={form.content}
                         onChange={(v) => setForm((f) => ({ ...f, content: v }))}
                         placeholder="리뷰를 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
@@ -457,19 +473,23 @@ export default function BooksSubPanel({
                 {/* 피드백 */}
                 {error && (
                     <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-950/30">
-                        {error}
+                        {<LocalizedText text={error} />}
                     </p>
                 )}
                 {success && (
                     <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-600 dark:bg-green-950/30">
-                        {success}
+                        {<LocalizedText text={success} />}
                     </p>
                 )}
 
                 {/* Sticky 저장 바 */}
                 <AdminSaveBar>
                     <span className="text-xs text-(--color-muted)">
-                        저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                        <LocalizedText
+                            text={
+                                "저장 후 미리보기를 방문하면 캐시가 갱신됩니다."
+                            }
+                        />
                     </span>
                     <div className="flex items-center gap-3">
                         <SaveIndicator
@@ -483,7 +503,10 @@ export default function BooksSubPanel({
                                 onClick={() => setStateModalOpen(true)}
                                 className="rounded-lg bg-yellow-500 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
-                                상태 기록: {snapshotCount}/6
+                                <LocalizedRichText
+                                    text={"상태 기록: {0}/6"}
+                                    values={[snapshotCount]}
+                                />
                             </button>
                             {editTarget !== "new" && (
                                 <button
@@ -494,7 +517,7 @@ export default function BooksSubPanel({
                                     }
                                     className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    삭제
+                                    <LocalizedText text={"삭제"} />
                                 </button>
                             )}
                             <button
@@ -502,7 +525,11 @@ export default function BooksSubPanel({
                                 disabled={saving || !isDirty}
                                 className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
-                                {saving ? "저장 중..." : "저장"}
+                                {saving ? (
+                                    <LocalizedText text={"저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"저장"} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -539,23 +566,30 @@ export default function BooksSubPanel({
                 <div className="mb-4 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-(--color-foreground)">
-                            도서
+                            <LocalizedText text={"도서"} />
                         </h2>
                         <p className="mt-0.5 text-sm text-(--color-muted)">
-                            Featured: {books.filter((b) => b.featured).length}/5
+                            <LocalizedRichText
+                                text={"Featured: {0}/5"}
+                                values={[
+                                    books.filter((b) => b.featured).length,
+                                ]}
+                            />
                         </p>
                     </div>
                     <button
                         onClick={openNew}
                         className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
                     >
-                        + 새 도서
+                        <LocalizedText text={"+ 새 도서"} />
                     </button>
                 </div>
 
                 {/* 필터 + 정렬 */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
@@ -571,9 +605,15 @@ export default function BooksSubPanel({
                         }
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
                     >
-                        <option value="all">전체</option>
-                        <option value="published">발행됨</option>
-                        <option value="draft">임시저장</option>
+                        <option value="all">
+                            <LocalizedText text={"전체"} />
+                        </option>
+                        <option value="published">
+                            <LocalizedText text={"발행됨"} />
+                        </option>
+                        <option value="draft">
+                            <LocalizedText text={"임시저장"} />
+                        </option>
                     </select>
                     <div className="ml-auto flex items-center gap-1">
                         {[
@@ -603,7 +643,9 @@ export default function BooksSubPanel({
                                 label: "Featured 먼저",
                             },
                         ].map(({ key, icon, label }) => (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["title"]}
                                 key={key}
                                 onClick={() => setSortAndSave(key)}
                                 title={label}
@@ -614,7 +656,7 @@ export default function BooksSubPanel({
                                 }`}
                             >
                                 {icon}
-                            </button>
+                            </LocalizedElement>
                         ))}
                     </div>
                 </div>
@@ -623,11 +665,11 @@ export default function BooksSubPanel({
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {loading ? (
                     <p className="py-8 text-center text-(--color-muted)">
-                        로딩 중…
+                        <LocalizedText text={"로딩 중…"} />
                     </p>
                 ) : displayedBooks.length === 0 ? (
                     <p className="py-8 text-center text-(--color-muted)">
-                        도서가 없습니다.
+                        <LocalizedText text={"도서가 없습니다."} />
                     </p>
                 ) : (
                     <ul>
@@ -651,8 +693,12 @@ export default function BooksSubPanel({
                                     <div className="flex flex-wrap items-center gap-2">
                                         {book.featured && (
                                             <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
-                                                <Star className="h-2.5 w-2.5" />{" "}
-                                                Featured
+                                                <LocalizedRichText
+                                                    text={"{0} Featured"}
+                                                    values={[
+                                                        <Star className="h-2.5 w-2.5" />,
+                                                    ]}
+                                                />
                                             </span>
                                         )}
                                         <span
@@ -667,19 +713,32 @@ export default function BooksSubPanel({
                                             ) : (
                                                 <EyeOff className="h-2.5 w-2.5" />
                                             )}
-                                            {book.published
-                                                ? "Published"
-                                                : "Draft"}
+                                            {book.published ? (
+                                                <LocalizedText
+                                                    text={"Published"}
+                                                />
+                                            ) : (
+                                                <LocalizedText text={"Draft"} />
+                                            )}
                                         </span>
                                         {!book.job_field?.length && (
                                             <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
-                                                <AlertTriangle className="h-2.5 w-2.5" />
-                                                직무 분야 없음
+                                                <LocalizedRichText
+                                                    text={"{0}직무 분야 없음"}
+                                                    values={[
+                                                        <AlertTriangle className="h-2.5 w-2.5" />,
+                                                    ]}
+                                                />
                                             </span>
                                         )}
                                         {(stateCounts[book.slug] ?? 0) > 0 && (
                                             <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
-                                                상태: {stateCounts[book.slug]}
+                                                <LocalizedRichText
+                                                    text={"상태: {0}"}
+                                                    values={[
+                                                        stateCounts[book.slug],
+                                                    ]}
+                                                />
                                             </span>
                                         )}
                                     </div>
@@ -727,9 +786,15 @@ export default function BooksSubPanel({
                                             <Star className="h-3 w-3" />
                                         )}
                                         <span className="tablet:inline hidden">
-                                            {book.featured
-                                                ? "Featured 해제"
-                                                : "Featured"}
+                                            {book.featured ? (
+                                                <LocalizedText
+                                                    text={"Featured 해제"}
+                                                />
+                                            ) : (
+                                                <LocalizedText
+                                                    text={"Featured"}
+                                                />
+                                            )}
                                         </span>
                                     </button>
                                     <button
@@ -746,9 +811,15 @@ export default function BooksSubPanel({
                                             <Eye className="h-3 w-3" />
                                         )}
                                         <span className="tablet:inline hidden">
-                                            {book.published
-                                                ? "Unpublish"
-                                                : "Publish"}
+                                            {book.published ? (
+                                                <LocalizedText
+                                                    text={"Unpublish"}
+                                                />
+                                            ) : (
+                                                <LocalizedText
+                                                    text={"Publish"}
+                                                />
+                                            )}
                                         </span>
                                     </button>
                                     <button
@@ -757,7 +828,7 @@ export default function BooksSubPanel({
                                     >
                                         <Pencil className="h-3 w-3" />
                                         <span className="tablet:inline hidden">
-                                            편집
+                                            <LocalizedText text={"편집"} />
                                         </span>
                                     </button>
                                     <button
@@ -766,7 +837,7 @@ export default function BooksSubPanel({
                                     >
                                         <Trash2 className="h-3 w-3" />
                                         <span className="tablet:inline hidden">
-                                            삭제
+                                            <LocalizedText text={"삭제"} />
                                         </span>
                                     </button>
                                 </div>
@@ -779,7 +850,7 @@ export default function BooksSubPanel({
             {/* 토스트 */}
             {toast && (
                 <div className="fixed right-6 bottom-6 z-50 rounded-xl bg-(--color-foreground) px-5 py-3 text-sm font-medium text-(--color-surface) shadow-lg">
-                    {toast}
+                    {<LocalizedText text={toast} />}
                 </div>
             )}
         </div>

@@ -1,4 +1,10 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 // 에디터 임시 저장 모달 (Supabase 기반 snapshot 데이터 손실 방지)
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -61,6 +67,7 @@ export default function EditorStatePreservation({
     folderPath,
     thumbnail,
 }: EditorStatePreservationProps) {
+    const { locale } = useUILocale();
     // currentContent / thumbnail 최신 ref — async cleanup 호출 시 stale 회피
     const contentRef = useRef(currentContent);
     contentRef.current = currentContent;
@@ -248,10 +255,10 @@ export default function EditorStatePreservation({
                         className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold ${getBadgeClass(snap.label)}`}
                     >
                         <SnapshotIcon className="h-4 w-4" />
-                        {getBadgeText(snap.label)}
+                        {<LocalizedText text={getBadgeText(snap.label)} />}
                     </span>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {new Date(snap.savedAt).toLocaleString()}
+                        {new Date(snap.savedAt).toLocaleString(locale)}
                     </span>
                 </div>
 
@@ -267,21 +274,24 @@ export default function EditorStatePreservation({
                             id={`revert-desc-${snap.id}`}
                             className="text-amber-600 dark:text-amber-400"
                         >
-                            현재 내용이 이 스냅샷으로 대체됩니다.
-                            계속하시겠습니까?
+                            <LocalizedText
+                                text={
+                                    "현재 내용이 이 스냅샷으로 대체됩니다. 계속하시겠습니까?"
+                                }
+                            />
                         </span>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => handleRevert(snap)}
                                 className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
                             >
-                                확인
+                                <LocalizedText text={"확인"} />
                             </button>
                             <button
                                 onClick={() => setConfirmRevertId(null)}
                                 className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
                             >
-                                취소
+                                <LocalizedText text={"취소"} />
                             </button>
                         </div>
                     </div>
@@ -296,7 +306,9 @@ export default function EditorStatePreservation({
                             id={`delete-desc-${snap.id}`}
                             className="text-red-600 dark:text-red-400"
                         >
-                            이 임시 저장본을 삭제하시겠습니까?
+                            <LocalizedText
+                                text={"이 임시 저장본을 삭제하시겠습니까?"}
+                            />
                         </span>
                         <div className="flex gap-2">
                             <button
@@ -306,13 +318,13 @@ export default function EditorStatePreservation({
                                 }}
                                 className="rounded-md bg-red-600 px-2.5 py-1 font-medium whitespace-nowrap text-white"
                             >
-                                삭제
+                                <LocalizedText text={"삭제"} />
                             </button>
                             <button
                                 onClick={() => setConfirmDeleteId(null)}
                                 className="rounded-md bg-zinc-400 px-2.5 py-1 font-medium whitespace-nowrap text-white"
                             >
-                                취소
+                                <LocalizedText text={"취소"} />
                             </button>
                         </div>
                     </div>
@@ -322,20 +334,20 @@ export default function EditorStatePreservation({
                             onClick={() => setPreviewSnapshot(snap)}
                             className="rounded-md bg-zinc-600 px-3 py-1.5 font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                         >
-                            미리보기
+                            <LocalizedText text={"미리보기"} />
                         </button>
                         <button
                             onClick={() => setConfirmRevertId(snap.id)}
                             className="rounded-md bg-amber-500 px-3 py-1.5 font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                         >
-                            복원
+                            <LocalizedText text={"복원"} />
                         </button>
                         {snap.label !== "Initial" && (
                             <button
                                 onClick={() => setConfirmDeleteId(snap.id)}
                                 className="rounded-md bg-red-600 px-3 py-1.5 font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                             >
-                                삭제
+                                <LocalizedText text={"삭제"} />
                             </button>
                         )}
                     </div>
@@ -359,28 +371,36 @@ export default function EditorStatePreservation({
                     <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-700">
                         <div className="min-w-0">
                             <p className="text-sm font-bold tracking-[0.16em] text-zinc-500 uppercase dark:text-zinc-400">
-                                Draft snapshots
+                                <LocalizedText text={"Draft snapshots"} />
                             </p>
                             <h3 className="mt-1 flex items-center gap-2 text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
                                 <History className="h-5 w-5 text-indigo-500" />
-                                임시 저장
+                                <LocalizedText text={"임시 저장"} />
                             </h3>
                             <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                자동 저장본과 직접 저장한 복구 지점을 확인하고
-                                되돌릴 수 있습니다.
+                                <LocalizedText
+                                    text={
+                                        "자동 저장본과 직접 저장한 복구 지점을 확인하고 되돌릴 수 있습니다."
+                                    }
+                                />
                             </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                             <span className="rounded-full bg-indigo-600 px-3 py-1 text-sm font-bold whitespace-nowrap text-white">
-                                {snapshots.length}개
+                                <LocalizedRichText
+                                    text={"{0}개"}
+                                    values={[snapshots.length]}
+                                />
                             </span>
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["aria-label"]}
                                 onClick={onClose}
                                 className="rounded p-1.5 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
                                 aria-label="닫기"
                             >
                                 ✕
-                            </button>
+                            </LocalizedElement>
                         </div>
                     </div>
 
@@ -391,11 +411,16 @@ export default function EditorStatePreservation({
                             onClick={handleBookmark}
                             className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-base font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
-                            현재 내용을 수동 임시 저장
+                            <LocalizedText
+                                text={"현재 내용을 수동 임시 저장"}
+                            />
                         </button>
                         <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                            저장 버튼을 누르기 전에도 복구용 지점을 남길 수
-                            있습니다.
+                            <LocalizedText
+                                text={
+                                    "저장 버튼을 누르기 전에도 복구용 지점을 남길 수 있습니다."
+                                }
+                            />
                         </p>
                     </div>
 
@@ -404,7 +429,7 @@ export default function EditorStatePreservation({
                         {/* 초기본 섹션 */}
                         <h4 className="mb-2 flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                             <FileClock className="h-4 w-4 text-blue-500" />
-                            초기본
+                            <LocalizedText text={"초기본"} />
                         </h4>
                         <div className="flex flex-col gap-2">
                             {initialSnapshots.map(renderSnapshotCard)}
@@ -416,7 +441,7 @@ export default function EditorStatePreservation({
                         <div className="mb-2 flex items-center justify-between gap-3">
                             <h4 className="flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                                 <Clock3 className="h-4 w-4 text-zinc-500" />
-                                자동 저장
+                                <LocalizedText text={"자동 저장"} />
                             </h4>
                             {autoSnapshots.length > 0 && (
                                 <button
@@ -425,13 +450,13 @@ export default function EditorStatePreservation({
                                     }
                                     className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    모두 삭제
+                                    <LocalizedText text={"모두 삭제"} />
                                 </button>
                             )}
                         </div>
                         {autoSnapshots.length === 0 ? (
                             <p className="py-1 text-sm text-zinc-400 dark:text-zinc-500">
-                                자동 저장 없음
+                                <LocalizedText text={"자동 저장 없음"} />
                             </p>
                         ) : (
                             <div className="flex flex-col gap-2">
@@ -445,7 +470,7 @@ export default function EditorStatePreservation({
                         <div className="mb-2 flex items-center justify-between gap-3">
                             <h4 className="flex items-center gap-2 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                                 <Save className="h-4 w-4 text-purple-500" />
-                                수동 저장
+                                <LocalizedText text={"수동 저장"} />
                             </h4>
                             {manualSnapshots.length > 0 && (
                                 <button
@@ -454,13 +479,13 @@ export default function EditorStatePreservation({
                                     }
                                     className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    모두 삭제
+                                    <LocalizedText text={"모두 삭제"} />
                                 </button>
                             )}
                         </div>
                         {manualSnapshots.length === 0 ? (
                             <p className="py-1 text-sm text-zinc-400 dark:text-zinc-500">
-                                수동 저장 없음
+                                <LocalizedText text={"수동 저장 없음"} />
                             </p>
                         ) : (
                             <div className="flex flex-col gap-2">
@@ -473,7 +498,9 @@ export default function EditorStatePreservation({
 
             {/* Preview 모달 */}
             {previewSnapshot && (
-                <StatePreviewModal
+                <LocalizedElement
+                    as={StatePreviewModal}
+                    translatedProps={["label"]}
                     isOpen={true}
                     onClose={() => setPreviewSnapshot(null)}
                     content={previewSnapshot.content}

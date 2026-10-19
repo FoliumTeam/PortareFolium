@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
@@ -221,10 +226,10 @@ export default function LoginForm({
                         </span>
                     </div>
                     <h1 className="text-3xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
-                        Admin 로그인
+                        <LocalizedText text={"Admin 로그인"} />
                     </h1>
                     <p className="text-sm text-(--color-muted)">
-                        관리자 계정으로 로그인하세요
+                        <LocalizedText text={"관리자 계정으로 로그인하세요"} />
                     </p>
                 </div>
 
@@ -232,23 +237,30 @@ export default function LoginForm({
                 <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-7 shadow-sm ring-1 ring-(--color-border)/40">
                     <div className="space-y-5">
                         <p className="text-sm text-(--color-muted)">
-                            email/password 기반 관리자 로그인
+                            <LocalizedText
+                                text={"email/password 기반 관리자 로그인"}
+                            />
                         </p>
                         {/* 에러 메시지 */}
                         {error && (
                             <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
-                                {error}
+                                {<LocalizedText text={error} />}
                             </p>
                         )}
 
                         {!setupReady && (
                             <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                                 <p className="font-semibold">
-                                    관리자 로그인 설정 필요
+                                    <LocalizedText
+                                        text={"관리자 로그인 설정 필요"}
+                                    />
                                 </p>
                                 <p>
-                                    이 사이트는 아래 env가 있어야 관리자
-                                    로그인을 사용할 수 있습니다.
+                                    <LocalizedText
+                                        text={
+                                            "이 사이트는 아래 env가 있어야 관리자 로그인을 사용할 수 있습니다."
+                                        }
+                                    />
                                 </p>
                                 <ul className="space-y-2 text-xs">
                                     {setupIssues.map((issue) => (
@@ -261,23 +273,52 @@ export default function LoginForm({
                                                     {issue.key}
                                                 </p>
                                                 <span className="rounded-full border border-amber-300 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:border-amber-700 dark:text-amber-200">
-                                                    {issue.status}
+                                                    {
+                                                        <LocalizedText
+                                                            text={issue.status}
+                                                        />
+                                                    }
                                                 </span>
                                             </div>
                                             <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
-                                                용도:{" "}
-                                                {ENV_DESCRIPTIONS[issue.key]
-                                                    ?.purpose ??
-                                                    "관리자 로그인에 필요한 환경변수"}
+                                                <LocalizedRichText
+                                                    text={"용도: {0}"}
+                                                    values={[
+                                                        <LocalizedText
+                                                            text={
+                                                                ENV_DESCRIPTIONS[
+                                                                    issue.key
+                                                                ]?.purpose ??
+                                                                "관리자 로그인에 필요한 환경변수"
+                                                            }
+                                                        />,
+                                                    ]}
+                                                />
                                             </p>
                                             <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
-                                                설정:{" "}
-                                                {ENV_DESCRIPTIONS[issue.key]
-                                                    ?.setup ??
-                                                    "환경변수에 값을 추가"}
+                                                <LocalizedRichText
+                                                    text={"설정: {0}"}
+                                                    values={[
+                                                        <LocalizedText
+                                                            text={
+                                                                ENV_DESCRIPTIONS[
+                                                                    issue.key
+                                                                ]?.setup ??
+                                                                "환경변수에 값을 추가"
+                                                            }
+                                                        />,
+                                                    ]}
+                                                />
                                             </p>
                                             <p className="mt-1 text-[11px] font-medium text-amber-900 dark:text-amber-100">
-                                                문제: {issue.reason}
+                                                <LocalizedRichText
+                                                    text={"문제: {0}"}
+                                                    values={[
+                                                        <LocalizedText
+                                                            text={issue.reason}
+                                                        />,
+                                                    ]}
+                                                />
                                             </p>
                                         </li>
                                     ))}
@@ -286,74 +327,122 @@ export default function LoginForm({
                                     <>
                                         <div className="space-y-2 rounded-lg border border-amber-200 bg-white/70 px-3 py-3 text-xs dark:border-amber-800 dark:bg-black/10">
                                             <p className="font-semibold">
-                                                원하는 로그인 비밀번호 설정 방법
+                                                <LocalizedText
+                                                    text={
+                                                        "원하는 로그인 비밀번호 설정 방법"
+                                                    }
+                                                />
                                             </p>
                                             <ol className="list-decimal space-y-1 pl-4 text-amber-800/90 dark:text-amber-200/90">
                                                 <li>
-                                                    먼저 실제로 로그인할
-                                                    비밀번호를 정합니다.
+                                                    <LocalizedText
+                                                        text={
+                                                            "먼저 실제로 로그인할 비밀번호를 정합니다."
+                                                        }
+                                                    />
                                                 </li>
                                                 <li>
-                                                    아래쪽 비밀번호 입력칸에
-                                                    원하는 비밀번호를 입력하면{" "}
-                                                    <span className="font-mono font-semibold">
-                                                        AUTH_ADMIN_PASSWORD_HASH
-                                                    </span>{" "}
-                                                    명령이 자동으로 바뀝니다.
+                                                    <LocalizedRichText
+                                                        text={
+                                                            "아래쪽 비밀번호 입력칸에 원하는 비밀번호를 입력하면 {0} 명령이 자동으로 바뀝니다."
+                                                        }
+                                                        values={[
+                                                            <span className="font-mono font-semibold">
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "AUTH_ADMIN_PASSWORD_HASH"
+                                                                    }
+                                                                />
+                                                            </span>,
+                                                        ]}
+                                                    />
                                                 </li>
                                                 <li>
-                                                    출력된{" "}
-                                                    <span className="font-mono font-semibold">
-                                                        scrypt\$...\$...
-                                                    </span>{" "}
-                                                    전체 문자열을 Vercel의{" "}
-                                                    <span className="font-mono font-semibold">
-                                                        AUTH_ADMIN_PASSWORD_HASH
-                                                    </span>
-                                                    에 저장합니다.
+                                                    <LocalizedRichText
+                                                        text={
+                                                            "출력된 {0} 전체 문자열을 Vercel의 {1}에 저장합니다."
+                                                        }
+                                                        values={[
+                                                            <span className="font-mono font-semibold">
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "scrypt\\$...\\$..."
+                                                                    }
+                                                                />
+                                                            </span>,
+                                                            <span className="font-mono font-semibold">
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "AUTH_ADMIN_PASSWORD_HASH"
+                                                                    }
+                                                                />
+                                                            </span>,
+                                                        ]}
+                                                    />
                                                 </li>
                                             </ol>
                                             <p className="text-amber-900 dark:text-amber-100">
-                                                예: 비밀번호를{" "}
-                                                <span className="font-mono font-semibold">
-                                                    password123
-                                                </span>
-                                                으로 정했다면 비밀번호 입력칸에
-                                                그대로 입력하세요. 단, 실제
-                                                운영에는 더 길고 추측하기 어려운
-                                                비밀번호를 사용하세요.
+                                                <LocalizedRichText
+                                                    text={
+                                                        "예: 비밀번호를 {0}으로 정했다면 비밀번호 입력칸에 그대로 입력하세요. 단, 실제 운영에는 더 길고 추측하기 어려운 비밀번호를 사용하세요."
+                                                    }
+                                                    values={[
+                                                        <span className="font-mono font-semibold">
+                                                            <LocalizedText
+                                                                text={
+                                                                    "password123"
+                                                                }
+                                                            />
+                                                        </span>,
+                                                    ]}
+                                                />
                                             </p>
                                             <p className="text-amber-900 dark:text-amber-100">
-                                                env에는 원래 비밀번호를 저장하지
-                                                않습니다. 로그인할 때만 원래
-                                                비밀번호를 입력합니다.
+                                                <LocalizedText
+                                                    text={
+                                                        "env에는 원래 비밀번호를 저장하지 않습니다. 로그인할 때만 원래 비밀번호를 입력합니다."
+                                                    }
+                                                />
                                             </p>
                                             <p className="text-amber-900 dark:text-amber-100">
-                                                로컬{" "}
-                                                <span className="font-mono font-semibold">
-                                                    .env.local
-                                                </span>
-                                                에서는{" "}
-                                                <span className="font-mono font-semibold">
-                                                    $
-                                                </span>
-                                                가 변수 치환으로 해석되므로,
-                                                명령 출력의{" "}
-                                                <span className="font-mono font-semibold">
-                                                    \$
-                                                </span>{" "}
-                                                표기를 그대로 붙여넣으세요.
+                                                <LocalizedRichText
+                                                    text={
+                                                        "로컬 {0}에서는 {1}가 변수 치환으로 해석되므로, 명령 출력의 {2} 표기를 그대로 붙여넣으세요."
+                                                    }
+                                                    values={[
+                                                        <span className="font-mono font-semibold">
+                                                            <LocalizedText
+                                                                text={
+                                                                    ".env.local"
+                                                                }
+                                                            />
+                                                        </span>,
+                                                        <span className="font-mono font-semibold">
+                                                            $
+                                                        </span>,
+                                                        <span className="font-mono font-semibold">
+                                                            \$
+                                                        </span>,
+                                                    ]}
+                                                />
                                             </p>
                                         </div>
                                         <div className="space-y-1 text-xs">
                                             <p className="font-semibold">
-                                                `AUTH_ADMIN_PASSWORD_HASH` 생성
-                                                명령
+                                                <LocalizedText
+                                                    text={
+                                                        "`AUTH_ADMIN_PASSWORD_HASH` 생성 명령"
+                                                    }
+                                                />
                                             </p>
                                             <div className="space-y-2">
                                                 <div className="grid gap-1 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-[11px] dark:border-amber-800 dark:bg-black/10">
                                                     <p className="font-semibold text-amber-900 dark:text-amber-100">
-                                                        비밀번호 규칙
+                                                        <LocalizedText
+                                                            text={
+                                                                "비밀번호 규칙"
+                                                            }
+                                                        />
                                                     </p>
                                                     <ul className="grid gap-1">
                                                         {passwordRequirementStates.map(
@@ -384,7 +473,11 @@ export default function LoginForm({
                                                                         }
                                                                     >
                                                                         {
-                                                                            requirement.label
+                                                                            <LocalizedText
+                                                                                text={
+                                                                                    requirement.label
+                                                                                }
+                                                                            />
                                                                         }
                                                                     </span>
                                                                 </li>
@@ -412,11 +505,28 @@ export default function LoginForm({
                                                     {passwordHashCommand}
                                                 </code>
                                                 <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90">
-                                                    {setupPasswordReady
-                                                        ? "현재 명령은 유효한 비밀번호 입력값으로 생성됩니다."
-                                                        : password
-                                                          ? "비밀번호 규칙을 모두 만족해야 이 명령을 복사할 수 있습니다."
-                                                          : `비밀번호 입력칸이 비어 있으면 명령에는 ${PASSWORD_PLACEHOLDER} 예시값이 표시됩니다.`}
+                                                    {setupPasswordReady ? (
+                                                        <LocalizedText
+                                                            text={
+                                                                "현재 명령은 유효한 비밀번호 입력값으로 생성됩니다."
+                                                            }
+                                                        />
+                                                    ) : password ? (
+                                                        <LocalizedText
+                                                            text={
+                                                                "비밀번호 규칙을 모두 만족해야 이 명령을 복사할 수 있습니다."
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={
+                                                                "비밀번호 입력칸이 비어 있으면 명령에는 {0} 예시값이 표시됩니다."
+                                                            }
+                                                            values={[
+                                                                PASSWORD_PLACEHOLDER,
+                                                            ]}
+                                                        />
+                                                    )}
                                                 </p>
                                                 <button
                                                     type="button"
@@ -448,19 +558,25 @@ export default function LoginForm({
                                                                     strokeLinejoin="round"
                                                                 />
                                                             </svg>
-                                                            복사됨
+                                                            <LocalizedText
+                                                                text={"복사됨"}
+                                                            />
                                                         </>
                                                     ) : !setupPasswordReady ? (
-                                                        "비밀번호 규칙 확인 필요"
+                                                        <LocalizedText text="비밀번호 규칙 확인 필요" />
                                                     ) : (
-                                                        "복사"
+                                                        <LocalizedText text="복사" />
                                                     )}
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="space-y-1 text-xs">
                                             <p className="font-semibold">
-                                                `AUTH_SECRET` 생성 명령
+                                                <LocalizedText
+                                                    text={
+                                                        "`AUTH_SECRET` 생성 명령"
+                                                    }
+                                                />
                                             </p>
                                             <div className="space-y-2">
                                                 <code
@@ -511,10 +627,12 @@ export default function LoginForm({
                                                                     strokeLinejoin="round"
                                                                 />
                                                             </svg>
-                                                            복사됨
+                                                            <LocalizedText
+                                                                text={"복사됨"}
+                                                            />
                                                         </>
                                                     ) : (
-                                                        "복사"
+                                                        <LocalizedText text="복사" />
                                                     )}
                                                 </button>
                                             </div>
@@ -522,12 +640,18 @@ export default function LoginForm({
                                     </>
                                 )}
                                 <p className="text-xs">
-                                    Vercel 사용 시 Project Settings →
-                                    Environment Variables에 값을 추가 후 재배포
+                                    <LocalizedText
+                                        text={
+                                            "Vercel 사용 시 Project Settings → Environment Variables에 값을 추가 후 재배포"
+                                        }
+                                    />
                                 </p>
                                 <p className="text-xs">
-                                    로컬 개발 시 프로젝트 루트의 `.env.local`
-                                    파일에 같은 값을 추가
+                                    <LocalizedText
+                                        text={
+                                            "로컬 개발 시 프로젝트 루트의 `.env.local` 파일에 같은 값을 추가"
+                                        }
+                                    />
                                 </p>
                             </div>
                         )}
@@ -537,13 +661,15 @@ export default function LoginForm({
                             className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
                         >
                             <p className="text-sm font-semibold text-(--color-foreground)">
-                                관리자 로그인
+                                <LocalizedText text={"관리자 로그인"} />
                             </p>
                             {/* 스크린리더용 숨김 레이블 */}
                             <label htmlFor="admin-email" className="sr-only">
-                                이메일
+                                <LocalizedText text={"이메일"} />
                             </label>
-                            <input
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 id="admin-email"
                                 type="email"
                                 value={email}
@@ -553,9 +679,17 @@ export default function LoginForm({
                                 className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
                             />
                             <label htmlFor="admin-password" className="sr-only">
-                                비밀번호
+                                <LocalizedText text={"비밀번호"} />
                             </label>
-                            <input
+                            <LocalizedElement
+                                as="input"
+                                messageProps={{
+                                    placeholder: setupReady
+                                        ? "••••••••"
+                                        : {
+                                              text: "원하는 관리자 비밀번호 입력",
+                                          },
+                                }}
                                 id="admin-password"
                                 type={setupReady ? "password" : "text"}
                                 value={password}
@@ -579,7 +713,11 @@ export default function LoginForm({
                                 disabled={loading || !setupReady}
                                 className="w-full rounded-2xl bg-(--color-accent) py-3 text-sm font-bold text-(--color-on-accent) transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {loading ? "로그인 중..." : "로그인"}
+                                {loading ? (
+                                    <LocalizedText text={"로그인 중..."} />
+                                ) : (
+                                    <LocalizedText text={"로그인"} />
+                                )}
                             </button>
                         </form>
                     </div>
@@ -605,7 +743,7 @@ export default function LoginForm({
                                 d="M15 19l-7-7 7-7"
                             />
                         </svg>
-                        사이트로 돌아가기
+                        <LocalizedText text={"사이트로 돌아가기"} />
                     </a>
                 </p>
             </div>

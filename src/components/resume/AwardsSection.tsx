@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { Search } from "lucide-react";
 import type { ResumeAward } from "@/types/resume";
 import EducationMetadata from "@/components/resume/EducationMetadata";
@@ -35,7 +36,7 @@ export default function AwardsSection({
             data-pdf-block={dataPdfBlock ? true : undefined}
         >
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {label}
+                {serverT(label)}
             </h2>
             <div className="space-y-4">
                 {awards.map((award, index) => {
@@ -56,8 +57,10 @@ export default function AwardsSection({
                                     src={image}
                                     alt={
                                         award.image
-                                            ? `${title || "수상"} 증서`
-                                            : "수상 증서 예시"
+                                            ? serverT("{0} 증서", [
+                                                  title || { text: "수상" },
+                                              ])
+                                            : serverT("수상 증서 예시")
                                     }
                                     width={210}
                                     height={297}

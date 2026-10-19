@@ -1,10 +1,12 @@
+import { formatBirthDateForUI } from "@/lib/resume-display";
+
+import { serverT } from "@/lib/server-i18n";
 import { Fragment, type ReactNode } from "react";
 import type {
     Resume,
     ResumeBasicsPresentation,
     ResumeCoreCompetency,
 } from "@/types/resume";
-import { formatResumeBirthDate } from "@/lib/resume-basics-presentation";
 import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
@@ -37,7 +39,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || serverT("진행 중")}`;
 };
 
 export default async function ResumeModern({
@@ -58,7 +60,7 @@ export default async function ResumeModern({
         const sec = (resume as Record<string, unknown>)[key] as
             | { emoji?: string; showEmoji?: boolean }
             | undefined;
-        return getResumeSectionLabel(key, sec, qualifier);
+        return getResumeSectionLabel(key, sec, qualifier, serverT);
     };
 
     // work markdown 렌더링
@@ -81,7 +83,7 @@ export default async function ResumeModern({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("coreCompetencies")}
+                {serverT(getLabel("coreCompetencies"))}
             </h2>
             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
@@ -128,7 +130,7 @@ export default async function ResumeModern({
     const renderWork = () => (
         <section key="work" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("work")}
+                {serverT(getLabel("work"))}
             </h2>
             <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
                 {workEntries.map((workItem, wIdx) => (
@@ -275,7 +277,7 @@ export default async function ResumeModern({
     const renderEducation = () => (
         <section key="education" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("education")}
+                {serverT(getLabel("education"))}
             </h2>
             <div>
                 {(resume.education?.entries ?? []).map((education, idx) => (
@@ -324,7 +326,8 @@ export default async function ResumeModern({
                         />
                         {education.courses && education.courses.length > 0 ? (
                             <div className="mt-2 text-sm leading-relaxed text-(--color-muted)">
-                                주요 과목: {education.courses.join(" · ")}
+                                {serverT("주요 과목: ")}
+                                {education.courses.join(" · ")}
                             </div>
                         ) : null}
                     </div>
@@ -336,7 +339,7 @@ export default async function ResumeModern({
     const renderVolunteer = () => (
         <section key="volunteer" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("volunteer")}
+                {serverT(getLabel("volunteer"))}
             </h2>
             <div className="flex flex-col gap-4">
                 {(resume.volunteer?.entries ?? []).map((v, idx) => (
@@ -411,7 +414,7 @@ export default async function ResumeModern({
     const renderCertificates = () => (
         <section key="certificates" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("certificates")}
+                {serverT(getLabel("certificates"))}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.certificates?.entries ?? []).map((cert, idx) => (
@@ -459,7 +462,7 @@ export default async function ResumeModern({
     const renderPublications = () => (
         <section key="publications" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("publications")}
+                {serverT(getLabel("publications"))}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.publications?.entries ?? []).map((pub, idx) => (
@@ -522,7 +525,7 @@ export default async function ResumeModern({
     const renderInterests = () => (
         <section key="interests" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("interests")}
+                {serverT(getLabel("interests"))}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.interests?.entries ?? []).map((it, idx) => (
@@ -557,7 +560,7 @@ export default async function ResumeModern({
     const renderReferences = () => (
         <section key="references" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {getLabel("references")}
+                {serverT(getLabel("references"))}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.references?.entries ?? []).map((ref, idx) => (
@@ -656,9 +659,9 @@ export default async function ResumeModern({
               basics.location.region,
               basics.location.postalCode,
               basics.location.countryCode === "KR"
-                  ? "대한민국"
+                  ? serverT("대한민국")
                   : basics.location.countryCode === "US"
-                    ? "미국"
+                    ? serverT("미국")
                     : basics.location.countryCode,
           ]
               .filter(Boolean)
@@ -667,7 +670,7 @@ export default async function ResumeModern({
     if (visible.location && location) {
         metadataItems.push({
             key: "location",
-            label: "위치",
+            label: "주소",
             value: <span>{location}</span>,
         });
     }
@@ -677,9 +680,10 @@ export default async function ResumeModern({
             label: "생년월일",
             value: (
                 <span>
-                    {formatResumeBirthDate(
+                    {formatBirthDateForUI(
                         basics.birthDate,
-                        basicsPresentation.personalDetailPreset
+                        basicsPresentation.personalDetailPreset,
+                        serverT
                     )}
                 </span>
             ),
@@ -720,7 +724,9 @@ export default async function ResumeModern({
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`${brand.label} 프로필 열기`}
+                                aria-label={serverT("{0} 프로필 열기", [
+                                    brand.label,
+                                ])}
                                 style={{
                                     backgroundColor: brand.backgroundColor,
                                     color: brand.foregroundColor,
@@ -807,7 +813,7 @@ export default async function ResumeModern({
                                     : "text-(--color-muted)"
                             }`}
                         >
-                            {item.label}
+                            {serverT(item.label)}
                         </p>
                         <div
                             className={`mt-1 text-base text-(--color-foreground) ${

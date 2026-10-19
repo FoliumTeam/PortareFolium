@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
 import type {
     CropRect,
@@ -32,17 +33,19 @@ export default function VideoGifSettingsForm({
         <div className="space-y-5 rounded-2xl border border-(--color-border) bg-(--color-surface) p-4">
             <div>
                 <h3 className="text-lg font-bold text-(--color-foreground)">
-                    GIF 설정
+                    <LocalizedText text={"GIF 설정"} />
                 </h3>
                 <p className="text-sm text-(--color-muted)">
-                    해상도는 현재 crop 영역보다 커질 수 없습니다.
+                    <LocalizedText
+                        text={"해상도는 현재 crop 영역보다 커질 수 없습니다."}
+                    />
                 </p>
             </div>
 
             <div className="tablet:grid-cols-2 grid gap-3">
                 <label className="space-y-1 text-sm">
                     <span className="font-medium text-(--color-muted)">
-                        시작 시간 (초)
+                        <LocalizedText text={"시작 시간 (초)"} />
                     </span>
                     <input
                         type="number"
@@ -63,7 +66,7 @@ export default function VideoGifSettingsForm({
                 </label>
                 <label className="space-y-1 text-sm">
                     <span className="font-medium text-(--color-muted)">
-                        종료 시간 (초)
+                        <LocalizedText text={"종료 시간 (초)"} />
                     </span>
                     <input
                         type="number"
@@ -90,7 +93,7 @@ export default function VideoGifSettingsForm({
                         htmlFor="video-gif-playback-speed"
                         className="text-sm font-medium text-(--color-muted)"
                     >
-                        재생 속도
+                        <LocalizedText text={"재생 속도"} />
                     </label>
                     <input
                         type="number"
@@ -127,15 +130,18 @@ export default function VideoGifSettingsForm({
                     className="w-full"
                 />
                 <p className="text-xs text-(--color-muted)">
-                    1.0×는 원본 속도입니다. 값이 커질수록 결과 GIF가 더 빠르게
-                    재생됩니다.
+                    <LocalizedText
+                        text={
+                            "1.0×는 원본 속도입니다. 값이 커질수록 결과 GIF가 더 빠르게 재생됩니다."
+                        }
+                    />
                 </p>
             </div>
 
             <div className="grid gap-3">
                 <label className="space-y-1 text-sm">
                     <span className="font-medium text-(--color-muted)">
-                        FPS
+                        <LocalizedText text={"FPS"} />
                     </span>
                     <input
                         type="number"
@@ -162,7 +168,7 @@ export default function VideoGifSettingsForm({
                         htmlFor="video-gif-compression-rate"
                         className="text-sm font-medium text-(--color-muted)"
                     >
-                        압축률
+                        <LocalizedText text={"압축률"} />
                     </label>
                     <div className="flex items-center gap-2">
                         <input
@@ -202,10 +208,11 @@ export default function VideoGifSettingsForm({
                     className="w-full"
                 />
                 <p className="text-xs text-(--color-muted)">
-                    권장값은 25–40%입니다. 0%는 색상과 움직임을 최대한 보존해
-                    파일이 큽니다. 50% 이상은 프레임을 줄여 더 작아지지만
-                    움직임이 덜 부드러울 수 있고, 80% 이상은 유사 프레임 제거가
-                    강해져 짧은 미리보기용에 적합합니다.
+                    <LocalizedText
+                        text={
+                            "권장값은 25–40%입니다. 0%는 색상과 움직임을 최대한 보존해 파일이 큽니다. 50% 이상은 프레임을 줄여 더 작아지지만 움직임이 덜 부드러울 수 있고, 80% 이상은 유사 프레임 제거가 강해져 짧은 미리보기용에 적합합니다."
+                        }
+                    />
                 </p>
             </div>
 
@@ -215,7 +222,7 @@ export default function VideoGifSettingsForm({
                         htmlFor="video-gif-output-scale"
                         className="text-sm font-medium text-(--color-muted)"
                     >
-                        출력 해상도
+                        <LocalizedText text={"출력 해상도"} />
                     </label>
                     <div className="flex items-center gap-2">
                         <input
@@ -255,14 +262,18 @@ export default function VideoGifSettingsForm({
                     className="w-full"
                 />
                 <p className="text-xs text-(--color-muted)">
-                    현재 출력: {settings.outputWidth} × {settings.outputHeight}
-                    px. 100%는 crop 영역의 원본 해상도입니다.
+                    <LocalizedRichText
+                        text={
+                            "현재 출력: {0} × {1}px. 100%는 crop 영역의 원본 해상도입니다."
+                        }
+                        values={[settings.outputWidth, settings.outputHeight]}
+                    />
                 </p>
             </div>
 
             <div>
                 <h4 className="mb-2 text-sm font-bold text-(--color-foreground)">
-                    Crop 영역
+                    <LocalizedText text={"Crop 영역"} />
                 </h4>
                 <div className="tablet:grid-cols-4 grid gap-3">
                     {(
@@ -275,7 +286,7 @@ export default function VideoGifSettingsForm({
                     ).map(([key, label, max]) => (
                         <label key={key} className="space-y-1 text-sm">
                             <span className="font-medium text-(--color-muted)">
-                                {label}
+                                {<LocalizedText text={label} />}
                             </span>
                             <input
                                 type="number"

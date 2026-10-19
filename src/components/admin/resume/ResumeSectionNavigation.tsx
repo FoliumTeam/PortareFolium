@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedElement,
+    LocalizedText,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import type { JobFieldItem } from "@/components/admin/JobFieldSelector";
 import type { ResumeSectionLayout } from "@/lib/resume-layout";
@@ -51,16 +56,25 @@ export const ResumeSectionNavigation = ({
     ];
 
     return (
-        <nav
+        <LocalizedElement
+            as="nav"
+            translatedProps={["aria-label"]}
             aria-label="이력서 편집 섹션"
             className="mt-3 flex shrink-0 flex-col gap-2 rounded-xl border border-(--color-border) bg-(--color-surface) p-3"
         >
             <div className="flex flex-wrap gap-2 text-xs font-medium">
                 <span className="rounded-md bg-(--color-surface-subtle) px-2 py-1 text-(--color-muted)">
-                    관리자 편집 가능
+                    <LocalizedText text={"관리자 편집 가능"} />
                 </span>
                 <span className="rounded-md bg-blue-500/15 px-2 py-1 text-blue-700 dark:text-blue-300">
-                    현재 직무 분야: {activeJobFieldName || "전체"}
+                    <LocalizedRichText
+                        text={"현재 직무 분야: {0}"}
+                        values={[
+                            activeJobFieldName || (
+                                <LocalizedText text={"전체"} />
+                            ),
+                        ]}
+                    />
                 </span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -82,7 +96,7 @@ export const ResumeSectionNavigation = ({
                                     : "border-(--color-border) text-(--color-foreground) hover:border-(--color-accent)/50"
                             }`}
                         >
-                            {section.label}
+                            {<LocalizedText text={section.label} />}
                             <span
                                 className={`rounded px-1.5 py-0.5 text-xs ${
                                     isActive
@@ -92,12 +106,16 @@ export const ResumeSectionNavigation = ({
                                           : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
                                 }`}
                             >
-                                {isPublic ? "공개" : "비공개"}
+                                {isPublic ? (
+                                    <LocalizedText text={"공개"} />
+                                ) : (
+                                    <LocalizedText text={"비공개"} />
+                                )}
                             </span>
                         </button>
                     );
                 })}
             </div>
-        </nav>
+        </LocalizedElement>
     );
 };

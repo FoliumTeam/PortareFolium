@@ -1,5 +1,5 @@
 import { setRequestLocale } from "@/lib/content-locale";
-import { normalizeLocale } from "@/lib/i18n";
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PortfolioPageContent from "@/app/(frontend)/portfolio/portfolio-content";
@@ -18,10 +18,15 @@ export async function generateMetadata({
     const target = await resolvePublicRouteTarget((await params).jobField);
     if (!target) return {};
     if (target.kind === "job-field") {
-        return getSeoMetadata(target.jobField.id, { title: "Portfolio" });
+        return getSeoMetadata(target.jobField.id, {
+            title: serverT("Portfolio"),
+        });
     }
     if (!target.profile.public_snapshot) return {};
-    return { title: "Portfolio", robots: { index: false, follow: false } };
+    return {
+        title: serverT("Portfolio"),
+        robots: { index: false, follow: false },
+    };
 }
 
 export default async function JobFieldPortfolioPage({ params }: PageProps) {

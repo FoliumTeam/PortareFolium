@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useUITranslation } from "@/components/LocaleProvider";
 import { signOut } from "next-auth/react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -90,6 +91,7 @@ type AdminDashboardProps = {
 export default function AdminDashboard({
     refugeMode = false,
 }: AdminDashboardProps) {
+    const uiT = useUITranslation();
     const allowedTabs: readonly TabId[] = refugeMode
         ? REFUGE_ADMIN_TABS
         : VALID_TABS;
@@ -166,7 +168,9 @@ export default function AdminDashboard({
                 if (remaining <= WARN_BEFORE_MS && !warnedRef.current) {
                     warnedRef.current = true;
                     const extend = window.confirm(
-                        "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                        uiT(
+                            "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                        )
                     );
                     if (extend) {
                         lastActivityRef.current = Date.now();
@@ -186,7 +190,7 @@ export default function AdminDashboard({
                 handleVisibilityChange
             );
         };
-    }, []);
+    }, [uiT]);
 
     // 패널에서 편집 상태 변경 시 hash 업데이트
     const handleEditPathChange = (path: string) => {

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -88,7 +89,13 @@ export default function Header({
                 </Link>
 
                 {/* 햄버거: 모바일만 */}
-                <button
+                <LocalizedElement
+                    as="button"
+                    messageProps={{
+                        "aria-label": open
+                            ? { text: "메뉴 닫기" }
+                            : { text: "메뉴 열기" },
+                    }}
                     type="button"
                     className="tablet:hidden rounded-md p-2 text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                     aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
@@ -126,7 +133,7 @@ export default function Header({
                             />
                         </svg>
                     )}
-                </button>
+                </LocalizedElement>
 
                 {/* 네비 */}
                 <div
@@ -148,7 +155,7 @@ export default function Header({
                             }
                             onClick={() => setOpen(false)}
                         >
-                            {label}
+                            {<LocalizedText text={label} />}
                         </Link>
                     ))}
                     {/* 구분선 */}
@@ -159,7 +166,9 @@ export default function Header({
                     {!isApplicationProfile && (
                         <GlobalSearch jobField={profileJobField} />
                     )}
-                    <a
+                    <LocalizedElement
+                        as="a"
+                        translatedProps={["aria-label"]}
                         href={githubUrl || "https://github.com/"}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -178,7 +187,7 @@ export default function Header({
                                 clipRule="evenodd"
                             />
                         </svg>
-                    </a>
+                    </LocalizedElement>
                     {themeMode === "system" && <ThemeToggle />}
                     <LanguageSelector />
                     <UserMenu />

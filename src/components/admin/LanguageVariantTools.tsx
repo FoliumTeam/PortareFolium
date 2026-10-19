@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
@@ -90,34 +91,44 @@ export const LanguageVariantTools = ({
                         }
                     }}
                 >
-                    {published
-                        ? "Published · 비공개로 변경"
-                        : "Draft · 검토 후 공개"}
+                    {published ? (
+                        <LocalizedText text={"Published · 비공개로 변경"} />
+                    ) : (
+                        <LocalizedText text={"Draft · 검토 후 공개"} />
+                    )}
                 </button>
             )}
             <details>
                 <summary className="cursor-pointer font-medium">
-                    다른 언어에서 복사
+                    <LocalizedText text={"다른 언어에서 복사"} />
                 </summary>
                 <div className="flex flex-wrap items-center gap-2 py-3">
                     {initialKind === "portfolio" && (
                         <label>
-                            콘텐츠 종류{" "}
-                            <select
+                            <LocalizedText text={"콘텐츠 종류"} />{" "}
+                            <LocalizedElement
+                                as="select"
+                                translatedProps={["aria-label"]}
                                 aria-label="콘텐츠 종류"
                                 value={kind}
                                 onChange={(event) =>
                                     setKind(event.target.value as VariantKind)
                                 }
                             >
-                                <option value="portfolio">Portfolio</option>
-                                <option value="book">Books</option>
-                            </select>
+                                <option value="portfolio">
+                                    <LocalizedText text={"Portfolio"} />
+                                </option>
+                                <option value="book">
+                                    <LocalizedText text={"Books"} />
+                                </option>
+                            </LocalizedElement>
                         </label>
                     )}
                     <label>
-                        원본 언어{" "}
-                        <select
+                        <LocalizedText text={"원본 언어"} />{" "}
+                        <LocalizedElement
+                            as="select"
+                            translatedProps={["aria-label"]}
                             aria-label="원본 언어"
                             className="rounded-md border border-(--color-border) bg-(--color-surface) p-2"
                             value={source}
@@ -132,12 +143,14 @@ export const LanguageVariantTools = ({
                                     </option>
                                 )
                             )}
-                        </select>
+                        </LocalizedElement>
                     </label>
                     {!documentKind && (
                         <label>
-                            원본 항목{" "}
-                            <select
+                            <LocalizedText text={"원본 항목"} />{" "}
+                            <LocalizedElement
+                                as="select"
+                                translatedProps={["aria-label"]}
                                 aria-label="원본 항목"
                                 value={slug}
                                 onChange={(event) =>
@@ -145,13 +158,15 @@ export const LanguageVariantTools = ({
                                 }
                                 className="max-w-72 rounded-md border border-(--color-border) bg-(--color-surface) p-2"
                             >
-                                <option value="">항목 선택</option>
+                                <option value="">
+                                    <LocalizedText text={"항목 선택"} />
+                                </option>
                                 {items.map((item) => (
                                     <option key={item.slug} value={item.slug}>
                                         {item.title}
                                     </option>
                                 ))}
-                            </select>
+                            </LocalizedElement>
                         </label>
                     )}
                     <button
@@ -175,17 +190,20 @@ export const LanguageVariantTools = ({
                             }
                         }}
                     >
-                        현재 언어에 Draft 복사
+                        <LocalizedText text={"현재 언어에 Draft 복사"} />
                     </button>
                     <p className="basis-full text-(--color-muted)">
-                        기존 내용 덮어쓰기 없이 복사. 번역 검토·저장 후 공개
-                        필요.
+                        <LocalizedText
+                            text={
+                                "기존 내용 덮어쓰기 없이 복사. 번역 검토·저장 후 공개 필요."
+                            }
+                        />
                     </p>
                 </div>
             </details>
             {error && (
                 <p role="alert" className="text-red-600">
-                    {error}
+                    {<LocalizedText text={error} />}
                 </p>
             )}
         </div>

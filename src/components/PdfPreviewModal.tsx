@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -307,7 +308,9 @@ export default function PdfPreviewModal({
             {/* 사이드바 컨트롤 */}
             <div className="relative z-10 flex w-72 shrink-0 flex-col border-r border-zinc-700 bg-zinc-900 text-white">
                 <div className="flex items-center justify-between border-b border-zinc-700 px-4 py-3">
-                    <h2 className="text-sm font-semibold">PDF 내보내기</h2>
+                    <h2 className="text-sm font-semibold">
+                        <LocalizedText text={"PDF 내보내기"} />
+                    </h2>
                     <button
                         onClick={onClose}
                         className="rounded p-1 transition-colors hover:bg-zinc-700"
@@ -320,7 +323,7 @@ export default function PdfPreviewModal({
                     {/* 컬러 스킴 선택 */}
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-zinc-400">
-                            Color Scheme
+                            <LocalizedText text={"Color Scheme"} />
                         </label>
                         <div className="relative" ref={dropdownRef}>
                             <button
@@ -336,7 +339,13 @@ export default function PdfPreviewModal({
                                     }}
                                 />
                                 <span className="flex-1">
-                                    {currentScheme?.label ?? scheme}
+                                    {
+                                        <LocalizedText
+                                            text={
+                                                currentScheme?.label ?? scheme
+                                            }
+                                        />
+                                    }
                                 </span>
                                 <ChevronDown
                                     className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
@@ -359,7 +368,13 @@ export default function PdfPreviewModal({
                                                     backgroundColor: opt.swatch,
                                                 }}
                                             />
-                                            <span>{opt.label}</span>
+                                            <span>
+                                                {
+                                                    <LocalizedText
+                                                        text={opt.label}
+                                                    />
+                                                }
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -371,7 +386,7 @@ export default function PdfPreviewModal({
                     {sections && sections.length > 0 && (
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-zinc-400">
-                                Sections
+                                <LocalizedText text={"Sections"} />
                             </label>
                             <div className="space-y-1.5">
                                 {sections.map((s) => (
@@ -390,7 +405,9 @@ export default function PdfPreviewModal({
                                             }
                                             className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-white"
                                         />
-                                        <span>{s.label}</span>
+                                        <span>
+                                            {<LocalizedText text={s.label} />}
+                                        </span>
                                     </label>
                                 ))}
                             </div>
@@ -400,10 +417,15 @@ export default function PdfPreviewModal({
                     {/* 페이지 정보 */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-zinc-400">
-                            Pages
+                            <LocalizedText text={"Pages"} />
                         </label>
                         <p className="text-sm text-zinc-300">
-                            {totalPages} {totalPages === 1 ? "page" : "pages"}
+                            {totalPages}{" "}
+                            {totalPages === 1 ? (
+                                <LocalizedText text={"page"} />
+                            ) : (
+                                <LocalizedText text={"pages"} />
+                            )}
                         </p>
                     </div>
                 </div>
@@ -420,7 +442,11 @@ export default function PdfPreviewModal({
                         ) : (
                             <Download className="h-4 w-4" />
                         )}
-                        {generating ? "생성 중..." : "PDF 다운로드"}
+                        {generating ? (
+                            <LocalizedText text={"생성 중..."} />
+                        ) : (
+                            <LocalizedText text={"PDF 다운로드"} />
+                        )}
                     </button>
                 </div>
             </div>

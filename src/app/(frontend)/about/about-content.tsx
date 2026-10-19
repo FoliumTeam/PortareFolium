@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import { serverClient } from "@/lib/supabase";
 import AboutView from "@/components/AboutView";
@@ -55,7 +56,7 @@ export default async function AboutPageContent({
         return (
             <div className="py-12">
                 <p className="text-sm text-red-500">
-                    About 데이터를 불러오지 못했습니다
+                    {serverT("About 데이터를 불러오지 못했습니다")}
                 </p>
             </div>
         );

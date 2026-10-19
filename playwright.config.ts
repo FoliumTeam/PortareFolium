@@ -112,6 +112,7 @@ export default defineConfig({
     reporter: process.env.CI ? "github" : "html",
     use: {
         baseURL,
+        locale: "ko-KR",
         trace: "on-first-retry",
         screenshot: "only-on-failure",
     },

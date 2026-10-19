@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { ResumeCareerPhase } from "@/types/resume";
 
 interface Props {
@@ -18,7 +19,7 @@ export default function CareerPhasesSection({
     return (
         <section className="mb-10" data-pdf-block>
             <h2 className="mb-4 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {label}
+                {serverT(label)}
             </h2>
             {/* 수평 진행 바 */}
             <div className="mb-5 flex gap-1">
@@ -46,7 +47,8 @@ export default function CareerPhasesSection({
                         className={`${idx === 0 ? "pr-6" : idx === sorted.length - 1 ? "pl-6" : "px-6"}`}
                     >
                         <p className="mb-0.5 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                            PHASE {phase.phase}
+                            {serverT("PHASE ")}
+                            {phase.phase}
                         </p>
                         {phase.startDate || phase.endDate ? (
                             <p
@@ -56,7 +58,8 @@ export default function CareerPhasesSection({
                                 }}
                             >
                                 {phase.startDate?.slice(0, 7)} ~{" "}
-                                {phase.endDate?.slice(0, 7) || "진행 중"}
+                                {phase.endDate?.slice(0, 7) ||
+                                    serverT("진행 중")}
                             </p>
                         ) : null}
                         {phase.name ? (

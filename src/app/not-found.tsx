@@ -3,8 +3,38 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { LocaleProvider, useUILocale } from "@/components/LocaleProvider";
+import { LocalizedText } from "@/components/LocalizedText";
+import { getBrowserLocale, isLocale, UI_LOCALE_COOKIE } from "@/lib/i18n";
 
-export default function NotFound() {
+const FALLBACK_MESSAGES = {
+    "페이지를 찾을 수 없습니다": "Page not found",
+    "요청하신 페이지가 존재하지 않습니다.":
+        "The requested page does not exist.",
+    "{0}초 후 홈페이지로 자동으로 이동합니다.":
+        "Returning to the home page in {0} seconds.",
+    "홈으로 이동": "Go home",
+};
+
+const DetectNotFoundLanguage = () => {
+    const { changeLocale } = useUILocale();
+    useEffect(() => {
+        const saved = document.cookie
+            .split(";")
+            .map((part) => part.trim())
+            .find((part) => part.startsWith(`${UI_LOCALE_COOKIE}=`))
+            ?.split("=")[1];
+        void changeLocale(
+            isLocale(saved)
+                ? saved
+                : getBrowserLocale(navigator.languages.join(",")),
+            { persist: false }
+        );
+    }, []);
+    return null;
+};
+
+const NotFoundContent = () => {
     const router = useRouter();
     const [countdown, setCountdown] = useState(5);
 
@@ -23,19 +53,33 @@ export default function NotFound() {
                 404
             </p>
             <h1 className="mb-3 text-2xl font-bold text-(--color-foreground)">
-                페이지를 찾을 수 없습니다
+                <LocalizedText text="페이지를 찾을 수 없습니다" />
             </h1>
             <p className="mb-8 leading-relaxed text-(--color-muted)">
-                요청하신 페이지가 존재하지 않습니다.
+                <LocalizedText text="요청하신 페이지가 존재하지 않습니다." />
                 <br />
-                <span>{countdown}</span>초 후 홈페이지로 자동으로 이동합니다.
+                <LocalizedText
+                    text="{0}초 후 홈페이지로 자동으로 이동합니다."
+                    values={[countdown]}
+                />
             </p>
             <Link
                 href="/"
                 className="rounded-lg bg-(--color-accent) px-6 py-3 font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
             >
-                홈으로 이동
+                <LocalizedText text="홈으로 이동" />
             </Link>
         </div>
+    );
+};
+
+export default function NotFound() {
+    const { provided } = useUILocale();
+    if (provided) return <NotFoundContent />;
+    return (
+        <LocaleProvider initialLocale="en" initialMessages={FALLBACK_MESSAGES}>
+            <DetectNotFoundLanguage />
+            <NotFoundContent />
+        </LocaleProvider>
     );
 }

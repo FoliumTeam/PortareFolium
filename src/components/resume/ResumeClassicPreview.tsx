@@ -1,4 +1,11 @@
 "use client";
+import { formatBirthDateForUI } from "@/lib/resume-display";
+import { useUITranslation } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { Fragment } from "react";
 import type {
@@ -13,10 +20,7 @@ import {
     resolveSectionOrder,
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
-import {
-    formatResumeBirthDate,
-    formatResumeMilitary,
-} from "@/lib/resume-basics-presentation";
+import { formatResumeMilitary } from "@/lib/resume-basics-presentation";
 
 interface Props {
     resume: Resume;
@@ -26,13 +30,14 @@ interface Props {
     activeJobField?: string;
 }
 
-const formatDateRange = (
+const formatDateRangeValue = (
     startDate?: string,
     endDate?: string,
-    hideDays?: boolean
+    hideDays?: boolean,
+    ongoing = "진행 중"
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || ongoing}`;
 };
 
 // Layout editor 전용 sync preview — markdown 렌더링, portfolio fetch 스킵
@@ -43,6 +48,12 @@ export default function ResumeClassicPreview({
     basicsPresentation,
     activeJobField,
 }: Props) {
+    const uiT = useUITranslation();
+    const formatDateRange = (
+        startDate?: string,
+        endDate?: string,
+        hideDays?: boolean
+    ) => formatDateRangeValue(startDate, endDate, hideDays, uiT("진행 중"));
     const basics = resume.basics ?? {};
     const visible = basicsPresentation.visibility;
     const resolvedOrder = resolveSectionOrder(resume, sectionLayout);
@@ -51,12 +62,12 @@ export default function ResumeClassicPreview({
         const sec = (resume as Record<string, unknown>)[key] as
             | { emoji?: string; showEmoji?: boolean }
             | undefined;
-        return getResumeSectionLabel(key, sec);
+        return getResumeSectionLabel(key, sec, undefined, uiT);
     };
 
     const sectionH2 = (title: string) => (
         <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-            {title}
+            {<LocalizedText text={title} />}
         </h2>
     );
 
@@ -109,7 +120,10 @@ export default function ResumeClassicPreview({
                             className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                         >
                             <p className="mb-0.5 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                                PHASE {phase.phase}
+                                <LocalizedRichText
+                                    text={"PHASE {0}"}
+                                    values={[phase.phase]}
+                                />
                             </p>
                             {phase.name ? (
                                 <h3 className="mb-1 text-base font-bold text-(--color-foreground)">
@@ -222,7 +236,9 @@ export default function ResumeClassicPreview({
     const renderProjects = () => (
         <section key="projects" className="mb-10">
             {sectionH2(
-                `${activeJobField ? "대표 " : ""}${getLabel("projects")}`
+                activeJobField
+                    ? uiT("대표 {0}", [getLabel("projects")])
+                    : getLabel("projects")
             )}
             <div className="flex flex-col gap-4">
                 {(resume.projects?.entries ?? []).map((p, idx) => (
@@ -338,7 +354,9 @@ export default function ResumeClassicPreview({
                 >[]
             ),
         languages: () => (
-            <LanguagesSection
+            <LocalizedElement
+                as={LanguagesSection}
+                translatedProps={["label"]}
                 languages={resume.languages?.entries ?? []}
                 label={getLabel("languages")}
             />
@@ -390,7 +408,7 @@ export default function ResumeClassicPreview({
                 {visible.email && basics.email ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            Email
+                            <LocalizedText text={"Email"} />
                         </strong>
                         <p className="mt-1 text-base break-all text-(--color-link)">
                             {basics.email}
@@ -400,7 +418,7 @@ export default function ResumeClassicPreview({
                 {visible.phone && basics.phone ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            Phone
+                            <LocalizedText text={"Phone"} />
                         </strong>
                         <p className="mt-1 text-base text-(--color-link)">
                             {basics.phone}
@@ -410,7 +428,7 @@ export default function ResumeClassicPreview({
                 {visible.url && basics.url ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            Website
+                            <LocalizedText text={"Website"} />
                         </strong>
                         <p className="mt-1 text-base break-all text-(--color-link)">
                             {basics.url}
@@ -420,16 +438,16 @@ export default function ResumeClassicPreview({
                 {visible.location && basics.location ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            Location
+                            <LocalizedText text={"Location"} />
                         </strong>
                         <p className="mt-1 text-base text-(--color-foreground)">
                             {[
                                 basics.location.city,
                                 basics.location.region,
                                 basics.location.countryCode === "KR"
-                                    ? "대한민국"
+                                    ? uiT("대한민국")
                                     : basics.location.countryCode === "US"
-                                      ? "미국"
+                                      ? uiT("미국")
                                       : basics.location.countryCode,
                             ]
                                 .filter(Boolean)
@@ -440,12 +458,13 @@ export default function ResumeClassicPreview({
                 {visible.birthDate && basics.birthDate ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            생년월일
+                            <LocalizedText text={"생년월일"} />
                         </strong>
                         <p className="mt-1 text-base text-(--color-foreground)">
-                            {formatResumeBirthDate(
+                            {formatBirthDateForUI(
                                 basics.birthDate,
-                                basicsPresentation.personalDetailPreset
+                                basicsPresentation.personalDetailPreset,
+                                uiT
                             )}
                         </p>
                     </div>
@@ -453,7 +472,7 @@ export default function ResumeClassicPreview({
                 {visible.military && basics.military?.status ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            병역
+                            <LocalizedText text={"병역"} />
                         </strong>
                         <p className="mt-1 text-base text-(--color-foreground)">
                             {formatResumeMilitary(
@@ -466,7 +485,7 @@ export default function ResumeClassicPreview({
                 {visible.profiles && basics.profiles?.length ? (
                     <div>
                         <strong className="text-xs tracking-widest text-(--color-muted) uppercase">
-                            Profiles
+                            <LocalizedText text={"Profiles"} />
                         </strong>
                         <div className="mt-1 space-y-1">
                             {basics.profiles.map((profile, index) => (

@@ -1,5 +1,5 @@
 import { setRequestLocale } from "@/lib/content-locale";
-import { normalizeLocale } from "@/lib/i18n";
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ResumePageContent from "@/app/(frontend)/resume/resume-content";
@@ -18,10 +18,13 @@ export async function generateMetadata({
     const target = await resolvePublicRouteTarget((await params).jobField);
     if (!target) return {};
     if (target.kind === "job-field") {
-        return getSeoMetadata(target.jobField.id, { title: "Resume" });
+        return getSeoMetadata(target.jobField.id, { title: serverT("Resume") });
     }
     if (!target.profile.public_snapshot) return {};
-    return { title: "Resume", robots: { index: false, follow: false } };
+    return {
+        title: serverT("Resume"),
+        robots: { index: false, follow: false },
+    };
 }
 
 export default async function JobFieldResumePage({ params }: PageProps) {

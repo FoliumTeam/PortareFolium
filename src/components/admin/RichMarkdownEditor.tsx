@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
@@ -241,7 +242,13 @@ export default function RichMarkdownEditor({
                                     contentEditable={false}
                                     className="relative inline-flex max-w-full align-top leading-none"
                                 >
-                                    <img
+                                    <LocalizedElement
+                                        as="img"
+                                        messageProps={{
+                                            title:
+                                                (node.attrs.title as string) ||
+                                                undefined,
+                                        }}
                                         src={node.attrs.src as string}
                                         alt={(node.attrs.alt as string) ?? ""}
                                         title={
@@ -268,15 +275,23 @@ export default function RichMarkdownEditor({
                                                                 .src as string
                                                         );
                                                         toast.success(
-                                                            "썸네일로 설정됨"
+                                                            <LocalizedText
+                                                                text={
+                                                                    "썸네일로 설정됨"
+                                                                }
+                                                            />
                                                         );
                                                     }}
                                                     className="rounded bg-(--color-accent) px-2 py-1 text-xs font-medium whitespace-nowrap text-(--color-on-accent)"
                                                 >
-                                                    썸네일로 설정
+                                                    <LocalizedText
+                                                        text={"썸네일로 설정"}
+                                                    />
                                                 </button>
                                             )}
-                                        <button
+                                        <LocalizedElement
+                                            as="button"
+                                            translatedProps={["aria-label"]}
                                             type="button"
                                             contentEditable={false}
                                             aria-label="이미지 삭제"
@@ -287,10 +302,12 @@ export default function RichMarkdownEditor({
                                             className="rounded bg-red-600 p-1.5 text-white transition-opacity hover:opacity-90"
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
+                                        </LocalizedElement>
                                     </span>
                                 </span>
-                                <ImageDeleteConfirmDialog
+                                <LocalizedElement
+                                    as={ImageDeleteConfirmDialog}
+                                    translatedProps={["title", "description"]}
                                     open={confirmOpen}
                                     onOpenChange={setConfirmOpen}
                                     title="이미지 삭제 확인"
@@ -346,7 +363,7 @@ export default function RichMarkdownEditor({
                 hasThumbnailAction: () => Boolean(onSetThumbnailRef.current),
                 onSetThumbnail: (url) => {
                     onSetThumbnailRef.current?.(url);
-                    toast.success("썸네일로 설정됨");
+                    toast.success(<LocalizedText text={"썸네일로 설정됨"} />);
                 },
             }),
             Placeholder.configure({
@@ -438,7 +455,7 @@ export default function RichMarkdownEditor({
                     "[RichMarkdownEditor::handleInsertImageGroup] group insert 실패",
                     error
                 );
-                toast.error("다중 이미지 삽입 실패");
+                toast.error(<LocalizedText text={"다중 이미지 삽입 실패"} />);
                 throw error;
             }
         },
@@ -608,7 +625,7 @@ export default function RichMarkdownEditor({
                                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                                     />
                                 </svg>
-                                에셋 이전 중...
+                                <LocalizedText text={"에셋 이전 중..."} />
                             </div>
                         </div>
                     )}
@@ -637,14 +654,16 @@ export default function RichMarkdownEditor({
                             }
                         />
                         {isFullscreen && (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["title", "aria-label"]}
                                 onClick={() => setIsFullscreen(false)}
                                 className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                                 title="전체화면 종료"
                                 aria-label="전체화면 종료"
                             >
                                 ✕
-                            </button>
+                            </LocalizedElement>
                         )}
                     </div>
 

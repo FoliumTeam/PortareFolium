@@ -1,5 +1,5 @@
 import { setRequestLocale } from "@/lib/content-locale";
-import { normalizeLocale } from "@/lib/i18n";
+import { serverT } from "@/lib/server-i18n";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BlogListContent from "@/app/(frontend)/blog/blog-list-content";
@@ -18,10 +18,10 @@ export async function generateMetadata({
     const target = await resolvePublicRouteTarget((await params).jobField);
     if (!target) return {};
     if (target.kind === "job-field") {
-        return getSeoMetadata(target.jobField.id, { title: "Blog" });
+        return getSeoMetadata(target.jobField.id, { title: serverT("Blog") });
     }
     if (!target.profile.public_snapshot) return {};
-    return { title: "Blog", robots: { index: false, follow: false } };
+    return { title: serverT("Blog"), robots: { index: false, follow: false } };
 }
 
 export default async function JobFieldBlogPage({ params }: PageProps) {

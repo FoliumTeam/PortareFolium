@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 /**
  * TagSelector
@@ -70,7 +71,7 @@ export default function TagSelector({
     if (loading) {
         return (
             <div className={`text-base text-(--color-muted) ${className}`}>
-                태그 불러오는 중...
+                <LocalizedText text={"태그 불러오는 중..."} />
             </div>
         );
     }
@@ -79,9 +80,15 @@ export default function TagSelector({
         return (
             <div className={`space-y-2 ${className}`}>
                 <p className="text-base text-(--color-muted)">
-                    등록된 태그가 없습니다. Admin → 태그에서 먼저 추가하세요.
+                    <LocalizedText
+                        text={
+                            "등록된 태그가 없습니다. Admin → 태그에서 먼저 추가하세요."
+                        }
+                    />
                 </p>
-                <input
+                <LocalizedElement
+                    as="input"
+                    translatedProps={["placeholder"]}
                     type="text"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -104,7 +111,14 @@ export default function TagSelector({
                                 className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-base text-amber-800 dark:border-amber-600 dark:bg-amber-950/30 dark:text-amber-200"
                             >
                                 {slug}
-                                <button
+                                <LocalizedElement
+                                    as="button"
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "{0} 제거",
+                                            values: [slug],
+                                        },
+                                    }}
                                     type="button"
                                     onClick={() => removeOrphan(slug)}
                                     disabled={disabled}
@@ -112,7 +126,7 @@ export default function TagSelector({
                                     aria-label={`${slug} 제거`}
                                 >
                                     ×
-                                </button>
+                                </LocalizedElement>
                             </span>
                         ))}
                     </>
@@ -148,7 +162,11 @@ export default function TagSelector({
                 })}
             </div>
             <p className="text-sm text-(--color-muted)">
-                클릭하여 선택/해제. 새 태그는 Admin → 태그에서 추가.
+                <LocalizedText
+                    text={
+                        "클릭하여 선택/해제. 새 태그는 Admin → 태그에서 추가."
+                    }
+                />
             </p>
         </div>
     );

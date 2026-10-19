@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import {
     type ReactNode,
@@ -126,7 +127,9 @@ function FilmstripThumbnail({
     }, [candidates]);
 
     return (
-        <button
+        <LocalizedElement
+            as="button"
+            translatedProps={["aria-label"]}
             type="button"
             aria-label="filmstrip 이미지로 이동"
             aria-current={active ? "true" : undefined}
@@ -159,7 +162,7 @@ function FilmstripThumbnail({
                     <Play className="h-5 w-5 fill-white text-white" />
                 </span>
             )}
-        </button>
+        </LocalizedElement>
     );
 }
 
@@ -178,7 +181,7 @@ function LightboxTooltipButton({
                 className="z-[130] bg-white text-black"
                 arrowClassName="bg-white fill-white"
             >
-                {label}
+                {<LocalizedText text={label} />}
             </TooltipContent>
         </Tooltip>
     );
@@ -535,7 +538,9 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
 
     return createPortal(
         <TooltipProvider delayDuration={120}>
-            <div
+            <LocalizedElement
+                as="div"
+                translatedProps={["aria-label"]}
                 role="dialog"
                 aria-modal="true"
                 aria-label="이미지 확대 보기"
@@ -675,8 +680,14 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                             >
                                 {current.type === "image" && (
                                     <>
-                                        <LightboxTooltipButton label="축소">
-                                            <button
+                                        <LocalizedElement
+                                            as={LightboxTooltipButton}
+                                            translatedProps={["label"]}
+                                            label="축소"
+                                        >
+                                            <LocalizedElement
+                                                as="button"
+                                                translatedProps={["aria-label"]}
                                                 type="button"
                                                 aria-label="축소"
                                                 onClick={(e) => {
@@ -690,10 +701,16 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                                 className={controlButtonClass}
                                             >
                                                 <ZoomOut className="h-4 w-4" />
-                                            </button>
-                                        </LightboxTooltipButton>
-                                        <LightboxTooltipButton label="확대">
-                                            <button
+                                            </LocalizedElement>
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={LightboxTooltipButton}
+                                            translatedProps={["label"]}
+                                            label="확대"
+                                        >
+                                            <LocalizedElement
+                                                as="button"
+                                                translatedProps={["aria-label"]}
                                                 type="button"
                                                 aria-label="확대"
                                                 onClick={(e) => {
@@ -707,10 +724,16 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                                 className={controlButtonClass}
                                             >
                                                 <ZoomIn className="h-4 w-4" />
-                                            </button>
-                                        </LightboxTooltipButton>
-                                        <LightboxTooltipButton label="확대 초기화">
-                                            <button
+                                            </LocalizedElement>
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={LightboxTooltipButton}
+                                            translatedProps={["label"]}
+                                            label="확대 초기화"
+                                        >
+                                            <LocalizedElement
+                                                as="button"
+                                                translatedProps={["aria-label"]}
                                                 type="button"
                                                 aria-label="확대 초기화"
                                                 onClick={(e) => {
@@ -720,12 +743,14 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                                 className={controlButtonClass}
                                             >
                                                 <RotateCcw className="h-4 w-4" />
-                                            </button>
-                                        </LightboxTooltipButton>
+                                            </LocalizedElement>
+                                        </LocalizedElement>
                                     </>
                                 )}
 
-                                <button
+                                <LocalizedElement
+                                    as="button"
+                                    translatedProps={["aria-label"]}
                                     type="button"
                                     aria-label="loop 토글"
                                     aria-pressed={loopEnabled}
@@ -739,12 +764,22 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                 >
                                     <Repeat className="h-4 w-4" />
                                     <span>
-                                        {loopEnabled ? "Loop On" : "Loop Off"}
+                                        {loopEnabled ? (
+                                            <LocalizedText text={"Loop On"} />
+                                        ) : (
+                                            <LocalizedText text={"Loop Off"} />
+                                        )}
                                     </span>
-                                </button>
+                                </LocalizedElement>
 
-                                <LightboxTooltipButton label="닫기">
-                                    <button
+                                <LocalizedElement
+                                    as={LightboxTooltipButton}
+                                    translatedProps={["label"]}
+                                    label="닫기"
+                                >
+                                    <LocalizedElement
+                                        as="button"
+                                        translatedProps={["aria-label"]}
                                         type="button"
                                         aria-label="닫기"
                                         onClick={(e) => {
@@ -754,14 +789,16 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                         className={controlButtonClass}
                                     >
                                         <X className="h-5 w-5" />
-                                    </button>
-                                </LightboxTooltipButton>
+                                    </LocalizedElement>
+                                </LocalizedElement>
                             </div>
                         </div>
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <button
+                                <LocalizedElement
+                                    as="button"
+                                    translatedProps={["aria-label"]}
                                     type="button"
                                     aria-label="이전 이미지"
                                     disabled={!canGoPrev}
@@ -772,7 +809,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                     className={`${navButtonClass} left-4 sm:left-6`}
                                 >
                                     <ChevronLeft className="h-7 w-7" />
-                                </button>
+                                </LocalizedElement>
                             </TooltipTrigger>
                             <TooltipContent
                                 side="right"
@@ -780,13 +817,15 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                 className="z-[130] bg-white text-black"
                                 arrowClassName="bg-white fill-white"
                             >
-                                이전 이미지
+                                <LocalizedText text={"이전 이미지"} />
                             </TooltipContent>
                         </Tooltip>
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <button
+                                <LocalizedElement
+                                    as="button"
+                                    translatedProps={["aria-label"]}
                                     type="button"
                                     aria-label="다음 이미지"
                                     disabled={!canGoNext}
@@ -797,7 +836,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                     className={`${navButtonClass} right-4 sm:right-6`}
                                 >
                                     <ChevronRight className="h-7 w-7" />
-                                </button>
+                                </LocalizedElement>
                             </TooltipTrigger>
                             <TooltipContent
                                 side="left"
@@ -805,7 +844,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                 className="z-[130] bg-white text-black"
                                 arrowClassName="bg-white fill-white"
                             >
-                                다음 이미지
+                                <LocalizedText text={"다음 이미지"} />
                             </TooltipContent>
                         </Tooltip>
 
@@ -867,8 +906,14 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                 />
                             </div>
                         ) : (
-                            <LightboxTooltipButton label="영상 재생">
-                                <button
+                            <LocalizedElement
+                                as={LightboxTooltipButton}
+                                translatedProps={["label"]}
+                                label="영상 재생"
+                            >
+                                <LocalizedElement
+                                    as="button"
+                                    translatedProps={["aria-label"]}
                                     type="button"
                                     aria-label="영상 재생"
                                     onClick={(e) => {
@@ -889,8 +934,8 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                             <Play className="h-8 w-8 fill-white text-white" />
                                         </span>
                                     </span>
-                                </button>
-                            </LightboxTooltipButton>
+                                </LocalizedElement>
+                            </LocalizedElement>
                         )}
 
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-linear-to-t from-black/88 via-black/45 to-transparent px-4 pt-24 pb-4 sm:px-6 sm:pb-6">
@@ -939,7 +984,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </LocalizedElement>
         </TooltipProvider>,
         document.body
     );

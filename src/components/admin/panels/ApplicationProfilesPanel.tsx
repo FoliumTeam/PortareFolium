@@ -1,4 +1,10 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
+
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useMemo, useState } from "react";
@@ -115,7 +121,7 @@ export default function ApplicationProfilesPanel() {
 
     const persist = async () => {
         if (!name.trim() || !parentJobField) {
-            toast.error("이름과 부모 직무 분야 필요");
+            toast.error(<LocalizedText text={"이름과 부모 직무 분야 필요"} />);
             return;
         }
         setSaving(true);
@@ -136,10 +142,20 @@ export default function ApplicationProfilesPanel() {
               });
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
-        toast.success(selected ? "지원 프로필 저장" : "지원 프로필 생성");
+        toast.success(
+            <LocalizedText
+                text={
+                    selected ? (
+                        <LocalizedText text={"지원 프로필 저장"} />
+                    ) : (
+                        <LocalizedText text={"지원 프로필 생성"} />
+                    )
+                }
+            />
+        );
         await load();
         setSelectedId(result.profile.id);
     };
@@ -155,10 +171,10 @@ export default function ApplicationProfilesPanel() {
         const result = await action(selected.id, selected.version);
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
-        toast.success("공개본 상태 갱신");
+        toast.success(<LocalizedText text={"공개본 상태 갱신"} />);
         await load();
     };
 
@@ -168,16 +184,18 @@ export default function ApplicationProfilesPanel() {
         const result = await issueApplicationProfileDraftToken(selected.id);
         setSaving(false);
         if (!result.success) {
-            toast.error(result.error);
+            toast.error(<LocalizedText text={result.error} />);
             return;
         }
         setDraftToken(result.token);
-        toast.success("초안 전용 MCP 토큰 발급");
+        toast.success(<LocalizedText text={"초안 전용 MCP 토큰 발급"} />);
     };
 
     if (loading)
         return (
-            <p className="text-sm text-(--color-muted)">지원 프로필 조회 중</p>
+            <p className="text-sm text-(--color-muted)">
+                <LocalizedText text={"지원 프로필 조회 중"} />
+            </p>
         );
 
     return (
@@ -196,7 +214,7 @@ export default function ApplicationProfilesPanel() {
                         onClick={() => selectProfile(null)}
                         className="mb-3 w-full rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-bold text-(--color-on-accent)"
                     >
-                        새 지원 프로필
+                        <LocalizedText text={"새 지원 프로필"} />
                     </button>
                     <div className="space-y-2">
                         {profiles.map((profile) => (
@@ -211,10 +229,14 @@ export default function ApplicationProfilesPanel() {
                                 </p>
                                 <p className="mt-1 text-xs text-(--color-muted)">
                                     {profile.parent_job_field} ·{" "}
-                                    {profile.status}
-                                    {profile.needsUpdate
-                                        ? " · 업데이트 가능"
-                                        : ""}
+                                    {<LocalizedText text={profile.status} />}
+                                    {profile.needsUpdate ? (
+                                        <LocalizedText
+                                            text={" · 업데이트 가능"}
+                                        />
+                                    ) : (
+                                        ""
+                                    )}
                                 </p>
                             </button>
                         ))}
@@ -222,16 +244,21 @@ export default function ApplicationProfilesPanel() {
                 </aside>
                 <section className="min-w-0 flex-1 overflow-y-auto rounded-2xl border border-(--color-border) bg-(--color-surface) p-6">
                     <h1 className="text-2xl font-black text-(--color-foreground)">
-                        지원 프로필
+                        <LocalizedText text={"지원 프로필"} />
                     </h1>
                     <p className="mt-2 text-sm leading-relaxed text-(--color-muted)">
-                        JD별 공개본을 부모 직무 분야에서 만들고, 이 화면의
-                        수정사항과 공개 상태를 별도로 관리합니다.
+                        <LocalizedText
+                            text={
+                                "JD별 공개본을 부모 직무 분야에서 만들고, 이 화면의 수정사항과 공개 상태를 별도로 관리합니다."
+                            }
+                        />
                     </p>
                     <div className="mt-6 grid gap-5">
                         <label className="grid gap-2 text-sm font-semibold">
-                            프로필 이름
-                            <input
+                            <LocalizedText text={"프로필 이름"} />
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 value={name}
                                 onChange={(event) =>
                                     setName(event.target.value)
@@ -242,7 +269,7 @@ export default function ApplicationProfilesPanel() {
                             />
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            부모 직무 분야
+                            <LocalizedText text={"부모 직무 분야"} />
                             <select
                                 value={parentJobField}
                                 disabled={Boolean(selected)}
@@ -259,8 +286,10 @@ export default function ApplicationProfilesPanel() {
                             </select>
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            Job description
-                            <textarea
+                            <LocalizedText text={"Job description"} />
+                            <LocalizedElement
+                                as="textarea"
+                                translatedProps={["placeholder"]}
                                 value={jobDescription}
                                 onChange={(event) =>
                                     setJobDescription(event.target.value)
@@ -271,8 +300,10 @@ export default function ApplicationProfilesPanel() {
                             />
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            포트폴리오 우선 순서
-                            <input
+                            <LocalizedText text={"포트폴리오 우선 순서"} />
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 value={formatList(overrides.portfolioOrder)}
                                 onChange={(event) =>
                                     setOverrides((current) => ({
@@ -287,8 +318,10 @@ export default function ApplicationProfilesPanel() {
                             />
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            제외할 포트폴리오
-                            <input
+                            <LocalizedText text={"제외할 포트폴리오"} />
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 value={formatList(
                                     overrides.excludedPortfolioSlugs
                                 )}
@@ -305,7 +338,7 @@ export default function ApplicationProfilesPanel() {
                             />
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            이력서 headline
+                            <LocalizedText text={"이력서 headline"} />
                             <input
                                 value={overrides.headline ?? ""}
                                 onChange={(event) =>
@@ -319,7 +352,7 @@ export default function ApplicationProfilesPanel() {
                             />
                         </label>
                         <label className="grid gap-2 text-sm font-semibold">
-                            이력서 summary
+                            <LocalizedText text={"이력서 summary"} />
                             <textarea
                                 value={overrides.summary ?? ""}
                                 onChange={(event) =>
@@ -341,7 +374,11 @@ export default function ApplicationProfilesPanel() {
                             disabled={saving}
                             className="rounded-lg bg-(--color-accent) px-4 py-2 font-bold text-(--color-on-accent) disabled:opacity-60"
                         >
-                            {saving ? "저장 중" : "저장"}
+                            {saving ? (
+                                <LocalizedText text={"저장 중"} />
+                            ) : (
+                                <LocalizedText text={"저장"} />
+                            )}
                         </button>
                         {selected?.needsUpdate && (
                             <button
@@ -354,7 +391,7 @@ export default function ApplicationProfilesPanel() {
                                 disabled={saving}
                                 className="rounded-lg border border-(--color-border) px-4 py-2 font-bold"
                             >
-                                부모 변경 적용
+                                <LocalizedText text={"부모 변경 적용"} />
                             </button>
                         )}
                         {selected && (
@@ -368,7 +405,7 @@ export default function ApplicationProfilesPanel() {
                                 disabled={saving}
                                 className="rounded-lg border border-(--color-border) px-4 py-2 font-bold"
                             >
-                                공개본 확정
+                                <LocalizedText text={"공개본 확정"} />
                             </button>
                         )}
                         {selected?.status === "published" && (
@@ -382,7 +419,7 @@ export default function ApplicationProfilesPanel() {
                                 disabled={saving}
                                 className="rounded-lg border border-red-500 px-4 py-2 font-bold text-red-600"
                             >
-                                링크 폐기
+                                <LocalizedText text={"링크 폐기"} />
                             </button>
                         )}
                         {selected && (
@@ -392,7 +429,7 @@ export default function ApplicationProfilesPanel() {
                                 disabled={saving}
                                 className="rounded-lg border border-(--color-border) px-4 py-2 font-bold"
                             >
-                                초안 MCP 토큰 발급
+                                <LocalizedText text={"초안 MCP 토큰 발급"} />
                             </button>
                         )}
                         {selected?.status === "published" && (
@@ -402,18 +439,24 @@ export default function ApplicationProfilesPanel() {
                                 rel="noreferrer"
                                 className="rounded-lg border border-(--color-border) px-4 py-2 font-bold"
                             >
-                                공개 미리보기
+                                <LocalizedText text={"공개 미리보기"} />
                             </a>
                         )}
                     </div>
                     {selected?.status === "published" && (
                         <p className="mt-5 rounded-lg bg-(--color-surface-subtle) p-3 text-sm text-(--color-muted)">
-                            공유 URL: {selected.publicUrl}
+                            <LocalizedRichText
+                                text={"공유 URL: {0}"}
+                                values={[selected.publicUrl]}
+                            />
                         </p>
                     )}
                     {draftToken && (
                         <p className="mt-3 rounded-lg border border-amber-400 bg-amber-50 p-3 text-sm break-all text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
-                            초안 MCP 토큰: {draftToken}
+                            <LocalizedRichText
+                                text={"초안 MCP 토큰: {0}"}
+                                values={[draftToken]}
+                            />
                         </p>
                     )}
                 </section>

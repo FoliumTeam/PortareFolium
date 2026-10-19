@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { notFound, redirect } from "next/navigation";
 import { getContentLocale } from "@/lib/content-locale";
 import Link from "next/link";
@@ -42,7 +43,7 @@ export async function generateMetadata({
 
 const formatDateRange = (startDate: string, endDate: string): string => {
     if (!startDate && !endDate) return "";
-    return `${startDate || "시작일 미정"} — ${endDate || "진행 중"}`;
+    return `${startDate || serverT("시작일 미정")} — ${endDate || serverT("진행 중")}`;
 };
 
 const formatTeamMemberLabel = (member: string, role: string): string => {
@@ -107,7 +108,7 @@ const ProjectHeroMedia = ({ media }: { media?: PortfolioMedia }) => {
                             href={media.src}
                             className="inline-flex items-center gap-1 font-semibold text-(--color-accent) underline-offset-4 hover:underline"
                         >
-                            Video 원본
+                            {serverT("Video 원본")}
                             <ArrowUpRight
                                 className="h-3.5 w-3.5"
                                 aria-hidden="true"
@@ -176,10 +177,11 @@ export default async function PortfolioDetailContent({
             {preview && (
                 <aside
                     className="mb-6 rounded-xl border border-amber-400 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"
-                    aria-label="관리자 Draft 미리보기"
+                    aria-label={serverT("관리자 Draft 미리보기")}
                 >
-                    관리자 전용 Draft 미리보기입니다. 공개 페이지에는 마지막
-                    Published 버전만 표시됩니다.
+                    {serverT(
+                        "관리자 전용 Draft 미리보기입니다. 공개 페이지에는 마지막 Published 버전만 표시됩니다."
+                    )}
                 </aside>
             )}
             <Link
@@ -187,12 +189,14 @@ export default async function PortfolioDetailContent({
                 className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                포트폴리오
+                {serverT("포트폴리오")}
             </Link>
 
             <header className="mt-8 max-w-4xl" data-pdf-block>
                 <p className="mb-3 text-xs font-bold tracking-[0.2em] text-(--color-accent) uppercase">
-                    {isV2 ? "프로젝트 기록" : "이전 프로젝트 기록"}
+                    {isV2
+                        ? serverT("프로젝트 기록")
+                        : serverT("이전 프로젝트 기록")}
                 </p>
                 <h1 className="tablet:text-5xl text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                     {project.title}
@@ -209,20 +213,20 @@ export default async function PortfolioDetailContent({
             {project.keywords.length > 0 && (
                 <section className="mt-10" aria-labelledby="technology-heading">
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        Technical stack
+                        {serverT("Technical stack")}
                     </p>
                     <h2
                         id="technology-heading"
                         className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        사용 기술
+                        {serverT("사용 기술")}
                     </h2>
                     {project.caseStudyStyle === "web" ? (
                         <TechnicalStack keywords={project.keywords} />
                     ) : (
                         <div
                             className="mt-5 flex flex-wrap gap-2"
-                            aria-label="사용 기술"
+                            aria-label={serverT("사용 기술")}
                         >
                             {project.keywords.map((keyword) => (
                                 <SkillBadge key={keyword} name={keyword} />
@@ -239,7 +243,7 @@ export default async function PortfolioDetailContent({
                 {project.role && (
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
-                            역할
+                            {serverT("역할")}
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {project.role}
@@ -250,10 +254,12 @@ export default async function PortfolioDetailContent({
                     <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-(--color-muted) uppercase">
                             <Users className="h-3.5 w-3.5" aria-hidden="true" />
-                            인원
+                            {serverT("인원")}
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
-                            {project.teamSize}명
+                            {serverT(project.teamSize === 1 ? "1명" : "{0}명", [
+                                project.teamSize,
+                            ])}
                         </p>
                         {teamMembers.length > 0 && (
                             <ul className="mt-3 space-y-1.5 text-base leading-relaxed text-(--color-muted)">
@@ -294,7 +300,7 @@ export default async function PortfolioDetailContent({
                                 className="h-3.5 w-3.5"
                                 aria-hidden="true"
                             />
-                            기간
+                            {serverT("기간")}
                         </p>
                         <p className="font-semibold text-(--color-foreground)">
                             {dateRange}
@@ -310,13 +316,13 @@ export default async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        목표
+                        {serverT("목표")}
                     </p>
                     <h2
                         id="project-goal-heading"
                         className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        프로젝트 목표
+                        {serverT("프로젝트 목표")}
                     </h2>
                     <div className="mt-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
                         {goalItems.length > 1 ? (
@@ -350,13 +356,13 @@ export default async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        담당 범위
+                        {serverT("담당 범위")}
                     </p>
                     <h2
                         id="ownership-heading"
                         className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        제가 맡은 일
+                        {serverT("제가 맡은 일")}
                     </h2>
                     <div className="mt-5 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
                         <ul className="space-y-3">
@@ -387,13 +393,13 @@ export default async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        결과
+                        {serverT("결과")}
                     </p>
                     <h2
                         id="outcomes-heading"
                         className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        결과와 근거
+                        {serverT("결과와 근거")}
                     </h2>
                     <div className="mt-5 flex flex-wrap gap-3 [&>*]:min-w-[min(100%,15rem)] [&>*]:flex-1">
                         {project.outcomes.map((outcome) => (
@@ -419,7 +425,7 @@ export default async function PortfolioDetailContent({
             {project.links.length > 0 && (
                 <section
                     className="mt-10"
-                    aria-label="프로젝트 링크"
+                    aria-label={serverT("프로젝트 링크")}
                     data-pdf-block
                 >
                     <PortfolioActions links={project.links} />
@@ -461,13 +467,13 @@ export default async function PortfolioDetailContent({
                     data-pdf-block
                 >
                     <p className="mb-2 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        더 읽을거리
+                        {serverT("더 읽을거리")}
                     </p>
                     <h2
                         id="devlogs-heading"
                         className="text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        개발 기록
+                        {serverT("개발 기록")}
                     </h2>
                     <ul className="mt-4 space-y-2">
                         {project.devlogs.map((devlog) => (
@@ -495,13 +501,13 @@ export default async function PortfolioDetailContent({
             >
                 <div>
                     <p className="text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                        다음 프로젝트
+                        {serverT("다음 프로젝트")}
                     </p>
                     <h2
                         id="next-project-heading"
                         className="mt-1 text-xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        다른 프로젝트도 확인해 보세요
+                        {serverT("다른 프로젝트도 확인해 보세요")}
                     </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -509,7 +515,7 @@ export default async function PortfolioDetailContent({
                         href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        포트폴리오 목록
+                        {serverT("포트폴리오 목록")}
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                     {jobField && (
@@ -517,7 +523,7 @@ export default async function PortfolioDetailContent({
                             href={`/${jobField}/about`}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-foreground) transition-colors hover:border-(--color-accent) hover:text-(--color-accent) focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
                         >
-                            연락하기
+                            {serverT("연락하기")}
                         </Link>
                     )}
                 </div>
@@ -525,7 +531,7 @@ export default async function PortfolioDetailContent({
 
             <MermaidRenderer
                 selector={contentSelector}
-                label="portfolio slug"
+                label={serverT("portfolio slug")}
             />
             <ImageLightbox contentSelector=".portfolio-case-study" />
         </div>

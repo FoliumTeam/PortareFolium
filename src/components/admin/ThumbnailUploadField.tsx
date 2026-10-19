@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 /**
  * ThumbnailUploadField
@@ -60,13 +61,15 @@ export default function ThumbnailUploadField({
     return (
         <div className="space-y-2">
             <label className="block text-base font-medium text-(--color-muted)">
-                썸네일
+                <LocalizedText text={"썸네일"} />
             </label>
 
             {/* 미리보기 */}
             {value && (
                 <div className="flex items-start gap-3">
-                    <img
+                    <LocalizedElement
+                        as="img"
+                        translatedProps={["alt"]}
                         src={value}
                         alt="썸네일 미리보기"
                         className="h-20 w-20 rounded-lg border border-(--color-border) object-cover"
@@ -101,7 +104,11 @@ export default function ThumbnailUploadField({
                             : "hover:border-(--color-accent) hover:bg-(--color-surface-subtle)"
                     } text-(--color-foreground)`}
                 >
-                    {uploading ? "업로드 중..." : "파일 선택"}
+                    {uploading ? (
+                        <LocalizedText text={"업로드 중..."} />
+                    ) : (
+                        <LocalizedText text={"파일 선택"} />
+                    )}
                 </label>
                 {value && (
                     <button
@@ -110,10 +117,12 @@ export default function ThumbnailUploadField({
                         disabled={uploading}
                         className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        삭제
+                        <LocalizedText text={"삭제"} />
                     </button>
                 )}
-                <input
+                <LocalizedElement
+                    as="input"
+                    translatedProps={["placeholder"]}
                     type="text"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
@@ -123,7 +132,9 @@ export default function ThumbnailUploadField({
             </div>
 
             {uploadError && (
-                <p className="text-sm text-red-500">{uploadError}</p>
+                <p className="text-sm text-red-500">
+                    {<LocalizedText text={uploadError} />}
+                </p>
             )}
         </div>
     );

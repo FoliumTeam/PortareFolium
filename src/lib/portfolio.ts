@@ -53,10 +53,11 @@ const formatPortfolioMonth = (value: string, fallback: string): string => {
 
 export const formatPortfolioMonthRange = (
     startDate: string,
-    endDate: string
+    endDate: string,
+    translate: (text: string) => string = (text) => text
 ): string => {
-    if (!startDate && !endDate) return "기간 미정";
-    return `${formatPortfolioMonth(startDate, "시작일 미정")} - ${formatPortfolioMonth(endDate, "진행 중")}`;
+    if (!startDate && !endDate) return translate("기간 미정");
+    return `${formatPortfolioMonth(startDate, translate("시작일 미정"))} - ${formatPortfolioMonth(endDate, translate("진행 중"))}`;
 };
 
 /** 팀 구성 문자열을 구성원별 항목으로 분리 */

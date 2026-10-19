@@ -1,32 +1,88 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    type ReactNode,
+} from "react";
 import { UI_LOCALE_COOKIE, type Locale } from "@/lib/i18n";
+import {
+    loadUIMessages,
+    translateUI,
+    type UIMessages,
+    type UIMessageValue,
+} from "@/lib/ui-messages";
 
 const LocaleContext = createContext({
     locale: "ko" as Locale,
-    changeLocale: (_locale: Locale) => {},
+    messages: {} as UIMessages,
+    changing: false,
+    provided: false,
+    error: "",
+    changeLocale: async (_locale: Locale, _options?: { persist?: boolean }) =>
+        true,
 });
 
 // 화면 문구의 언어와 관리자 입력 상태의 독립 유지
 export const LocaleProvider = ({
     initialLocale,
+    initialMessages = {},
     children,
 }: {
     initialLocale: Locale;
+    initialMessages?: UIMessages;
     children: ReactNode;
 }) => {
     const [locale, setLocale] = useState(initialLocale);
-    const changeLocale = (next: Locale) => {
-        document.cookie = `${UI_LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-        document.documentElement.lang = next;
-        setLocale(next);
+    const [messages, setMessages] = useState(initialMessages);
+    const [changing, setChanging] = useState(false);
+    const [error, setError] = useState("");
+    const changeLocale = async (
+        next: Locale,
+        options?: { persist?: boolean }
+    ) => {
+        setChanging(true);
+        setError("");
+        try {
+            const nextMessages = await loadUIMessages(next);
+            if (options?.persist !== false)
+                document.cookie = `${UI_LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+            document.documentElement.lang = next;
+            setLocale(next);
+            setMessages(nextMessages);
+            return true;
+        } catch {
+            setError("화면 언어를 불러오지 못했습니다. 다시 선택하세요.");
+            return false;
+        } finally {
+            setChanging(false);
+        }
     };
     return (
-        <LocaleContext.Provider value={{ locale, changeLocale }}>
+        <LocaleContext.Provider
+            value={{
+                locale,
+                messages,
+                changing,
+                provided: true,
+                error,
+                changeLocale,
+            }}
+        >
             {children}
         </LocaleContext.Provider>
     );
 };
 
 export const useUILocale = () => useContext(LocaleContext);
+
+export const useUITranslation = () => {
+    const { messages } = useUILocale();
+    return useCallback(
+        (text: string, values?: readonly UIMessageValue[]) =>
+            translateUI(text, messages, values),
+        [messages]
+    );
+};

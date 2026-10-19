@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -77,7 +82,8 @@ import {
     type PortfolioAdminItem,
     type PortfolioEditorForm,
 } from "@/lib/portfolio-admin";
-import { bindContentAction } from "@/lib/admin-content-state";
+import { bindContentAction, getEditingLocale } from "@/lib/admin-content-state";
+import type { Locale } from "@/lib/i18n";
 const rewriteEditorSnapshotUrls = bindContentAction(
     raw_rewriteEditorSnapshotUrls
 );
@@ -122,6 +128,88 @@ const PORTFOLIO_SHOWCASE_TEMPLATES = [
         content: `::portfolio-flow[]{steps='[{"title":"입력","description":"필요한 맥락과 목표 확인"},{"title":"구성","description":"규약과 구현 범위 정리"},{"title":"검증","description":"결과와 근거 확인"},{"title":"공개","description":"사용 가능한 결과 전달"}]'}`,
     },
 ];
+
+const getShowcaseTemplates = (locale: Locale) => {
+    if (locale === "ko") return PORTFOLIO_SHOWCASE_TEMPLATES;
+    const copy =
+        locale === "ja"
+            ? {
+                  feature: [
+                      {
+                          label: "主な機能",
+                          title: "機能の見出し",
+                          description: "プロジェクトの価値と実装の判断",
+                      },
+                      {
+                          label: "適用範囲",
+                          title: "対象",
+                          description: "利用者または開発の流れ",
+                      },
+                  ],
+                  owned: ["自分が管理する範囲", "検証基準と変更の境界"],
+                  outside: [
+                      "外部ツールまたは提供者の責任",
+                      "利用者の承認が必要な変更",
+                  ],
+                  steps: [
+                      { title: "入力", description: "必要な背景と目標を確認" },
+                      { title: "構成", description: "規約と実装範囲を整理" },
+                      { title: "検証", description: "結果と根拠を確認" },
+                      { title: "公開", description: "利用可能な結果を提供" },
+                  ],
+              }
+            : {
+                  feature: [
+                      {
+                          label: "Key feature",
+                          title: "Feature title",
+                          description:
+                              "Project value and implementation decisions",
+                      },
+                      {
+                          label: "Scope",
+                          title: "Target audience",
+                          description: "User or development workflow",
+                      },
+                  ],
+                  owned: [
+                      "Scope I manage",
+                      "Verification criteria and change boundaries",
+                  ],
+                  outside: [
+                      "Responsibilities of external tools or providers",
+                      "Changes requiring user approval",
+                  ],
+                  steps: [
+                      {
+                          title: "Input",
+                          description: "Confirm the context and goals",
+                      },
+                      {
+                          title: "Plan",
+                          description:
+                              "Define conventions and implementation scope",
+                      },
+                      {
+                          title: "Verify",
+                          description: "Check results and evidence",
+                      },
+                      {
+                          title: "Publish",
+                          description: "Deliver a usable result",
+                      },
+                  ],
+              };
+    const content = [
+        `::portfolio-feature-grid[]{items='${JSON.stringify(copy.feature)}'}`,
+        `::portfolio-boundary[]{owned='${JSON.stringify(copy.owned)}' outside='${JSON.stringify(copy.outside)}'}`,
+        `::portfolio-flow[]{steps='${JSON.stringify(copy.steps)}'}`,
+    ];
+    return PORTFOLIO_SHOWCASE_TEMPLATES.map((template, index) => ({
+        ...template,
+        content: content[index],
+    }));
+};
 
 const getItemJobFields = (item: PortfolioItem): string[] =>
     Array.from(
@@ -359,7 +447,11 @@ export default function PortfolioPanel({
     const openNew = (useCaseStudyTemplate = false) => {
         const jobField = getInitialJobFieldSelection(activeJobField);
         const base: ItemForm = useCaseStudyTemplate
-            ? createPortfolioTemplateForm(items.length, jobField)
+            ? createPortfolioTemplateForm(
+                  items.length,
+                  jobField,
+                  getEditingLocale()
+              )
             : {
                   ...EMPTY_FORM,
                   order_idx: items.length,
@@ -594,7 +686,9 @@ export default function PortfolioPanel({
     if (editPath && !editTarget && !editPathRestoredRef.current) {
         return (
             <div className="flex items-center justify-center py-20">
-                <span className="text-zinc-400">불러오는 중...</span>
+                <span className="text-zinc-400">
+                    <LocalizedText text={"불러오는 중..."} />
+                </span>
             </div>
         );
     }
@@ -609,7 +703,7 @@ export default function PortfolioPanel({
                         onClick={handleBack}
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        ← 목록
+                        <LocalizedText text={"← 목록"} />
                     </button>
                     <button
                         onClick={() =>
@@ -620,26 +714,35 @@ export default function PortfolioPanel({
                         }
                         className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        <ExternalLink size={15} />
-                        미리보기
+                        <LocalizedRichText
+                            text={"{0}미리보기"}
+                            values={[<ExternalLink size={15} />]}
+                        />
                     </button>
                     <button
                         onClick={() => setMetadataOpen(true)}
                         className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        <Settings size={15} />
-                        설정
+                        <LocalizedRichText
+                            text={"{0}설정"}
+                            values={[<Settings size={15} />]}
+                        />
                     </button>
                 </div>
                 <ContentEditorGuide kind="portfolio" />
                 <p className="text-center text-base text-(--color-muted)">
-                    저장 시 현재 공개 상태 유지. 공개·비공개 전환은 목록에서
-                    선택.
+                    <LocalizedText
+                        text={
+                            "저장 시 현재 공개 상태 유지. 공개·비공개 전환은 목록에서 선택."
+                        }
+                    />
                 </p>
 
                 {/* 제목 입력 */}
                 <div className="px-1">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={form.title}
                         onChange={(e) => {
@@ -690,14 +793,16 @@ export default function PortfolioPanel({
                             }}
                             className="shrink-0 rounded bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted) hover:text-(--color-foreground)"
                         >
-                            자동 생성
+                            <LocalizedText text={"자동 생성"} />
                         </button>
                     )}
                 </div>
 
                 {/* 본문 에디터 */}
                 <div className="tablet:min-h-0 min-h-[400px] flex-1">
-                    <RichMarkdownEditor
+                    <LocalizedElement
+                        as={RichMarkdownEditor}
+                        translatedProps={["placeholder"]}
                         value={form.content}
                         onChange={(c) => setForm((f) => ({ ...f, content: c }))}
                         placeholder="본문을 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
@@ -708,7 +813,9 @@ export default function PortfolioPanel({
                         onSetThumbnail={(url) =>
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
-                        showcaseTemplates={PORTFOLIO_SHOWCASE_TEMPLATES}
+                        showcaseTemplates={getShowcaseTemplates(
+                            getEditingLocale()
+                        )}
                         onImagesRemoved={(urls) => {
                             const folder = `portfolio/${form.slug || "untitled"}`;
                             const keys = urls.flatMap((u) =>
@@ -739,16 +846,19 @@ export default function PortfolioPanel({
                 <AdminSaveBar>
                     {error ? (
                         <span className="text-base font-medium text-red-500">
-                            {error}
+                            {<LocalizedText text={error} />}
                         </span>
                     ) : success ? (
                         <span className="text-base font-medium text-green-600">
-                            {success}
+                            {<LocalizedText text={success} />}
                         </span>
                     ) : (
                         <span className="text-base text-(--color-muted)">
-                            저장 시 현재 공개 상태 유지. 공개·비공개 전환은
-                            목록에서 선택.
+                            <LocalizedText
+                                text={
+                                    "저장 시 현재 공개 상태 유지. 공개·비공개 전환은 목록에서 선택."
+                                }
+                            />
                         </span>
                     )}
                     <div className="flex items-center gap-3">
@@ -758,18 +868,27 @@ export default function PortfolioPanel({
                             isDirty={isDirty}
                         />
                         <div className="flex items-center gap-3">
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": {
+                                        text: "임시 저장 열기: {0}/6",
+                                        values: [snapshotCount],
+                                    },
+                                }}
                                 type="button"
                                 onClick={() => setStateModalOpen(true)}
                                 className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-base font-semibold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-indigo-500 dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-500"
                                 aria-label={`임시 저장 열기: ${snapshotCount}/6`}
                             >
                                 <Clock3 className="h-4 w-4" />
-                                <span>임시 저장</span>
+                                <span>
+                                    <LocalizedText text={"임시 저장"} />
+                                </span>
                                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
                                     {snapshotCount}/6
                                 </span>
-                            </button>
+                            </LocalizedElement>
                             {editTarget !== "new" && (
                                 <button
                                     onClick={() =>
@@ -779,7 +898,7 @@ export default function PortfolioPanel({
                                     }
                                     className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    삭제
+                                    <LocalizedText text={"삭제"} />
                                 </button>
                             )}
                             <button
@@ -787,7 +906,11 @@ export default function PortfolioPanel({
                                 disabled={saving || !isDirty}
                                 className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
-                                {saving ? "저장 중..." : "저장"}
+                                {saving ? (
+                                    <LocalizedText text={"저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"저장"} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -981,12 +1104,14 @@ export default function PortfolioPanel({
                         <section className="mb-6 space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                             <div>
                                 <h3 className="text-xl font-bold text-(--color-foreground)">
-                                    목록 디자인
+                                    <LocalizedText text={"목록 디자인"} />
                                 </h3>
                                 <p className="mt-1 text-base text-(--color-muted)">
-                                    Portfolio 목록 페이지에만 적용됩니다.
-                                    프로젝트 상세 페이지는 현재 디자인을
-                                    유지합니다.
+                                    <LocalizedText
+                                        text={
+                                            "Portfolio 목록 페이지에만 적용됩니다. 프로젝트 상세 페이지는 현재 디자인을 유지합니다."
+                                        }
+                                    />
                                 </p>
                             </div>
                             <div className="tablet:grid-cols-2 grid gap-3">
@@ -1038,10 +1163,20 @@ export default function PortfolioPanel({
                                                 )}
                                             </span>
                                             <span className="block text-sm font-semibold text-(--color-foreground)">
-                                                {option.title}
+                                                {
+                                                    <LocalizedText
+                                                        text={option.title}
+                                                    />
+                                                }
                                             </span>
                                             <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                                {option.description}
+                                                {
+                                                    <LocalizedText
+                                                        text={
+                                                            option.description
+                                                        }
+                                                    />
+                                                }
                                             </span>
                                         </button>
                                     );
@@ -1058,27 +1193,40 @@ export default function PortfolioPanel({
                                 </span>
                                 <div>
                                     <p className="text-xs font-bold tracking-[0.16em] text-(--color-accent) uppercase">
-                                        Shared AI section
+                                        <LocalizedText
+                                            text={"Shared AI section"}
+                                        />
                                     </p>
                                     <h3 className="mt-1 text-xl font-bold text-(--color-foreground)">
-                                        AI 프로젝트 구역
+                                        <LocalizedText
+                                            text={"AI 프로젝트 구역"}
+                                        />
                                     </h3>
                                     <p className="mt-1 text-base leading-relaxed text-(--color-muted)">
-                                        선택한 프로젝트를 모든 직무 Portfolio의
-                                        기업 또는 개인 프로젝트 문맥 안에서 한
-                                        번씩 보여 줍니다.
+                                        <LocalizedText
+                                            text={
+                                                "선택한 프로젝트를 모든 직무 Portfolio의 기업 또는 개인 프로젝트 문맥 안에서 한 번씩 보여 줍니다."
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
                             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                                 <p className="text-sm font-semibold text-(--color-foreground)">
-                                    선택된 AI 프로젝트
+                                    <LocalizedText
+                                        text={"선택된 AI 프로젝트"}
+                                    />
                                 </p>
                                 <p className="mt-1 text-sm leading-relaxed text-(--color-muted)">
-                                    선택 순서대로 모든 직무 Portfolio의 AI
-                                    구역에 표시됩니다.
+                                    <LocalizedText
+                                        text={
+                                            "선택 순서대로 모든 직무 Portfolio의 AI 구역에 표시됩니다."
+                                        }
+                                    />
                                 </p>
-                                <div
+                                <LocalizedElement
+                                    as="div"
+                                    translatedProps={["aria-label"]}
                                     className="mt-3 flex flex-wrap gap-2"
                                     aria-label="선택된 AI 프로젝트"
                                 >
@@ -1093,23 +1241,35 @@ export default function PortfolioPanel({
                                         ))
                                     ) : (
                                         <span className="text-sm text-(--color-muted)">
-                                            선택된 프로젝트 없음
+                                            <LocalizedText
+                                                text={"선택된 프로젝트 없음"}
+                                            />
                                         </span>
                                     )}
-                                </div>
+                                </LocalizedElement>
                                 <details className="group mt-4 overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface)">
                                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-(--color-foreground) hover:bg-(--color-surface-subtle) [&::-webkit-details-marker]:hidden">
-                                        <span>AI 프로젝트 선택 변경</span>
+                                        <span>
+                                            <LocalizedText
+                                                text={"AI 프로젝트 선택 변경"}
+                                            />
+                                        </span>
                                         <span className="rounded-full bg-(--color-surface-subtle) px-2.5 py-1 text-xs text-(--color-muted)">
-                                            {selectedAiItems.length}개 선택
+                                            <LocalizedRichText
+                                                text={"{0}개 선택"}
+                                                values={[
+                                                    selectedAiItems.length,
+                                                ]}
+                                            />
                                         </span>
                                     </summary>
                                     <div className="border-t border-(--color-border) p-4">
                                         <p className="text-sm leading-relaxed text-(--color-muted)">
-                                            Published 프로젝트를 여러 개 선택할
-                                            수 있습니다. 선택한 순서대로
-                                            표시되며 직무 분야 연결 여부의
-                                            영향을 받지 않습니다.
+                                            <LocalizedText
+                                                text={
+                                                    "Published 프로젝트를 여러 개 선택할 수 있습니다. 선택한 순서대로 표시되며 직무 분야 연결 여부의 영향을 받지 않습니다."
+                                                }
+                                            />
                                         </p>
                                         <div className="tablet:grid-cols-2 mt-3 grid gap-2">
                                             {publishedItems.map((item) => {
@@ -1119,7 +1279,23 @@ export default function PortfolioPanel({
                                                     );
                                                 const selected = order >= 0;
                                                 return (
-                                                    <button
+                                                    <LocalizedElement
+                                                        as="button"
+                                                        messageProps={{
+                                                            "aria-label": {
+                                                                text: "{0} AI 구역 {1}",
+                                                                values: [
+                                                                    item.title,
+                                                                    selected
+                                                                        ? {
+                                                                              text: "제외",
+                                                                          }
+                                                                        : {
+                                                                              text: "포함",
+                                                                          },
+                                                                ],
+                                                            },
+                                                        }}
                                                         key={item.id}
                                                         type="button"
                                                         disabled={
@@ -1157,10 +1333,18 @@ export default function PortfolioPanel({
                                                         </span>
                                                         {selected && (
                                                             <span className="ml-2 text-xs opacity-80">
-                                                                {order + 1}번째
+                                                                <LocalizedRichText
+                                                                    text={
+                                                                        "{0}번째"
+                                                                    }
+                                                                    values={[
+                                                                        order +
+                                                                            1,
+                                                                    ]}
+                                                                />
                                                             </span>
                                                         )}
-                                                    </button>
+                                                    </LocalizedElement>
                                                 );
                                             })}
                                         </div>
@@ -1204,7 +1388,11 @@ export default function PortfolioPanel({
                                             }`}
                                         >
                                             <span className="block text-base font-bold">
-                                                {option.title}
+                                                {
+                                                    <LocalizedText
+                                                        text={option.title}
+                                                    />
+                                                }
                                             </span>
                                             <span
                                                 className={`mt-1 block text-sm leading-relaxed ${
@@ -1213,7 +1401,13 @@ export default function PortfolioPanel({
                                                         : "text-(--color-muted)"
                                                 }`}
                                             >
-                                                {option.description}
+                                                {
+                                                    <LocalizedText
+                                                        text={
+                                                            option.description
+                                                        }
+                                                    />
+                                                }
                                             </span>
                                         </button>
                                     );
@@ -1223,15 +1417,20 @@ export default function PortfolioPanel({
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-2xl font-bold text-(--color-foreground)">
-                                    포트폴리오
+                                    <LocalizedText text={"포트폴리오"} />
                                 </h2>
                                 <p className="mt-1 text-sm text-(--color-muted)">
-                                    일반 항목은 빠른 기록, 사례 연구 템플릿은
-                                    구조화된 장문 프로젝트에 사용
+                                    <LocalizedText
+                                        text={
+                                            "일반 항목은 빠른 기록, 사례 연구 템플릿은 구조화된 장문 프로젝트에 사용"
+                                        }
+                                    />
                                 </p>
                                 <div className="mt-2 flex flex-wrap items-center gap-2">
                                     <span className="text-sm text-(--color-muted)">
-                                        Featured scope
+                                        <LocalizedText
+                                            text={"Featured scope"}
+                                        />
                                     </span>
                                     {featuredCountsByJobField.map(
                                         (jobField) => (
@@ -1262,20 +1461,24 @@ export default function PortfolioPanel({
                                     onClick={() => openNew(false)}
                                     className="rounded-lg bg-(--color-muted) px-4 py-2 text-base font-semibold whitespace-nowrap text-white hover:opacity-90"
                                 >
-                                    + 새 항목
+                                    <LocalizedText text={"+ 새 항목"} />
                                 </button>
                                 <button
                                     onClick={() => openNew(true)}
                                     className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
                                 >
-                                    사례 연구 템플릿으로 생성
+                                    <LocalizedText
+                                        text={"사례 연구 템플릿으로 생성"}
+                                    />
                                 </button>
                             </div>
                         </div>
 
                         {/* 필터 + 정렬 */}
                         <div className="mt-4 flex flex-wrap items-center gap-2">
-                            <input
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 type="text"
                                 value={filterSearch}
                                 onChange={(e) =>
@@ -1296,9 +1499,15 @@ export default function PortfolioPanel({
                                 }
                                 className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
                             >
-                                <option value="all">전체</option>
-                                <option value="published">Published</option>
-                                <option value="draft">Unpublished</option>
+                                <option value="all">
+                                    <LocalizedText text={"전체"} />
+                                </option>
+                                <option value="published">
+                                    <LocalizedText text={"Published"} />
+                                </option>
+                                <option value="draft">
+                                    <LocalizedText text={"Unpublished"} />
+                                </option>
                             </select>
                             {jobFields.length > 0 && (
                                 <select
@@ -1308,7 +1517,11 @@ export default function PortfolioPanel({
                                     }
                                     className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
                                 >
-                                    <option value="">직무 분야 전체</option>
+                                    <option value="">
+                                        <LocalizedText
+                                            text={"직무 분야 전체"}
+                                        />
+                                    </option>
                                     {jobFields.map((f) => (
                                         <option key={f.id} value={f.id}>
                                             {f.emoji} {f.name}
@@ -1353,7 +1566,12 @@ export default function PortfolioPanel({
                                         label: "Featured 먼저",
                                     },
                                 ].map(({ key, icon, label }) => (
-                                    <button
+                                    <LocalizedElement
+                                        as="button"
+                                        translatedProps={[
+                                            "title",
+                                            "aria-label",
+                                        ]}
                                         key={key}
                                         onClick={() => setSortAndSave(key)}
                                         title={label}
@@ -1365,7 +1583,7 @@ export default function PortfolioPanel({
                                         }`}
                                     >
                                         {icon}
-                                    </button>
+                                    </LocalizedElement>
                                 ))}
                             </div>
                         </div>
@@ -1387,8 +1605,12 @@ export default function PortfolioPanel({
                     {featuredJobField && scopedFeaturedItems.length > 0 && (
                         <div className="mb-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-4">
                             <p className="mb-2 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
-                                Featured 순서 · {featuredScopeLabel} (드래그하여
-                                변경)
+                                <LocalizedRichText
+                                    text={
+                                        "Featured 순서 · {0} (드래그하여 변경)"
+                                    }
+                                    values={[featuredScopeLabel]}
+                                />
                             </p>
                             <div className="space-y-1">
                                 {scopedFeaturedItems.map((item, idx) => (
@@ -1414,7 +1636,9 @@ export default function PortfolioPanel({
                                         </span>
                                         {!item.published && (
                                             <span className="ml-auto shrink-0 rounded bg-(--color-border) px-1.5 py-0.5 text-[10px] font-medium text-(--color-muted)">
-                                                Unpublished
+                                                <LocalizedText
+                                                    text={"Unpublished"}
+                                                />
                                             </span>
                                         )}
                                     </div>
@@ -1425,8 +1649,11 @@ export default function PortfolioPanel({
                     {!featuredJobField &&
                         items.some((item) => item.featured) && (
                             <p className="mb-4 text-sm text-(--color-muted)">
-                                Featured scope를 선택하면 해당 분야의 Featured
-                                순서를 조정할 수 있습니다.
+                                <LocalizedText
+                                    text={
+                                        "Featured scope를 선택하면 해당 분야의 Featured 순서를 조정할 수 있습니다."
+                                    }
+                                />
                             </p>
                         )}
 
@@ -1434,7 +1661,10 @@ export default function PortfolioPanel({
                     {someSelected && (
                         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-(--color-accent)/30 bg-(--color-surface-subtle) px-4 py-3">
                             <span className="text-sm font-medium text-(--color-foreground)">
-                                {selected.size}개 선택됨
+                                <LocalizedRichText
+                                    text={"{0}개 선택됨"}
+                                    values={[selected.size]}
+                                />
                             </span>
                             <button
                                 type="button"
@@ -1442,7 +1672,10 @@ export default function PortfolioPanel({
                                 disabled={batchSaving}
                                 className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                             >
-                                <EyeOff size={13} /> 비공개
+                                <LocalizedRichText
+                                    text={"{0} 비공개"}
+                                    values={[<EyeOff size={13} />]}
+                                />
                             </button>
                             {jobFields.length > 0 && (
                                 <div className="flex items-center gap-1.5">
@@ -1453,7 +1686,11 @@ export default function PortfolioPanel({
                                         }
                                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
                                     >
-                                        <option value="">직무 분야 선택</option>
+                                        <option value="">
+                                            <LocalizedText
+                                                text={"직무 분야 선택"}
+                                            />
+                                        </option>
                                         {jobFields.map((f) => (
                                             <option key={f.id} value={f.id}>
                                                 {f.emoji} {f.name}
@@ -1466,7 +1703,7 @@ export default function PortfolioPanel({
                                         disabled={batchSaving || !batchJobField}
                                         className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
-                                        적용
+                                        <LocalizedText text={"적용"} />
                                     </button>
                                 </div>
                             )}
@@ -1475,29 +1712,51 @@ export default function PortfolioPanel({
                                 onClick={() => setSelected(new Set())}
                                 className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
                             >
-                                선택 해제
+                                <LocalizedText text={"선택 해제"} />
                             </button>
                         </div>
                     )}
 
                     {error && (
-                        <p className="mb-4 text-base text-red-500">{error}</p>
+                        <p className="mb-4 text-base text-red-500">
+                            {<LocalizedText text={error} />}
+                        </p>
                     )}
                     {loading ? (
                         <p className="text-base text-(--color-muted)">
-                            불러오는 중...
+                            <LocalizedText text={"불러오는 중..."} />
                         </p>
                     ) : displayedItems.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-6 py-10 text-center">
                             <p className="text-base font-semibold text-(--color-foreground)">
-                                {items.length === 0
-                                    ? "첫 프로젝트를 기록할 준비가 됐습니다"
-                                    : "필터 조건에 맞는 프로젝트가 없습니다"}
+                                {items.length === 0 ? (
+                                    <LocalizedText
+                                        text={
+                                            "첫 프로젝트를 기록할 준비가 됐습니다"
+                                        }
+                                    />
+                                ) : (
+                                    <LocalizedText
+                                        text={
+                                            "필터 조건에 맞는 프로젝트가 없습니다"
+                                        }
+                                    />
+                                )}
                             </p>
                             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-(--color-muted)">
-                                {items.length === 0
-                                    ? "빠른 기록은 새 항목, 문제·역할·근거를 자세히 설명하려면 사례 연구 템플릿을 선택하세요."
-                                    : "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."}
+                                {items.length === 0 ? (
+                                    <LocalizedText
+                                        text={
+                                            "빠른 기록은 새 항목, 문제·역할·근거를 자세히 설명하려면 사례 연구 템플릿을 선택하세요."
+                                        }
+                                    />
+                                ) : (
+                                    <LocalizedText
+                                        text={
+                                            "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."
+                                        }
+                                    />
+                                )}
                             </p>
                             {items.length === 0 ? (
                                 <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -1506,14 +1765,18 @@ export default function PortfolioPanel({
                                         onClick={() => openNew(false)}
                                         className="rounded-lg bg-(--color-muted) px-4 py-2 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90"
                                     >
-                                        빠른 프로젝트 기록
+                                        <LocalizedText
+                                            text={"빠른 프로젝트 기록"}
+                                        />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => openNew(true)}
                                         className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
                                     >
-                                        사례 연구로 시작
+                                        <LocalizedText
+                                            text={"사례 연구로 시작"}
+                                        />
                                     </button>
                                 </div>
                             ) : null}
@@ -1529,7 +1792,10 @@ export default function PortfolioPanel({
                                     className="h-4 w-4 cursor-pointer rounded"
                                 />
                                 <span className="text-sm text-(--color-muted)">
-                                    전체 선택 ({displayedItems.length}개)
+                                    <LocalizedRichText
+                                        text={"전체 선택 ({0}개)"}
+                                        values={[displayedItems.length]}
+                                    />
                                 </span>
                             </div>
                             {displayedItems.map((item) => {
@@ -1592,14 +1858,26 @@ export default function PortfolioPanel({
                                                             key={jobField}
                                                             className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400"
                                                         >
-                                                            <Star size={10} />
-                                                            {jobFields.find(
-                                                                (field) =>
-                                                                    field.id ===
-                                                                    jobField
-                                                            )?.name ??
-                                                                jobField}{" "}
-                                                            Featured
+                                                            <LocalizedRichText
+                                                                text={
+                                                                    "{0} {1} Featured"
+                                                                }
+                                                                values={[
+                                                                    <Star
+                                                                        size={
+                                                                            10
+                                                                        }
+                                                                    />,
+                                                                    jobFields.find(
+                                                                        (
+                                                                            field
+                                                                        ) =>
+                                                                            field.id ===
+                                                                            jobField
+                                                                    )?.name ??
+                                                                        jobField,
+                                                                ]}
+                                                            />
                                                         </span>
                                                     )
                                                 )}
@@ -1615,21 +1893,38 @@ export default function PortfolioPanel({
                                                     ) : (
                                                         <EyeOff size={10} />
                                                     )}
-                                                    {item.published
-                                                        ? "Published"
-                                                        : "Unpublished"}
+                                                    {item.published ? (
+                                                        <LocalizedText
+                                                            text={"Published"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"Unpublished"}
+                                                        />
+                                                    )}
                                                 </span>
                                                 {!hasJobField && (
                                                     <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
-                                                        <AlertTriangle
-                                                            size={10}
+                                                        <LocalizedRichText
+                                                            text={
+                                                                "{0}직무 분야 없음"
+                                                            }
+                                                            values={[
+                                                                <AlertTriangle
+                                                                    size={10}
+                                                                />,
+                                                            ]}
                                                         />
-                                                        직무 분야 없음
                                                     </span>
                                                 )}
                                                 {stateCount > 0 && (
                                                     <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
-                                                        상태: {stateCount}
+                                                        <LocalizedRichText
+                                                            text={"상태: {0}"}
+                                                            values={[
+                                                                stateCount,
+                                                            ]}
+                                                        />
                                                     </span>
                                                 )}
                                             </div>
@@ -1643,9 +1938,19 @@ export default function PortfolioPanel({
                                                 {(startDate || endDate) && (
                                                     <span className="inline-flex items-center gap-1 text-xs text-(--color-muted)">
                                                         <Clock3 size={12} />
-                                                        {startDate ||
-                                                            "시작일 미입력"}{" "}
-                                                        ~ {endDate || "진행 중"}
+                                                        {startDate || (
+                                                            <LocalizedText
+                                                                text={
+                                                                    "시작일 미입력"
+                                                                }
+                                                            />
+                                                        )}{" "}
+                                                        ~{" "}
+                                                        {endDate || (
+                                                            <LocalizedText
+                                                                text={"진행 중"}
+                                                            />
+                                                        )}
                                                     </span>
                                                 )}
                                                 <JobFieldBadges
@@ -1694,9 +1999,27 @@ export default function PortfolioPanel({
                                                     <Star size={12} />
                                                 )}
                                                 <span className="tablet:inline hidden">
-                                                    {featuredInScope
-                                                        ? `${featuredScopeLabel} Featured 해제`
-                                                        : `${featuredScopeLabel || "직무 분야"} Featured`}
+                                                    {featuredInScope ? (
+                                                        <LocalizedText
+                                                            text={
+                                                                "{0} Featured 해제"
+                                                            }
+                                                            values={[
+                                                                featuredScopeLabel,
+                                                            ]}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={
+                                                                "{0} Featured"
+                                                            }
+                                                            values={[
+                                                                featuredScopeLabel || {
+                                                                    text: "직무 분야",
+                                                                },
+                                                            ]}
+                                                        />
+                                                    )}
                                                 </span>
                                             </button>
                                             <button
@@ -1717,12 +2040,29 @@ export default function PortfolioPanel({
                                                     <Eye size={12} />
                                                 )}
                                                 <span className="tablet:inline hidden">
-                                                    {item.published
-                                                        ? "비공개"
-                                                        : "공개"}
+                                                    {item.published ? (
+                                                        <LocalizedText
+                                                            text={"비공개"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"공개"}
+                                                        />
+                                                    )}
                                                 </span>
                                             </button>
-                                            <button
+                                            <LocalizedElement
+                                                as="button"
+                                                messageProps={{
+                                                    title: {
+                                                        text: "{0} 편집",
+                                                        values: [item.title],
+                                                    },
+                                                    "aria-label": {
+                                                        text: "{0} 편집",
+                                                        values: [item.title],
+                                                    },
+                                                }}
                                                 onClick={() =>
                                                     void openEdit(item)
                                                 }
@@ -1735,12 +2075,30 @@ export default function PortfolioPanel({
                                             >
                                                 <Pencil size={12} />
                                                 <span className="tablet:inline hidden">
-                                                    {openingItemId === item.id
-                                                        ? "불러오는 중"
-                                                        : "편집"}
+                                                    {openingItemId ===
+                                                    item.id ? (
+                                                        <LocalizedText
+                                                            text={"불러오는 중"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"편집"}
+                                                        />
+                                                    )}
                                                 </span>
-                                            </button>
-                                            <button
+                                            </LocalizedElement>
+                                            <LocalizedElement
+                                                as="button"
+                                                messageProps={{
+                                                    title: {
+                                                        text: "{0} 삭제",
+                                                        values: [item.title],
+                                                    },
+                                                    "aria-label": {
+                                                        text: "{0} 삭제",
+                                                        values: [item.title],
+                                                    },
+                                                }}
                                                 onClick={() =>
                                                     handleDelete(item.id)
                                                 }
@@ -1750,9 +2108,11 @@ export default function PortfolioPanel({
                                             >
                                                 <Trash2 size={12} />
                                                 <span className="tablet:inline hidden">
-                                                    삭제
+                                                    <LocalizedText
+                                                        text={"삭제"}
+                                                    />
                                                 </span>
-                                            </button>
+                                            </LocalizedElement>
                                         </div>
                                     </div>
                                 );
@@ -1763,7 +2123,7 @@ export default function PortfolioPanel({
                     {/* 토스트 알림 */}
                     {toast && (
                         <div className="fixed right-6 bottom-6 z-100 rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
-                            {toast}
+                            {<LocalizedText text={toast} />}
                         </div>
                     )}
                 </div>
