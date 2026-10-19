@@ -1,7 +1,7 @@
 import { getContentLocale } from "@/lib/content-locale";
 
 import { serverT } from "@/lib/server-i18n";
-import Link from "next/link";
+import Link, { PublicAnchor } from "@/components/PublicLink";
 import { serverClient } from "@/lib/supabase";
 import { formatPubDateKST } from "@/lib/blog";
 import type { Metadata } from "next";
@@ -406,14 +406,14 @@ export default async function HomePageContent({
                                 {w.name && (
                                     <h3 className="text-2xl leading-tight font-black text-(--color-foreground)">
                                         {w.url ? (
-                                            <a
+                                            <PublicAnchor
                                                 href={w.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="transition-colors hover:underline"
                                             >
                                                 {w.name}
-                                            </a>
+                                            </PublicAnchor>
                                         ) : (
                                             w.name
                                         )}

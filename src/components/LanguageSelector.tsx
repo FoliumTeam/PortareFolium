@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { useUILocale } from "@/components/LocaleProvider";
 import { LocalizedText } from "@/components/LocalizedText";
+import { withoutLanguageQuery } from "@/lib/query-language";
 
 // 공개 전환은 이전 페이지·사전 로딩 자료를 폐기한 전체 요청
 export const LanguageSelector = ({ admin = false }: { admin?: boolean }) => {
@@ -28,7 +29,12 @@ export const LanguageSelector = ({ admin = false }: { admin?: boolean }) => {
                     const changed = await changeLocale(
                         event.target.value as Locale
                     );
-                    if (changed && !admin) window.location.reload();
+                    if (changed && !admin) {
+                        const next = withoutLanguageQuery(window.location.href);
+                        if (next !== window.location.href)
+                            window.location.replace(next);
+                        else window.location.reload();
+                    }
                 }}
             >
                 {LOCALES.map((value) => (

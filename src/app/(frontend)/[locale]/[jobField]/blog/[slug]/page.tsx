@@ -1,6 +1,7 @@
 import { setRequestLocale } from "@/lib/content-locale";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import BlogPostContent from "@/app/(frontend)/blog/[slug]/blog-post-content";
 import { resolvePublicRouteTarget } from "@/lib/public-route";
 import { getBlogPostMetadata } from "@/lib/content-metadata";
@@ -47,7 +48,9 @@ export default async function JobFieldBlogPostPage({ params }: PageProps) {
         (entry) => entry.slug === slug
     );
     if (!profile.public_snapshot || !post)
-        redirect(`/${profile.public_token}/blog`);
+        return (
+            <MissingContentRedirect href={`/${profile.public_token}/blog`} />
+        );
     return (
         <BlogPostContent
             slug={slug}

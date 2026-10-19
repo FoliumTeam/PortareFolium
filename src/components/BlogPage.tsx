@@ -1,4 +1,6 @@
 "use client";
+import { PublicAnchor } from "@/components/PublicLink";
+
 import {
     LocalizedElement,
     LocalizedText,
@@ -203,15 +205,15 @@ export default function BlogPage({
     const updateUrl = useCallback(
         (category: string, tag: string | null) => {
             if (typeof window === "undefined") return;
-            const params = new URLSearchParams();
+            const params = new URLSearchParams(window.location.search);
             if (category && category !== ALL_CATEGORY) {
                 params.set("category", category);
-            }
+            } else params.delete("category");
             if (tag) {
                 params.set("tag", tag);
-            }
+            } else params.delete("tag");
             const query = params.toString();
-            const url = query ? `${blogBasePath}?${query}` : blogBasePath;
+            const url = `${blogBasePath}${query ? `?${query}` : ""}${window.location.hash}`;
             window.history.replaceState({ category, tag }, "", url);
         },
         [blogBasePath]
@@ -487,7 +489,7 @@ export default function BlogPage({
                     // Block view: grid 카드
                     <div className="tablet:grid-cols-2 laptop:grid-cols-3 grid grid-cols-1 gap-6">
                         {paginatedPosts.map((post) => (
-                            <a
+                            <PublicAnchor
                                 key={post.slug}
                                 href={`${blogBasePath}/${post.slug}`}
                                 className="card-lift group flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
@@ -568,7 +570,7 @@ export default function BlogPage({
                                             })}
                                     </div>
                                 </div>
-                            </a>
+                            </PublicAnchor>
                         ))}
                     </div>
                 ) : (
@@ -576,7 +578,7 @@ export default function BlogPage({
                     <ul className="space-y-4">
                         {paginatedPosts.map((post) => (
                             <li key={post.slug}>
-                                <a
+                                <PublicAnchor
                                     href={`${blogBasePath}/${post.slug}`}
                                     className="card-lift group tablet:flex-row flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                                 >
@@ -656,7 +658,7 @@ export default function BlogPage({
                                             />
                                         </div>
                                     )}
-                                </a>
+                                </PublicAnchor>
                             </li>
                         ))}
                     </ul>

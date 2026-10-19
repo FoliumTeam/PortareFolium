@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getQueryLocale } from "@/lib/query-language";
 import {
     getBrowserLocale,
     isLocale,
@@ -35,9 +36,11 @@ export function proxy(req: NextRequest) {
             return NextResponse.redirect(url);
         }
         const saved = req.cookies.get(UI_LOCALE_COOKIE)?.value;
-        const locale = isLocale(saved)
-            ? saved
-            : getBrowserLocale(req.headers.get("accept-language"));
+        const locale =
+            getQueryLocale(req.nextUrl.searchParams.get("lang")) ??
+            (isLocale(saved)
+                ? saved
+                : getBrowserLocale(req.headers.get("accept-language")));
         const url = req.nextUrl.clone();
         url.pathname = `/${locale}${path === "/" ? "" : path}`;
         const headers = new Headers(req.headers);

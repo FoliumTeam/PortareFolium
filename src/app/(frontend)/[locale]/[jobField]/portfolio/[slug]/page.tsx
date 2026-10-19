@@ -1,6 +1,7 @@
 import { setRequestLocale } from "@/lib/content-locale";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import PortfolioDetailContent from "@/app/(frontend)/portfolio/[slug]/portfolio-detail-content";
 import { resolvePublicRouteTarget } from "@/lib/public-route";
 import { getPortfolioItemMetadata } from "@/lib/content-metadata";
@@ -51,7 +52,11 @@ export default async function JobFieldPortfolioDetailPage({
         (entry) => entry.slug === slug
     );
     if (!profile.public_snapshot || !item)
-        redirect(`/${profile.public_token}/portfolio`);
+        return (
+            <MissingContentRedirect
+                href={`/${profile.public_token}/portfolio`}
+            />
+        );
     return (
         <PortfolioDetailContent
             slug={slug}

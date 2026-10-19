@@ -1,7 +1,7 @@
 import { getContentLocale } from "@/lib/content-locale";
 
 import { serverT } from "@/lib/server-i18n";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
     getPost,
     getTags,
@@ -16,7 +16,8 @@ import GithubToc from "@/components/GithubToc";
 import MermaidRenderer from "@/components/MermaidRenderer";
 import ImageLightbox from "@/components/ImageLightbox";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { isGifUrl } from "@/lib/image-url";
@@ -56,7 +57,7 @@ export default async function BlogPostContent({
     const blogBasePath =
         basePathOverride ?? (jobField ? `/${jobField}/blog` : "/blog");
     const post = postOverride ?? (await getPost(slug));
-    if (!post) redirect(blogBasePath);
+    if (!post) return <MissingContentRedirect href={blogBasePath} />;
     if (
         jobField &&
         !postOverride &&

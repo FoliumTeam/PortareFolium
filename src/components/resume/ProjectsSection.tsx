@@ -1,3 +1,4 @@
+import { PublicAnchor } from "@/components/PublicLink";
 import { serverT } from "@/lib/server-i18n";
 import type { ResumeProject } from "@/types/resume";
 import { renderMarkdown } from "@/lib/markdown";
@@ -95,13 +96,13 @@ export default async function ProjectsSection({
                             )}
                         </p>
                     </div>
-                    <a
+                    <PublicAnchor
                         href={portfolioBasePath}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3.5 py-2 text-sm font-bold text-(--color-on-accent) transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         {serverT("포트폴리오 전체 보기")}
                         <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                    </a>
+                    </PublicAnchor>
                 </div>
                 <div className="space-y-3">
                     {compactProjects.map((project) => {
@@ -122,7 +123,7 @@ export default async function ProjectsSection({
                                 className="group relative rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-5 transition-colors hover:border-(--color-accent)"
                                 data-pdf-block-item
                             >
-                                <a
+                                <PublicAnchor
                                     href={`${portfolioBasePath}/${project.slug}`}
                                     className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:outline-none"
                                     aria-label={serverT(
@@ -258,7 +259,7 @@ export default async function ProjectsSection({
                             data-pdf-block-item
                         >
                             {project.portfolioSlug ? (
-                                <a
+                                <PublicAnchor
                                     href={`${portfolioBasePath}/${project.portfolioSlug}`}
                                     className="absolute inset-0 z-10 rounded-lg focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-surface) focus-visible:outline-none"
                                     aria-label={serverT(
@@ -293,14 +294,14 @@ export default async function ProjectsSection({
                                     >
                                         {project.url &&
                                         !project.portfolioSlug ? (
-                                            <a
+                                            <PublicAnchor
                                                 href={project.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-(--color-link) no-underline hover:opacity-80"
                                             >
                                                 {project.name}
-                                            </a>
+                                            </PublicAnchor>
                                         ) : (
                                             project.name
                                         )}
@@ -404,7 +405,7 @@ export default async function ProjectsSection({
                                 {/* GitHub */}
                                 {sourceLink ? (
                                     <div className="relative z-20 mt-auto pt-2">
-                                        <a
+                                        <PublicAnchor
                                             href={sourceLink.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -426,7 +427,7 @@ export default async function ProjectsSection({
                                             <span className="ml-1">
                                                 <ExternalLinkIcon className="h-3.5 w-3.5" />
                                             </span>
-                                        </a>
+                                        </PublicAnchor>
                                     </div>
                                 ) : null}
                             </div>

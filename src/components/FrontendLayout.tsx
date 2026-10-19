@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import ContentWrapper from "@/components/ContentWrapper";
 import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
 import { getPublicJobFields } from "@/lib/public-job-field";
+import { PublicLanguageNavigation } from "@/components/PublicLanguageNavigation";
 
 export default async function FrontendLayout({
     children,
@@ -63,17 +64,19 @@ export default async function FrontendLayout({
     const jobFields = await getPublicJobFields();
 
     return (
-        <div className="flex min-h-screen flex-col">
-            <Header
-                headerName={headerName}
-                githubUrl={githubUrl}
-                jobFields={jobFields}
-                themeMode={themeMode}
-            />
-            <ContentWrapper as="main" className="flex-1 px-4 py-8">
-                {children}
-            </ContentWrapper>
-            <Footer siteName={siteName} githubUrl={githubUrl} />
-        </div>
+        <PublicLanguageNavigation>
+            <div className="flex min-h-screen flex-col">
+                <Header
+                    headerName={headerName}
+                    githubUrl={githubUrl}
+                    jobFields={jobFields}
+                    themeMode={themeMode}
+                />
+                <ContentWrapper as="main" className="flex-1 px-4 py-8">
+                    {children}
+                </ContentWrapper>
+                <Footer siteName={siteName} githubUrl={githubUrl} />
+            </div>
+        </PublicLanguageNavigation>
     );
 }

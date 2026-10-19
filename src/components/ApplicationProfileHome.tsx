@@ -1,5 +1,5 @@
 import { serverT } from "@/lib/server-i18n";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
 import type { ApplicationProfileSnapshot } from "@/types/application-profile";
 
 type Props = {

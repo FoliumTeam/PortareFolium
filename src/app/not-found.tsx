@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LocaleProvider, useUILocale } from "@/components/LocaleProvider";
 import { LocalizedText } from "@/components/LocalizedText";
 import { getBrowserLocale, isLocale, UI_LOCALE_COOKIE } from "@/lib/i18n";
+import { getQueryLocale, withLanguageQuery } from "@/lib/query-language";
 
 const FALLBACK_MESSAGES = {
     "페이지를 찾을 수 없습니다": "Page not found",
@@ -25,9 +26,12 @@ const DetectNotFoundLanguage = () => {
             .find((part) => part.startsWith(`${UI_LOCALE_COOKIE}=`))
             ?.split("=")[1];
         void changeLocale(
-            isLocale(saved)
-                ? saved
-                : getBrowserLocale(navigator.languages.join(",")),
+            getQueryLocale(
+                new URLSearchParams(window.location.search).get("lang")
+            ) ??
+                (isLocale(saved)
+                    ? saved
+                    : getBrowserLocale(navigator.languages.join(","))),
             { persist: false }
         );
     }, []);
@@ -37,10 +41,15 @@ const DetectNotFoundLanguage = () => {
 const NotFoundContent = () => {
     const router = useRouter();
     const [countdown, setCountdown] = useState(5);
+    const [homeHref, setHomeHref] = useState("/");
+    useEffect(
+        () => setHomeHref(withLanguageQuery("/", window.location.search)),
+        []
+    );
 
     useEffect(() => {
         if (countdown <= 0) {
-            router.push("/");
+            router.push(withLanguageQuery("/", window.location.search));
             return;
         }
         const t = setTimeout(() => setCountdown((n) => n - 1), 1000);
@@ -64,7 +73,7 @@ const NotFoundContent = () => {
                 />
             </p>
             <Link
-                href="/"
+                href={homeHref}
                 className="rounded-lg bg-(--color-accent) px-6 py-3 font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
             >
                 <LocalizedText text="홈으로 이동" />

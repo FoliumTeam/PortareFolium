@@ -3,6 +3,8 @@ import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { searchPublicContent } from "@/app/admin/actions/public-data";
+import { useUILocale } from "@/components/LocaleProvider";
+import { PublicAnchor } from "@/components/PublicLink";
 
 interface SearchResult {
     slug: string;
@@ -11,6 +13,7 @@ interface SearchResult {
 }
 
 export default function GlobalSearch({ jobField }: { jobField: string }) {
+    const { locale } = useUILocale();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -51,15 +54,24 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
             return;
         }
 
+        let active = true;
         setLoading(true);
         const timer = setTimeout(async () => {
-            const items = await searchPublicContent(q, jobField);
-            setResults(items as SearchResult[]);
-            setLoading(false);
+            try {
+                const items = await searchPublicContent(q, jobField, locale);
+                if (active) setResults(items as SearchResult[]);
+            } catch {
+                if (active) setResults([]);
+            } finally {
+                if (active) setLoading(false);
+            }
         }, 200);
 
-        return () => clearTimeout(timer);
-    }, [query, jobField]);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
+    }, [query, jobField, locale]);
 
     const handleOpen = useCallback(() => {
         setOpen(true);
@@ -177,14 +189,14 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                                         <LocalizedText text={"Posts"} />
                                     </p>
                                     {posts.map((r) => (
-                                        <a
+                                        <PublicAnchor
                                             key={r.slug}
-                                            href={`/blog/${r.slug}`}
+                                            href={`/${jobField}/blog/${r.slug}`}
                                             className="block rounded-lg px-3 py-2 text-sm text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
                                             onClick={() => setOpen(false)}
                                         >
                                             {r.title}
-                                        </a>
+                                        </PublicAnchor>
                                     ))}
                                 </div>
                             )}
@@ -200,14 +212,14 @@ export default function GlobalSearch({ jobField }: { jobField: string }) {
                                         <LocalizedText text={"Portfolio"} />
                                     </p>
                                     {portfolios.map((r) => (
-                                        <a
+                                        <PublicAnchor
                                             key={r.slug}
-                                            href={`/portfolio/${r.slug}`}
+                                            href={`/${jobField}/portfolio/${r.slug}`}
                                             className="block rounded-lg px-3 py-2 text-sm text-(--color-foreground) transition-colors hover:bg-(--color-surface-subtle)"
                                             onClick={() => setOpen(false)}
                                         >
                                             {r.title}
-                                        </a>
+                                        </PublicAnchor>
                                     ))}
                                 </div>
                             )}

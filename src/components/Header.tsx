@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
 import GlobalSearch from "@/components/GlobalSearch";
 import { contentVariants } from "@/components/ContentWrapper";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
 import type { ThemeMode } from "@/lib/theme-mode";
 import type { PublicJobField } from "@/lib/public-job-field";
 import { getHeaderBrandLabel } from "@/lib/header-brand";

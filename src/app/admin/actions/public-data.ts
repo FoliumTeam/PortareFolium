@@ -1,5 +1,7 @@
 "use server";
 import { withActionLocale } from "@/lib/action-locale";
+import { withContentLocale } from "@/lib/content-locale";
+import { isLocale, type Locale } from "@/lib/i18n";
 
 import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { getSqliteRefugeSchemaVersion } from "@/lib/refuge/sqlite-migrations";
@@ -35,9 +37,12 @@ export async function listPublicTags(): Promise<
 // 공개 검색 결과 조회
 export async function searchPublicContent(
     query: string,
-    jobField: string
+    jobField: string,
+    locale?: Locale
 ): Promise<{ slug: string; title: string; type: "post" | "portfolio" }[]> {
-    return withActionLocale("public", async () => {
+    if (locale !== undefined && !isLocale(locale))
+        throw new Error("Unsupported locale");
+    const read = async () => {
         if (!serverClient || !query.trim()) return [];
 
         const q = escapeLikePattern(query.trim().toLowerCase());
@@ -103,7 +108,10 @@ export async function searchPublicContent(
         }
 
         return items;
-    });
+    };
+    return locale === undefined
+        ? withActionLocale("public", read)
+        : withContentLocale(locale, read);
 }
 
 // 관리자 프로필 이미지 조회

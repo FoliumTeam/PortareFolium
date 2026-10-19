@@ -1,7 +1,8 @@
 import { serverT } from "@/lib/server-i18n";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getContentLocale } from "@/lib/content-locale";
-import Link from "next/link";
+import Link, { PublicAnchor } from "@/components/PublicLink";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import type { Metadata } from "next";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Users } from "lucide-react";
 import { getAllPortfolioSlugs, getPortfolioItem } from "@/lib/queries";
@@ -140,7 +141,7 @@ export default async function PortfolioDetailContent({
         basePathOverride ??
         (jobField ? `/${jobField}/portfolio` : "/portfolio");
     const item = itemOverride ?? (await getPortfolioItem(slug));
-    if (!item) redirect(portfolioBasePath);
+    if (!item) return <MissingContentRedirect href={portfolioBasePath} />;
 
     const project = normalizePortfolioProject(item as PortfolioRawRow);
     if (jobField && !matchesPortfolioJobField(project, jobField)) notFound();
@@ -478,7 +479,7 @@ export default async function PortfolioDetailContent({
                     <ul className="mt-4 space-y-2">
                         {project.devlogs.map((devlog) => (
                             <li key={devlog.url}>
-                                <a
+                                <PublicAnchor
                                     href={devlog.url}
                                     className="inline-flex items-center gap-1.5 font-semibold text-(--color-accent) underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-(--color-accent) focus-visible:outline-none"
                                 >
@@ -487,7 +488,7 @@ export default async function PortfolioDetailContent({
                                         className="h-4 w-4"
                                         aria-hidden="true"
                                     />
-                                </a>
+                                </PublicAnchor>
                             </li>
                         ))}
                     </ul>

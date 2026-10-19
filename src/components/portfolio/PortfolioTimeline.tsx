@@ -1,5 +1,5 @@
 import { serverT } from "@/lib/server-i18n";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
 import { CalendarDays, ImageIcon } from "lucide-react";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import { SkillBadge } from "@/components/resume/SkillBadge";

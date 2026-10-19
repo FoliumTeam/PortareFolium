@@ -1,12 +1,13 @@
 import { serverT } from "@/lib/server-i18n";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getBook, getBookMeta, getAllBookSlugs } from "@/lib/queries";
 import { getCachedMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import MermaidRenderer from "@/components/MermaidRenderer";
 import { ArrowLeft, Star } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
+import MissingContentRedirect from "@/components/MissingContentRedirect";
 import type { Metadata } from "next";
 import { matchesJobField } from "@/lib/job-field";
 
@@ -44,12 +45,12 @@ export default async function BookDetailContent({
     slug,
     jobField,
 }: BookDetailContentProps) {
-    const book = await getBook(slug);
-    if (!book) redirect("/portfolio");
-    if (jobField && !matchesJobField(book.job_field, jobField)) notFound();
     const portfolioBasePath = jobField
         ? `/${jobField}/portfolio`
         : "/portfolio";
+    const book = await getBook(slug);
+    if (!book) return <MissingContentRedirect href={portfolioBasePath} />;
+    if (jobField && !matchesJobField(book.job_field, jobField)) notFound();
 
     const contentHtml = await getCachedMarkdown(slug, book.content ?? "");
     const tocEntries = extractTocFromHtml(contentHtml);

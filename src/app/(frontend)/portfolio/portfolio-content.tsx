@@ -14,7 +14,7 @@ import {
 import { getPublicResumeBasics, getSiteConfig } from "@/lib/queries";
 import { getResumeProfileUrl } from "@/lib/resume-profile-preset";
 import type { PortfolioProject, PortfolioRawRow } from "@/types/portfolio";
-import Link from "next/link";
+import Link from "@/components/PublicLink";
 import { ArrowUpRight, BookOpen, FileText, Star } from "lucide-react";
 
 interface BookItem {
