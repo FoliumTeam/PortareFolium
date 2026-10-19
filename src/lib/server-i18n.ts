@@ -29,6 +29,9 @@ import koSentences from "@/lib/locales/sentences-ko.json";
 import enDebug from "@/lib/locales/debug-en.json";
 import jaDebug from "@/lib/locales/debug-ja.json";
 import koDebug from "@/lib/locales/debug-ko.json";
+import enTraining from "@/lib/locales/training-en.json";
+import jaTraining from "@/lib/locales/training-ja.json";
+import koTraining from "@/lib/locales/training-ko.json";
 
 const messages: Record<Locale, UIMessages> = {
     en: {
@@ -40,6 +43,7 @@ const messages: Record<Locale, UIMessages> = {
         ...enOverrides,
         ...enSentences,
         ...enDebug,
+        ...enTraining,
     },
     ja: {
         ...jaA,
@@ -50,6 +54,7 @@ const messages: Record<Locale, UIMessages> = {
         ...jaOverrides,
         ...jaSentences,
         ...jaDebug,
+        ...jaTraining,
     },
     ko: {
         ...koA,
@@ -60,6 +65,7 @@ const messages: Record<Locale, UIMessages> = {
         ...koOverrides,
         ...koSentences,
         ...koDebug,
+        ...koTraining,
     },
 };
 

@@ -343,6 +343,39 @@ describe("createJobFieldResumeView", () => {
         ).toEqual(["기존 수상", "게임 수상"]);
     });
 
+    it("교육 과정은 선택한 직무에만 노출하고 비공개 항목은 숨긴다", () => {
+        const entry = (title: string, jobField: string, visible = true) => ({
+            title,
+            organizer: "교육 기관",
+            startMonth: "2026-01",
+            endMonth: "2026-07",
+            jobField,
+            visible,
+        });
+        const resume = {
+            training: {
+                emoji: "📚",
+                showEmoji: true,
+                entries: [
+                    entry("게임 과정", "game"),
+                    entry("웹 과정", "web"),
+                    entry("비공개 게임 과정", "game", false),
+                ],
+            },
+        };
+
+        expect(
+            createJobFieldResumeView(resume, "game").training?.entries.map(
+                (item) => item.title
+            )
+        ).toEqual(["게임 과정"]);
+        expect(
+            createJobFieldResumeView(resume, "web").training?.entries.map(
+                (item) => item.title
+            )
+        ).toEqual(["웹 과정"]);
+    });
+
     it("game mode에서 웹 경력과 게임 전환 단계를 함께 유지", () => {
         const result = createJobFieldResumeView(
             {

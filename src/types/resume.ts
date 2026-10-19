@@ -9,6 +9,7 @@ export const defaultSectionLabels: Record<string, string> = {
     work: "경력",
     skills: "기술",
     education: "학력",
+    training: "교육",
     projects: "프로젝트",
     volunteer: "봉사 활동",
     awards: "수상",
@@ -141,6 +142,15 @@ export interface ResumeEducation {
     courses?: string[];
 }
 
+export interface ResumeTraining {
+    title: string;
+    organizer: string;
+    startMonth: string;
+    endMonth: string;
+    jobField: string | string[];
+    visible?: boolean;
+}
+
 export interface ResumeAward {
     title?: string;
     position?: string;
@@ -265,6 +275,7 @@ export interface ResumeSection<T> {
     showEmoji: boolean;
     entries: T[];
     defaultView?: string;
+    label?: string;
 }
 
 export interface Resume {
@@ -272,6 +283,7 @@ export interface Resume {
     work?: ResumeSection<ResumeWork>;
     volunteer?: ResumeSection<ResumeVolunteer>;
     education?: ResumeSection<ResumeEducation>;
+    training?: ResumeSection<ResumeTraining>;
     awards?: ResumeSection<ResumeAward>;
     certificates?: ResumeSection<ResumeCertificate>;
     publications?: ResumeSection<ResumePublication>;

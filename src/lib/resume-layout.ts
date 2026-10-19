@@ -12,6 +12,7 @@ const DEFAULT_ENABLED: string[] = [
     "work",
     "projects",
     "education",
+    "training",
     "skills",
 ];
 
@@ -41,6 +42,7 @@ export const DEFAULT_RESUME_LAYOUT: ResumeSectionLayout = {
 type ResumeSectionLabelSource = {
     emoji?: string;
     showEmoji?: boolean;
+    label?: string;
 };
 
 // qualifier가 있어도 emoji를 label 맨 앞에 유지
@@ -50,9 +52,13 @@ export function getResumeSectionLabel(
     qualifier?: string,
     translate: (text: string) => string = (text) => text
 ): string {
-    const baseLabel = translate(
-        defaultSectionLabels[key] || key.charAt(0).toUpperCase() + key.slice(1)
-    );
+    const customLabel = section?.label;
+    const baseLabel = customLabel?.trim()
+        ? customLabel
+        : translate(
+              defaultSectionLabels[key] ||
+                  key.charAt(0).toUpperCase() + key.slice(1)
+          );
     const label = qualifier
         ? `${translate(qualifier)} ${baseLabel}`
         : baseLabel;
@@ -73,6 +79,15 @@ export function normalizeLayout(
             order.push(k);
             seen.add(k);
         }
+    }
+    if (!seen.has("training")) {
+        const educationIndex = order.indexOf("education");
+        order.splice(
+            educationIndex < 0 ? order.length : educationIndex + 1,
+            0,
+            "training"
+        );
+        seen.add("training");
     }
     for (const k of ALL_RESUME_SECTION_KEYS) {
         if (!seen.has(k)) order.push(k);

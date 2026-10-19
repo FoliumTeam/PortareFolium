@@ -71,7 +71,7 @@ const getFeaturedPortfolioProjects = async (
 // 프로젝트 섹션 렌더링 (markdown 렌더링 및 portfolio fetch 자체 처리)
 export default async function ProjectsSection({
     projects,
-    label = "프로젝트",
+    label,
     badge,
     portfolioBasePath = "/portfolio",
     compact = false,
@@ -87,7 +87,7 @@ export default async function ProjectsSection({
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-(--color-border) pb-2">
                     <div>
                         <h2 className="text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                            {serverT(label)}
+                            {label ?? serverT("프로젝트")}
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
                             {serverT(
@@ -232,7 +232,7 @@ export default async function ProjectsSection({
             <h2
                 className={`mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase ${badge ? "flex items-center gap-3" : ""}`}
             >
-                {serverT(label)}
+                {label ?? serverT("프로젝트")}
                 {badge ? (
                     <span className="rounded-lg bg-(--color-accent) px-3 py-0.5 text-xs font-bold tracking-widest text-(--color-on-accent) normal-case">
                         {badge}

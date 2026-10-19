@@ -36,7 +36,7 @@ export default function AwardsSection({
             data-pdf-block={dataPdfBlock ? true : undefined}
         >
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(label)}
+                {label}
             </h2>
             <div className="space-y-4">
                 {awards.map((award, index) => {

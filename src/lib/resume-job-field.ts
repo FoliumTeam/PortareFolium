@@ -160,6 +160,17 @@ export function createJobFieldResumeView(
         ...resume,
         basics,
         work: filterResumeSection(resume.work, jobField),
+        training: resume.training
+            ? {
+                  ...resume.training,
+                  entries: filterByJobField(
+                      resume.training.entries.filter(
+                          (entry) => entry.visible !== false
+                      ),
+                      jobField
+                  ),
+              }
+            : undefined,
         projects: filterResumeSection(resume.projects, jobField),
         awards: filterResumeAwards(resume.awards, jobField),
         careerPhases: jobField === "game" ? resume.careerPhases : undefined,

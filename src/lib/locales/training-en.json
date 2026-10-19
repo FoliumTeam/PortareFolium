@@ -1,0 +1,23 @@
+{
+    "교육": "Training",
+    "교육 추가": "Add training",
+    "대학 학력과 별도로 표시하는 교육 과정. 직무 분야와 공개 여부에 따라 이력서에 표시": "Training courses shown separately from university education. They appear on the resume according to the selected job fields and visibility.",
+    "공개 섹션 이름": "Public section title",
+    "제목 앞 이모지 표시": "Show an emoji before the title",
+    "과정명": "Course name",
+    "교육 과정 이름": "Training course name",
+    "주최": "Organizer",
+    "주최 기관": "Organizing institution",
+    "시작 월 (YYYY-MM)": "Start month (YYYY-MM)",
+    "종료 월 (YYYY-MM)": "End month (YYYY-MM)",
+    "선택한 직무 분야의 이력서에만 표시. 과정명·주최·시작 월·종료 월과 직무 분야를 채운 뒤 공개 가능": "Shown only on resumes for the selected job fields. Enter the course name, organizer, start month, end month, and job fields before publishing.",
+    "새 교육": "New training",
+    "{0} 공개 여부": "Visibility of {0}",
+    "이 교육을 공개 화면에서 앞 순서로 이동": "Move this training earlier on the public resume",
+    "이 교육을 공개 화면에서 뒤 순서로 이동": "Move this training later on the public resume",
+    "앞": "Earlier",
+    "뒤": "Later",
+    "교육 삭제": "Delete training",
+    "이 교육 항목을 이력서에서 삭제할까요?": "Delete this training entry from the resume?",
+    "이 교육 항목 삭제": "Delete this training entry"
+}

@@ -7,10 +7,7 @@ interface Props {
 }
 
 // 커리어 타임라인 섹션 렌더링
-export default function CareerPhasesSection({
-    phases,
-    label = "커리어 타임라인",
-}: Props) {
+export default function CareerPhasesSection({ phases, label }: Props) {
     if (phases.length === 0) return null;
 
     // phase 번호 오름차순 정렬
@@ -19,7 +16,7 @@ export default function CareerPhasesSection({
     return (
         <section className="mb-10" data-pdf-block>
             <h2 className="mb-4 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(label)}
+                {label ?? serverT("커리어 타임라인")}
             </h2>
             {/* 수평 진행 바 */}
             <div className="mb-5 flex gap-1">

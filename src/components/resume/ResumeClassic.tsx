@@ -11,6 +11,7 @@ import { formatResumeMilitary } from "@/lib/resume-basics-presentation";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import LanguagesSection from "@/components/resume/LanguagesSection";
+import TrainingSection from "@/components/resume/TrainingSection";
 import AwardsSection from "@/components/resume/AwardsSection";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
@@ -76,7 +77,7 @@ export default async function ResumeClassic({
 
     const getLabel = (key: string, qualifier?: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
-            | { emoji?: string; showEmoji?: boolean }
+            | { emoji?: string; showEmoji?: boolean; label?: string }
             | undefined;
         return getResumeSectionLabel(key, sec, qualifier, serverT);
     };
@@ -99,7 +100,7 @@ export default async function ResumeClassic({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("coreCompetencies"))}
+                {getLabel("coreCompetencies")}
             </h2>
             <div className="grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
@@ -163,7 +164,7 @@ export default async function ResumeClassic({
     const renderWork = () => (
         <section key="work" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("work"))}
+                {getLabel("work")}
             </h2>
             {workEntries.map((workItem, wIdx) => (
                 <div
@@ -250,7 +251,7 @@ export default async function ResumeClassic({
     const renderEducation = () => (
         <section key="education" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("education"))}
+                {getLabel("education")}
             </h2>
             {(resume.education?.entries ?? []).map((education, idx) => (
                 <div
@@ -330,7 +331,7 @@ export default async function ResumeClassic({
     const renderGeneric = (key: string, items: Record<string, unknown>[]) => (
         <section key={key} className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel(key))}
+                {getLabel(key)}
             </h2>
             {items.map((genericItem, idx) => (
                 <div
@@ -427,6 +428,14 @@ export default async function ResumeClassic({
         skills: renderSkills,
         work: renderWork,
         education: renderEducation,
+        training: () => (
+            <TrainingSection
+                key="training"
+                entries={resume.training?.entries ?? []}
+                label={getLabel("training")}
+                variant="classic"
+            />
+        ),
         projects: renderProjects,
         volunteer: () =>
             renderGeneric(

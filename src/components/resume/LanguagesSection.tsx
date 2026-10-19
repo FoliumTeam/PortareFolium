@@ -1,4 +1,4 @@
-import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
+import { LocalizedElement } from "@/components/LocalizedText";
 import { languages as languageData } from "countries-list";
 import type { ResumeLanguage } from "@/types/resume";
 
@@ -93,7 +93,7 @@ export default function LanguagesSection({
             data-pdf-block={dataPdfBlock ? true : undefined}
         >
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {<LocalizedText text={label} />}
+                {label}
             </h2>
             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
                 {languages.map((language, index) => {

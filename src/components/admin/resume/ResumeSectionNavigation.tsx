@@ -21,6 +21,7 @@ const editorSections: EditorSection[] = [
     { key: "work", label: "경력" },
     { key: "projects", label: "프로젝트" },
     { key: "education", label: "학력" },
+    { key: "training", label: "교육" },
     { key: "awards", label: "수상" },
     { key: "skills", label: "기술" },
     { key: "languages", label: "언어" },

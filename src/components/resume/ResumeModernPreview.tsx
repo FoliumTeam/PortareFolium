@@ -15,6 +15,7 @@ import type {
 } from "@/types/resume";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import EducationMetadata from "@/components/resume/EducationMetadata";
+import TrainingSection from "@/components/resume/TrainingSection";
 import LanguagesSection from "@/components/resume/LanguagesSection";
 import {
     getResumeSectionLabel,
@@ -64,14 +65,14 @@ export default function ResumeModernPreview({
 
     const getLabel = (key: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
-            | { emoji?: string; showEmoji?: boolean }
+            | { emoji?: string; showEmoji?: boolean; label?: string }
             | undefined;
         return getResumeSectionLabel(key, sec, undefined, uiT);
     };
 
     const sectionH2 = (title: string) => (
         <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-            {<LocalizedText text={title} />}
+            {title}
         </h2>
     );
 
@@ -377,6 +378,13 @@ export default function ResumeModernPreview({
         projects: renderProjects,
         skills: renderSkills,
         education: renderEducation,
+        training: () => (
+            <TrainingSection
+                key="training"
+                entries={resume.training?.entries ?? []}
+                label={getLabel("training")}
+            />
+        ),
         volunteer: () =>
             renderGrid(
                 "volunteer",
@@ -427,9 +435,7 @@ export default function ResumeModernPreview({
                 }
             ),
         languages: () => (
-            <LocalizedElement
-                as={LanguagesSection}
-                translatedProps={["label"]}
+            <LanguagesSection
                 languages={resume.languages?.entries ?? []}
                 label={getLabel("languages")}
             />

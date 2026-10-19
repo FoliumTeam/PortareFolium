@@ -11,6 +11,7 @@ import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
 import EducationMetadata from "@/components/resume/EducationMetadata";
+import TrainingSection from "@/components/resume/TrainingSection";
 import LanguagesSection from "@/components/resume/LanguagesSection";
 import AwardsSection from "@/components/resume/AwardsSection";
 import SkillsSection from "@/components/resume/SkillsSection";
@@ -58,7 +59,7 @@ export default async function ResumeModern({
 
     const getLabel = (key: string, qualifier?: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
-            | { emoji?: string; showEmoji?: boolean }
+            | { emoji?: string; showEmoji?: boolean; label?: string }
             | undefined;
         return getResumeSectionLabel(key, sec, qualifier, serverT);
     };
@@ -83,7 +84,7 @@ export default async function ResumeModern({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("coreCompetencies"))}
+                {getLabel("coreCompetencies")}
             </h2>
             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
@@ -130,7 +131,7 @@ export default async function ResumeModern({
     const renderWork = () => (
         <section key="work" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("work"))}
+                {getLabel("work")}
             </h2>
             <div className="relative ml-2 flex flex-col gap-7 border-l-2 border-(--color-border) pl-6">
                 {workEntries.map((workItem, wIdx) => (
@@ -277,7 +278,7 @@ export default async function ResumeModern({
     const renderEducation = () => (
         <section key="education" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("education"))}
+                {getLabel("education")}
             </h2>
             <div>
                 {(resume.education?.entries ?? []).map((education, idx) => (
@@ -339,7 +340,7 @@ export default async function ResumeModern({
     const renderVolunteer = () => (
         <section key="volunteer" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("volunteer"))}
+                {getLabel("volunteer")}
             </h2>
             <div className="flex flex-col gap-4">
                 {(resume.volunteer?.entries ?? []).map((v, idx) => (
@@ -414,7 +415,7 @@ export default async function ResumeModern({
     const renderCertificates = () => (
         <section key="certificates" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("certificates"))}
+                {getLabel("certificates")}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.certificates?.entries ?? []).map((cert, idx) => (
@@ -462,7 +463,7 @@ export default async function ResumeModern({
     const renderPublications = () => (
         <section key="publications" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("publications"))}
+                {getLabel("publications")}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.publications?.entries ?? []).map((pub, idx) => (
@@ -525,7 +526,7 @@ export default async function ResumeModern({
     const renderInterests = () => (
         <section key="interests" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("interests"))}
+                {getLabel("interests")}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.interests?.entries ?? []).map((it, idx) => (
@@ -560,7 +561,7 @@ export default async function ResumeModern({
     const renderReferences = () => (
         <section key="references" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                {serverT(getLabel("references"))}
+                {getLabel("references")}
             </h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
                 {(resume.references?.entries ?? []).map((ref, idx) => (
@@ -593,6 +594,13 @@ export default async function ResumeModern({
         projects: renderProjects,
         skills: renderSkills,
         education: renderEducation,
+        training: () => (
+            <TrainingSection
+                key="training"
+                entries={resume.training?.entries ?? []}
+                label={getLabel("training")}
+            />
+        ),
         volunteer: renderVolunteer,
         awards: renderAwards,
         certificates: renderCertificates,
