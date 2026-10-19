@@ -281,7 +281,7 @@ export default function AdminDashboard({
                                     : ""
                             }`}
                         >
-                            {activeTab === "main" && (
+                            {hashReady && activeTab === "main" && (
                                 <MainPanel
                                     key={`main-${tabKey}`}
                                     refugeMode={refugeMode}
