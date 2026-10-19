@@ -1,24 +1,17 @@
-import { setRequestLocale, withContentLocale } from "@/lib/content-locale";
-import { normalizeLocale } from "@/lib/i18n";
+import { setRequestLocale } from "@/lib/content-locale";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BookDetailContent from "@/app/(frontend)/books/[slug]/book-detail-content";
 import { resolvePublicRouteTarget } from "@/lib/public-route";
 import { getSeoMetadata } from "@/lib/seo-metadata";
-import { getPublicBookRouteParams } from "@/lib/public-route-params";
+import { getLocalizedDetailRouteParams } from "@/lib/public-route-params";
 
 type PageProps = {
     params: Promise<{ locale: string; jobField: string; slug: string }>;
 };
 
-export async function generateStaticParams({
-    params,
-}: {
-    params: { locale: string };
-}) {
-    return withContentLocale(normalizeLocale(params.locale), async () => {
-        return getPublicBookRouteParams();
-    });
+export async function generateStaticParams() {
+    return getLocalizedDetailRouteParams("books");
 }
 
 export async function generateMetadata({

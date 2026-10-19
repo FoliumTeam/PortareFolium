@@ -1,24 +1,17 @@
-import { setRequestLocale, withContentLocale } from "@/lib/content-locale";
-import { normalizeLocale } from "@/lib/i18n";
+import { setRequestLocale } from "@/lib/content-locale";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import PortfolioDetailContent from "@/app/(frontend)/portfolio/[slug]/portfolio-detail-content";
 import { resolvePublicRouteTarget } from "@/lib/public-route";
 import { getPortfolioItemMetadata } from "@/lib/content-metadata";
-import { getPublicPortfolioRouteParams } from "@/lib/public-route-params";
+import { getLocalizedDetailRouteParams } from "@/lib/public-route-params";
 
 type PageProps = {
     params: Promise<{ locale: string; jobField: string; slug: string }>;
 };
 
-export async function generateStaticParams({
-    params,
-}: {
-    params: { locale: string };
-}) {
-    return withContentLocale(normalizeLocale(params.locale), async () => {
-        return getPublicPortfolioRouteParams();
-    });
+export async function generateStaticParams() {
+    return getLocalizedDetailRouteParams("portfolio");
 }
 
 export async function generateMetadata({
