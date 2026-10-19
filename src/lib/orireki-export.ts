@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { strToU8, zipSync } from "fflate";
+import { isLocale, LOCALES, type Locale } from "@/lib/i18n";
 
 export type ExportRow = Record<string, unknown>;
 export const ORIREKI_TABLES = [
@@ -11,6 +12,18 @@ export const ORIREKI_TABLES = [
     "tags",
     "post_categories",
     "gantt_chart_archives",
+    "editor_states",
+    "post_content_revisions",
+    "post_content_chunks",
+    "about_data_i18n",
+    "posts_i18n",
+    "portfolio_items_i18n",
+    "books_i18n",
+    "tags_i18n",
+    "post_categories_i18n",
+    "editor_states_i18n",
+    "post_content_revisions_i18n",
+    "post_content_chunks_i18n",
 ] as const;
 export const ORIREKI_CONFIG_KEYS = [
     "header_name",
@@ -26,6 +39,50 @@ export const ORIREKI_CONFIG_KEYS = [
     "navigation_config",
 ];
 type Media = { bytes: Uint8Array; mimeType: string };
+
+// 같은 식별자를 가진 번역의 수정 이력과 조각 분리
+const readExportPostContent = (
+    tables: Record<string, ExportRow[]>,
+    table: string,
+    row: ExportRow,
+    lang: Locale,
+    warnings: string[]
+): string => {
+    const fallback = typeof row.content === "string" ? row.content : "";
+    const suffix = table.endsWith("_i18n") ? "_i18n" : "";
+    const revision = (tables[`post_content_revisions${suffix}`] ?? [])
+        .filter(
+            (candidate) =>
+                candidate.post_id === row.id &&
+                candidate.active === true &&
+                candidate.status === "committed" &&
+                (!suffix || candidate.lang === lang)
+        )
+        .sort((a, b) =>
+            String(b.committed_at ?? "").localeCompare(
+                String(a.committed_at ?? "")
+            )
+        )[0];
+    if (!revision) return fallback;
+    const chunks = (tables[`post_content_chunks${suffix}`] ?? [])
+        .filter(
+            (chunk) =>
+                chunk.revision_id === revision.id &&
+                (!suffix || chunk.lang === lang)
+        )
+        .sort((a, b) => Number(a.chunk_index) - Number(b.chunk_index));
+    const content = chunks.map((chunk) => String(chunk.content ?? "")).join("");
+    if (
+        chunks.length !== revision.chunk_count ||
+        chunks.some((chunk, index) => chunk.chunk_index !== index) ||
+        createHash("sha256").update(content, "utf8").digest("hex") !==
+            revision.content_hash
+    ) {
+        warnings.push(`분할 본문 검증 실패, 원본 조각 보존: ${lang}:${row.id}`);
+        return fallback;
+    }
+    return content;
+};
 
 // 인증·운영 테이블을 제외한 사용자 자료의 버전별 이전 묶음 생성
 export const buildOrirekiExport = async (
@@ -47,21 +104,34 @@ export const buildOrirekiExport = async (
     for (const table of ORIREKI_TABLES) {
         const rows = tables[table] ?? [];
         preserved[table] = rows;
-        if (!kinds[table]) continue;
+        const baseTable = table.replace(/_i18n$/, "");
+        if (!kinds[baseTable]) continue;
         rows.forEach((row, index) => {
+            const lang = isLocale(row.lang) ? row.lang : "ko";
+            const sourceId = String(row.id ?? `${baseTable}-${index}`);
             contents.push({
-                sourceId: String(row.id ?? `${table}-${index}`),
-                kind: kinds[table],
+                sourceId: lang === "ko" ? sourceId : `${lang}:${sourceId}`,
+                lang,
+                kind: kinds[baseTable],
                 title: String(
                     row.title ??
                         row.name ??
-                        (table === "resume_data"
+                        (baseTable === "resume_data"
                             ? "이전한 이력서"
                             : "이전한 소개")
                 ),
-                slug: String(row.slug ?? `${kinds[table]}-${index}`),
+                slug: String(row.slug ?? `${kinds[baseTable]}-${index}`),
                 description: String(row.description ?? ""),
-                body: row.content ?? row.data ?? "",
+                body:
+                    baseTable === "posts"
+                        ? readExportPostContent(
+                              tables,
+                              table,
+                              row,
+                              lang,
+                              warnings
+                          )
+                        : (row.content ?? row.data ?? ""),
                 contentFormat:
                     typeof row.content === "string"
                         ? "mdx"
@@ -70,12 +140,27 @@ export const buildOrirekiExport = async (
             });
         });
     }
-    const settings = Object.fromEntries(
-        config
-            .filter((row) => ORIREKI_CONFIG_KEYS.includes(String(row.key)))
-            .map((row) => [String(row.key), row.value])
+    const settingsByLanguage = Object.fromEntries(
+        LOCALES.map((lang) => [
+            lang,
+            Object.fromEntries(
+                config
+                    .filter(
+                        (row) =>
+                            (row.lang ?? "ko") === lang &&
+                            ORIREKI_CONFIG_KEYS.includes(String(row.key))
+                    )
+                    .map((row) => [String(row.key), row.value])
+            ),
+        ])
     );
-    const text = JSON.stringify({ contents, preserved, settings });
+    const settings = settingsByLanguage.ko;
+    const text = JSON.stringify({
+        contents,
+        preserved,
+        settings,
+        settingsByLanguage,
+    });
     if (Buffer.byteLength(text) > 15 * 1024 * 1024)
         throw new Error("본문이 15MB를 초과하여 파일을 나누어 이전 필요");
     const urls = [...new Set(text.match(/https?:\/\/[^\s"<>\\)]+/g) ?? [])];
@@ -86,22 +171,30 @@ export const buildOrirekiExport = async (
         sha256: string;
     }[] = [];
     let total = 0;
+    const mediaByUrl = new Map<string, Promise<Media | null>>();
     for (const url of urls) {
         try {
-            const media = await loadMedia(url);
+            const source = new URL(url);
+            source.hash = "";
+            const mediaUrl = source.toString();
+            if (!mediaByUrl.has(mediaUrl))
+                mediaByUrl.set(mediaUrl, loadMedia(mediaUrl));
+            const media = await mediaByUrl.get(mediaUrl);
             if (!media) {
                 if (/\.(png|jpe?g|webp|gif|avif)(?:\?|$)/i.test(url))
                     warnings.push(`외부 이미지 파일 미포함, 링크 보존: ${url}`);
                 continue;
             }
-            total += media.bytes.length;
-            if (total > 75 * 1024 * 1024)
-                throw new Error("미디어 합계 75MB 제한");
             const digest = createHash("sha256")
                 .update(media.bytes)
                 .digest("hex");
             const path = `assets/${digest}`;
-            files[path] = media.bytes;
+            if (!files[path]) {
+                if (total + media.bytes.length > 75 * 1024 * 1024)
+                    throw new Error("미디어 합계 75MB 제한");
+                total += media.bytes.length;
+                files[path] = media.bytes;
+            }
             assets.push({
                 path,
                 sourceUrl: url,
@@ -122,6 +215,7 @@ export const buildOrirekiExport = async (
         exportedAt: new Date().toISOString(),
         contents,
         settings,
+        settingsByLanguage,
         assets,
         warnings,
         preserved,

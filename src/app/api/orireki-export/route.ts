@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { requireAdminSession } from "@/lib/server-admin";
-import { serverClient } from "@/lib/supabase";
+import { unscopedServerClient } from "@/lib/supabase";
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
 import { assertSafeR2Key } from "@/lib/r2-path-policy";
-import { readPostContentById } from "@/lib/post-content-chunks";
 import {
     buildOrirekiExport,
     ORIREKI_TABLES,
@@ -24,46 +23,55 @@ export const GET = async () => {
             { status: 401 }
         );
     }
-    if (!serverClient)
+    if (!unscopedServerClient)
         return NextResponse.json({ error: "DB 연결 필요" }, { status: 503 });
+    const client = unscopedServerClient;
     try {
         const tables: Record<string, ExportRow[]> = {};
-        for (const table of ORIREKI_TABLES) {
+        // 복합 식별자 순서 고정으로 언어별 행의 페이지 누락 방지
+        const readRows = async (table: string): Promise<ExportRow[]> => {
             const rows: ExportRow[] = [];
+            const baseTable = table.replace(/_i18n$/, "");
             for (let offset = 0; ; offset += 500) {
-                const { data, error } = await serverClient
-                    .from(table)
-                    .select("*")
-                    .order(
-                        table === "tags"
+                let query = client.from(table).select("*");
+                if (table.endsWith("_i18n") || table === "resume_data")
+                    query = query.order("lang");
+                if (baseTable === "post_content_chunks") {
+                    query = query.order("revision_id").order("chunk_index");
+                } else {
+                    query = query.order(
+                        baseTable === "tags"
                             ? "slug"
-                            : table === "post_categories"
+                            : baseTable === "post_categories"
                               ? "name"
-                              : "id"
-                    )
-                    .range(offset, offset + 499);
+                              : baseTable === "site_config"
+                                ? "key"
+                                : "id"
+                    );
+                }
+                const { data, error } = await query.range(offset, offset + 499);
                 if (error) throw new Error(`${table} 조회 실패`);
                 rows.push(...(data ?? []));
                 if (!data || data.length < 500) break;
                 if (rows.length >= 10000)
                     throw new Error(`${table} 10000행 제한 초과`);
             }
-            tables[table] = rows;
+            return rows;
+        };
+        for (const table of ORIREKI_TABLES) {
+            tables[table] = await readRows(table);
         }
-        for (const row of tables.posts) {
-            const result = await readPostContentById(
-                String(row.id),
-                typeof row.content === "string" ? row.content : ""
-            );
-            row.content = result.content;
-        }
-        const { data: config, error } = await serverClient
-            .from("site_config")
-            .select("key,value");
-        if (error) throw new Error("사이트 설정 조회 실패");
+        const config = [
+            ...(await readRows("site_config")),
+            ...(await readRows("site_config_i18n")),
+        ];
+        const mediaByKey = new Map<
+            string,
+            Promise<{ bytes: Uint8Array; mimeType: string }>
+        >();
         const bytes = await buildOrirekiExport(
             tables,
-            config ?? [],
+            config,
             async (url) => {
                 if (!R2_PUBLIC_URL) return null;
                 const source = new URL(url);
@@ -81,19 +89,33 @@ export const GET = async () => {
                     source.pathname.slice(allowed.pathname.length)
                 );
                 assertSafeR2Key(key, "export");
-                const result = await r2Client.send(
-                    new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }),
-                    { abortSignal: AbortSignal.timeout(15000) }
-                );
-                if (
-                    (result.ContentLength ?? Infinity) > 20 * 1024 * 1024 ||
-                    !result.Body
-                )
-                    throw new Error("파일 크기 제한");
-                return {
-                    bytes: await result.Body.transformToByteArray(),
-                    mimeType: result.ContentType ?? "application/octet-stream",
-                };
+                if (!mediaByKey.has(key)) {
+                    mediaByKey.set(
+                        key,
+                        (async () => {
+                            const result = await r2Client.send(
+                                new GetObjectCommand({
+                                    Bucket: R2_BUCKET,
+                                    Key: key,
+                                }),
+                                { abortSignal: AbortSignal.timeout(15000) }
+                            );
+                            if (
+                                (result.ContentLength ?? Infinity) >
+                                    20 * 1024 * 1024 ||
+                                !result.Body
+                            )
+                                throw new Error("파일 크기 제한");
+                            return {
+                                bytes: await result.Body.transformToByteArray(),
+                                mimeType:
+                                    result.ContentType ??
+                                    "application/octet-stream",
+                            };
+                        })()
+                    );
+                }
+                return (await mediaByKey.get(key)) ?? null;
             },
             version
         );
