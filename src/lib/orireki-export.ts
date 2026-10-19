@@ -155,6 +155,20 @@ export const buildOrirekiExport = async (
         ])
     );
     const settings = settingsByLanguage.ko;
+    // 언어·비공개 상태를 버리는 구형 가져오기의 잘못된 공개 방지
+    const requiresLanguageAwareImport =
+        Object.entries(tables).some(
+            ([table, rows]) =>
+                ORIREKI_TABLES.includes(
+                    table as (typeof ORIREKI_TABLES)[number]
+                ) &&
+                rows.some(
+                    (row) =>
+                        table.endsWith("_i18n") ||
+                        (isLocale(row.lang) && row.lang !== "ko") ||
+                        row.published === false
+                )
+        ) || config.some((row) => isLocale(row.lang) && row.lang !== "ko");
     const text = JSON.stringify({
         contents,
         preserved,
@@ -208,9 +222,13 @@ export const buildOrirekiExport = async (
     warnings.push(
         "외부 링크·영상은 링크 유지. 특수 MDX·도서·간트 원본 보존, 새 서비스 지원 범위에서 변환."
     );
+    if (requiresLanguageAwareImport)
+        warnings.push(
+            "형식 2: 언어·비공개 상태 보존 지원 도구에서만 가져오기 가능. 구형 Orireki 형식 1 가져오기 미지원."
+        );
     const manifest = {
         format: "orireki-transfer",
-        version: 1,
+        version: requiresLanguageAwareImport ? 2 : 1,
         sourceVersion,
         exportedAt: new Date().toISOString(),
         contents,

@@ -4,6 +4,32 @@ import { unzipSync, strFromU8, strToU8 } from "fflate";
 import { buildOrirekiExport } from "@/lib/orireki-export";
 
 describe("Orireki 이전 파일", () => {
+    it.each([
+        ["posts", { published: true }, 1],
+        ["posts", { published: false }, 2],
+        ["books", { published: false }, 2],
+        ["resume_data", { lang: "ja", published: true }, 2],
+        ["portfolio_items_i18n", { lang: "en", published: true }, 2],
+    ])(
+        "구형 가져오기 노출 방지: %s %j → 형식 %i",
+        async (table, row, version) => {
+            const bytes = await buildOrirekiExport(
+                { [table as string]: [row as Record<string, unknown>] },
+                [],
+                async () => null,
+                "test"
+            );
+            const manifest = JSON.parse(
+                strFromU8(unzipSync(bytes)["manifest.json"])
+            );
+            expect(manifest.version).toBe(version);
+            expect(manifest.preserved[table as string]).toEqual([row]);
+            if (version === 2)
+                expect(manifest.warnings).toContain(
+                    "형식 2: 언어·비공개 상태 보존 지원 도구에서만 가져오기 가능. 구형 Orireki 형식 1 가져오기 미지원."
+                );
+        }
+    );
     it("사용자 자료 보존과 비밀 설정·운영 테이블 제외", async () => {
         const bytes = await buildOrirekiExport(
             {
@@ -106,7 +132,7 @@ describe("Orireki 이전 파일", () => {
         const manifest = JSON.parse(
             strFromU8(unzipSync(bytes)["manifest.json"])
         );
-        expect(manifest.version).toBe(1);
+        expect(manifest.version).toBe(2);
         expect(
             manifest.contents.filter(
                 (row: { kind: string }) => row.kind === "blog"
