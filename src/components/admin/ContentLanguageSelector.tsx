@@ -17,7 +17,7 @@ export const ContentLanguageSelector = ({
 }: {
     onChange: (locale: Locale) => void;
 }) => {
-    const { locale: ui } = useUILocale();
+    const { locale: ui, changing, isChangingLocale } = useUILocale();
     const [locale, setLocale] = useState<Locale>("ko");
     const [switching, setSwitching] = useState(false);
     const dirty = useSyncExternalStore(
@@ -51,18 +51,27 @@ export const ContentLanguageSelector = ({
                 <select
                     aria-label={label}
                     value={locale}
-                    disabled={dirty || switching}
+                    disabled={dirty || switching || changing}
                     className="rounded-md border border-(--color-border) bg-(--color-surface) px-2 py-2"
                     onChange={async (event) => {
+                        if (
+                            changing ||
+                            switching ||
+                            isChangingLocale() ||
+                            hasDirtyContent()
+                        )
+                            return;
                         const next = event.target.value as Locale;
                         setSwitching(true);
-                        await waitForContentActions();
-                        if (!hasDirtyContent()) {
+                        try {
+                            await waitForContentActions();
+                            if (isChangingLocale() || hasDirtyContent()) return;
                             setEditingLocale(next);
                             setLocale(next);
                             onChange(next);
+                        } finally {
+                            setSwitching(false);
                         }
-                        setSwitching(false);
                     }}
                 >
                     {LOCALES.map((value) => (

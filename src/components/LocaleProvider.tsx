@@ -4,6 +4,7 @@ import {
     createContext,
     useContext,
     useState,
+    useRef,
     useCallback,
     type ReactNode,
 } from "react";
@@ -19,6 +20,7 @@ const LocaleContext = createContext({
     locale: "ko" as Locale,
     messages: {} as UIMessages,
     changing: false,
+    isChangingLocale: (): boolean => false,
     provided: false,
     error: "",
     changeLocale: async (_locale: Locale, _options?: { persist?: boolean }) =>
@@ -38,11 +40,14 @@ export const LocaleProvider = ({
     const [locale, setLocale] = useState(initialLocale);
     const [messages, setMessages] = useState(initialMessages);
     const [changing, setChanging] = useState(false);
+    const pendingChanges = useRef(0);
     const [error, setError] = useState("");
+    const isChangingLocale = useCallback(() => pendingChanges.current > 0, []);
     const changeLocale = async (
         next: Locale,
         options?: { persist?: boolean }
     ) => {
+        pendingChanges.current += 1;
         setChanging(true);
         setError("");
         try {
@@ -57,7 +62,8 @@ export const LocaleProvider = ({
             setError("화면 언어를 불러오지 못했습니다. 다시 선택하세요.");
             return false;
         } finally {
-            setChanging(false);
+            pendingChanges.current -= 1;
+            setChanging(pendingChanges.current > 0);
         }
     };
     return (
@@ -66,6 +72,7 @@ export const LocaleProvider = ({
                 locale,
                 messages,
                 changing,
+                isChangingLocale,
                 provided: true,
                 error,
                 changeLocale,
