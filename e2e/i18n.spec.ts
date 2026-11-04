@@ -192,10 +192,11 @@ test.describe("주소로 지정한 공개 언어", () => {
             .locator("#site-header")
             .getByRole("link", { name: navigation.ja.portfolio, exact: true })
             .click();
-        await expect(page).toHaveURL(
+        await page.waitForURL(
             (url) =>
                 url.pathname === "/web/portfolio" &&
-                url.searchParams.get("lang") === "ja"
+                url.searchParams.get("lang") === "ja",
+            { waitUntil: "domcontentloaded", timeout: 5000 }
         );
         await expect(page.locator("html")).toHaveAttribute("lang", "ja");
         expect(new URL(page.url()).searchParams.has("source")).toBe(false);
@@ -245,11 +246,12 @@ test.describe("주소로 지정한 공개 언어", () => {
             "/web/portfolio/not-written-i18n-test?lang=ja&source=mail",
             { waitUntil: "domcontentloaded" }
         );
-        await expect(page).toHaveURL(
+        await page.waitForURL(
             (url) =>
                 url.pathname === "/web/portfolio" &&
                 url.searchParams.get("lang") === "ja" &&
-                url.searchParams.get("source") === "mail"
+                url.searchParams.get("source") === "mail",
+            { waitUntil: "domcontentloaded", timeout: 5000 }
         );
         await expect(page.locator("html")).toHaveAttribute("lang", "ja");
     });
