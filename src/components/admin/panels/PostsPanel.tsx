@@ -1,4 +1,10 @@
 "use client";
+import { useUILocale, useUITranslation } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -13,19 +19,19 @@ import {
 } from "@/lib/orphan-cleanup";
 import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
-import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
+import { rewriteEditorSnapshotUrls as raw_rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
-    batchDeletePostsByIds,
-    batchRenamePostTitlesByRegex,
-    batchSetPostJobField,
-    batchSetPostPublished,
-    deletePostById,
-    getPostsPanelBootstrap,
-    savePost,
-    savePostTocStyle,
-    setPostPublished,
+    batchDeletePostsByIds as raw_batchDeletePostsByIds,
+    batchRenamePostTitlesByRegex as raw_batchRenamePostTitlesByRegex,
+    batchSetPostJobField as raw_batchSetPostJobField,
+    batchSetPostPublished as raw_batchSetPostPublished,
+    deletePostById as raw_deletePostById,
+    getPostsPanelBootstrap as raw_getPostsPanelBootstrap,
+    savePost as raw_savePost,
+    savePostTocStyle as raw_savePostTocStyle,
+    setPostPublished as raw_setPostPublished,
 } from "@/app/admin/actions/posts";
-import { createPostCategory } from "@/app/admin/actions/tags";
+import { createPostCategory as raw_createPostCategory } from "@/app/admin/actions/tags";
 import {
     Eye,
     EyeOff,
@@ -59,9 +65,27 @@ import {
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
 import { ContentEditorGuide } from "@/components/admin/ContentEditorGuide";
 import { Badge } from "@/components/ui/badge";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { bindContentAction, getEditingLocale } from "@/lib/admin-content-state";
+import type { Locale } from "@/lib/i18n";
+const rewriteEditorSnapshotUrls = bindContentAction(
+    raw_rewriteEditorSnapshotUrls
+);
+const batchDeletePostsByIds = bindContentAction(raw_batchDeletePostsByIds);
+const batchRenamePostTitlesByRegex = bindContentAction(
+    raw_batchRenamePostTitlesByRegex
+);
+const batchSetPostJobField = bindContentAction(raw_batchSetPostJobField);
+const batchSetPostPublished = bindContentAction(raw_batchSetPostPublished);
+const deletePostById = bindContentAction(raw_deletePostById);
+const getPostsPanelBootstrap = bindContentAction(raw_getPostsPanelBootstrap);
+const savePost = bindContentAction(raw_savePost);
+const savePostTocStyle = bindContentAction(raw_savePostTocStyle);
+const setPostPublished = bindContentAction(raw_setPostPublished);
+const createPostCategory = bindContentAction(raw_createPostCategory);
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -166,10 +190,16 @@ async function sha256Hex(value: string): Promise<string> {
         .join("");
 }
 
-async function postChunkedContentRequest<T>(body: unknown): Promise<T> {
+async function postChunkedContentRequest<T>(
+    body: unknown,
+    locale: Locale
+): Promise<T> {
     const response = await fetch("/api/admin/posts/chunked-content", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "x-folium-content-locale": locale,
+        },
         body: JSON.stringify(body),
     });
     const json = (await response.json()) as T & { error?: string };
@@ -182,6 +212,8 @@ export default function PostsPanel({
     editPath = "",
     onEditPathChange,
 }: PostsPanelProps) {
+    const { locale } = useUILocale();
+    const uiT = useUITranslation();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [editTarget, setEditTarget] = useState<Post | null | "new">(null);
@@ -301,7 +333,9 @@ export default function PostsPanel({
         if (!result.success) {
             setPostTocStyles(previous);
             window.alert(
-                `목차 스타일 저장 실패: ${result.error ?? "알 수 없는 오류"}`
+                uiT("목차 스타일 저장 실패: {0}", [
+                    result.error ?? { text: "알 수 없는 오류" },
+                ])
             );
         }
     };
@@ -310,7 +344,8 @@ export default function PostsPanel({
         postId: string
     ): Promise<{ content: string; storageMode: PostContentStorageMode }> => {
         const response = await fetch(
-            `/api/admin/posts/chunked-content?postId=${encodeURIComponent(postId)}`
+            `/api/admin/posts/chunked-content?postId=${encodeURIComponent(postId)}`,
+            { headers: { "x-folium-content-locale": getEditingLocale() } }
         );
         const json = (await response.json()) as {
             success?: boolean;
@@ -443,6 +478,7 @@ export default function PostsPanel({
         payload: ReturnType<typeof buildPayload>,
         editTargetId?: string | null
     ): Promise<SavePostResult> => {
+        const locale = getEditingLocale();
         try {
             const chunks = splitUtf8Chunks(
                 payload.content,
@@ -453,32 +489,38 @@ export default function PostsPanel({
                 success: true;
                 revisionId: string;
                 post: Post;
-            }>({
-                action: "init",
-                payload: { ...payload, content: "" },
-                editTargetId,
-                contentHash,
-                contentSize: getUtf8ByteSize(payload.content),
-                chunkSize: POST_CONTENT_CHUNK_BYTES,
-                chunkCount: chunks.length,
-            });
+            }>(
+                {
+                    action: "init",
+                    payload: { ...payload, content: "" },
+                    editTargetId,
+                    contentHash,
+                    contentSize: getUtf8ByteSize(payload.content),
+                    chunkSize: POST_CONTENT_CHUNK_BYTES,
+                    chunkCount: chunks.length,
+                },
+                locale
+            );
 
             for (let index = 0; index < chunks.length; index += 1) {
                 const chunk = chunks[index] ?? "";
-                await postChunkedContentRequest<{ success: true }>({
-                    action: "chunk",
-                    revisionId: init.revisionId,
-                    chunkIndex: index,
-                    content: chunk,
-                    checksum: await sha256Hex(chunk),
-                });
+                await postChunkedContentRequest<{ success: true }>(
+                    {
+                        action: "chunk",
+                        revisionId: init.revisionId,
+                        chunkIndex: index,
+                        content: chunk,
+                        checksum: await sha256Hex(chunk),
+                    },
+                    locale
+                );
             }
 
             const committed = await postChunkedContentRequest<{
                 success: true;
                 post: Post;
                 storageMode: PostContentStorageMode;
-            }>({ action: "commit", revisionId: init.revisionId });
+            }>({ action: "commit", revisionId: init.revisionId }, locale);
 
             return {
                 success: true,
@@ -645,7 +687,9 @@ export default function PostsPanel({
     if (editPath && !editTarget && !editPathRestoredRef.current) {
         return (
             <div className="flex items-center justify-center py-20">
-                <span className="text-zinc-400">불러오는 중...</span>
+                <span className="text-zinc-400">
+                    <LocalizedText text={"불러오는 중..."} />
+                </span>
             </div>
         );
     }
@@ -660,7 +704,7 @@ export default function PostsPanel({
                         onClick={handleBack}
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        ← 목록
+                        <LocalizedText text={"← 목록"} />
                     </button>
                     <button
                         disabled={!form.published}
@@ -669,26 +713,35 @@ export default function PostsPanel({
                         }
                         className="flex items-center gap-1.5 rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
-                        <ExternalLink size={15} />
-                        미리보기
+                        <LocalizedRichText
+                            text={"{0}미리보기"}
+                            values={[<ExternalLink size={15} />]}
+                        />
                     </button>
                     <button
                         onClick={() => setMetadataOpen(true)}
                         className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
                     >
-                        <Settings size={15} />
-                        설정
+                        <LocalizedRichText
+                            text={"{0}설정"}
+                            values={[<Settings size={15} />]}
+                        />
                     </button>
                 </div>
                 <p className="text-center text-base text-(--color-muted)">
-                    저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
-                    즉시 제공됩니다.
+                    <LocalizedText
+                        text={
+                            "저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게 즉시 제공됩니다."
+                        }
+                    />
                 </p>
                 <ContentEditorGuide kind="post" />
 
                 {/* 제목 입력 */}
                 <div className="px-1">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={form.title}
                         onChange={(e) => {
@@ -739,14 +792,16 @@ export default function PostsPanel({
                             }}
                             className="shrink-0 rounded bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted) hover:text-(--color-foreground)"
                         >
-                            자동 생성
+                            <LocalizedText text={"자동 생성"} />
                         </button>
                     )}
                 </div>
 
                 {/* 본문 에디터 */}
                 <div className="tablet:min-h-0 min-h-[400px] flex-1">
-                    <RichMarkdownEditor
+                    <LocalizedElement
+                        as={RichMarkdownEditor}
+                        translatedProps={["placeholder"]}
                         value={form.content}
                         onChange={(c) => setForm((f) => ({ ...f, content: c }))}
                         placeholder="본문을 작성하세요. ## 제목, **굵게**, [링크](url) 등 마크다운 문법이 즉시 반영됩니다."
@@ -787,15 +842,19 @@ export default function PostsPanel({
                 <AdminSaveBar>
                     {error ? (
                         <span className="text-base font-medium text-red-500">
-                            {error}
+                            {<LocalizedText text={error} />}
                         </span>
                     ) : success ? (
                         <span className="text-base font-medium text-green-600">
-                            {success}
+                            {<LocalizedText text={success} />}
                         </span>
                     ) : (
                         <span className="text-base text-(--color-muted)">
-                            저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                            <LocalizedText
+                                text={
+                                    "저장 후 미리보기를 방문하면 캐시가 갱신됩니다."
+                                }
+                            />
                         </span>
                     )}
                     <div className="flex items-center gap-3">
@@ -805,18 +864,27 @@ export default function PostsPanel({
                             isDirty={isDirty}
                         />
                         <div className="flex items-center gap-3">
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                messageProps={{
+                                    "aria-label": {
+                                        text: "임시 저장 열기: {0}/6",
+                                        values: [snapshotCount],
+                                    },
+                                }}
                                 type="button"
                                 onClick={() => setStateModalOpen(true)}
                                 className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-base font-semibold whitespace-nowrap text-white shadow-sm transition-colors hover:bg-indigo-500 dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-500"
                                 aria-label={`임시 저장 열기: ${snapshotCount}/6`}
                             >
                                 <Clock3 className="h-4 w-4" />
-                                <span>임시 저장</span>
+                                <span>
+                                    <LocalizedText text={"임시 저장"} />
+                                </span>
                                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
                                     {snapshotCount}/6
                                 </span>
-                            </button>
+                            </LocalizedElement>
                             {editTarget !== "new" && (
                                 <button
                                     onClick={() =>
@@ -824,7 +892,7 @@ export default function PostsPanel({
                                     }
                                     className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                 >
-                                    삭제
+                                    <LocalizedText text={"삭제"} />
                                 </button>
                             )}
                             <button
@@ -832,7 +900,11 @@ export default function PostsPanel({
                                 disabled={saving || !isDirty}
                                 className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
-                                {saving ? "저장 중..." : "저장"}
+                                {saving ? (
+                                    <LocalizedText text={"저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"저장"} />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -1082,24 +1154,29 @@ export default function PostsPanel({
                 <div className="mb-4 flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-(--color-foreground)">
-                            블로그 포스트
+                            <LocalizedText text={"블로그 포스트"} />
                         </h2>
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            검색·필터로 항목을 찾고, 편집 화면의 설정에서 공개
-                            정보와 본문을 함께 관리
+                            <LocalizedText
+                                text={
+                                    "검색·필터로 항목을 찾고, 편집 화면의 설정에서 공개 정보와 본문을 함께 관리"
+                                }
+                            />
                         </p>
                     </div>
                     <button
                         onClick={openNew}
                         className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
-                        + 새 포스트
+                        <LocalizedText text={"+ 새 포스트"} />
                     </button>
                 </div>
 
                 {/* 필터 + 정렬 */}
                 <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
@@ -1115,9 +1192,15 @@ export default function PostsPanel({
                         }
                         className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
                     >
-                        <option value="all">전체</option>
-                        <option value="published">Published</option>
-                        <option value="draft">Draft</option>
+                        <option value="all">
+                            <LocalizedText text={"전체"} />
+                        </option>
+                        <option value="published">
+                            <LocalizedText text={"Published"} />
+                        </option>
+                        <option value="draft">
+                            <LocalizedText text={"Draft"} />
+                        </option>
                     </select>
                     {jobFields.length > 0 && (
                         <select
@@ -1125,7 +1208,9 @@ export default function PostsPanel({
                             onChange={(e) => setFilterJobField(e.target.value)}
                             className="rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:outline-none"
                         >
-                            <option value="">직무 분야 전체</option>
+                            <option value="">
+                                <LocalizedText text={"직무 분야 전체"} />
+                            </option>
                             {jobFields.map((f) => (
                                 <option key={f.id} value={f.id}>
                                     {f.emoji} {f.name}
@@ -1166,7 +1251,9 @@ export default function PostsPanel({
                                 label: "Draft 먼저",
                             },
                         ].map(({ key, icon, label }) => (
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["title", "aria-label"]}
                                 key={key}
                                 onClick={() => setSortAndSave(key)}
                                 title={label}
@@ -1178,7 +1265,7 @@ export default function PostsPanel({
                                 }`}
                             >
                                 {icon}
-                            </button>
+                            </LocalizedElement>
                         ))}
                     </div>
                 </div>
@@ -1189,7 +1276,10 @@ export default function PostsPanel({
                 {someSelected && (
                     <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-(--color-accent)/30 bg-(--color-surface-subtle) px-4 py-3">
                         <span className="text-sm font-medium text-(--color-foreground)">
-                            {selected.size}개 선택됨
+                            <LocalizedRichText
+                                text={"{0}개 선택됨"}
+                                values={[selected.size]}
+                            />
                         </span>
                         <button
                             type="button"
@@ -1197,7 +1287,10 @@ export default function PostsPanel({
                             disabled={batchSaving}
                             className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                         >
-                            <Eye size={13} /> Publish
+                            <LocalizedRichText
+                                text={"{0} Publish"}
+                                values={[<Eye size={13} />]}
+                            />
                         </button>
                         <button
                             type="button"
@@ -1205,7 +1298,10 @@ export default function PostsPanel({
                             disabled={batchSaving}
                             className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                         >
-                            <EyeOff size={13} /> Unpublish
+                            <LocalizedRichText
+                                text={"{0} Unpublish"}
+                                values={[<EyeOff size={13} />]}
+                            />
                         </button>
                         {jobFields.length > 0 && (
                             <div className="flex items-center gap-1.5">
@@ -1216,7 +1312,11 @@ export default function PostsPanel({
                                     }
                                     className="rounded-lg border border-(--color-border) bg-(--color-surface) px-2 py-1.5 text-sm text-(--color-foreground)"
                                 >
-                                    <option value="">직무 분야 선택</option>
+                                    <option value="">
+                                        <LocalizedText
+                                            text={"직무 분야 선택"}
+                                        />
+                                    </option>
                                     {jobFields.map((f) => (
                                         <option key={f.id} value={f.id}>
                                             {f.emoji} {f.name}
@@ -1229,7 +1329,7 @@ export default function PostsPanel({
                                     disabled={batchSaving || !batchJobField}
                                     className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                 >
-                                    적용
+                                    <LocalizedText text={"적용"} />
                                 </button>
                             </div>
                         )}
@@ -1241,7 +1341,10 @@ export default function PostsPanel({
                             disabled={batchSaving}
                             className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                         >
-                            <Pencil size={13} /> Regex rename
+                            <LocalizedRichText
+                                text={"{0} Regex rename"}
+                                values={[<Pencil size={13} />]}
+                            />
                         </button>
                         <button
                             type="button"
@@ -1249,19 +1352,24 @@ export default function PostsPanel({
                             disabled={batchSaving}
                             className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                         >
-                            <Trash2 size={13} /> Delete
+                            <LocalizedRichText
+                                text={"{0} Delete"}
+                                values={[<Trash2 size={13} />]}
+                            />
                         </button>
                         <button
                             type="button"
                             onClick={() => setSelected(new Set())}
                             className="ml-auto text-sm text-(--color-muted) hover:text-(--color-foreground)"
                         >
-                            선택 해제
+                            <LocalizedText text={"선택 해제"} />
                         </button>
                         {batchRenameOpen && (
                             <div className="mt-2 grid w-full gap-2 border-t border-(--color-border) pt-3">
                                 <div className="tablet:grid-cols-[1fr_1fr_auto] grid gap-2">
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         type="text"
                                         value={batchRenamePattern}
                                         onChange={(event) =>
@@ -1272,7 +1380,9 @@ export default function PostsPanel({
                                         placeholder="정규식 패턴"
                                         className="min-w-0 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent)/40 focus:outline-none"
                                     />
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         type="text"
                                         value={batchRenameReplacement}
                                         onChange={(event) =>
@@ -1294,7 +1404,10 @@ export default function PostsPanel({
                                         }
                                         className="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white hover:opacity-90 disabled:opacity-50"
                                     >
-                                        {batchRenameChanged}개 변경
+                                        <LocalizedRichText
+                                            text={"{0}개 변경"}
+                                            values={[batchRenameChanged]}
+                                        />
                                     </button>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-4 text-xs text-(--color-muted)">
@@ -1308,7 +1421,7 @@ export default function PostsPanel({
                                                 )
                                             }
                                         />
-                                        전체 일치
+                                        <LocalizedText text={"전체 일치"} />
                                     </label>
                                     <label className="inline-flex items-center gap-1.5">
                                         <input
@@ -1320,17 +1433,30 @@ export default function PostsPanel({
                                                 )
                                             }
                                         />
-                                        대소문자 무시
+                                        <LocalizedText text={"대소문자 무시"} />
                                     </label>
                                     {batchRenameError && (
                                         <span className="text-red-500">
-                                            정규식 오류: {batchRenameError}
+                                            <LocalizedRichText
+                                                text={"정규식 오류: {0}"}
+                                                values={[
+                                                    <LocalizedText
+                                                        text={batchRenameError}
+                                                    />,
+                                                ]}
+                                            />
                                         </span>
                                     )}
                                     {!batchRenameError &&
                                         batchRenamePattern.trim() &&
                                         batchRenameChanged === 0 && (
-                                            <span>변경될 제목이 없습니다.</span>
+                                            <span>
+                                                <LocalizedText
+                                                    text={
+                                                        "변경될 제목이 없습니다."
+                                                    }
+                                                />
+                                            </span>
                                         )}
                                 </div>
                                 {batchRenamePreview.length > 0 && (
@@ -1358,23 +1484,43 @@ export default function PostsPanel({
                     </div>
                 )}
 
-                {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+                {error && (
+                    <p className="mb-4 text-sm text-red-500">
+                        {<LocalizedText text={error} />}
+                    </p>
+                )}
 
                 {loading ? (
                     <p className="text-sm text-(--color-muted)">
-                        불러오는 중...
+                        <LocalizedText text={"불러오는 중..."} />
                     </p>
                 ) : displayedPosts.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-6 py-10 text-center">
                         <p className="text-base font-semibold text-(--color-foreground)">
-                            {posts.length === 0
-                                ? "첫 포스트를 작성할 준비가 됐습니다"
-                                : "필터 조건에 맞는 포스트가 없습니다"}
+                            {posts.length === 0 ? (
+                                <LocalizedText
+                                    text={"첫 포스트를 작성할 준비가 됐습니다"}
+                                />
+                            ) : (
+                                <LocalizedText
+                                    text={"필터 조건에 맞는 포스트가 없습니다"}
+                                />
+                            )}
                         </p>
                         <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-(--color-muted)">
-                            {posts.length === 0
-                                ? "제목을 입력하면 주소가 자동 생성됩니다. 설정에서 직무 분야와 공개 여부를 확인한 뒤 본문을 작성하세요."
-                                : "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."}
+                            {posts.length === 0 ? (
+                                <LocalizedText
+                                    text={
+                                        "제목을 입력하면 주소가 자동 생성됩니다. 설정에서 직무 분야와 공개 여부를 확인한 뒤 본문을 작성하세요."
+                                    }
+                                />
+                            ) : (
+                                <LocalizedText
+                                    text={
+                                        "검색어·공개 상태·직무 분야 필터를 초기화해 다시 확인하세요."
+                                    }
+                                />
+                            )}
                         </p>
                         {posts.length === 0 ? (
                             <button
@@ -1382,7 +1528,7 @@ export default function PostsPanel({
                                 onClick={openNew}
                                 className="mt-5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90"
                             >
-                                첫 포스트 작성
+                                <LocalizedText text={"첫 포스트 작성"} />
                             </button>
                         ) : null}
                     </div>
@@ -1398,7 +1544,10 @@ export default function PostsPanel({
                                     className="h-4 w-4 cursor-pointer rounded"
                                 />
                                 <span className="text-sm text-(--color-muted)">
-                                    전체 선택 ({displayedPosts.length}개)
+                                    <LocalizedRichText
+                                        text={"전체 선택 ({0}개)"}
+                                        values={[displayedPosts.length]}
+                                    />
                                 </span>
                             </div>
                         </div>
@@ -1445,24 +1594,41 @@ export default function PostsPanel({
                                                     ) : (
                                                         <EyeOff size={10} />
                                                     )}
-                                                    {post.published
-                                                        ? "Published"
-                                                        : "Draft"}
+                                                    {post.published ? (
+                                                        <LocalizedText
+                                                            text={"Published"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"Draft"}
+                                                        />
+                                                    )}
                                                 </span>
                                                 {!hasJobField && (
                                                     <Badge
                                                         variant="destructive"
                                                         className="text-xs"
                                                     >
-                                                        <AlertTriangle
-                                                            size={10}
+                                                        <LocalizedRichText
+                                                            text={
+                                                                "{0}직무 분야 없음"
+                                                            }
+                                                            values={[
+                                                                <AlertTriangle
+                                                                    size={10}
+                                                                />,
+                                                            ]}
                                                         />
-                                                        직무 분야 없음
                                                     </Badge>
                                                 )}
                                                 {stateCount > 0 && (
                                                     <span className="rounded-lg bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
-                                                        상태: {stateCount}
+                                                        <LocalizedRichText
+                                                            text={"상태: {0}"}
+                                                            values={[
+                                                                stateCount,
+                                                            ]}
+                                                        />
                                                     </span>
                                                 )}
                                                 {post.category && (
@@ -1506,7 +1672,13 @@ export default function PostsPanel({
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                        <div className="tablet:opacity-0 tablet:group-hover:opacity-100 tablet:focus-within:opacity-100 flex shrink-0 items-center gap-1 transition-opacity">
+                                            <LanguageCopyButton
+                                                kind="post"
+                                                sourceKey={post.slug}
+                                                sourceTitle={post.title}
+                                                compact
+                                            />
                                             <button
                                                 onClick={() =>
                                                     togglePublish(post)
@@ -1525,12 +1697,29 @@ export default function PostsPanel({
                                                     <Eye size={12} />
                                                 )}
                                                 <span className="tablet:inline hidden">
-                                                    {post.published
-                                                        ? "Unpublish"
-                                                        : "Publish"}
+                                                    {post.published ? (
+                                                        <LocalizedText
+                                                            text={"Unpublish"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"Publish"}
+                                                        />
+                                                    )}
                                                 </span>
                                             </button>
-                                            <button
+                                            <LocalizedElement
+                                                as="button"
+                                                messageProps={{
+                                                    title: {
+                                                        text: "{0} 편집",
+                                                        values: [post.title],
+                                                    },
+                                                    "aria-label": {
+                                                        text: "{0} 편집",
+                                                        values: [post.title],
+                                                    },
+                                                }}
                                                 onClick={() =>
                                                     void openEdit(post)
                                                 }
@@ -1540,10 +1729,23 @@ export default function PostsPanel({
                                             >
                                                 <Pencil size={12} />
                                                 <span className="tablet:inline hidden">
-                                                    편집
+                                                    <LocalizedText
+                                                        text={"편집"}
+                                                    />
                                                 </span>
-                                            </button>
-                                            <button
+                                            </LocalizedElement>
+                                            <LocalizedElement
+                                                as="button"
+                                                messageProps={{
+                                                    title: {
+                                                        text: "{0} 삭제",
+                                                        values: [post.title],
+                                                    },
+                                                    "aria-label": {
+                                                        text: "{0} 삭제",
+                                                        values: [post.title],
+                                                    },
+                                                }}
                                                 onClick={() =>
                                                     handleDelete(post.id)
                                                 }
@@ -1553,9 +1755,11 @@ export default function PostsPanel({
                                             >
                                                 <Trash2 size={12} />
                                                 <span className="tablet:inline hidden">
-                                                    삭제
+                                                    <LocalizedText
+                                                        text={"삭제"}
+                                                    />
                                                 </span>
-                                            </button>
+                                            </LocalizedElement>
                                         </div>
                                     </div>
                                 );
@@ -1567,7 +1771,7 @@ export default function PostsPanel({
                 {/* 토스트 알림 */}
                 {toast && (
                     <div className="fixed right-6 bottom-6 z-100 rounded-lg bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-lg">
-                        {toast}
+                        {<LocalizedText text={toast} />}
                     </div>
                 )}
             </div>

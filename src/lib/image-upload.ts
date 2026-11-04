@@ -1,3 +1,17 @@
+import { getEditingLocale } from "@/lib/admin-content-state";
+
+// 번역의 새 자산과 한국어 원본 폴더 분리
+export const localizeStorageFolder = (folder: string): string => {
+    const locale = typeof document === "undefined" ? "ko" : getEditingLocale();
+    if (locale === "ko" || /\/_i18n\//.test(folder)) return folder;
+    const match = folder.match(
+        /^(blog|portfolio|books|resume|about)(?:\/(.*))?$/
+    );
+    return match
+        ? `${match[1]}/_i18n/${locale}${match[2] ? `/${match[2]}` : ""}`
+        : folder;
+};
+
 // 이미지 업로드 유틸: WebP 변환 + Cloudflare R2
 
 // 이미지 파일/Blob → WebP Blob 변환
@@ -56,7 +70,7 @@ export function getStoragePath(
 ): string {
     const uuid = crypto.randomUUID();
     if (folderPath) {
-        return `${folderPath}/${uuid}.${ext}`;
+        return `${localizeStorageFolder(folderPath)}/${uuid}.${ext}`;
     }
     const now = new Date();
     const y = now.getFullYear();
@@ -128,7 +142,10 @@ export async function listStorageFiles(folder: string): Promise<string[]> {
     const res = await fetch("/api/storage-ops", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "list", prefix: folder }),
+        body: JSON.stringify({
+            action: "list",
+            prefix: localizeStorageFolder(folder),
+        }),
     });
     if (!res.ok) return [];
     const { files } = await res.json();
@@ -140,15 +157,16 @@ export async function moveStorageFolder(
     oldFolder: string,
     newFolder: string
 ): Promise<void> {
-    await fetch("/api/storage-ops", {
+    const response = await fetch("/api/storage-ops", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             action: "move",
-            oldPrefix: oldFolder,
-            newPrefix: newFolder,
+            oldPrefix: localizeStorageFolder(oldFolder),
+            newPrefix: localizeStorageFolder(newFolder),
         }),
     });
+    if (!response.ok) throw new Error("자산 이동 실패 · 원본 보존");
 }
 
 // R2 폴더 전체 삭제
@@ -156,7 +174,10 @@ export async function deleteStorageFolder(folder: string): Promise<void> {
     await fetch("/api/storage-ops", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", prefix: folder }),
+        body: JSON.stringify({
+            action: "delete",
+            prefix: localizeStorageFolder(folder),
+        }),
     });
 }
 
@@ -178,7 +199,10 @@ export function replaceImageUrls(
 ): string {
     // R2 URL: ...r2.dev/blog/old-slug/uuid.webp → ...r2.dev/blog/new-slug/uuid.webp
     // Supabase URL 잔존 대비: .../images/blog/old-slug/... → .../images/blog/new-slug/...
-    return content.replaceAll(`/${oldFolder}/`, `/${newFolder}/`);
+    return content.replaceAll(
+        `/${localizeStorageFolder(oldFolder)}/`,
+        `/${localizeStorageFolder(newFolder)}/`
+    );
 }
 
 // TODO: 이미지 중복 처리

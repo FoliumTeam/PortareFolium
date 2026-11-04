@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { ExternalLink } from "lucide-react";
 import type { PortfolioMedia } from "@/types/portfolio";
 
@@ -22,7 +23,7 @@ export default function PortfolioGallery({
                 id="portfolio-gallery-heading"
                 className="mb-5 text-2xl font-(--font-display) font-black text-(--color-foreground)"
             >
-                {heading}
+                {serverT(heading)}
             </h2>
             <div className="tablet:grid-cols-2 grid min-w-0 grid-cols-1 gap-5">
                 {media.map((item) => (
@@ -70,7 +71,7 @@ export default function PortfolioGallery({
                                     href={item.src}
                                     className="mt-2 flex w-fit items-center gap-1 font-semibold text-(--color-accent) underline-offset-4 hover:underline"
                                 >
-                                    영상 원본
+                                    {serverT("영상 원본")}
                                     <ExternalLink
                                         className="h-3.5 w-3.5"
                                         aria-hidden="true"

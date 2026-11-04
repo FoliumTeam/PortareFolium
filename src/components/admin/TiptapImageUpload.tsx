@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 // Tiptap 에디터 전용 이미지 업로드 모달
 // 파일 업로드 (drag & drop + file picker) 및 URL 입력 지원
@@ -132,7 +133,7 @@ export default function TiptapImageUpload({
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3 className="mb-4 text-xl font-semibold text-(--color-foreground)">
-                    이미지 삽입
+                    <LocalizedText text={"이미지 삽입"} />
                 </h3>
 
                 {/* 탭 전환 */}
@@ -149,7 +150,7 @@ export default function TiptapImageUpload({
                                 : "border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-subtle)"
                         }`}
                     >
-                        파일 업로드
+                        <LocalizedText text={"파일 업로드"} />
                     </button>
                     <button
                         type="button"
@@ -163,16 +164,18 @@ export default function TiptapImageUpload({
                                 : "border border-(--color-border) text-(--color-muted) hover:bg-(--color-surface-subtle)"
                         }`}
                     >
-                        URL 입력
+                        <LocalizedText text={"URL 입력"} />
                     </button>
                 </div>
 
                 {/* Alt 텍스트 */}
                 <div className="mb-4">
                     <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                        대체 텍스트 (선택)
+                        <LocalizedText text={"대체 텍스트 (선택)"} />
                     </label>
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={altInput}
                         onChange={(e) => setAltInput(e.target.value)}
@@ -199,16 +202,24 @@ export default function TiptapImageUpload({
                             className="block cursor-pointer"
                         >
                             {preview ? (
-                                <img
+                                <LocalizedElement
+                                    as="img"
+                                    translatedProps={["alt"]}
                                     src={preview}
                                     alt="미리보기"
                                     className="mx-auto max-h-48 rounded"
                                 />
                             ) : (
                                 <span className="text-base text-(--color-muted)">
-                                    클릭하거나 이미지를 끌어다 놓으세요
+                                    <LocalizedText
+                                        text={
+                                            "클릭하거나 이미지를 끌어다 놓으세요"
+                                        }
+                                    />
                                     <br />
-                                    (최대 5MB, WebP로 변환 저장)
+                                    <LocalizedText
+                                        text={"(최대 5MB, WebP로 변환 저장)"}
+                                    />
                                 </span>
                             )}
                         </label>
@@ -216,9 +227,11 @@ export default function TiptapImageUpload({
                 ) : (
                     <div className="mb-4">
                         <label className="mb-1 block text-base font-medium text-(--color-muted)">
-                            이미지 URL
+                            <LocalizedText text={"이미지 URL"} />
                         </label>
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             type="url"
                             value={urlInput}
                             onChange={(e) => setUrlInput(e.target.value)}
@@ -226,14 +239,19 @@ export default function TiptapImageUpload({
                             className="w-full rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-base text-(--color-foreground)"
                         />
                         <p className="mt-1 text-sm text-(--color-muted)">
-                            외부 이미지 URL을 그대로 본문에 삽입 (R2 업로드 안
-                            함)
+                            <LocalizedText
+                                text={
+                                    "외부 이미지 URL을 그대로 본문에 삽입 (R2 업로드 안 함)"
+                                }
+                            />
                         </p>
                     </div>
                 )}
 
                 {error && (
-                    <p className="mb-4 text-base text-red-500">{error}</p>
+                    <p className="mb-4 text-base text-red-500">
+                        {<LocalizedText text={error} />}
+                    </p>
                 )}
 
                 <div className="flex justify-end gap-2">
@@ -242,7 +260,7 @@ export default function TiptapImageUpload({
                         onClick={handleClose}
                         className="rounded-lg border border-(--color-border) px-4 py-2 text-base text-(--color-muted) hover:bg-(--color-surface-subtle)"
                     >
-                        취소
+                        <LocalizedText text={"취소"} />
                     </button>
                     {mode === "upload" ? (
                         <button
@@ -251,7 +269,11 @@ export default function TiptapImageUpload({
                             disabled={!file || uploading}
                             className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-medium text-(--color-on-accent) disabled:opacity-50"
                         >
-                            {uploading ? "업로드 중..." : "삽입"}
+                            {uploading ? (
+                                <LocalizedText text={"업로드 중..."} />
+                            ) : (
+                                <LocalizedText text={"삽입"} />
+                            )}
                         </button>
                     ) : (
                         <button
@@ -260,7 +282,7 @@ export default function TiptapImageUpload({
                             disabled={!urlInput.trim()}
                             className="rounded-lg bg-(--color-accent) px-4 py-2 text-base font-medium text-(--color-on-accent) disabled:opacity-50"
                         >
-                            URL 삽입
+                            <LocalizedText text={"URL 삽입"} />
                         </button>
                     )}
                 </div>

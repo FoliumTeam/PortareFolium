@@ -1,4 +1,10 @@
 "use client";
+import { useUITranslation } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Resume, ResumeBasicsPresentationConfig } from "@/types/resume";
@@ -27,7 +33,7 @@ const EXTRA_LABELS: Record<string, string> = {
     careerPhases: "커리어 타임라인",
 };
 
-const getSectionLabel = (key: string): string => {
+const getSectionLabelValue = (key: string): string => {
     return (
         defaultSectionLabels[key] ||
         EXTRA_LABELS[key] ||
@@ -44,6 +50,8 @@ export default function ResumeLayoutEditor({
     aboutData,
     basicsPresentation,
 }: Props) {
+    const uiT = useUITranslation();
+    const getSectionLabel = (key: string) => uiT(getSectionLabelValue(key));
     const dragSrcRef = useRef<number | null>(null);
     const dragOverRef = useRef<number | null>(null);
     const [previewJobField, setPreviewJobField] = useState(
@@ -140,16 +148,27 @@ export default function ResumeLayoutEditor({
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-(--color-border) bg-(--color-surface) p-3">
                 <div className="mr-2 min-w-48">
                     <p className="text-sm font-semibold text-(--color-foreground)">
-                        공개 Resume live preview
+                        <LocalizedText text={"공개 Resume live preview"} />
                     </p>
                     <p className="text-xs text-(--color-muted)">
-                        디자인·직무 분야·section 설정을 같은 화면에서 확인
+                        <LocalizedText
+                            text={
+                                "디자인·직무 분야·section 설정을 같은 화면에서 확인"
+                            }
+                        />
                     </p>
                 </div>
                 {jobFields.map((field) => {
                     const selected = field.id === previewJobField;
                     return (
-                        <button
+                        <LocalizedElement
+                            as="button"
+                            messageProps={{
+                                "aria-label": {
+                                    text: "{0} 공개 Resume 미리보기",
+                                    values: [field.name],
+                                },
+                            }}
                             key={field.id}
                             type="button"
                             onClick={() => setPreviewJobField(field.id)}
@@ -162,12 +181,15 @@ export default function ResumeLayoutEditor({
                             }`}
                         >
                             {field.emoji} {field.name}
-                        </button>
+                        </LocalizedElement>
                     );
                 })}
                 {selectedJobField ? (
                     <span className="ml-auto text-xs text-(--color-muted)">
-                        /{selectedJobField.id}/resume · {theme}
+                        <LocalizedRichText
+                            text={"/{0}/resume · {1}"}
+                            values={[selectedJobField.id, theme]}
+                        />
                     </span>
                 ) : null}
             </div>
@@ -208,11 +230,14 @@ export default function ResumeLayoutEditor({
 
                 <div className="flex min-h-0 w-96 shrink-0 flex-col overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-4">
                     <h3 className="mb-3 text-lg font-bold text-(--color-foreground)">
-                        섹션 순서 / 표시 여부
+                        <LocalizedText text={"섹션 순서 / 표시 여부"} />
                     </h3>
                     <p className="mb-4 text-sm text-(--color-muted)">
-                        눈 아이콘으로 공개 여부 변경. 화살표 또는 Drag으로 순서
-                        변경
+                        <LocalizedText
+                            text={
+                                "눈 아이콘으로 공개 여부 변경. 화살표 또는 Drag으로 순서 변경"
+                            }
+                        />
                     </p>
                     <ul className="flex flex-col gap-1.5">
                         {order.map((key, idx) => {
@@ -236,10 +261,29 @@ export default function ResumeLayoutEditor({
                                 >
                                     <GripVertical className="h-4 w-4 shrink-0 text-(--color-muted)" />
                                     <span className="truncate text-sm font-medium text-(--color-foreground)">
-                                        {getSectionLabel(key)}
+                                        {
+                                            <LocalizedText
+                                                text={getSectionLabel(key)}
+                                            />
+                                        }
                                     </span>
                                     <div className="ml-auto flex items-center gap-1">
-                                        <button
+                                        <LocalizedElement
+                                            as="button"
+                                            messageProps={{
+                                                title: {
+                                                    text: "{0} 위로 이동",
+                                                    values: [
+                                                        getSectionLabel(key),
+                                                    ],
+                                                },
+                                                "aria-label": {
+                                                    text: "{0} 위로 이동",
+                                                    values: [
+                                                        getSectionLabel(key),
+                                                    ],
+                                                },
+                                            }}
                                             type="button"
                                             onClick={() => moveSection(idx, -1)}
                                             disabled={idx === 0}
@@ -248,8 +292,23 @@ export default function ResumeLayoutEditor({
                                             className="rounded-md p-1.5 text-(--color-muted) hover:bg-(--color-surface) hover:text-(--color-foreground) disabled:opacity-30"
                                         >
                                             <ArrowUp className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as="button"
+                                            messageProps={{
+                                                title: {
+                                                    text: "{0} 아래로 이동",
+                                                    values: [
+                                                        getSectionLabel(key),
+                                                    ],
+                                                },
+                                                "aria-label": {
+                                                    text: "{0} 아래로 이동",
+                                                    values: [
+                                                        getSectionLabel(key),
+                                                    ],
+                                                },
+                                            }}
                                             type="button"
                                             onClick={() => moveSection(idx, 1)}
                                             disabled={idx === order.length - 1}
@@ -258,7 +317,7 @@ export default function ResumeLayoutEditor({
                                             className="rounded-md p-1.5 text-(--color-muted) hover:bg-(--color-surface) hover:text-(--color-foreground) disabled:opacity-30"
                                         >
                                             <ArrowDown className="h-3.5 w-3.5" />
-                                        </button>
+                                        </LocalizedElement>
                                         <button
                                             type="button"
                                             onClick={() => handleToggle(key)}

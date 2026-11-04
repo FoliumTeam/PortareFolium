@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { CropRect, VideoMetadata } from "@/lib/video-gif/types";
@@ -117,20 +118,39 @@ const VideoGifPreview = forwardRef<HTMLVideoElement, VideoGifPreviewProps>(
                         </>
                     ) : (
                         <div className="flex h-full items-center justify-center text-sm text-zinc-400">
-                            비디오를 선택하면 여기에 미리보기가 표시됩니다.
+                            <LocalizedText
+                                text={
+                                    "비디오를 선택하면 여기에 미리보기가 표시됩니다."
+                                }
+                            />
                         </div>
                     )}
                 </div>
                 {metadata && (
                     <div className="tablet:grid-cols-3 mt-3 grid gap-2 text-xs text-zinc-300">
                         <span>
-                            원본: {metadata.width} × {metadata.height}px
+                            <LocalizedRichText
+                                text={"원본: {0} × {1}px"}
+                                values={[metadata.width, metadata.height]}
+                            />
                         </span>
-                        <span>길이: {metadata.duration.toFixed(2)}초</span>
+                        <span>
+                            <LocalizedRichText
+                                text={"길이: {0}초"}
+                                values={[metadata.duration.toFixed(2)]}
+                            />
+                        </span>
                         {crop && (
                             <span>
-                                캡처: {crop.width} × {crop.height}px @ ({crop.x}
-                                , {crop.y})
+                                <LocalizedRichText
+                                    text={"캡처: {0} × {1}px @ ({2} , {3})"}
+                                    values={[
+                                        crop.width,
+                                        crop.height,
+                                        crop.x,
+                                        crop.y,
+                                    ]}
+                                />
                             </span>
                         )}
                     </div>

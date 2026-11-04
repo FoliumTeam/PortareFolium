@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import { forwardRef, Fragment, useMemo } from "react";
 
@@ -90,7 +91,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                     {children}
                 </TooltipTrigger>
                 <TooltipContent>
-                    {tooltip}
+                    {<LocalizedText text={tooltip} />}
                     <ShortcutDisplay shortcuts={shortcuts} />
                 </TooltipContent>
             </Tooltip>

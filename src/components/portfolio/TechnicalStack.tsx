@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import { SkillBadge } from "@/components/resume/SkillBadge";
 
 type TechnicalStackCategory =
@@ -102,14 +103,14 @@ export default function TechnicalStack({ keywords }: TechnicalStackProps) {
     if (groups.length === 0) return null;
 
     return (
-        <div className="mt-5 space-y-3" aria-label="기술 스택">
+        <div className="mt-5 space-y-3" aria-label={serverT("기술 스택")}>
             {groups.map((group) => (
                 <div
                     key={group.category}
                     className="flex flex-wrap gap-x-4 gap-y-2"
                 >
                     <p className="w-28 shrink-0 pt-1 text-xs font-bold tracking-[0.12em] text-(--color-muted) uppercase">
-                        {group.category}
+                        {serverT(group.category)}
                     </p>
                     <div className="flex flex-1 flex-wrap gap-2">
                         {group.keywords.map((keyword) => (

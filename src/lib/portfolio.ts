@@ -1,4 +1,5 @@
 import { createProcessor } from "@mdx-js/mdx";
+import type { Locale } from "@/lib/i18n";
 import {
     EDITABLE_PORTFOLIO_DATA_KEYS,
     KNOWN_PORTFOLIO_DATA_KEYS,
@@ -52,10 +53,11 @@ const formatPortfolioMonth = (value: string, fallback: string): string => {
 
 export const formatPortfolioMonthRange = (
     startDate: string,
-    endDate: string
+    endDate: string,
+    translate: (text: string) => string = (text) => text
 ): string => {
-    if (!startDate && !endDate) return "기간 미정";
-    return `${formatPortfolioMonth(startDate, "시작일 미정")} - ${formatPortfolioMonth(endDate, "진행 중")}`;
+    if (!startDate && !endDate) return translate("기간 미정");
+    return `${formatPortfolioMonth(startDate, translate("시작일 미정"))} - ${formatPortfolioMonth(endDate, translate("진행 중"))}`;
 };
 
 /** 팀 구성 문자열을 구성원별 항목으로 분리 */
@@ -600,13 +602,16 @@ export const matchesPortfolioJobField = (
 
 export const normalizePortfolioCaseStudyContent = (
     content: string,
-    style: PortfolioCaseStudyStyle
+    style: PortfolioCaseStudyStyle,
+    locale: Locale = "ko"
 ): string =>
-    content.replace(
-        /^(###)\s+(Problem|Decision|Implementation|Result|Trade-off)\s*$/gm,
-        (_, heading: string, title: string) =>
-            `${heading} ${LEGACY_DEEP_DIVE_HEADING_MAP[style][title]}`
-    );
+    locale !== "ko"
+        ? content
+        : content.replace(
+              /^(###)\s+(Problem|Decision|Implementation|Result|Trade-off)\s*$/gm,
+              (_, heading: string, title: string) =>
+                  `${heading} ${LEGACY_DEEP_DIVE_HEADING_MAP[style][title]}`
+          );
 
 const getHeadingText = (node: MarkdownNode): string => {
     if (!("children" in node) || !Array.isArray(node.children)) return "";
@@ -654,8 +659,20 @@ const validateDeepDives = (
     }
     for (const deepDive of deepDives) {
         const requiredHeadings = REQUIRED_DEEP_DIVE_HEADINGS[style];
+        const equivalents: Record<string, string[]> = {
+            "목표와 제약": ["Goals and constraints", "目標と制約"],
+            "내 역할": ["My role", "担当範囲"],
+            "핵심 구현": ["Implementation", "主な実装"],
+            "게임 효과": ["Game impact", "ゲームへの効果"],
+            "배경과 목표": ["Context and goals", "背景と目標"],
+            "담당 범위": ["Scope of responsibility", "担当範囲"],
+            실행: ["Implementation", "実装"],
+            "결과와 근거": ["Results and evidence", "結果と根拠"],
+        };
         const requiredPositions = requiredHeadings.map((heading) =>
-            deepDive.headings.indexOf(heading)
+            deepDive.headings.findIndex((value) =>
+                [heading, ...(equivalents[heading] ?? [])].includes(value)
+            )
         );
         const complete = requiredPositions.every(
             (position, index) =>

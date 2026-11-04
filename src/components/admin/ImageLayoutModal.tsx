@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useEffect, useMemo, useState } from "react";
 import type { ImageGroupLayout } from "@/components/ImageGroup";
@@ -127,13 +128,19 @@ export default function ImageLayoutModal({
                 <div className="mb-8 flex items-start justify-between gap-4">
                     <div>
                         <h3 className="text-center text-4xl font-semibold text-zinc-950 dark:text-zinc-50">
-                            사진 첨부 방식
+                            <LocalizedText text={"사진 첨부 방식"} />
                         </h3>
                         <p className="mt-3 text-center text-lg text-zinc-500 dark:text-zinc-400">
-                            첨부되는 사진들의 레이아웃을 선택할 수 있습니다
+                            <LocalizedText
+                                text={
+                                    "첨부되는 사진들의 레이아웃을 선택할 수 있습니다"
+                                }
+                            />
                         </p>
                     </div>
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         onClick={onClose}
                         disabled={submitting}
@@ -153,7 +160,7 @@ export default function ImageLayoutModal({
                             <path d="M18 6L6 18" />
                             <path d="M6 6l12 12" />
                         </svg>
-                    </button>
+                    </LocalizedElement>
                 </div>
 
                 <div className="tablet:grid-cols-2 grid gap-4">
@@ -175,10 +182,14 @@ export default function ImageLayoutModal({
                                     previews={previews}
                                 />
                                 <p className="mt-4 text-center text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-                                    {option.label}
+                                    {<LocalizedText text={option.label} />}
                                 </p>
                                 <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                                    {option.description}
+                                    {
+                                        <LocalizedText
+                                            text={option.description}
+                                        />
+                                    }
                                 </p>
                             </button>
                         );
@@ -192,7 +203,7 @@ export default function ImageLayoutModal({
                         disabled={submitting}
                         className="rounded-xl border border-zinc-300 px-5 py-3 text-base font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
                     >
-                        취소
+                        <LocalizedText text={"취소"} />
                     </button>
                     <button
                         type="button"
@@ -207,7 +218,11 @@ export default function ImageLayoutModal({
                         disabled={submitting}
                         className="rounded-xl bg-zinc-950 px-5 py-3 text-base font-medium whitespace-nowrap text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300"
                     >
-                        {submitting ? "삽입 중..." : "선택한 레이아웃으로 삽입"}
+                        {submitting ? (
+                            <LocalizedText text={"삽입 중..."} />
+                        ) : (
+                            <LocalizedText text={"선택한 레이아웃으로 삽입"} />
+                        )}
                     </button>
                 </div>
             </div>

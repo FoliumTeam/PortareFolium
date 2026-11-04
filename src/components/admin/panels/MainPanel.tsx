@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -9,12 +14,14 @@ import {
     RefreshCw,
 } from "lucide-react";
 import {
-    getMainPanelBootstrap,
+    getMainPanelBootstrap as raw_getMainPanelBootstrap,
     type MainPanelBootstrap,
 } from "@/app/admin/actions/main";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { TabId } from "@/components/admin/AdminSidebar";
+import { bindContentAction } from "@/lib/admin-content-state";
+const getMainPanelBootstrap = bindContentAction(raw_getMainPanelBootstrap);
 
 type MainPanelProps = {
     refugeMode?: boolean;
@@ -46,7 +53,7 @@ export default function MainPanel({
     if (loading || !data) {
         return (
             <div className="p-8 text-sm text-(--color-muted)">
-                사이트 상태를 불러오는 중...
+                <LocalizedText text={"사이트 상태를 불러오는 중..."} />
             </div>
         );
     }
@@ -60,13 +67,17 @@ export default function MainPanel({
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p className="text-xs font-bold tracking-[0.24em] text-(--color-muted) uppercase">
-                        Admin Overview
+                        <LocalizedText text={"Admin Overview"} />
                     </p>
                     <h2 className="mt-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                        사이트 상태
+                        <LocalizedText text={"사이트 상태"} />
                     </h2>
                     <p className="mt-1 text-sm text-(--color-muted)">
-                        로그인 직후 DB 상태와 미완료 작업을 한눈에 확인합니다.
+                        <LocalizedText
+                            text={
+                                "로그인 직후 DB 상태와 미완료 작업을 한눈에 확인합니다."
+                            }
+                        />
                     </p>
                 </div>
                 <Button
@@ -80,13 +91,18 @@ export default function MainPanel({
                             refreshing ? "animate-spin" : ""
                         }`}
                     />
-                    {refreshing ? "새로고침 중..." : "새로고침"}
+                    {refreshing ? (
+                        <LocalizedText text={"새로고침 중..."} />
+                    ) : (
+                        <LocalizedText text={"새로고침"} />
+                    )}
                 </Button>
             </div>
 
             {data.errors.length > 0 && (
                 <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
-                    일부 상태를 불러오지 못했습니다: {data.errors.join(", ")}
+                    <LocalizedText text={"일부 상태를 불러오지 못했습니다: "} />
+                    {data.errors.join(", ")}
                 </div>
             )}
 
@@ -94,7 +110,7 @@ export default function MainPanel({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                            등록 직무 분야
+                            <LocalizedText text={"등록 직무 분야"} />
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {data.jobFields.map((jobField) => (
@@ -104,12 +120,19 @@ export default function MainPanel({
                             ))}
                             {data.jobFields.length === 0 && (
                                 <p className="text-sm text-(--color-muted)">
-                                    Config에서 직무 분야 등록 필요
+                                    <LocalizedText
+                                        text={"Config에서 직무 분야 등록 필요"}
+                                    />
                                 </p>
                             )}
                         </div>
                     </div>
-                    <Badge variant="outline">{data.jobFields.length}개</Badge>
+                    <Badge variant="outline">
+                        <LocalizedRichText
+                            text={"{0}개"}
+                            values={[data.jobFields.length]}
+                        />
+                    </Badge>
                 </div>
             </section>
 
@@ -140,7 +163,7 @@ export default function MainPanel({
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="text-lg font-bold text-(--color-foreground)">
-                                    DB 상태
+                                    <LocalizedText text={"DB 상태"} />
                                 </h3>
                                 <Badge
                                     className={
@@ -149,50 +172,83 @@ export default function MainPanel({
                                             : "bg-green-600"
                                     }
                                 >
-                                    {migrationNeeded ? "확인 필요" : "최신"}
+                                    {migrationNeeded ? (
+                                        <LocalizedText text={"확인 필요"} />
+                                    ) : (
+                                        <LocalizedText text={"최신"} />
+                                    )}
                                 </Badge>
                                 {refugeMode && (
                                     <Badge variant="outline">
-                                        SQLite refuge
+                                        <LocalizedText text={"SQLite refuge"} />
                                     </Badge>
                                 )}
                             </div>
                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-(--color-muted)">
                                 <span>
-                                    DB 스키마 버전:{" "}
-                                    <code className="font-mono font-semibold text-(--color-foreground)">
-                                        {data.db.currentVersion ?? "없음"}
-                                    </code>
+                                    <LocalizedRichText
+                                        text={"DB 스키마 버전: {0}"}
+                                        values={[
+                                            <code className="font-mono font-semibold text-(--color-foreground)">
+                                                {data.db.currentVersion ?? (
+                                                    <LocalizedText
+                                                        text={"없음"}
+                                                    />
+                                                )}
+                                            </code>,
+                                        ]}
+                                    />
                                 </span>
                                 <span>
-                                    앱 배포 버전:{" "}
-                                    <code className="font-mono font-semibold text-(--color-foreground)">
-                                        {data.db.frontendVersion}
-                                    </code>
+                                    <LocalizedRichText
+                                        text={"앱 배포 버전: {0}"}
+                                        values={[
+                                            <code className="font-mono font-semibold text-(--color-foreground)">
+                                                {data.db.frontendVersion}
+                                            </code>,
+                                        ]}
+                                    />
                                 </span>
                             </div>
                             {data.db.nextMigration && (
                                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
-                                    자동 마이그레이션 대기: v
-                                    {data.db.nextMigration.version} ·{" "}
-                                    {data.db.nextMigration.title}
+                                    <LocalizedRichText
+                                        text={
+                                            "자동 마이그레이션 대기: v{0} · {1}"
+                                        }
+                                        values={[
+                                            data.db.nextMigration.version,
+                                            data.db.nextMigration.title,
+                                        ]}
+                                    />
                                 </p>
                             )}
                             {data.db.currentVersion === null && (
                                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
-                                    DB 스키마 버전 정보가 없습니다. 신규 설정
-                                    SQL을 먼저 실행해야 합니다.
+                                    <LocalizedText
+                                        text={
+                                            "DB 스키마 버전 정보가 없습니다. 신규 설정 SQL을 먼저 실행해야 합니다."
+                                        }
+                                    />
                                 </p>
                             )}
                             {data.db.currentVersion !== null &&
                                 migrationNeeded && (
                                     <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
-                                        서버가 시작되거나 다음 요청이 처리될 때
-                                        자동 적용됩니다. 수동 SQL은{" "}
-                                        <code className="font-mono">
-                                            supabase/migrations
-                                        </code>
-                                        에서 확인할 수 있습니다.
+                                        <LocalizedRichText
+                                            text={
+                                                "서버가 시작되거나 다음 요청이 처리될 때 자동 적용됩니다. 수동 SQL은 {0}에서 확인할 수 있습니다."
+                                            }
+                                            values={[
+                                                <code className="font-mono">
+                                                    <LocalizedText
+                                                        text={
+                                                            "supabase/migrations"
+                                                        }
+                                                    />
+                                                </code>,
+                                            ]}
+                                        />
                                     </p>
                                 )}
                         </div>
@@ -201,13 +257,17 @@ export default function MainPanel({
             </section>
 
             <div className="laptop:grid-cols-2 grid gap-4">
-                <ContentCard
+                <LocalizedElement
+                    as={ContentCard}
+                    translatedProps={["title"]}
                     icon={<FileText className="h-5 w-5" />}
                     title="포스트"
                     stats={data.posts}
                     onOpen={() => onNavigate?.("posts")}
                 />
-                <ContentCard
+                <LocalizedElement
+                    as={ContentCard}
+                    translatedProps={["title"]}
                     icon={<Briefcase className="h-5 w-5" />}
                     title="포트폴리오"
                     stats={data.portfolio}
@@ -238,22 +298,34 @@ function ContentCard({
                     </div>
                     <div>
                         <h3 className="font-bold text-(--color-foreground)">
-                            {title}
+                            {<LocalizedText text={title} />}
                         </h3>
                         <p className="text-sm text-(--color-muted)">
-                            작성 현황
+                            <LocalizedText text={"작성 현황"} />
                         </p>
                     </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onOpen}>
-                    열기
+                    <LocalizedText text={"열기"} />
                 </Button>
             </div>
 
             <div className="mt-5 grid grid-cols-3 gap-3">
-                <StatPill label="전체" value={stats.total} />
-                <StatPill label="공개" value={stats.published} />
-                <StatPill
+                <LocalizedElement
+                    as={StatPill}
+                    translatedProps={["label"]}
+                    label="전체"
+                    value={stats.total}
+                />
+                <LocalizedElement
+                    as={StatPill}
+                    translatedProps={["label"]}
+                    label="공개"
+                    value={stats.published}
+                />
+                <LocalizedElement
+                    as={StatPill}
+                    translatedProps={["label"]}
                     label="초안"
                     value={stats.drafts}
                     highlight={stats.drafts > 0}
@@ -283,7 +355,7 @@ function StatPill({
         >
             <div className="text-2xl font-black tabular-nums">{value}</div>
             <div className="mt-0.5 text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                {label}
+                {<LocalizedText text={label} />}
             </div>
         </div>
     );

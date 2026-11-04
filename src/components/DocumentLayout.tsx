@@ -1,0 +1,95 @@
+import type { Locale } from "@/lib/i18n";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { getServerUIMessages } from "@/lib/server-i18n";
+import type { Metadata } from "next";
+import Script from "next/script";
+import "@/styles/global.css";
+import "katex/dist/katex.min.css";
+import { getSiteConfig } from "@/lib/queries";
+import { ALL_SCHEME_IDS } from "@/lib/color-schemes";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
+import { Toaster } from "@/components/ui/sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
+import { normalizeThemeMode, type ThemeMode } from "@/lib/theme-mode";
+import { getSeoMetadata } from "@/lib/seo-metadata";
+
+export async function getDocumentMetadata(): Promise<Metadata> {
+    return { ...BASE_METADATA, ...(await getSeoMetadata()) };
+}
+
+const BASE_METADATA: Metadata = {
+    icons: { icon: "/favicon.svg" },
+    verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        other: process.env.NEXT_PUBLIC_NAVER_VERIFICATION
+            ? {
+                  "naver-site-verification":
+                      process.env.NEXT_PUBLIC_NAVER_VERIFICATION,
+              }
+            : undefined,
+    },
+};
+
+const VALID_SCHEMES: readonly string[] = ALL_SCHEME_IDS;
+
+export default async function RootLayout({
+    children,
+    locale,
+}: {
+    children: React.ReactNode;
+    locale: Locale;
+}) {
+    let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "blue";
+    let plainMode = false;
+    let themeMode: ThemeMode = "system";
+
+    const configRows = await getSiteConfig();
+    for (const row of configRows) {
+        let v = row.value;
+        if (typeof v === "string" && v.startsWith('"')) v = JSON.parse(v);
+        if (row.key === "color_scheme" && typeof v === "string")
+            colorScheme = v;
+        if (row.key === "plain_mode") plainMode = v === true || v === "true";
+        if (row.key === "theme_mode") themeMode = normalizeThemeMode(v);
+    }
+
+    const validScheme = VALID_SCHEMES.includes(colorScheme)
+        ? colorScheme
+        : "blue";
+
+    return (
+        <html
+            lang={locale}
+            data-color-scheme={validScheme}
+            {...(plainMode ? { "data-plain": "" } : {})}
+            data-scroll-behavior="smooth"
+            suppressHydrationWarning
+        >
+            <head>
+                <Script
+                    id="theme-initialization"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){var m=${JSON.stringify(themeMode)};var a=location.pathname.startsWith("/admin");var t=a?(localStorage.getItem("theme")||"system"):m;var s=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(t==="system"&&s)){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}var p=localStorage.getItem("folium_plain_mode");if(p==="true"){document.documentElement.setAttribute("data-plain","")}else if(p==="false"){document.documentElement.removeAttribute("data-plain")}})();`,
+                    }}
+                />
+            </head>
+            <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
+                <LocaleProvider
+                    initialLocale={locale}
+                    initialMessages={getServerUIMessages(locale)}
+                >
+                    <AuthSessionProvider>{children}</AuthSessionProvider>
+                    <Toaster />
+                </LocaleProvider>
+                {process.env.VERCEL && (
+                    <>
+                        <SpeedInsights />
+                        <Analytics />
+                    </>
+                )}
+            </body>
+        </html>
+    );
+}

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 /**
  * TableOfContents
@@ -90,12 +91,14 @@ export default function TableOfContents({
                     : "top-24"
             } ${className}`}
         >
-            <nav
+            <LocalizedElement
+                as="nav"
+                translatedProps={["aria-label"]}
                 className="max-h-[calc(100vh-8rem)] w-full overflow-y-auto overscroll-contain"
                 aria-label="목차"
             >
                 <p className="mb-4 text-xs font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                    목차
+                    <LocalizedText text={"목차"} />
                 </p>
                 <ul className="space-y-0.5 text-sm">
                     {entries.map((entry, i) => {
@@ -147,7 +150,7 @@ export default function TableOfContents({
                         );
                     })}
                 </ul>
-            </nav>
+            </LocalizedElement>
         </aside>
     );
 }

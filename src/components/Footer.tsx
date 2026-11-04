@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 // frontend footer — 저작권 + GitHub 링크
 import ContentWrapper from "./ContentWrapper";
 
@@ -21,7 +22,7 @@ export default function Footer({ siteName, githubUrl }: FooterProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-md p-2 text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                        aria-label="GitHub"
+                        aria-label={serverT("GitHub")}
                     >
                         <svg
                             className="h-5 w-5"

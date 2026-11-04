@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback } from "react";
 
@@ -98,7 +99,9 @@ export const UndoRedoButton = forwardRef<
         }
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 disabled={!canExecute}
                 variant="ghost"
@@ -116,7 +119,9 @@ export const UndoRedoButton = forwardRef<
                     <>
                         <Icon className="tiptap-button-icon" />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <HistoryShortcutBadge
@@ -126,7 +131,7 @@ export const UndoRedoButton = forwardRef<
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/resume/ResumeEditorFields";
 import { Switch } from "@/components/ui/switch";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUITranslation } from "@/components/LocaleProvider";
 import type { Resume, ResumeSection, ResumeTraining } from "@/types/resume";
 
 type Props = {
@@ -19,13 +20,14 @@ type Props = {
     onChange: (resume: Resume) => void;
 };
 
-/** 직무별 비학위 교육 과정을 관리자 화면에서 편집한다. */
+// 직무별 비학위 교육 과정 편집
 export default function ResumeTrainingEditor({
     resume,
     jobFields,
     activeJobField,
     onChange,
 }: Props) {
+    const uiT = useUITranslation();
     const { confirm } = useConfirmDialog();
     const section: ResumeSection<ResumeTraining> = resume.training ?? {
         emoji: "📚",
@@ -45,7 +47,7 @@ export default function ResumeTrainingEditor({
         <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-xl font-bold text-(--color-foreground)">
-                    교육
+                    {uiT("교육")}
                 </h3>
                 <button
                     type="button"
@@ -68,12 +70,13 @@ export default function ResumeTrainingEditor({
                     }
                     className="rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold text-(--color-on-accent)"
                 >
-                    교육 추가
+                    {uiT("교육 추가")}
                 </button>
             </div>
             <p className="text-sm text-(--color-muted)">
-                대학 학력과 별도로 표시하는 교육 과정. 직무 분야와 공개 여부에
-                따라 이력서에 표시
+                {uiT(
+                    "대학 학력과 별도로 표시하는 교육 과정. 직무 분야와 공개 여부에 따라 이력서에 표시"
+                )}
             </p>
             <div className="tablet:grid-cols-2 grid gap-4">
                 <InputField
@@ -98,7 +101,7 @@ export default function ResumeTrainingEditor({
                         htmlFor="show-emojis-training"
                         className="text-sm text-(--color-muted)"
                     >
-                        제목 앞 이모지 표시
+                        {uiT("제목 앞 이모지 표시")}
                     </label>
                 </div>
             </div>
@@ -123,7 +126,7 @@ export default function ResumeTrainingEditor({
                             placeholder="주최 기관"
                         />
                         <label className="flex flex-col gap-1 text-sm font-medium text-(--color-muted)">
-                            시작 월 (YYYY-MM)
+                            {uiT("시작 월 (YYYY-MM)")}
                             <input
                                 type="month"
                                 value={entry.startMonth}
@@ -136,7 +139,7 @@ export default function ResumeTrainingEditor({
                             />
                         </label>
                         <label className="flex flex-col gap-1 text-sm font-medium text-(--color-muted)">
-                            종료 월 (YYYY-MM)
+                            {uiT("종료 월 (YYYY-MM)")}
                             <input
                                 type="month"
                                 value={entry.endMonth}
@@ -157,8 +160,9 @@ export default function ResumeTrainingEditor({
                         }
                     />
                     <p className="text-sm text-(--color-muted)">
-                        선택한 직무 분야의 이력서에만 표시. 과정명·주최·시작
-                        월·종료 월과 직무 분야를 채운 뒤 공개 가능
+                        {uiT(
+                            "선택한 직무 분야의 이력서에만 표시. 과정명·주최·시작 월·종료 월과 직무 분야를 채운 뒤 공개 가능"
+                        )}
                     </p>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <label className="flex items-center gap-2 text-sm text-(--color-foreground)">
@@ -177,9 +181,11 @@ export default function ResumeTrainingEditor({
                                 onCheckedChange={(visible) =>
                                     updateEntry(index, { visible })
                                 }
-                                aria-label={`${entry.title || "새 교육"} 공개 여부`}
+                                aria-label={uiT("{0} 공개 여부", [
+                                    entry.title || { text: "새 교육" },
+                                ])}
                             />
-                            공개
+                            {uiT("공개")}
                         </label>
                         <div className="flex gap-2">
                             <button
@@ -194,9 +200,11 @@ export default function ResumeTrainingEditor({
                                     updateSection({ entries });
                                 }}
                                 className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm disabled:opacity-40"
-                                title="이 교육을 공개 화면에서 앞 순서로 이동"
+                                title={uiT(
+                                    "이 교육을 공개 화면에서 앞 순서로 이동"
+                                )}
                             >
-                                앞
+                                {uiT("앞")}
                             </button>
                             <button
                                 type="button"
@@ -210,9 +218,11 @@ export default function ResumeTrainingEditor({
                                     updateSection({ entries });
                                 }}
                                 className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm disabled:opacity-40"
-                                title="이 교육을 공개 화면에서 뒤 순서로 이동"
+                                title={uiT(
+                                    "이 교육을 공개 화면에서 뒤 순서로 이동"
+                                )}
                             >
-                                뒤
+                                {uiT("뒤")}
                             </button>
                             <button
                                 type="button"
@@ -234,9 +244,9 @@ export default function ResumeTrainingEditor({
                                     });
                                 }}
                                 className="rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-600"
-                                title="이 교육 항목 삭제"
+                                title={uiT("이 교육 항목 삭제")}
                             >
-                                삭제
+                                {uiT("삭제")}
                             </button>
                         </div>
                     </div>

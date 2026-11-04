@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import {
@@ -36,7 +41,7 @@ type JobFieldItem = {
 };
 
 // ResumePanel 초기 데이터 조회
-export async function getResumeBootstrap(): Promise<{
+async function getResumeBootstrapInLocale(): Promise<{
     rowId: string | null;
     resumeData: Resume | null;
     resumeLayout: "classic" | "modern";
@@ -110,7 +115,7 @@ export async function getResumeBootstrap(): Promise<{
     };
 }
 
-export async function saveResumeBasicsPresentation(
+async function saveResumeBasicsPresentationInLocale(
     presentation: ResumeBasicsPresentationConfig
 ): Promise<{ success: true } | { success: false; error: string }> {
     await requireAdminSession();
@@ -129,7 +134,7 @@ export async function saveResumeBasicsPresentation(
 }
 
 // resume_data + layout 설정 저장
-export async function saveResumePanel(
+async function saveResumePanelInLocale(
     input: SaveResumeInput
 ): Promise<SaveResumeResult> {
     await requireAdminSession();
@@ -140,11 +145,18 @@ export async function saveResumePanel(
     try {
         let nextRowId = rowId;
         if (rowId) {
-            const { error } = await serverClient
+            const { data: saved, error } = await serverClient
                 .from("resume_data")
                 .update({ data: resumeData })
-                .eq("id", rowId);
+                .eq("id", rowId)
+                .select("id")
+                .maybeSingle();
             if (error) return { success: false, error: error.message };
+            if (!saved)
+                return {
+                    success: false,
+                    error: "선택 언어와 이력서 식별자 불일치",
+                };
         } else {
             const { data, error } = await serverClient
                 .from("resume_data")
@@ -183,7 +195,7 @@ export async function saveResumePanel(
 }
 
 // resume layout 단독 저장
-export async function saveResumeTheme(
+async function saveResumeThemeInLocale(
     layout: "classic" | "modern"
 ): Promise<{ success: true } | { success: false; error: string }> {
     await requireAdminSession();
@@ -196,4 +208,76 @@ export async function saveResumeTheme(
 
     await revalidateResume();
     return { success: true };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getResumeBootstrap(
+    ...args: [
+        ...Parameters<typeof getResumeBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getResumeBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getResumeBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getResumeBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveResumeBasicsPresentation(
+    ...args: [
+        ...Parameters<typeof saveResumeBasicsPresentationInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof saveResumeBasicsPresentationInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveResumeBasicsPresentationInLocale>;
+    return withContentLocale(locale, () =>
+        saveResumeBasicsPresentationInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveResumePanel(
+    ...args: [
+        ...Parameters<typeof saveResumePanelInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof saveResumePanelInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveResumePanelInLocale>;
+    return withContentLocale(locale, () => saveResumePanelInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveResumeTheme(
+    ...args: [
+        ...Parameters<typeof saveResumeThemeInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof saveResumeThemeInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveResumeThemeInLocale>;
+    return withContentLocale(locale, () => saveResumeThemeInLocale(...values));
 }

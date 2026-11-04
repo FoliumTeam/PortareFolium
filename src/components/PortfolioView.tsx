@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import PortfolioProjectGrid from "@/components/portfolio/PortfolioProjectGrid";
 import PortfolioTimeline from "@/components/portfolio/PortfolioTimeline";
 import {
@@ -73,17 +74,18 @@ const AiProjectSubsection = ({
                 </span>
                 <div>
                     <p className="text-xs font-bold tracking-[0.16em] text-(--color-accent) uppercase">
-                        AI
+                        {serverT("AI")}
                     </p>
                     <h3
                         id="ai-projects-heading"
                         className="mt-1 text-2xl font-(--font-display) font-black text-(--color-foreground)"
                     >
-                        AI 프로젝트
+                        {serverT("AI 프로젝트")}
                     </h3>
                     <p className="mt-1 text-base leading-relaxed text-(--color-muted)">
-                        AI를 도구로 삼아 개발 역량과 문제 해결의 범위를 넓힌
-                        프로젝트
+                        {serverT(
+                            "AI를 도구로 삼아 개발 역량과 문제 해결의 범위를 넓힌 프로젝트"
+                        )}
                     </p>
                 </div>
             </div>
@@ -123,23 +125,25 @@ const ProjectGroupSection = ({
                     </span>
                     <div>
                         <p className="mb-1 text-xs font-bold tracking-[0.18em] text-(--color-accent) uppercase">
-                            {group.eyebrow}
+                            {serverT(group.eyebrow)}
                         </p>
                         <h2
                             id={`${group.eyebrow}-heading`}
-                            className="text-3xl font-(--font-display) font-black tracking-tight text-(--color-foreground)"
+                            className="text-3xl font-(--font-display) font-black tracking-tight text-balance text-(--color-foreground)"
                         >
-                            {group.heading}
+                            {serverT(group.heading)}
                         </h2>
                         <p className="mt-2 text-base leading-relaxed text-(--color-muted)">
-                            {group.description}
+                            {serverT(group.description)}
                         </p>
                     </div>
                 </div>
                 <span
                     className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-bold ${group.badgeClass}`}
                 >
-                    {group.projects.length + aiProjects.length}건
+                    {serverT("{0}건", [
+                        group.projects.length + aiProjects.length,
+                    ])}
                 </span>
             </div>
         </div>
@@ -154,7 +158,7 @@ const ProjectGroupSection = ({
             <div>
                 {aiProjects.length > 0 && (
                     <h3 className="mb-5 text-2xl font-(--font-display) font-black text-(--color-foreground)">
-                        직무별 프로젝트
+                        {serverT("직무별 프로젝트")}
                     </h3>
                 )}
                 {renderProjectList(group.projects, design, portfolioBasePath)}
@@ -181,7 +185,7 @@ export default function PortfolioView({
     if (projects.length === 0) {
         return (
             <p className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) px-5 py-10 text-center text-(--color-muted)">
-                공개된 프로젝트가 없습니다.
+                {serverT("공개된 프로젝트가 없습니다.")}
             </p>
         );
     }

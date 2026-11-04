@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
@@ -26,7 +31,7 @@ const TAXONOMY_POST_SELECT_FIELDS =
 const TAXONOMY_POST_PREVIEW_LIMIT = 20;
 
 // tags / categories 초기 데이터 조회
-export async function getTagsPanelBootstrap(): Promise<{
+async function getTagsPanelBootstrapInLocale(): Promise<{
     tags: TagItem[];
     categories: Category[];
 }> {
@@ -90,7 +95,7 @@ export async function getTagsPanelBootstrap(): Promise<{
 }
 
 // 태그 생성/수정
-export async function saveTagItem(
+async function saveTagItemInLocale(
     payload: TagPayload,
     editSlug: string | "new" | null
 ): Promise<{ success: boolean; error?: string }> {
@@ -111,7 +116,7 @@ export async function saveTagItem(
 }
 
 // 태그 삭제
-export async function deleteTagItem(
+async function deleteTagItemInLocale(
     slug: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -123,7 +128,7 @@ export async function deleteTagItem(
 }
 
 // 카테고리 생성
-export async function createPostCategory(
+async function createPostCategoryInLocale(
     name: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -143,7 +148,7 @@ export async function createPostCategory(
 }
 
 // 카테고리 이름 변경
-export async function renamePostCategory(
+async function renamePostCategoryInLocale(
     oldName: string,
     newName: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -179,7 +184,7 @@ export async function renamePostCategory(
 }
 
 // 카테고리 삭제
-export async function deletePostCategory(
+async function deletePostCategoryInLocale(
     name: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -201,7 +206,7 @@ export async function deletePostCategory(
 }
 
 // 태그를 사용하는 포스트 lazy 조회
-export async function listPostsByTagSlug(
+async function listPostsByTagSlugInLocale(
     slug: string
 ): Promise<{ success: boolean; posts?: TaxonomyPost[]; error?: string }> {
     await requireAdminSession();
@@ -241,7 +246,7 @@ export async function listPostsByTagSlug(
 }
 
 // 카테고리를 사용하는 포스트 lazy 조회
-export async function listPostsByCategoryName(
+async function listPostsByCategoryNameInLocale(
     name: string
 ): Promise<{ success: boolean; posts?: TaxonomyPost[]; error?: string }> {
     await requireAdminSession();
@@ -256,4 +261,167 @@ export async function listPostsByCategoryName(
 
     if (error) return { success: false, error: error.message };
     return { success: true, posts: (data as TaxonomyPost[] | null) ?? [] };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getTagsPanelBootstrap(
+    ...args: [
+        ...Parameters<typeof getTagsPanelBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getTagsPanelBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getTagsPanelBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getTagsPanelBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function saveTagItem(
+    ...args: [...Parameters<typeof saveTagItemInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof saveTagItemInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof saveTagItemInLocale>;
+    return withContentLocale(locale, () => saveTagItemInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deleteTagItem(
+    ...args: [...Parameters<typeof deleteTagItemInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof deleteTagItemInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deleteTagItemInLocale>;
+    return withContentLocale(locale, () => deleteTagItemInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function createPostCategory(
+    ...args: [
+        ...Parameters<typeof createPostCategoryInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof createPostCategoryInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof createPostCategoryInLocale>;
+    return withContentLocale(locale, () =>
+        createPostCategoryInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function renamePostCategory(
+    ...args: [
+        ...Parameters<typeof renamePostCategoryInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof renamePostCategoryInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof renamePostCategoryInLocale>;
+    return withContentLocale(locale, () =>
+        renamePostCategoryInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deletePostCategory(
+    ...args: [
+        ...Parameters<typeof deletePostCategoryInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof deletePostCategoryInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deletePostCategoryInLocale>;
+    return withContentLocale(locale, () =>
+        deletePostCategoryInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function listPostsByTagSlug(
+    ...args: [
+        ...Parameters<typeof listPostsByTagSlugInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof listPostsByTagSlugInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof listPostsByTagSlugInLocale>;
+    return withContentLocale(locale, () =>
+        listPostsByTagSlugInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function listPostsByCategoryName(
+    ...args: [
+        ...Parameters<typeof listPostsByCategoryNameInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof listPostsByCategoryNameInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof listPostsByCategoryNameInLocale>;
+    return withContentLocale(locale, () =>
+        listPostsByCategoryNameInLocale(...values)
+    );
+}
+
+// 화면 언어와 독립적인 관리자 입력 태그 목록
+export async function listContentTags(scope?: ContentLocaleScope) {
+    await requireAdminSession();
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    return withContentLocale(locale, async () => {
+        if (!serverClient) return [];
+        const { data, error } = await serverClient
+            .from("tags")
+            .select("slug, name, color")
+            .order("name");
+        if (error) throw new Error("태그 조회 실패");
+        return (data ?? []) as {
+            slug: string;
+            name: string;
+            color: string | null;
+        }[];
+    });
 }

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Separator } from "@/components/tiptap-ui-primitive/separator";
@@ -87,7 +88,9 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(
         useToolbarNavigation(toolbarRef);
 
         return (
-            <div
+            <LocalizedElement
+                as="div"
+                translatedProps={["aria-label"]}
                 ref={composedRef}
                 role="toolbar"
                 aria-label="toolbar"
@@ -96,7 +99,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(
                 {...props}
             >
                 {children}
-            </div>
+            </LocalizedElement>
         );
     }
 );

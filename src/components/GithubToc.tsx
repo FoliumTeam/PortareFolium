@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 import type { TocEntry } from "@/lib/toc";
 
 export default function GithubToc({ entries }: { entries: TocEntry[] }) {
@@ -6,7 +7,7 @@ export default function GithubToc({ entries }: { entries: TocEntry[] }) {
     return (
         <nav
             className="github-toc mb-8 rounded-xl border border-(--color-border) bg-(--color-surface) p-3 text-[0.9rem]"
-            aria-label="목차"
+            aria-label={serverT("목차")}
         >
             <details open className="github-toc-details">
                 <summary className="github-toc-summary flex cursor-pointer items-center gap-2 py-1 font-semibold text-(--color-foreground)">
@@ -24,7 +25,7 @@ export default function GithubToc({ entries }: { entries: TocEntry[] }) {
                     >
                         <path d="M9 6l6 6-6 6" />
                     </svg>
-                    <span>목차</span>
+                    <span>{serverT("목차")}</span>
                 </summary>
                 <ol className="mt-2 ml-5 space-y-0.5">
                     {entries.map((entry) => (

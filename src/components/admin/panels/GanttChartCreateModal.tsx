@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Plus, Trash2, Upload } from "lucide-react";
@@ -219,11 +220,15 @@ export default function GanttChartCreateModal({
                 <div className="flex shrink-0 items-center justify-between border-b border-(--color-border) px-6 py-4">
                     <div className="flex items-center gap-3">
                         <h2 className="shrink-0 text-lg font-bold text-(--color-foreground)">
-                            {mode === "create"
-                                ? "새 Gantt Chart 생성"
-                                : "Gantt Chart 편집"}
+                            {mode === "create" ? (
+                                <LocalizedText text={"새 Gantt Chart 생성"} />
+                            ) : (
+                                <LocalizedText text={"Gantt Chart 편집"} />
+                            )}
                         </h2>
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             type="text"
                             value={titleDraft}
                             onChange={(e) => {
@@ -242,7 +247,7 @@ export default function GanttChartCreateModal({
                         >
                             <Upload className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                             <span className="whitespace-nowrap">
-                                CSV 파일로 채우기
+                                <LocalizedText text={"CSV 파일로 채우기"} />
                             </span>
                         </Button>
                         <Button
@@ -252,7 +257,11 @@ export default function GanttChartCreateModal({
                             className="bg-green-600 text-white hover:bg-green-500"
                         >
                             <span className="whitespace-nowrap">
-                                {saving ? "저장 중..." : "저장"}
+                                {saving ? (
+                                    <LocalizedText text={"저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"저장"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -260,14 +269,14 @@ export default function GanttChartCreateModal({
                             onClick={() => void handleClose()}
                             className="bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
                         >
-                            닫기
+                            <LocalizedText text={"닫기"} />
                         </Button>
                     </div>
                 </div>
 
                 {error && (
                     <p className="shrink-0 border-b border-red-200 bg-red-50 px-6 py-2 text-sm font-medium text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
-                        {error}
+                        {<LocalizedText text={error} />}
                     </p>
                 )}
 
@@ -288,7 +297,7 @@ export default function GanttChartCreateModal({
                                         key={label}
                                         className="border-b border-(--color-border) px-3 py-2 text-left text-xs font-semibold tracking-wider text-(--color-muted) uppercase"
                                     >
-                                        {label}
+                                        {<LocalizedText text={label} />}
                                     </th>
                                 ))}
                             </tr>
@@ -300,7 +309,9 @@ export default function GanttChartCreateModal({
                                     className="border-b border-(--color-border) hover:bg-(--color-surface-subtle)"
                                 >
                                     <td className="px-3 py-1.5">
-                                        <input
+                                        <LocalizedElement
+                                            as="input"
+                                            translatedProps={["placeholder"]}
                                             type="text"
                                             value={row.taskName}
                                             onChange={(e) =>
@@ -313,7 +324,9 @@ export default function GanttChartCreateModal({
                                         />
                                     </td>
                                     <td className="px-3 py-1.5">
-                                        <input
+                                        <LocalizedElement
+                                            as="input"
+                                            translatedProps={["placeholder"]}
                                             type="text"
                                             value={row.category}
                                             onChange={(e) =>
@@ -350,7 +363,9 @@ export default function GanttChartCreateModal({
                                         />
                                     </td>
                                     <td className="px-3 py-1.5">
-                                        <input
+                                        <LocalizedElement
+                                            as="input"
+                                            translatedProps={["placeholder"]}
                                             type="text"
                                             value={row.comment}
                                             onChange={(e) =>
@@ -384,7 +399,8 @@ export default function GanttChartCreateModal({
                         onClick={addRow}
                         className="bg-(--color-accent) text-(--color-on-accent) hover:opacity-90"
                     >
-                        <Plus className="mr-1.5 h-3.5 w-3.5 shrink-0" />행 추가
+                        <Plus className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                        <LocalizedText text={"행 추가"} />
                     </Button>
                 </div>
             </div>
@@ -405,17 +421,17 @@ export default function GanttChartCreateModal({
                 <CustomConfirmDialogContent>
                     <CustomConfirmDialogHeader>
                         <CustomConfirmDialogTitle>
-                            중복 task name
+                            <LocalizedText text={"중복 task name"} />
                         </CustomConfirmDialogTitle>
                         <CustomConfirmDialogDescription>
-                            {warning ?? ""}
+                            <LocalizedText text={warning ?? ""} />
                         </CustomConfirmDialogDescription>
                     </CustomConfirmDialogHeader>
                     <CustomConfirmDialogFooter>
                         <CustomConfirmDialogAction
                             onClick={() => setWarning(null)}
                         >
-                            확인
+                            <LocalizedText text={"확인"} />
                         </CustomConfirmDialogAction>
                     </CustomConfirmDialogFooter>
                 </CustomConfirmDialogContent>

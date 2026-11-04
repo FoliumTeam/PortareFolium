@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { forwardRef, useCallback } from "react";
 
@@ -93,7 +94,9 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
         }
 
         return (
-            <Button
+            <LocalizedElement
+                as={Button}
+                translatedProps={["aria-label", "tooltip"]}
                 type="button"
                 disabled={!canToggle}
                 variant="ghost"
@@ -113,7 +116,9 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
                     <>
                         <Icon className="tiptap-button-icon" />
                         {text && (
-                            <span className="tiptap-button-text">{text}</span>
+                            <span className="tiptap-button-text">
+                                {<LocalizedText text={text} />}
+                            </span>
                         )}
                         {showShortcut && (
                             <MarkShortcutBadge
@@ -123,7 +128,7 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
                         )}
                     </>
                 )}
-            </Button>
+            </LocalizedElement>
         );
     }
 );

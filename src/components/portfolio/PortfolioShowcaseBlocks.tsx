@@ -1,3 +1,4 @@
+import { serverT } from "@/lib/server-i18n";
 type FeatureItem = {
     label: string;
     title: string;
@@ -143,11 +144,15 @@ export function PortfolioBoundary({
     return (
         <div className="tablet:grid-cols-2 my-8 grid gap-4" data-pdf-block>
             {owned.length > 0 && (
-                <BoundaryList title="관리 범위" items={owned} tone="accent" />
+                <BoundaryList
+                    title={serverT("관리 범위")}
+                    items={owned}
+                    tone="accent"
+                />
             )}
             {outside.length > 0 && (
                 <BoundaryList
-                    title="직접 소유하지 않는 범위"
+                    title={serverT("직접 소유하지 않는 범위")}
                     items={outside}
                     tone="muted"
                 />
@@ -177,7 +182,8 @@ export function PortfolioFlow({ steps: rawSteps }: PortfolioFlowProps) {
                     data-pdf-block-item
                 >
                     <p className="text-base font-extrabold tracking-[0.12em] text-(--color-accent)">
-                        STEP {String(index + 1).padStart(2, "0")}
+                        {serverT("STEP ")}
+                        {String(index + 1).padStart(2, "0")}
                     </p>
                     <h3 className="mt-3 text-lg font-bold text-(--color-foreground)">
                         {step.title}

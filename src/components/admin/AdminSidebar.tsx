@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import {
     LayoutDashboard,
@@ -145,7 +146,7 @@ export default function AdminSidebar({
                                 <div className="mx-3 my-2.5 h-px bg-(--color-border) opacity-70" />
                             )}
                             <p className="mb-1 px-4 text-[10px] font-black tracking-[0.2em] text-(--color-muted) uppercase">
-                                {section.label}
+                                {<LocalizedText text={section.label} />}
                             </p>
                             {items.map((item) => {
                                 const Icon: ComponentType<{
@@ -174,7 +175,13 @@ export default function AdminSidebar({
                                                     : "",
                                             ].join(" ")}
                                         />
-                                        <span>{item.label}</span>
+                                        <span>
+                                            {
+                                                <LocalizedText
+                                                    text={item.label}
+                                                />
+                                            }
+                                        </span>
                                     </button>
                                 );
                             })}
@@ -188,7 +195,9 @@ export default function AdminSidebar({
                         className="flex items-center gap-3 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
                     >
                         <ExternalLink className="h-4 w-4 shrink-0" />
-                        <span>사이트로 이동</span>
+                        <span>
+                            <LocalizedText text={"사이트로 이동"} />
+                        </span>
                     </a>
                 </div>
             </nav>

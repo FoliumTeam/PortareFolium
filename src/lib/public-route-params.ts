@@ -1,3 +1,5 @@
+import { LOCALES } from "@/lib/i18n";
+import { withContentLocale } from "@/lib/content-locale";
 import { getPortfolioJobFields } from "@/lib/portfolio";
 import { getPublicJobFields } from "@/lib/public-job-field";
 import { serverClient } from "@/lib/supabase";
@@ -101,3 +103,24 @@ export async function getPublicBookRouteParams(): Promise<
         )
     );
 }
+
+// 번역 없는 분기와 독립적인 전체 상세 경로 조합
+export const getLocalizedDetailRouteParams = async (
+    kind: "portfolio" | "blog" | "books"
+) => {
+    const read =
+        kind === "portfolio"
+            ? getPublicPortfolioRouteParams
+            : kind === "blog"
+              ? getPublicPostRouteParams
+              : getPublicBookRouteParams;
+    return (
+        await Promise.all(
+            LOCALES.map((locale) =>
+                withContentLocale(locale, async () =>
+                    (await read()).map((row) => ({ ...row, locale }))
+                )
+            )
+        )
+    ).flat();
+};

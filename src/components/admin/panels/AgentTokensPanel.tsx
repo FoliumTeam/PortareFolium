@@ -1,4 +1,10 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useState } from "react";
 import { Key, RefreshCw, Trash2 } from "lucide-react";
@@ -33,6 +39,7 @@ function getTokenStatus(token: TokenRow): "active" | "expired" | "revoked" {
 }
 
 export default function AgentTokensPanel() {
+    const { locale } = useUILocale();
     const { confirm } = useConfirmDialog();
     const [tokens, setTokens] = useState<TokenRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -110,19 +117,23 @@ export default function AgentTokensPanel() {
             {/* 헤더 — 스크롤 중에도 상단 고정 */}
             <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pb-3">
                 <h2 className="text-3xl font-bold tracking-tight text-(--color-foreground)">
-                    Agent 토큰
+                    <LocalizedText text={"Agent 토큰"} />
                 </h2>
                 <p className="mt-1 text-sm text-(--color-muted)">
-                    MCP API 에이전트 인증 토큰 발급 및 관리
+                    <LocalizedText
+                        text={"MCP API 에이전트 인증 토큰 발급 및 관리"}
+                    />
                 </p>
 
                 {/* 토큰 발급 폼 */}
                 <section className="mt-4 space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-5">
                     <h3 className="text-sm font-bold tracking-widest text-(--color-muted) uppercase">
-                        새 토큰 발급
+                        <LocalizedText text={"새 토큰 발급"} />
                     </h3>
                     <div className="flex flex-wrap gap-3">
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             type="text"
                             placeholder="Label (예: claude-agent-prod)"
                             value={label}
@@ -138,7 +149,7 @@ export default function AgentTokensPanel() {
                         >
                             {DURATION_OPTIONS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>
-                                    {opt.label}
+                                    {<LocalizedText text={opt.label} />}
                                 </option>
                             ))}
                         </select>
@@ -149,19 +160,30 @@ export default function AgentTokensPanel() {
                         >
                             <Key className="mr-2 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
-                                {issuing ? "발급 중..." : "발급"}
+                                {issuing ? (
+                                    <LocalizedText text={"발급 중..."} />
+                                ) : (
+                                    <LocalizedText text={"발급"} />
+                                )}
                             </span>
                         </Button>
                     </div>
 
-                    {error && <p className="text-sm text-red-500">{error}</p>}
+                    {error && (
+                        <p className="text-sm text-red-500">
+                            {<LocalizedText text={error} />}
+                        </p>
+                    )}
 
                     {/* 신규 발급 토큰 — 한 번만 표시 */}
                     {newToken && (
                         <div className="rounded-lg border border-green-300 bg-green-50 p-4 dark:border-green-700 dark:bg-green-950/30">
                             <p className="mb-2 text-xs font-semibold text-green-700 dark:text-green-400">
-                                토큰이 발급되었습니다. 지금 복사하세요 — 다시
-                                표시되지 않습니다.
+                                <LocalizedText
+                                    text={
+                                        "토큰이 발급되었습니다. 지금 복사하세요 — 다시 표시되지 않습니다."
+                                    }
+                                />
                             </p>
                             <div className="flex items-center gap-2">
                                 <code className="flex-1 rounded bg-green-100 px-2 py-1.5 font-mono text-xs break-all text-green-900 dark:bg-green-900/40 dark:text-green-200">
@@ -173,7 +195,11 @@ export default function AgentTokensPanel() {
                                     className={primaryButtonClassName}
                                 >
                                     <span className="whitespace-nowrap">
-                                        {copied ? "복사됨" : "복사"}
+                                        {copied ? (
+                                            <LocalizedText text={"복사됨"} />
+                                        ) : (
+                                            <LocalizedText text={"복사"} />
+                                        )}
                                     </span>
                                 </Button>
                             </div>
@@ -184,7 +210,7 @@ export default function AgentTokensPanel() {
                 {/* 토큰 목록 header */}
                 <section className="mt-6 flex items-center justify-between">
                     <h3 className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                        토큰 목록
+                        <LocalizedText text={"토큰 목록"} />
                     </h3>
                     <Button
                         size="sm"
@@ -198,7 +224,11 @@ export default function AgentTokensPanel() {
                             }`}
                         />
                         <span className="whitespace-nowrap">
-                            {loading ? "새로고침 중..." : "새로고침"}
+                            {loading ? (
+                                <LocalizedText text={"새로고침 중..."} />
+                            ) : (
+                                <LocalizedText text={"새로고침"} />
+                            )}
                         </span>
                     </Button>
                 </section>
@@ -208,7 +238,7 @@ export default function AgentTokensPanel() {
             <section className="min-h-0 flex-1 overflow-y-auto">
                 {tokens.length === 0 && !loading && (
                     <p className="text-sm text-(--color-muted)">
-                        발급된 토큰이 없습니다.
+                        <LocalizedText text={"발급된 토큰이 없습니다."} />
                     </p>
                 )}
 
@@ -232,33 +262,49 @@ export default function AgentTokensPanel() {
                                         </span>
                                         {status === "active" && (
                                             <Badge className="bg-green-500 text-white">
-                                                Active
+                                                <LocalizedText
+                                                    text={"Active"}
+                                                />
                                             </Badge>
                                         )}
                                         {status === "expired" && (
                                             <Badge className="bg-amber-500 text-white dark:bg-amber-500 dark:text-white">
-                                                Expired
+                                                <LocalizedText
+                                                    text={"Expired"}
+                                                />
                                             </Badge>
                                         )}
                                         {status === "revoked" && (
                                             <Badge className="bg-red-600 text-white dark:bg-red-600 dark:text-white">
-                                                Revoked
+                                                <LocalizedText
+                                                    text={"Revoked"}
+                                                />
                                             </Badge>
                                         )}
                                     </div>
                                     <div className="flex flex-wrap gap-3 text-xs text-(--color-muted)">
                                         <span>
-                                            만료:{" "}
-                                            {new Date(
-                                                token.expires_at
-                                            ).toLocaleString("ko-KR")}
+                                            <LocalizedRichText
+                                                text={"만료: {0}"}
+                                                values={[
+                                                    new Date(
+                                                        token.expires_at
+                                                    ).toLocaleString(locale),
+                                                ]}
+                                            />
                                         </span>
                                         {token.last_used_at && (
                                             <span>
-                                                마지막 사용:{" "}
-                                                {new Date(
-                                                    token.last_used_at
-                                                ).toLocaleString("ko-KR")}
+                                                <LocalizedRichText
+                                                    text={"마지막 사용: {0}"}
+                                                    values={[
+                                                        new Date(
+                                                            token.last_used_at
+                                                        ).toLocaleString(
+                                                            locale
+                                                        ),
+                                                    ]}
+                                                />
                                             </span>
                                         )}
                                     </div>
@@ -272,9 +318,13 @@ export default function AgentTokensPanel() {
                                     >
                                         <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">
-                                            {revoking === token.id
-                                                ? "폐기 중..."
-                                                : "폐기"}
+                                            {revoking === token.id ? (
+                                                <LocalizedText
+                                                    text={"폐기 중..."}
+                                                />
+                                            ) : (
+                                                <LocalizedText text={"폐기"} />
+                                            )}
                                         </span>
                                     </Button>
                                 )}

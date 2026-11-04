@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { serverT } from "@/lib/server-i18n";
+import Link from "@/components/PublicLink";
 import { CalendarDays, ImageIcon } from "lucide-react";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import { SkillBadge } from "@/components/resume/SkillBadge";
@@ -43,7 +44,8 @@ export default function PortfolioProjectCard({
     const projectTypeBadge = getProjectTypeBadge(project.projectType);
     const projectDate = formatPortfolioMonthRange(
         project.startDate,
-        project.endDate
+        project.endDate,
+        serverT
     );
 
     return (
@@ -53,14 +55,17 @@ export default function PortfolioProjectCard({
         >
             <Link
                 href={`${portfolioBasePath}/${project.slug}`}
-                aria-label={`${project.title} 프로젝트 기록 보기`}
+                aria-label={serverT("{0} 프로젝트 기록 보기", [project.title])}
                 className={`absolute inset-0 z-10 rounded-2xl ${focusClass}`}
             />
             <div className="relative block aspect-video overflow-hidden bg-(--color-border)">
                 {imageSource ? (
                     <img
                         src={imageSource}
-                        alt={media?.alt ?? `${project.title} 대표 이미지`}
+                        alt={
+                            media?.alt ??
+                            serverT("{0} 대표 이미지", [project.title])
+                        }
                         width={960}
                         height={540}
                         loading={priority ? "eager" : "lazy"}
@@ -75,7 +80,7 @@ export default function PortfolioProjectCard({
                 )}
                 {media?.type === "video" && (
                     <span className="absolute right-3 bottom-3 rounded-md bg-black/75 px-2.5 py-1 text-xs font-bold text-white">
-                        Video
+                        {serverT("Video")}
                     </span>
                 )}
             </div>
@@ -84,7 +89,7 @@ export default function PortfolioProjectCard({
                 <span
                     className={`mb-3 inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold ${projectTypeBadge.className}`}
                 >
-                    {projectTypeBadge.label}
+                    {serverT(projectTypeBadge.label)}
                 </span>
                 <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-(--color-muted)">
                     <CalendarDays className="size-4" aria-hidden="true" />
@@ -104,7 +109,10 @@ export default function PortfolioProjectCard({
                     </p>
                 )}
                 {project.outcomes.length > 0 && (
-                    <ul className="mt-4 space-y-2" aria-label="주요 결과">
+                    <ul
+                        className="mt-4 space-y-2"
+                        aria-label={serverT("주요 결과")}
+                    >
                         {project.outcomes.slice(0, 2).map((outcome) => (
                             <li
                                 key={outcome.result}
@@ -122,7 +130,7 @@ export default function PortfolioProjectCard({
                 {project.keywords.length > 0 && (
                     <div
                         className="mt-5 flex flex-wrap gap-1.5"
-                        aria-label="사용 기술"
+                        aria-label={serverT("사용 기술")}
                     >
                         {project.keywords.slice(0, 4).map((keyword) => (
                             <SkillBadge key={keyword} name={keyword} />

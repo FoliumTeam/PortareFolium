@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedRichText } from "@/components/LocalizedText";
 
 import { useEffect, useState } from "react";
 import { Wrench, AlertTriangle, CheckCircle2, Info } from "lucide-react";
@@ -204,12 +205,15 @@ export default function DebugPanel() {
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                            Debug
+                            <LocalizedText text={"Debug"} />
                         </h2>
                         <div className="space-y-1 text-sm text-(--color-muted)">
                             <p>
-                                운영 중 수동 실행이 필요한 debug 도구를 모아두는
-                                패널입니다.
+                                <LocalizedText
+                                    text={
+                                        "운영 중 수동 실행이 필요한 debug 도구를 모아두는 패널입니다."
+                                    }
+                                />
                             </p>
                         </div>
                     </div>
@@ -221,7 +225,7 @@ export default function DebugPanel() {
                         className="shrink-0 bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                     >
                         <Info className="mr-1.5 h-4 w-4" />
-                        도움말
+                        <LocalizedText text={"도움말"} />
                     </Button>
                 </div>
 
@@ -232,14 +236,34 @@ export default function DebugPanel() {
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="text-base font-semibold text-(--color-foreground)">
-                                Lightbox sidecar backfill
+                                <LocalizedText
+                                    text={"Lightbox sidecar backfill"}
+                                />
                             </p>
                             <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                                기존 <code>blog</code>, <code>portfolio</code>{" "}
-                                자산을 순회하면서 <code>.thumb.webp</code>{" "}
-                                하나만 남기도록 정리합니다. GIF는 첫 프레임 기반
-                                정적 <code>.thumb.webp</code>를 생성합니다.
-                                운영에서는 한 번만 실행하는 것을 권장합니다.
+                                <LocalizedRichText
+                                    text={
+                                        "기존 {0}, {1} 자산을 순회하면서 {2} 하나만 남기도록 정리합니다. GIF는 첫 프레임 기반 정적 {3}를 생성합니다. 운영에서는 한 번만 실행하는 것을 권장합니다."
+                                    }
+                                    values={[
+                                        <code>
+                                            <LocalizedText text={"blog"} />
+                                        </code>,
+                                        <code>
+                                            <LocalizedText text={"portfolio"} />
+                                        </code>,
+                                        <code>
+                                            <LocalizedText
+                                                text={".thumb.webp"}
+                                            />
+                                        </code>,
+                                        <code>
+                                            <LocalizedText
+                                                text={".thumb.webp"}
+                                            />
+                                        </code>,
+                                    ]}
+                                />
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {BACKFILL_INDICATORS.map((indicator) => (
@@ -247,7 +271,13 @@ export default function DebugPanel() {
                                         key={indicator.label}
                                         className={`rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${indicatorClassName(indicator.tone)}`}
                                     >
-                                        {indicator.label}: {indicator.value}
+                                        {
+                                            <LocalizedText
+                                                text={indicator.label}
+                                            />
+                                        }
+                                        :{" "}
+                                        <LocalizedText text={indicator.value} />
                                     </span>
                                 ))}
                             </div>
@@ -258,9 +288,15 @@ export default function DebugPanel() {
                                         disabled={running}
                                         className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                                     >
-                                        {running
-                                            ? "실행 중..."
-                                            : "Backfill 실행"}
+                                        {running ? (
+                                            <LocalizedText
+                                                text={"실행 중..."}
+                                            />
+                                        ) : (
+                                            <LocalizedText
+                                                text={"Backfill 실행"}
+                                            />
+                                        )}
                                     </Button>
                                     <Button
                                         type="button"
@@ -270,7 +306,7 @@ export default function DebugPanel() {
                                         }
                                         className="border-(--color-border) bg-(--color-surface) text-(--color-muted) hover:text-(--color-foreground)"
                                     >
-                                        Learn more
+                                        <LocalizedText text={"Learn more"} />
                                     </Button>
                                 </div>
                             </div>
@@ -285,14 +321,19 @@ export default function DebugPanel() {
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="text-base font-semibold text-(--color-foreground)">
-                                DB migration failsafe
+                                <LocalizedText text={"DB migration failsafe"} />
                             </p>
                             <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                                자동 마이그레이션이 적용되지 않았을 때 기존 DB
-                                마이그레이션 패널의 <strong>자동 적용</strong>{" "}
-                                버튼처럼 pending migration을 수동 실행합니다.
-                                일반 운영에서는 Admin 메인 DB 상태 카드가 계속
-                                pending을 표시할 때만 사용하세요.
+                                <LocalizedRichText
+                                    text={
+                                        "자동 마이그레이션이 적용되지 않았을 때 기존 DB 마이그레이션 패널의 {0} 버튼처럼 pending migration을 수동 실행합니다. 일반 운영에서는 Admin 메인 DB 상태 카드가 계속 pending을 표시할 때만 사용하세요."
+                                    }
+                                    values={[
+                                        <strong>
+                                            <LocalizedText text={"자동 적용"} />
+                                        </strong>,
+                                    ]}
+                                />
                             </p>
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {DB_MIGRATION_INDICATORS.map((indicator) => (
@@ -300,7 +341,13 @@ export default function DebugPanel() {
                                         key={indicator.label}
                                         className={`rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${indicatorClassName(indicator.tone)}`}
                                     >
-                                        {indicator.label}: {indicator.value}
+                                        {
+                                            <LocalizedText
+                                                text={indicator.label}
+                                            />
+                                        }
+                                        :{" "}
+                                        <LocalizedText text={indicator.value} />
                                     </span>
                                 ))}
                             </div>
@@ -313,9 +360,15 @@ export default function DebugPanel() {
                                         disabled={migrationRunning}
                                         className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                                     >
-                                        {migrationRunning
-                                            ? "적용 중..."
-                                            : "DB migration 적용"}
+                                        {migrationRunning ? (
+                                            <LocalizedText
+                                                text={"적용 중..."}
+                                            />
+                                        ) : (
+                                            <LocalizedText
+                                                text={"DB migration 적용"}
+                                            />
+                                        )}
                                     </Button>
                                     <Button
                                         type="button"
@@ -325,7 +378,7 @@ export default function DebugPanel() {
                                         }
                                         className="border-(--color-border) bg-(--color-surface) text-(--color-muted) hover:text-(--color-foreground)"
                                     >
-                                        Learn more
+                                        <LocalizedText text={"Learn more"} />
                                     </Button>
                                 </div>
                             </div>
@@ -338,37 +391,98 @@ export default function DebugPanel() {
                         <div className="flex items-start gap-3">
                             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                             <div className="space-y-1 text-sm text-green-700 dark:text-green-300">
-                                <p>processed={result.summary.processed}</p>
-                                <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    실제로 검사한 원본 자산 수
+                                <p>
+                                    <LocalizedRichText
+                                        text={"processed={0}"}
+                                        values={[result.summary.processed]}
+                                    />
                                 </p>
-                                <p>skipped={result.summary.skipped}</p>
                                 <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    이미 정적인 thumb가 있어서 추가 작업 없이
-                                    건너뛴 수
-                                </p>
-                                <p>thumb={result.summary.thumbCreated}</p>
-                                <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    새로 생성된 <code>.thumb.webp</code> 수
+                                    <LocalizedText
+                                        text={"실제로 검사한 원본 자산 수"}
+                                    />
                                 </p>
                                 <p>
-                                    rewrittenThumb=
-                                    {result.summary.rewrittenThumb}
+                                    <LocalizedRichText
+                                        text={"skipped={0}"}
+                                        values={[result.summary.skipped]}
+                                    />
                                 </p>
                                 <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    기존 animated <code>.thumb.webp</code>를
-                                    정적인 첫 프레임 thumb로 다시 생성한 수
+                                    <LocalizedText
+                                        text={
+                                            "이미 정적인 thumb가 있어서 추가 작업 없이 건너뛴 수"
+                                        }
+                                    />
                                 </p>
                                 <p>
-                                    deletedPoster=
-                                    {result.summary.deletedPoster}
+                                    <LocalizedRichText
+                                        text={"thumb={0}"}
+                                        values={[result.summary.thumbCreated]}
+                                    />
                                 </p>
                                 <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    기존 <code>.poster.webp</code>를 정리한 수
+                                    <LocalizedRichText
+                                        text={"새로 생성된 {0} 수"}
+                                        values={[
+                                            <code>
+                                                <LocalizedText
+                                                    text={".thumb.webp"}
+                                                />
+                                            </code>,
+                                        ]}
+                                    />
                                 </p>
-                                <p>errors={result.summary.errors.length}</p>
+                                <p>
+                                    <LocalizedRichText
+                                        text={"rewrittenThumb={0}"}
+                                        values={[result.summary.rewrittenThumb]}
+                                    />
+                                </p>
                                 <p className="text-xs text-green-700/90 dark:text-green-300/90">
-                                    변환 또는 업로드에 실패한 자산 수
+                                    <LocalizedRichText
+                                        text={
+                                            "기존 animated {0}를 정적인 첫 프레임 thumb로 다시 생성한 수"
+                                        }
+                                        values={[
+                                            <code>
+                                                <LocalizedText
+                                                    text={".thumb.webp"}
+                                                />
+                                            </code>,
+                                        ]}
+                                    />
+                                </p>
+                                <p>
+                                    <LocalizedRichText
+                                        text={"deletedPoster={0}"}
+                                        values={[result.summary.deletedPoster]}
+                                    />
+                                </p>
+                                <p className="text-xs text-green-700/90 dark:text-green-300/90">
+                                    <LocalizedRichText
+                                        text={"기존 {0}를 정리한 수"}
+                                        values={[
+                                            <code>
+                                                <LocalizedText
+                                                    text={".poster.webp"}
+                                                />
+                                            </code>,
+                                        ]}
+                                    />
+                                </p>
+                                <p>
+                                    <LocalizedRichText
+                                        text={"errors={0}"}
+                                        values={[result.summary.errors.length]}
+                                    />
+                                </p>
+                                <p className="text-xs text-green-700/90 dark:text-green-300/90">
+                                    <LocalizedText
+                                        text={
+                                            "변환 또는 업로드에 실패한 자산 수"
+                                        }
+                                    />
                                 </p>
                             </div>
                         </div>
@@ -380,7 +494,7 @@ export default function DebugPanel() {
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                             <p className="text-sm text-red-600 dark:text-red-300">
-                                {result.message}
+                                {<LocalizedText text={result.message} />}
                             </p>
                         </div>
                     </div>
@@ -391,15 +505,32 @@ export default function DebugPanel() {
                         <div className="flex items-start gap-3">
                             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                             <div className="space-y-1 text-sm text-green-700 dark:text-green-300">
-                                <p>mode={migrationResult.summary.mode}</p>
-                                <p>applied={migrationResult.summary.applied}</p>
                                 <p>
-                                    versions=
-                                    {migrationResult.summary.versions.length > 0
-                                        ? migrationResult.summary.versions.join(
-                                              ", "
-                                          )
-                                        : "none"}
+                                    <LocalizedRichText
+                                        text={"mode={0}"}
+                                        values={[migrationResult.summary.mode]}
+                                    />
+                                </p>
+                                <p>
+                                    <LocalizedRichText
+                                        text={"applied={0}"}
+                                        values={[
+                                            migrationResult.summary.applied,
+                                        ]}
+                                    />
+                                </p>
+                                <p>
+                                    <LocalizedRichText
+                                        text={"versions={0}"}
+                                        values={[
+                                            migrationResult.summary.versions
+                                                .length > 0
+                                                ? migrationResult.summary.versions.join(
+                                                      ", "
+                                                  )
+                                                : "none",
+                                        ]}
+                                    />
                                 </p>
                             </div>
                         </div>
@@ -411,7 +542,11 @@ export default function DebugPanel() {
                         <div className="flex items-start gap-3">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                             <p className="text-sm text-red-600 dark:text-red-300">
-                                {migrationResult.message}
+                                {
+                                    <LocalizedText
+                                        text={migrationResult.message}
+                                    />
+                                }
                             </p>
                         </div>
                     </div>
@@ -421,11 +556,13 @@ export default function DebugPanel() {
                     result.summary.errors.length > 0 && (
                         <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-4">
                             <p className="mb-2 text-sm font-semibold text-(--color-foreground)">
-                                실패 목록
+                                <LocalizedText text={"실패 목록"} />
                             </p>
                             <div className="max-h-60 overflow-y-auto rounded-xl bg-(--color-surface-subtle) p-3 font-mono text-xs text-(--color-muted)">
                                 {result.summary.errors.map((error) => (
-                                    <p key={error}>{error}</p>
+                                    <p key={error}>
+                                        {<LocalizedText text={error} />}
+                                    </p>
                                 ))}
                             </div>
                         </div>
@@ -435,149 +572,302 @@ export default function DebugPanel() {
             <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
                 <DialogContent className="tablet:max-w-2xl max-h-[80vh] overflow-y-auto border-(--color-border) bg-(--color-surface) text-(--color-foreground)">
                     <DialogHeader>
-                        <DialogTitle>Debug indicator 안내</DialogTitle>
+                        <DialogTitle>
+                            <LocalizedText text={"Debug indicator 안내"} />
+                        </DialogTitle>
                         <DialogDescription>
-                            각 debug entry에 표시되는 indicator는 실행 전 비용과
-                            영향 범위를 빠르게 판단하기 위한 정보입니다.
+                            <LocalizedText
+                                text={
+                                    "각 debug entry에 표시되는 indicator는 실행 전 비용과 영향 범위를 빠르게 판단하기 위한 정보입니다."
+                                }
+                            />
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-5 text-sm leading-6 text-(--color-muted)">
                         <section className="space-y-2">
                             <h3 className="font-semibold text-(--color-foreground)">
-                                공통 indicator 의미
+                                <LocalizedText text={"공통 indicator 의미"} />
                             </h3>
                             <div className="space-y-2">
                                 <p>
-                                    <strong className="text-(--color-foreground)">
-                                        중복 생성
-                                    </strong>
-                                    : 같은 key를 또 만드는지 여부입니다. 현재
-                                    debug 도구가 이미 생성된 결과를 다시
-                                    만들거나 같은 데이터를 중복 저장하는
-                                    위험도를 뜻합니다.
+                                    <LocalizedRichText
+                                        text={
+                                            "{0}: 같은 key를 또 만드는지 여부입니다. 현재 debug 도구가 이미 생성된 결과를 다시 만들거나 같은 데이터를 중복 저장하는 위험도를 뜻합니다."
+                                        }
+                                        values={[
+                                            <strong className="text-(--color-foreground)">
+                                                <LocalizedText
+                                                    text={"중복 생성"}
+                                                />
+                                            </strong>,
+                                        ]}
+                                    />
                                 </p>
                                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                                     <p className="font-semibold">
-                                        💸 과금과의 관계
+                                        <LocalizedText
+                                            text={"💸 과금과의 관계"}
+                                        />
                                     </p>
                                     <p className="mt-1">
-                                        중복 생성이 있으면 저장 용량 증가나
-                                        불필요한 쓰기 요청 증가로 직접 비용에
-                                        연결될 수 있습니다. 중복 생성이 없더라도
-                                        실행 과정의 읽기/쓰기 요청은 별도로 과금
-                                        대상일 수 있습니다.
+                                        <LocalizedText
+                                            text={
+                                                "중복 생성이 있으면 저장 용량 증가나 불필요한 쓰기 요청 증가로 직접 비용에 연결될 수 있습니다. 중복 생성이 없더라도 실행 과정의 읽기/쓰기 요청은 별도로 과금 대상일 수 있습니다."
+                                            }
+                                        />
                                     </p>
                                 </div>
                                 <p>
-                                    <strong className="text-(--color-foreground)">
-                                        Vercel 함수 실행
-                                    </strong>
-                                    : server action 또는 API route가 오래
-                                    실행될수록 함수 실행 시간과 메모리 사용량이
-                                    늘어날 수 있음을 뜻합니다. 실행 중에는 admin
-                                    화면 응답이 잠시 느려질 수 있습니다.
+                                    <LocalizedRichText
+                                        text={
+                                            "{0}: server action 또는 API route가 오래 실행될수록 함수 실행 시간과 메모리 사용량이 늘어날 수 있음을 뜻합니다. 실행 중에는 admin 화면 응답이 잠시 느려질 수 있습니다."
+                                        }
+                                        values={[
+                                            <strong className="text-(--color-foreground)">
+                                                <LocalizedText
+                                                    text={"Vercel 함수 실행"}
+                                                />
+                                            </strong>,
+                                        ]}
+                                    />
                                 </p>
                                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                                     <p className="font-semibold">
-                                        💸 과금과의 관계
+                                        <LocalizedText
+                                            text={"💸 과금과의 관계"}
+                                        />
                                     </p>
                                     <p className="mt-1">
-                                        Vercel Hobby는 무료 플랜이지만 포함량을
-                                        넘기면 직접 과금보다 quota 소모와 일시
-                                        제한이 더 큰 리스크입니다.
+                                        <LocalizedText
+                                            text={
+                                                "Vercel Hobby는 무료 플랜이지만 포함량을 넘기면 직접 과금보다 quota 소모와 일시 제한이 더 큰 리스크입니다."
+                                            }
+                                        />
                                     </p>
                                     <div className="mt-2 space-y-1 font-medium">
-                                        <p>• 함수 호출: 월 1,000,000회</p>
-                                        <p>• Function Duration: 100 GB-Hours</p>
                                         <p>
-                                            • 최대 실행 시간: 기본 10초, 최대
-                                            60초
+                                            <LocalizedText
+                                                text={
+                                                    "• 함수 호출: 월 1,000,000회"
+                                                }
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={
+                                                    "• Function Duration: 100 GB-Hours"
+                                                }
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={
+                                                    "• 최대 실행 시간: 기본 10초, 최대 60초"
+                                                }
+                                            />
                                         </p>
                                     </div>
                                 </div>
                                 <p>
-                                    <strong className="text-(--color-foreground)">
-                                        Cloudflare R2 사용량
-                                    </strong>
-                                    : R2의 <code>LIST</code>, <code>HEAD</code>,{" "}
-                                    <code>GET</code>, <code>PUT</code>,{" "}
-                                    <code>DELETE</code> 요청량이 늘어날 수
-                                    있음을 뜻합니다.
+                                    <LocalizedRichText
+                                        text={
+                                            "{0}: R2의 {1}, {2}, {3}, {4}, {5} 요청량이 늘어날 수 있음을 뜻합니다."
+                                        }
+                                        values={[
+                                            <strong className="text-(--color-foreground)">
+                                                <LocalizedText
+                                                    text={
+                                                        "Cloudflare R2 사용량"
+                                                    }
+                                                />
+                                            </strong>,
+                                            <code>
+                                                <LocalizedText text={"LIST"} />
+                                            </code>,
+                                            <code>
+                                                <LocalizedText text={"HEAD"} />
+                                            </code>,
+                                            <code>
+                                                <LocalizedText text={"GET"} />
+                                            </code>,
+                                            <code>
+                                                <LocalizedText text={"PUT"} />
+                                            </code>,
+                                            <code>
+                                                <LocalizedText
+                                                    text={"DELETE"}
+                                                />
+                                            </code>,
+                                        ]}
+                                    />
                                 </p>
                                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                                     <p className="font-semibold">
-                                        💸 과금과의 관계
+                                        <LocalizedText
+                                            text={"💸 과금과의 관계"}
+                                        />
                                     </p>
                                     <p className="mt-1">
-                                        Cloudflare R2는 이 항목에서 가장
-                                        직접적인 비용 리스크입니다. 대량
-                                        자산일수록 free tier를 먼저 잠식할 수
-                                        있습니다.
+                                        <LocalizedText
+                                            text={
+                                                "Cloudflare R2는 이 항목에서 가장 직접적인 비용 리스크입니다. 대량 자산일수록 free tier를 먼저 잠식할 수 있습니다."
+                                            }
+                                        />
                                     </p>
                                     <div className="mt-2 space-y-1 font-medium">
-                                        <p>• Storage: 월 10 GB</p>
-                                        <p>• Class A: 월 1,000,000 요청</p>
-                                        <p>• Class B: 월 10,000,000 요청</p>
-                                        <p>• DeleteObject: 무료</p>
-                                        <p>• Egress: 무료</p>
+                                        <p>
+                                            <LocalizedText
+                                                text={"• Storage: 월 10 GB"}
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={
+                                                    "• Class A: 월 1,000,000 요청"
+                                                }
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={
+                                                    "• Class B: 월 10,000,000 요청"
+                                                }
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={"• DeleteObject: 무료"}
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={"• Egress: 무료"}
+                                            />
+                                        </p>
                                     </div>
                                     <p className="mt-2">
-                                        이 작업에서 <code>LIST</code>,{" "}
-                                        <code>PUT</code>는 Class A,{" "}
-                                        <code>HEAD</code>, <code>GET</code>은
-                                        Class B, <code>DELETE</code>는 무료에
-                                        해당합니다.
+                                        <LocalizedRichText
+                                            text={
+                                                "이 작업에서 {0}, {1}는 Class A, {2}, {3}은 Class B, {4}는 무료에 해당합니다."
+                                            }
+                                            values={[
+                                                <code>
+                                                    <LocalizedText
+                                                        text={"LIST"}
+                                                    />
+                                                </code>,
+                                                <code>
+                                                    <LocalizedText
+                                                        text={"PUT"}
+                                                    />
+                                                </code>,
+                                                <code>
+                                                    <LocalizedText
+                                                        text={"HEAD"}
+                                                    />
+                                                </code>,
+                                                <code>
+                                                    <LocalizedText
+                                                        text={"GET"}
+                                                    />
+                                                </code>,
+                                                <code>
+                                                    <LocalizedText
+                                                        text={"DELETE"}
+                                                    />
+                                                </code>,
+                                            ]}
+                                        />
                                     </p>
                                 </div>
                                 <p>
-                                    <strong className="text-(--color-foreground)">
-                                        Supabase 영향
-                                    </strong>
-                                    : 이 debug 항목이 Supabase Database,
-                                    Supabase Storage, Supabase Edge Functions를
-                                    직접 호출하는지 여부를 뜻합니다.
+                                    <LocalizedRichText
+                                        text={
+                                            "{0}: 이 debug 항목이 Supabase Database, Supabase Storage, Supabase Edge Functions를 직접 호출하는지 여부를 뜻합니다."
+                                        }
+                                        values={[
+                                            <strong className="text-(--color-foreground)">
+                                                <LocalizedText
+                                                    text={"Supabase 영향"}
+                                                />
+                                            </strong>,
+                                        ]}
+                                    />
                                 </p>
                                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                                     <p className="font-semibold">
-                                        💸 과금과의 관계
+                                        <LocalizedText
+                                            text={"💸 과금과의 관계"}
+                                        />
                                     </p>
                                     <p className="mt-1">
-                                        Supabase free tier 자체는 quota가
-                                        있지만, 현재 lightbox sidecar backfill은
-                                        Supabase를 직접 사용하지 않으므로 이
-                                        항목에는 직접 영향이 없습니다.
+                                        <LocalizedText
+                                            text={
+                                                "Supabase free tier 자체는 quota가 있지만, 현재 lightbox sidecar backfill은 Supabase를 직접 사용하지 않으므로 이 항목에는 직접 영향이 없습니다."
+                                            }
+                                        />
                                     </p>
                                     <div className="mt-2 space-y-1 font-medium">
-                                        <p>• Free project: 최대 2개</p>
                                         <p>
-                                            • Database Size: 프로젝트당 500 MB
+                                            <LocalizedText
+                                                text={
+                                                    "• Free project: 최대 2개"
+                                                }
+                                            />
                                         </p>
-                                        <p>• Storage Size: 1 GB</p>
                                         <p>
-                                            • Edge Function Invocations: 500,000
+                                            <LocalizedText
+                                                text={
+                                                    "• Database Size: 프로젝트당 500 MB"
+                                                }
+                                            />
                                         </p>
-                                        <p>• Bandwidth: 10 GB</p>
+                                        <p>
+                                            <LocalizedText
+                                                text={"• Storage Size: 1 GB"}
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={
+                                                    "• Edge Function Invocations: 500,000"
+                                                }
+                                            />
+                                        </p>
+                                        <p>
+                                            <LocalizedText
+                                                text={"• Bandwidth: 10 GB"}
+                                            />
+                                        </p>
                                     </div>
                                 </div>
                                 <p>
-                                    <strong className="text-(--color-foreground)">
-                                        권장 실행 횟수
-                                    </strong>
-                                    : 동일 작업을 얼마나 자주 실행하는 게
-                                    적절한지 알려줍니다.
+                                    <LocalizedRichText
+                                        text={
+                                            "{0}: 동일 작업을 얼마나 자주 실행하는 게 적절한지 알려줍니다."
+                                        }
+                                        values={[
+                                            <strong className="text-(--color-foreground)">
+                                                <LocalizedText
+                                                    text={"권장 실행 횟수"}
+                                                />
+                                            </strong>,
+                                        ]}
+                                    />
                                 </p>
                                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                                     <p className="font-semibold">
-                                        💸 과금과의 관계
+                                        <LocalizedText
+                                            text={"💸 과금과의 관계"}
+                                        />
                                     </p>
                                     <p className="mt-1">
-                                        권장 실행 횟수를 넘겨 반복 실행하면 같은
-                                        결과를 얻기 위해 불필요한 함수 실행과
-                                        storage 요청을 다시 발생시킬 수
-                                        있습니다. 즉 직접적인 기능 이득 없이
-                                        free tier quota만 줄어들 가능성이
-                                        큽니다.
+                                        <LocalizedText
+                                            text={
+                                                "권장 실행 횟수를 넘겨 반복 실행하면 같은 결과를 얻기 위해 불필요한 함수 실행과 storage 요청을 다시 발생시킬 수 있습니다. 즉 직접적인 기능 이득 없이 free tier quota만 줄어들 가능성이 큽니다."
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
@@ -594,9 +884,11 @@ export default function DebugPanel() {
             >
                 <DialogContent className="tablet:max-w-2xl max-h-[80vh] overflow-y-auto border-(--color-border) bg-(--color-surface) text-(--color-foreground)">
                     <DialogHeader>
-                        <DialogTitle>{detail?.title}</DialogTitle>
+                        <DialogTitle>
+                            {<LocalizedText text={detail?.title} />}
+                        </DialogTitle>
                         <DialogDescription className="leading-6 whitespace-pre-line">
-                            {detail?.description}
+                            {<LocalizedText text={detail?.description} />}
                         </DialogDescription>
                     </DialogHeader>
                 </DialogContent>
@@ -608,11 +900,15 @@ export default function DebugPanel() {
                     className="tablet:max-w-lg border-(--color-border) bg-(--color-surface) text-(--color-foreground)"
                 >
                     <DialogHeader>
-                        <DialogTitle>Backfill 실행 중</DialogTitle>
+                        <DialogTitle>
+                            <LocalizedText text={"Backfill 실행 중"} />
+                        </DialogTitle>
                         <DialogDescription>
-                            기존 자산을 순회하면서 missing thumb를 생성하고 기존
-                            poster를 정리하고 있습니다. bucket 크기에 따라
-                            시간이 걸릴 수 있습니다.
+                            <LocalizedText
+                                text={
+                                    "기존 자산을 순회하면서 missing thumb를 생성하고 기존 poster를 정리하고 있습니다. bucket 크기에 따라 시간이 걸릴 수 있습니다."
+                                }
+                            />
                         </DialogDescription>
                     </DialogHeader>
 
@@ -624,7 +920,8 @@ export default function DebugPanel() {
                             />
                         </div>
                         <p className="text-sm text-(--color-muted)">
-                            {progressLabel} {progressValue}%
+                            {<LocalizedText text={progressLabel} />}{" "}
+                            {progressValue}%
                         </p>
                     </div>
                 </DialogContent>

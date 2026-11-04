@@ -1,10 +1,12 @@
+import { formatBirthDateForUI } from "@/lib/resume-display";
+
+import { serverT } from "@/lib/server-i18n";
 import { Fragment, type ReactNode } from "react";
 import type {
     Resume,
     ResumeBasicsPresentation,
     ResumeCoreCompetency,
 } from "@/types/resume";
-import { formatResumeBirthDate } from "@/lib/resume-basics-presentation";
 import { getResumeProfileBrand } from "@/lib/resume-profile-preset";
 import { renderMarkdown } from "@/lib/markdown";
 import CoreCompetencyMarkdown from "@/components/resume/CoreCompetencyMarkdown";
@@ -38,7 +40,7 @@ const formatDateRange = (
     hideDays?: boolean
 ): string => {
     const fmt = (d?: string) => (d && hideDays ? d.slice(0, 7) : d || "");
-    return `${fmt(startDate)} ~ ${fmt(endDate) || "진행 중"}`;
+    return `${fmt(startDate)} ~ ${fmt(endDate) || serverT("진행 중")}`;
 };
 
 export default async function ResumeModern({
@@ -57,9 +59,9 @@ export default async function ResumeModern({
 
     const getLabel = (key: string, qualifier?: string) => {
         const sec = (resume as Record<string, unknown>)[key] as
-            | { emoji?: string; showEmoji?: boolean }
+            | { emoji?: string; showEmoji?: boolean; label?: string }
             | undefined;
-        return getResumeSectionLabel(key, sec, qualifier);
+        return getResumeSectionLabel(key, sec, qualifier, serverT);
     };
 
     // work markdown 렌더링
@@ -325,7 +327,8 @@ export default async function ResumeModern({
                         />
                         {education.courses && education.courses.length > 0 ? (
                             <div className="mt-2 text-sm leading-relaxed text-(--color-muted)">
-                                주요 과목: {education.courses.join(" · ")}
+                                {serverT("주요 과목: ")}
+                                {education.courses.join(" · ")}
                             </div>
                         ) : null}
                     </div>
@@ -664,9 +667,9 @@ export default async function ResumeModern({
               basics.location.region,
               basics.location.postalCode,
               basics.location.countryCode === "KR"
-                  ? "대한민국"
+                  ? serverT("대한민국")
                   : basics.location.countryCode === "US"
-                    ? "미국"
+                    ? serverT("미국")
                     : basics.location.countryCode,
           ]
               .filter(Boolean)
@@ -675,7 +678,7 @@ export default async function ResumeModern({
     if (visible.location && location) {
         metadataItems.push({
             key: "location",
-            label: "위치",
+            label: "주소",
             value: <span>{location}</span>,
         });
     }
@@ -685,9 +688,10 @@ export default async function ResumeModern({
             label: "생년월일",
             value: (
                 <span>
-                    {formatResumeBirthDate(
+                    {formatBirthDateForUI(
                         basics.birthDate,
-                        basicsPresentation.personalDetailPreset
+                        basicsPresentation.personalDetailPreset,
+                        serverT
                     )}
                 </span>
             ),
@@ -728,7 +732,9 @@ export default async function ResumeModern({
                                 href={profile.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`${brand.label} 프로필 열기`}
+                                aria-label={serverT("{0} 프로필 열기", [
+                                    brand.label,
+                                ])}
                                 style={{
                                     backgroundColor: brand.backgroundColor,
                                     color: brand.foregroundColor,
@@ -815,7 +821,7 @@ export default async function ResumeModern({
                                     : "text-(--color-muted)"
                             }`}
                         >
-                            {item.label}
+                            {serverT(item.label)}
                         </p>
                         <div
                             className={`mt-1 text-base text-(--color-foreground) ${

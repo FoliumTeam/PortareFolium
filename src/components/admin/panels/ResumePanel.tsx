@@ -1,21 +1,29 @@
 "use client";
+import { useUILocale } from "@/components/LocaleProvider";
+import { LanguageCopyButton } from "@/components/admin/LanguageCopyButton";
+import { DocumentPublicationControl } from "@/components/admin/DocumentPublicationControl";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { normalizeJobFieldValue } from "@/lib/job-field";
 import {
-    getResumeBootstrap,
-    saveResumeBasicsPresentation,
-    saveResumePanel,
-    saveResumeTheme,
+    getResumeBootstrap as raw_getResumeBootstrap,
+    saveResumeBasicsPresentation as raw_saveResumeBasicsPresentation,
+    saveResumePanel as raw_saveResumePanel,
+    saveResumeTheme as raw_saveResumeTheme,
 } from "@/app/admin/actions/resume";
 import {
-    getPortfolioPanelBootstrap,
-    reorderFeaturedPortfolioItems,
-    setPortfolioFeatured,
+    getPortfolioPanelBootstrap as raw_getPortfolioPanelBootstrap,
+    reorderFeaturedPortfolioItems as raw_reorderFeaturedPortfolioItems,
+    setPortfolioFeatured as raw_setPortfolioFeatured,
 } from "@/app/admin/actions/portfolio";
 import {
-    getAboutBootstrap,
-    saveAboutIntroductions,
+    getAboutBootstrap as raw_getAboutBootstrap,
+    saveAboutIntroductions as raw_saveAboutIntroductions,
 } from "@/app/admin/actions/about";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField, normalizeUniqueJobFieldList } from "@/lib/job-field";
@@ -108,12 +116,28 @@ function normalizeSkills(resume: Resume): Resume {
     };
 }
 import { Switch } from "@/components/ui/switch";
+import { bindContentAction } from "@/lib/admin-content-state";
+const getResumeBootstrap = bindContentAction(raw_getResumeBootstrap);
+const saveResumeBasicsPresentation = bindContentAction(
+    raw_saveResumeBasicsPresentation
+);
+const saveResumePanel = bindContentAction(raw_saveResumePanel);
+const saveResumeTheme = bindContentAction(raw_saveResumeTheme);
+const getPortfolioPanelBootstrap = bindContentAction(
+    raw_getPortfolioPanelBootstrap
+);
+const reorderFeaturedPortfolioItems = bindContentAction(
+    raw_reorderFeaturedPortfolioItems
+);
+const setPortfolioFeatured = bindContentAction(raw_setPortfolioFeatured);
+const getAboutBootstrap = bindContentAction(raw_getAboutBootstrap);
+const saveAboutIntroductions = bindContentAction(raw_saveAboutIntroductions);
 
 type ResumeLayout = "classic" | "modern";
 
 // 타임스탬프 포맷 (시:분:초)
-function fmtTime(d: Date): string {
-    return d.toLocaleTimeString("ko-KR", {
+function fmtTime(d: Date, locale: string): string {
+    return d.toLocaleTimeString(locale, {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -177,6 +201,7 @@ const getPortfolioFeaturedOrder = (
 };
 
 export default function ResumePanel() {
+    const { locale } = useUILocale();
     const { confirm } = useConfirmDialog();
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
@@ -215,6 +240,7 @@ export default function ResumePanel() {
     const [featuredProjectsLoading, setFeaturedProjectsLoading] =
         useState(true);
     const [aboutData, setAboutData] = useState<AboutData | null>(null);
+    const savedAboutDataRef = useRef("{}");
     const [aboutRowId, setAboutRowId] = useState<string | null>(null);
     const [aboutSaving, setAboutSaving] = useState(false);
     // 직무 분야 필터 (null = 전체)
@@ -271,6 +297,7 @@ export default function ResumePanel() {
                 savedDataRef.current = JSON.stringify(loaded);
                 setResumeData(loaded);
             } else {
+                savedDataRef.current = JSON.stringify(defaultResume);
                 setResumeData(defaultResume);
             }
 
@@ -286,6 +313,7 @@ export default function ResumePanel() {
 
     useEffect(() => {
         getAboutBootstrap().then((result) => {
+            savedAboutDataRef.current = JSON.stringify(result.aboutData ?? {});
             setAboutData(result.aboutData ?? {});
             setAboutRowId(result.aboutRowId);
         });
@@ -326,7 +354,12 @@ export default function ResumePanel() {
         JSON.stringify(initialSectionLayout);
 
     // beforeunload + route navigation 가드
-    useUnsavedWarning(isDirty || isLayoutDirty);
+    useUnsavedWarning(
+        isDirty ||
+            isLayoutDirty ||
+            (aboutData !== null &&
+                JSON.stringify(aboutData) !== savedAboutDataRef.current)
+    );
 
     // 공개 화면의 disabled 상태와 관리자 편집 가능 여부 분리
     const sectionWrapperStyle = (key: string): React.CSSProperties => {
@@ -573,6 +606,7 @@ export default function ResumePanel() {
             setStatus({ type: "error", msg: result.error });
             return;
         }
+        savedAboutDataRef.current = JSON.stringify(aboutData);
         if (result.aboutRowId) setAboutRowId(result.aboutRowId);
         setStatus({
             type: "success",
@@ -650,7 +684,11 @@ export default function ResumePanel() {
     };
 
     if (!resumeData)
-        return <div className="p-4 text-(--color-muted)">Loading...</div>;
+        return (
+            <div className="p-4 text-(--color-muted)">
+                <LocalizedText text={"Loading..."} />
+            </div>
+        );
 
     const availablePortfolioProjects = portfolioItems.filter(
         (item) =>
@@ -674,16 +712,28 @@ export default function ResumePanel() {
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             {/* 상단 고정: 제목 + 저장 버튼 */}
             <div className="sticky top-0 z-10 shrink-0 bg-(--color-surface) pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-2xl font-bold text-(--color-foreground)">
-                        이력서 편집
+                        <LocalizedText text={"이력서 편집"} />
                     </h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         {savedAt && (
                             <span className="text-sm text-green-600">
-                                자동 저장 완료 {fmtTime(savedAt)}
+                                <LocalizedRichText
+                                    text={"자동 저장 완료 {0}"}
+                                    values={[fmtTime(savedAt, locale)]}
+                                />
                             </span>
                         )}
+                        <DocumentPublicationControl
+                            kind="resume"
+                            saved={rowId !== null}
+                        />
+                        <LanguageCopyButton
+                            kind="resume"
+                            sourceTitle="Resume"
+                            disabled={rowId === null}
+                        />
                         <button
                             onClick={async () => {
                                 const saved = initialSectionLayoutRef.current;
@@ -705,16 +755,22 @@ export default function ResumePanel() {
                             }}
                             className="rounded-lg bg-(--color-accent) px-4 py-2.5 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
-                            {layoutEditMode
-                                ? "레이아웃 편집 종료"
-                                : "레이아웃 편집"}
+                            {layoutEditMode ? (
+                                <LocalizedText text={"레이아웃 편집 종료"} />
+                            ) : (
+                                <LocalizedText text={"레이아웃 편집"} />
+                            )}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={saving || (!isDirty && !isLayoutDirty)}
                             className="rounded-lg bg-green-500 px-6 py-2.5 text-base font-semibold text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
-                            {saving ? "저장 중..." : "변경사항 저장"}
+                            {saving ? (
+                                <LocalizedText text={"저장 중..."} />
+                            ) : (
+                                <LocalizedText text={"변경사항 저장"} />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -740,7 +796,7 @@ export default function ResumePanel() {
                     <p
                         className={`rounded-lg px-3 py-2 text-base ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
                     >
-                        {status.msg}
+                        {<LocalizedText text={status.msg} />}
                     </p>
                 )}
 
@@ -748,11 +804,14 @@ export default function ResumePanel() {
                 {!layoutEditMode && (
                     <section className="space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                         <h3 className="text-xl font-bold text-(--color-foreground)">
-                            이력서 디자인
+                            <LocalizedText text={"이력서 디자인"} />
                         </h3>
                         <p className="text-sm leading-6 text-(--color-muted)">
-                            전체 이력서의 구조와 분위기를 정합니다. 선택 즉시
-                            저장되며 공개 Resume에 반영됩니다.
+                            <LocalizedText
+                                text={
+                                    "전체 이력서의 구조와 분위기를 정합니다. 선택 즉시 저장되며 공개 Resume에 반영됩니다."
+                                }
+                            />
                         </p>
                         <div className="tablet:grid-cols-2 grid gap-3">
                             {(
@@ -848,13 +907,27 @@ export default function ResumePanel() {
                                             </span>
                                             <span>
                                                 <span className="block text-sm font-semibold text-(--color-foreground)">
-                                                    {option.title}
-                                                    {option.recommended
-                                                        ? " · 추천"
-                                                        : ""}
+                                                    {
+                                                        <LocalizedText
+                                                            text={option.title}
+                                                        />
+                                                    }
+                                                    {option.recommended ? (
+                                                        <LocalizedText
+                                                            text={" · 추천"}
+                                                        />
+                                                    ) : (
+                                                        ""
+                                                    )}
                                                 </span>
                                                 <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                                    {option.description}
+                                                    {
+                                                        <LocalizedText
+                                                            text={
+                                                                option.description
+                                                            }
+                                                        />
+                                                    }
                                                 </span>
                                             </span>
                                         </span>
@@ -927,7 +1000,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    커리어 타임라인
+                                    <LocalizedText text={"커리어 타임라인"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -954,7 +1027,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-careerPhases"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -996,13 +1069,15 @@ export default function ResumePanel() {
                                     setEditingCareerPhaseKeywords("");
                                 }}
                             >
-                                + Phase 추가
+                                <LocalizedText text={"+ Phase 추가"} />
                             </button>
                         </div>
                         {(resumeData.careerPhases?.entries ?? []).length ===
                         0 ? (
                             <p className="text-sm text-(--color-muted)">
-                                아직 추가된 Phase가 없습니다.
+                                <LocalizedText
+                                    text={"아직 추가된 Phase가 없습니다."}
+                                />
                             </p>
                         ) : null}
                         {(resumeData.careerPhases?.entries ?? []).map(
@@ -1015,7 +1090,11 @@ export default function ResumePanel() {
                                         <div className="space-y-3">
                                             <div className="flex gap-3">
                                                 <div className="w-24 flex-shrink-0">
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="Phase 번호"
                                                         value={String(
                                                             cp.phase ?? ""
@@ -1045,7 +1124,12 @@ export default function ResumePanel() {
                                                     />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                            "placeholder",
+                                                        ]}
                                                         label="이름"
                                                         value={cp.name ?? ""}
                                                         onChange={(v) => {
@@ -1072,7 +1156,9 @@ export default function ResumePanel() {
                                                 </div>
                                             </div>
                                             <div className="flex gap-3">
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="시작일 (YYYY-MM)"
                                                     value={cp.startDate ?? ""}
                                                     onChange={(v) => {
@@ -1096,7 +1182,9 @@ export default function ResumePanel() {
                                                     }}
                                                     placeholder="2022-06"
                                                 />
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="종료일 (YYYY-MM)"
                                                     value={cp.endDate ?? ""}
                                                     onChange={(v) => {
@@ -1121,7 +1209,12 @@ export default function ResumePanel() {
                                                     placeholder="2025-05"
                                                 />
                                             </div>
-                                            <TextAreaField
+                                            <LocalizedElement
+                                                as={TextAreaField}
+                                                translatedProps={[
+                                                    "label",
+                                                    "placeholder",
+                                                ]}
                                                 label="설명"
                                                 value={cp.description ?? ""}
                                                 onChange={(v) => {
@@ -1145,7 +1238,12 @@ export default function ResumePanel() {
                                                 placeholder="줄바꿈으로 구분된 주요 내용"
                                                 rows={3}
                                             />
-                                            <InputField
+                                            <LocalizedElement
+                                                as={InputField}
+                                                translatedProps={[
+                                                    "label",
+                                                    "placeholder",
+                                                ]}
                                                 label="키워드 (쉼표로 구분)"
                                                 value={
                                                     editingCareerPhaseKeywords
@@ -1214,7 +1312,9 @@ export default function ResumePanel() {
                                                         );
                                                     }}
                                                 >
-                                                    저장
+                                                    <LocalizedText
+                                                        text={"저장"}
+                                                    />
                                                 </button>
                                                 <button
                                                     className="rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-1.5 text-sm font-bold text-(--color-muted)"
@@ -1224,7 +1324,9 @@ export default function ResumePanel() {
                                                         )
                                                     }
                                                 >
-                                                    취소
+                                                    <LocalizedText
+                                                        text={"취소"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
@@ -1232,16 +1334,26 @@ export default function ResumePanel() {
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
-                                                    PHASE {cp.phase}
+                                                    <LocalizedRichText
+                                                        text={"PHASE {0}"}
+                                                        values={[cp.phase]}
+                                                    />
                                                 </p>
                                                 <p className="font-semibold text-(--color-foreground)">
-                                                    {cp.name || "(이름 없음)"}
+                                                    {cp.name || (
+                                                        <LocalizedText
+                                                            text={"(이름 없음)"}
+                                                        />
+                                                    )}
                                                 </p>
                                                 {cp.startDate || cp.endDate ? (
                                                     <p className="text-xs text-(--color-muted)">
                                                         {cp.startDate} ~{" "}
-                                                        {cp.endDate ||
-                                                            "진행 중"}
+                                                        {cp.endDate || (
+                                                            <LocalizedText
+                                                                text={"진행 중"}
+                                                            />
+                                                        )}
                                                     </p>
                                                 ) : null}
                                                 {cp.description ? (
@@ -1280,7 +1392,9 @@ export default function ResumePanel() {
                                                         );
                                                     }}
                                                 >
-                                                    편집
+                                                    <LocalizedText
+                                                        text={"편집"}
+                                                    />
                                                 </button>
                                                 <button
                                                     className="rounded-lg bg-red-500 px-3 py-1 text-sm font-bold whitespace-nowrap text-white"
@@ -1301,7 +1415,9 @@ export default function ResumePanel() {
                                                         });
                                                     }}
                                                 >
-                                                    삭제
+                                                    <LocalizedText
+                                                        text={"삭제"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
@@ -1338,7 +1454,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    핵심 역량
+                                    <LocalizedText text={"핵심 역량"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -1363,7 +1479,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-coreCompetencies"
                                         className="text-xs text-(--color-muted)"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -1378,8 +1494,11 @@ export default function ResumePanel() {
                             </span>
                         </div>
                         <p className="text-sm text-(--color-muted)">
-                            직무별 이력서에 맞춰 노출됩니다. 최근 경험의 범위와
-                            확인 가능한 결과를 짧게 작성하세요.
+                            <LocalizedText
+                                text={
+                                    "직무별 이력서에 맞춰 노출됩니다. 최근 경험의 범위와 확인 가능한 결과를 짧게 작성하세요."
+                                }
+                            />
                         </p>
                         {(resumeData?.coreCompetencies?.entries ?? []).map(
                             (comp, idx) => (
@@ -1389,7 +1508,10 @@ export default function ResumePanel() {
                                 >
                                     <div className="mb-2 flex items-center justify-between">
                                         <span className="text-sm font-bold text-(--color-accent)">
-                                            역량 {idx + 1}
+                                            <LocalizedRichText
+                                                text={"역량 {0}"}
+                                                values={[idx + 1]}
+                                            />
                                         </span>
                                         <button
                                             type="button"
@@ -1435,9 +1557,13 @@ export default function ResumePanel() {
                                     <div className="flex flex-col gap-3">
                                         <div>
                                             <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                                제목
+                                                <LocalizedText text={"제목"} />
                                             </label>
-                                            <input
+                                            <LocalizedElement
+                                                as="input"
+                                                translatedProps={[
+                                                    "placeholder",
+                                                ]}
                                                 value={comp.title}
                                                 onChange={(e) =>
                                                     setResumeData((prev) =>
@@ -1480,7 +1606,9 @@ export default function ResumePanel() {
                                         <div>
                                             <div className="mb-1 flex items-center justify-between gap-3">
                                                 <label className="block text-xs font-medium text-(--color-muted)">
-                                                    설명
+                                                    <LocalizedText
+                                                        text={"설명"}
+                                                    />
                                                 </label>
                                                 <button
                                                     type="button"
@@ -1527,10 +1655,23 @@ export default function ResumePanel() {
                                                             : "border border-(--color-border) text-(--color-muted)"
                                                     }`}
                                                 >
-                                                    Markdown
+                                                    <LocalizedText
+                                                        text={"Markdown"}
+                                                    />
                                                 </button>
                                             </div>
-                                            <textarea
+                                            <LocalizedElement
+                                                as="textarea"
+                                                messageProps={{
+                                                    placeholder:
+                                                        comp.markdown !== false
+                                                            ? {
+                                                                  text: "**핵심 결과**를 먼저 쓰고, 빈 줄로 근거를 나누어 작성",
+                                                              }
+                                                            : {
+                                                                  text: "핵심 역량 설명",
+                                                              },
+                                                }}
                                                 value={comp.description}
                                                 onChange={(e) =>
                                                     setResumeData((prev) =>
@@ -1647,7 +1788,7 @@ export default function ResumePanel() {
                                 }
                                 className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"
                             >
-                                추가
+                                <LocalizedText text={"추가"} />
                             </button>
                         )}
                     </section>
@@ -1678,7 +1819,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    경력 (Work)
+                                    <LocalizedText text={"경력 (Work)"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -1704,7 +1845,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-work"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -1736,7 +1877,7 @@ export default function ResumePanel() {
                                 }}
                                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                + 경력 추가
+                                <LocalizedText text={"+ 경력 추가"} />
                             </button>
                         </div>
 
@@ -1747,7 +1888,7 @@ export default function ResumePanel() {
                                     onClick={() => setFilterJobField(null)}
                                     className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                                 >
-                                    전체
+                                    <LocalizedText text={"전체"} />
                                 </button>
                                 {jobFields.map((jf) => (
                                     <button
@@ -1815,7 +1956,11 @@ export default function ResumePanel() {
                                         {editingWork === idx ? (
                                             <div className="space-y-4">
                                                 <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="회사명"
                                                         value={work.name || ""}
                                                         onChange={(v) => {
@@ -1839,7 +1984,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="직책"
                                                         value={
                                                             work.position || ""
@@ -1865,7 +2014,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="고용 형태"
                                                         value={
                                                             work.employmentType ||
@@ -1895,7 +2048,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="근무 지역"
                                                         value={
                                                             work.location || ""
@@ -1923,7 +2080,9 @@ export default function ResumePanel() {
                                                     />
                                                     <div className="flex flex-col space-y-1">
                                                         <label className="text-sm font-medium text-(--color-muted)">
-                                                            시작일
+                                                            <LocalizedText
+                                                                text={"시작일"}
+                                                            />
                                                         </label>
                                                         <input
                                                             type="date"
@@ -1962,8 +2121,11 @@ export default function ResumePanel() {
                                                     </div>
                                                     <div className="flex flex-col space-y-1">
                                                         <label className="text-sm font-medium text-(--color-muted)">
-                                                            종료일 (비워두면
-                                                            '현재')
+                                                            <LocalizedText
+                                                                text={
+                                                                    "종료일 (비워두면 '현재')"
+                                                                }
+                                                            />
                                                         </label>
                                                         <input
                                                             type="date"
@@ -2035,7 +2197,11 @@ export default function ResumePanel() {
                                                         }}
                                                         className="accent-(--color-accent)"
                                                     />
-                                                    날짜에서 일(Day) 숨기기
+                                                    <LocalizedText
+                                                        text={
+                                                            "날짜에서 일(Day) 숨기기"
+                                                        }
+                                                    />
                                                 </label>
                                                 <label className="flex cursor-pointer items-center gap-2 text-sm text-(--color-muted)">
                                                     <input
@@ -2071,10 +2237,15 @@ export default function ResumePanel() {
                                                         }}
                                                         className="accent-(--color-accent)"
                                                     />
-                                                    요약/성과를 마크다운으로
-                                                    렌더링
+                                                    <LocalizedText
+                                                        text={
+                                                            "요약/성과를 마크다운으로 렌더링"
+                                                        }
+                                                    />
                                                 </label>
-                                                <TextAreaField
+                                                <LocalizedElement
+                                                    as={TextAreaField}
+                                                    translatedProps={["label"]}
                                                     label="요약 (Summary)"
                                                     value={work.summary || ""}
                                                     onChange={(v) => {
@@ -2097,7 +2268,9 @@ export default function ResumePanel() {
                                                         });
                                                     }}
                                                 />
-                                                <TextAreaField
+                                                <LocalizedElement
+                                                    as={TextAreaField}
+                                                    translatedProps={["label"]}
                                                     label="주요 성과 (Highlights, 엔터로 구분)"
                                                     value={
                                                         work.highlights?.join(
@@ -2162,7 +2335,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                                     >
-                                                        취소
+                                                        <LocalizedText
+                                                            text={"취소"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -2173,18 +2348,22 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
-                                                        완료
+                                                        <LocalizedText
+                                                            text={"완료"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="flex items-start gap-2">
-                                                <span
+                                                <LocalizedElement
+                                                    as="span"
+                                                    translatedProps={["title"]}
                                                     className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
                                                     title="드래그로 순서 변경"
                                                 >
                                                     ⠿
-                                                </span>
+                                                </LocalizedElement>
                                                 <div className="mr-12 flex-1">
                                                     <h4 className="font-semibold text-(--color-foreground)">
                                                         {work.position} @{" "}
@@ -2192,7 +2371,11 @@ export default function ResumePanel() {
                                                     </h4>
                                                     <p className="text-sm text-(--color-muted)">
                                                         {work.startDate} ~{" "}
-                                                        {work.endDate || "현재"}
+                                                        {work.endDate || (
+                                                            <LocalizedText
+                                                                text={"현재"}
+                                                            />
+                                                        )}
                                                     </p>
                                                     <div className="mt-1 flex flex-wrap gap-1">
                                                         <JobFieldBadges
@@ -2213,7 +2396,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                                     >
-                                                        수정
+                                                        <LocalizedText
+                                                            text={"수정"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -2249,7 +2434,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
                                                     >
-                                                        복사
+                                                        <LocalizedText
+                                                            text={"복사"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={async () => {
@@ -2287,7 +2474,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
-                                                        삭제
+                                                        <LocalizedText
+                                                            text={"삭제"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
@@ -2307,16 +2496,20 @@ export default function ResumePanel() {
                     <section className="space-y-5 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                         <div className="space-y-2">
                             <h3 className="text-xl font-bold text-(--color-foreground)">
-                                대표 프로젝트
+                                <LocalizedText text={"대표 프로젝트"} />
                             </h3>
                             <p className="text-sm leading-relaxed text-(--color-muted)">
-                                Portfolio의 Published 프로젝트를 직무 분야별로
-                                최대 5건까지 선택합니다. 이 목록과 순서가 공개
-                                이력서에 그대로 표시됩니다.
+                                <LocalizedText
+                                    text={
+                                        "Portfolio의 Published 프로젝트를 직무 분야별로 최대 5건까지 선택합니다. 이 목록과 순서가 공개 이력서에 그대로 표시됩니다."
+                                    }
+                                />
                             </p>
                         </div>
 
-                        <div
+                        <LocalizedElement
+                            as="div"
+                            translatedProps={["aria-label"]}
                             className="flex flex-wrap gap-2"
                             aria-label="대표 프로젝트 직무 분야"
                         >
@@ -2346,28 +2539,40 @@ export default function ResumePanel() {
                                     </button>
                                 );
                             })}
-                        </div>
+                        </LocalizedElement>
 
                         {featuredProjectsLoading ? (
                             <p className="text-sm text-(--color-muted)">
-                                Portfolio 프로젝트를 불러오는 중...
+                                <LocalizedText
+                                    text={"Portfolio 프로젝트를 불러오는 중..."}
+                                />
                             </p>
                         ) : !featuredProjectJobField ? (
                             <p className="rounded-lg border border-dashed border-(--color-border) px-4 py-6 text-sm text-(--color-muted)">
-                                대표 프로젝트를 관리할 직무 분야가 없습니다.
-                                Admin Config에서 직무 분야를 먼저 추가하세요.
+                                <LocalizedText
+                                    text={
+                                        "대표 프로젝트를 관리할 직무 분야가 없습니다. Admin Config에서 직무 분야를 먼저 추가하세요."
+                                    }
+                                />
                             </p>
                         ) : (
                             <div className="space-y-5">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
                                         <h4 className="font-semibold text-(--color-foreground)">
-                                            선택된 대표 프로젝트
+                                            <LocalizedText
+                                                text={"선택된 대표 프로젝트"}
+                                            />
                                         </h4>
                                         <p className="mt-1 text-sm text-(--color-muted)">
-                                            {featuredPortfolioProjects.length}/5
-                                            · 왼쪽 번호가 공개 이력서 표시
-                                            순서입니다.
+                                            <LocalizedRichText
+                                                text={
+                                                    "{0}/5 · 왼쪽 번호가 공개 이력서 표시 순서입니다."
+                                                }
+                                                values={[
+                                                    featuredPortfolioProjects.length,
+                                                ]}
+                                            />
                                         </p>
                                     </div>
                                 </div>
@@ -2400,13 +2605,26 @@ export default function ResumePanel() {
                                                     }}
                                                     className="flex items-center gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-3"
                                                 >
-                                                    <span
+                                                    <LocalizedElement
+                                                        as="span"
+                                                        messageProps={{
+                                                            "aria-label": {
+                                                                text: "{0}번째 대표 프로젝트",
+                                                                values: [
+                                                                    index + 1,
+                                                                ],
+                                                            },
+                                                        }}
                                                         aria-label={`${index + 1}번째 대표 프로젝트`}
                                                         className="flex size-8 shrink-0 items-center justify-center rounded-md bg-(--color-accent) text-sm font-bold text-(--color-on-accent)"
                                                     >
                                                         {index + 1}
-                                                    </span>
-                                                    <GripVertical
+                                                    </LocalizedElement>
+                                                    <LocalizedElement
+                                                        as={GripVertical}
+                                                        translatedProps={[
+                                                            "aria-label",
+                                                        ]}
                                                         className="shrink-0 cursor-grab text-(--color-muted)"
                                                         aria-label="드래그로 순서 변경"
                                                     />
@@ -2432,7 +2650,9 @@ export default function ResumePanel() {
                                                         }
                                                         className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
-                                                        제외
+                                                        <LocalizedText
+                                                            text={"제외"}
+                                                        />
                                                     </button>
                                                 </div>
                                             )
@@ -2440,13 +2660,19 @@ export default function ResumePanel() {
                                     </div>
                                 ) : (
                                     <p className="rounded-lg border border-dashed border-(--color-border) px-4 py-5 text-sm text-(--color-muted)">
-                                        아직 선택된 대표 프로젝트가 없습니다.
+                                        <LocalizedText
+                                            text={
+                                                "아직 선택된 대표 프로젝트가 없습니다."
+                                            }
+                                        />
                                     </p>
                                 )}
 
                                 <div className="space-y-2 border-t border-(--color-border) pt-5">
                                     <h4 className="font-semibold text-(--color-foreground)">
-                                        Portfolio에서 가져오기
+                                        <LocalizedText
+                                            text={"Portfolio에서 가져오기"}
+                                        />
                                     </h4>
                                     {selectablePortfolioProjects.length > 0 ? (
                                         <div className="space-y-2">
@@ -2482,7 +2708,11 @@ export default function ResumePanel() {
                                                             }
                                                             className="rounded-lg bg-(--color-accent) px-3 py-2 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                                         >
-                                                            대표 프로젝트에 추가
+                                                            <LocalizedText
+                                                                text={
+                                                                    "대표 프로젝트에 추가"
+                                                                }
+                                                            />
                                                         </button>
                                                     </div>
                                                 )
@@ -2490,8 +2720,11 @@ export default function ResumePanel() {
                                         </div>
                                     ) : (
                                         <p className="text-sm text-(--color-muted)">
-                                            이 직무 분야에 추가할 Published
-                                            Portfolio 프로젝트가 없습니다.
+                                            <LocalizedText
+                                                text={
+                                                    "이 직무 분야에 추가할 Published Portfolio 프로젝트가 없습니다."
+                                                }
+                                            />
                                         </p>
                                     )}
                                 </div>
@@ -2518,7 +2751,11 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    대표 프로젝트 / 프로젝트 (Projects)
+                                    <LocalizedText
+                                        text={
+                                            "대표 프로젝트 / 프로젝트 (Projects)"
+                                        }
+                                    />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -2545,7 +2782,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-projects"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -2579,13 +2816,15 @@ export default function ResumePanel() {
                                 }}
                                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                + 프로젝트 추가
+                                <LocalizedText text={"+ 프로젝트 추가"} />
                             </button>
                         </div>
                         <p className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3 text-sm leading-relaxed text-(--color-muted)">
-                            Web 이력서는 이 목록의 순서대로 최대 5건을 대표
-                            프로젝트로 표시합니다. 드래그로 순서를 바꾸고, 각
-                            프로젝트의 연결과 설명은 여기서 편집하세요.
+                            <LocalizedText
+                                text={
+                                    "Web 이력서는 이 목록의 순서대로 최대 5건을 대표 프로젝트로 표시합니다. 드래그로 순서를 바꾸고, 각 프로젝트의 연결과 설명은 여기서 편집하세요."
+                                }
+                            />
                         </p>
 
                         {/* 직무 분야 필터 */}
@@ -2595,7 +2834,7 @@ export default function ResumePanel() {
                                     onClick={() => setFilterJobField(null)}
                                     className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${filterJobField === null ? "bg-(--color-accent) text-(--color-on-accent)" : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"}`}
                                 >
-                                    전체
+                                    <LocalizedText text={"전체"} />
                                 </button>
                                 {jobFields.map((jf) => (
                                     <button
@@ -2663,7 +2902,11 @@ export default function ResumePanel() {
                                         {editingProject === idx ? (
                                             <div className="space-y-4">
                                                 <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="프로젝트명"
                                                         value={proj.name || ""}
                                                         onChange={(v) => {
@@ -2687,7 +2930,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="역할 (Roles, 쉼표 구분)"
                                                         value={
                                                             proj.roles?.join(
@@ -2721,7 +2968,9 @@ export default function ResumePanel() {
                                                     />
                                                     <div className="flex flex-col space-y-1">
                                                         <label className="text-sm font-medium text-(--color-muted)">
-                                                            시작일
+                                                            <LocalizedText
+                                                                text={"시작일"}
+                                                            />
                                                         </label>
                                                         <input
                                                             type="date"
@@ -2760,7 +3009,9 @@ export default function ResumePanel() {
                                                     </div>
                                                     <div className="flex flex-col space-y-1">
                                                         <label className="text-sm font-medium text-(--color-muted)">
-                                                            종료일
+                                                            <LocalizedText
+                                                                text={"종료일"}
+                                                            />
                                                         </label>
                                                         <input
                                                             type="date"
@@ -2797,7 +3048,12 @@ export default function ResumePanel() {
                                                             className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-foreground) focus:border-(--color-accent) focus:outline-none"
                                                         />
                                                     </div>
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                            "placeholder",
+                                                        ]}
                                                         label="라이브 URL"
                                                         value={proj.url || ""}
                                                         onChange={(v) => {
@@ -2822,7 +3078,12 @@ export default function ResumePanel() {
                                                         }}
                                                         placeholder="https://..."
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                            "placeholder",
+                                                        ]}
                                                         label="URL 표시 텍스트 (기본: 라이브 URL)"
                                                         value={
                                                             proj.urlLabel || ""
@@ -2884,13 +3145,21 @@ export default function ResumePanel() {
                                                         }}
                                                         className="accent-(--color-accent)"
                                                     />
-                                                    날짜에서 일(Day) 숨기기
+                                                    <LocalizedText
+                                                        text={
+                                                            "날짜에서 일(Day) 숨기기"
+                                                        }
+                                                    />
                                                 </label>
                                                 {/* 자유 양식 섹션 목록 */}
                                                 <div className="space-y-3">
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-sm font-medium text-(--color-muted)">
-                                                            섹션 목록
+                                                            <LocalizedText
+                                                                text={
+                                                                    "섹션 목록"
+                                                                }
+                                                            />
                                                         </span>
                                                         <button
                                                             type="button"
@@ -2933,7 +3202,11 @@ export default function ResumePanel() {
                                                             }}
                                                             className="rounded-lg border border-(--color-border) px-3 py-1 text-sm text-(--color-muted) hover:text-(--color-foreground)"
                                                         >
-                                                            + 섹션 추가
+                                                            <LocalizedText
+                                                                text={
+                                                                    "+ 섹션 추가"
+                                                                }
+                                                            />
                                                         </button>
                                                     </div>
                                                     {(proj.sections || []).map(
@@ -2943,7 +3216,11 @@ export default function ResumePanel() {
                                                                 className="space-y-2 rounded-lg border border-(--color-border) p-3"
                                                             >
                                                                 <div className="flex items-center gap-2">
-                                                                    <input
+                                                                    <LocalizedElement
+                                                                        as="input"
+                                                                        translatedProps={[
+                                                                            "placeholder",
+                                                                        ]}
                                                                         type="text"
                                                                         value={
                                                                             sec.title
@@ -3042,10 +3319,18 @@ export default function ResumePanel() {
                                                                         }}
                                                                         className="rounded-lg bg-red-600 px-2 py-1 text-xs text-white hover:opacity-90"
                                                                     >
-                                                                        삭제
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "삭제"
+                                                                            }
+                                                                        />
                                                                     </button>
                                                                 </div>
-                                                                <textarea
+                                                                <LocalizedElement
+                                                                    as="textarea"
+                                                                    translatedProps={[
+                                                                        "placeholder",
+                                                                    ]}
                                                                     value={
                                                                         sec.content
                                                                     }
@@ -3163,8 +3448,11 @@ export default function ResumePanel() {
                                                                         }}
                                                                         className="accent-(--color-accent)"
                                                                     />
-                                                                    마크다운으로
-                                                                    렌더링
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "마크다운으로 렌더링"
+                                                                        }
+                                                                    />
                                                                 </label>
                                                             </div>
                                                         )
@@ -3206,7 +3494,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                                     >
-                                                        취소
+                                                        <LocalizedText
+                                                            text={"취소"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -3217,18 +3507,22 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
-                                                        완료
+                                                        <LocalizedText
+                                                            text={"완료"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="flex items-start gap-2">
-                                                <span
+                                                <LocalizedElement
+                                                    as="span"
+                                                    translatedProps={["title"]}
                                                     className="mt-1 cursor-grab text-lg text-(--color-muted) select-none"
                                                     title="드래그로 순서 변경"
                                                 >
                                                     ⠿
-                                                </span>
+                                                </LocalizedElement>
                                                 <div className="mr-12 flex-1">
                                                     <h4 className="font-semibold text-(--color-foreground)">
                                                         {proj.name}
@@ -3247,11 +3541,21 @@ export default function ResumePanel() {
                                                     {(proj.startDate ||
                                                         proj.endDate) && (
                                                         <p className="mt-1 text-sm font-medium text-(--color-muted)">
-                                                            {proj.startDate ||
-                                                                "시작일 미정"}{" "}
+                                                            {proj.startDate || (
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "시작일 미정"
+                                                                    }
+                                                                />
+                                                            )}{" "}
                                                             ~{" "}
-                                                            {proj.endDate ||
-                                                                "진행 중"}
+                                                            {proj.endDate || (
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "진행 중"
+                                                                    }
+                                                                />
+                                                            )}
                                                         </p>
                                                     )}
                                                     <div className="mt-1 flex flex-wrap gap-1">
@@ -3326,7 +3630,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                                     >
-                                                        수정
+                                                        <LocalizedText
+                                                            text={"수정"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -3364,7 +3670,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg border border-(--color-border) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-muted) transition-opacity hover:opacity-90"
                                                     >
-                                                        복사
+                                                        <LocalizedText
+                                                            text={"복사"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={async () => {
@@ -3402,7 +3710,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
-                                                        삭제
+                                                        <LocalizedText
+                                                            text={"삭제"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
@@ -3441,7 +3751,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    학력 (Education)
+                                    <LocalizedText text={"학력 (Education)"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -3468,7 +3778,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-education"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -3499,7 +3809,7 @@ export default function ResumePanel() {
                                 }}
                                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                + 학력 추가
+                                <LocalizedText text={"+ 학력 추가"} />
                             </button>
                         </div>
 
@@ -3512,7 +3822,9 @@ export default function ResumePanel() {
                                     {editingEducation === idx ? (
                                         <div className="space-y-4">
                                             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="학교/기관명"
                                                     value={ed.institution || ""}
                                                     onChange={(v) => {
@@ -3535,7 +3847,9 @@ export default function ResumePanel() {
                                                         });
                                                     }}
                                                 />
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="전공/분야 (Area)"
                                                     value={ed.area || ""}
                                                     onChange={(v) => {
@@ -3558,7 +3872,9 @@ export default function ResumePanel() {
                                                         });
                                                     }}
                                                 />
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="학교 지역"
                                                     value={ed.location || ""}
                                                     onChange={(v) => {
@@ -3581,7 +3897,9 @@ export default function ResumePanel() {
                                                         });
                                                     }}
                                                 />
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={["label"]}
                                                     label="학위 (Study Type)"
                                                     value={ed.studyType || ""}
                                                     onChange={(v) => {
@@ -3606,7 +3924,9 @@ export default function ResumePanel() {
                                                 />
                                                 <div className="flex flex-col space-y-1">
                                                     <label className="text-sm font-medium text-(--color-muted)">
-                                                        시작일
+                                                        <LocalizedText
+                                                            text={"시작일"}
+                                                        />
                                                     </label>
                                                     <input
                                                         type="date"
@@ -3643,7 +3963,9 @@ export default function ResumePanel() {
                                                 </div>
                                                 <div className="flex flex-col space-y-1">
                                                     <label className="text-sm font-medium text-(--color-muted)">
-                                                        종료일
+                                                        <LocalizedText
+                                                            text={"종료일"}
+                                                        />
                                                     </label>
                                                     <input
                                                         type="date"
@@ -3681,7 +4003,9 @@ export default function ResumePanel() {
                                             <div className="flex items-end gap-3">
                                                 <div className="flex flex-col space-y-1">
                                                     <label className="text-sm font-medium text-(--color-muted)">
-                                                        Max GPA
+                                                        <LocalizedText
+                                                            text={"Max GPA"}
+                                                        />
                                                     </label>
                                                     <select
                                                         value={ed.gpaMax ?? 4.5}
@@ -3741,9 +4065,15 @@ export default function ResumePanel() {
                                                 </div>
                                                 <div className="flex flex-col space-y-1">
                                                     <label className="text-sm font-medium text-(--color-muted)">
-                                                        GPA
+                                                        <LocalizedText
+                                                            text={"GPA"}
+                                                        />
                                                     </label>
-                                                    <input
+                                                    <LocalizedElement
+                                                        as="input"
+                                                        translatedProps={[
+                                                            "placeholder",
+                                                        ]}
                                                         type="number"
                                                         min={0}
                                                         max={ed.gpaMax ?? 4.5}
@@ -3805,7 +4135,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                                 >
-                                                    취소
+                                                    <LocalizedText
+                                                        text={"취소"}
+                                                    />
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -3816,7 +4148,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
-                                                    완료
+                                                    <LocalizedText
+                                                        text={"완료"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
@@ -3827,9 +4161,17 @@ export default function ResumePanel() {
                                                     {ed.institution}
                                                 </h4>
                                                 <p className="text-sm text-(--color-muted)">
-                                                    {ed.studyType} in {ed.area}{" "}
-                                                    ({ed.startDate} ~{" "}
-                                                    {ed.endDate})
+                                                    <LocalizedRichText
+                                                        text={
+                                                            "{0} in {1} ({2} ~ {3})"
+                                                        }
+                                                        values={[
+                                                            ed.studyType,
+                                                            ed.area,
+                                                            ed.startDate,
+                                                            ed.endDate,
+                                                        ]}
+                                                    />
                                                 </p>
                                             </div>
                                             <div className="flex gap-2">
@@ -3844,7 +4186,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                                 >
-                                                    수정
+                                                    <LocalizedText
+                                                        text={"수정"}
+                                                    />
                                                 </button>
                                                 <button
                                                     onClick={async () => {
@@ -3881,7 +4225,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                 >
-                                                    삭제
+                                                    <LocalizedText
+                                                        text={"삭제"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
@@ -3929,7 +4275,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    수상 (Awards)
+                                    <LocalizedText text={"수상 (Awards)"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -3956,7 +4302,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-awards"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -3992,7 +4338,7 @@ export default function ResumePanel() {
                                 }}
                                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                + 수상 추가
+                                <LocalizedText text={"+ 수상 추가"} />
                             </button>
                         </div>
                         <div className="space-y-4">
@@ -4005,7 +4351,11 @@ export default function ResumePanel() {
                                         {editingAward === idx ? (
                                             <div className="space-y-4">
                                                 <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="수상명"
                                                         value={
                                                             award.title || ""
@@ -4035,7 +4385,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="수여기관"
                                                         value={
                                                             award.awarder || ""
@@ -4065,7 +4419,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="수상 등급"
                                                         value={
                                                             award.position || ""
@@ -4095,7 +4453,11 @@ export default function ResumePanel() {
                                                             });
                                                         }}
                                                     />
-                                                    <InputField
+                                                    <LocalizedElement
+                                                        as={InputField}
+                                                        translatedProps={[
+                                                            "label",
+                                                        ]}
                                                         label="날짜 (YYYY-MM)"
                                                         value={award.date || ""}
                                                         onChange={(v) => {
@@ -4180,7 +4542,9 @@ export default function ResumePanel() {
                                                 <div className="space-y-1">
                                                     <div className="flex items-center justify-between">
                                                         <label className="text-sm font-medium text-(--color-muted)">
-                                                            내용
+                                                            <LocalizedText
+                                                                text={"내용"}
+                                                            />
                                                         </label>
                                                         <button
                                                             type="button"
@@ -4217,10 +4581,25 @@ export default function ResumePanel() {
                                                                     : "border border-(--color-border) text-(--color-muted)"
                                                             }`}
                                                         >
-                                                            Markdown
+                                                            <LocalizedText
+                                                                text={
+                                                                    "Markdown"
+                                                                }
+                                                            />
                                                         </button>
                                                     </div>
-                                                    <textarea
+                                                    <LocalizedElement
+                                                        as="textarea"
+                                                        messageProps={{
+                                                            placeholder:
+                                                                award.markdown
+                                                                    ? {
+                                                                          text: "마크다운 형식으로 작성",
+                                                                      }
+                                                                    : {
+                                                                          text: "수상 내용",
+                                                                      },
+                                                        }}
                                                         value={
                                                             award.summary || ""
                                                         }
@@ -4272,7 +4651,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                                     >
-                                                        취소
+                                                        <LocalizedText
+                                                            text={"취소"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -4283,7 +4664,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
-                                                        완료
+                                                        <LocalizedText
+                                                            text={"완료"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
@@ -4312,7 +4695,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                                     >
-                                                        수정
+                                                        <LocalizedText
+                                                            text={"수정"}
+                                                        />
                                                     </button>
                                                     <button
                                                         onClick={async () => {
@@ -4351,7 +4736,9 @@ export default function ResumePanel() {
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
-                                                        삭제
+                                                        <LocalizedText
+                                                            text={"삭제"}
+                                                        />
                                                     </button>
                                                 </div>
                                             </div>
@@ -4403,7 +4790,7 @@ export default function ResumePanel() {
                                             });
                                         }}
                                     />
-                                    언어 (Languages)
+                                    <LocalizedText text={"언어 (Languages)"} />
                                 </h3>
                                 <div className="ml-4 flex items-center gap-2">
                                     <Switch
@@ -4430,7 +4817,7 @@ export default function ResumePanel() {
                                         htmlFor="show-emojis-languages"
                                         className="cursor-pointer text-sm font-medium text-(--color-muted) select-none"
                                     >
-                                        이모지 표시
+                                        <LocalizedText text={"이모지 표시"} />
                                     </label>
                                 </div>
                             </div>
@@ -4460,7 +4847,7 @@ export default function ResumePanel() {
                                 }}
                                 className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                + 언어 추가
+                                <LocalizedText text={"+ 언어 추가"} />
                             </button>
                         </div>
                         <div className="space-y-4">
@@ -4472,7 +4859,12 @@ export default function ResumePanel() {
                                     {editingLanguage === idx ? (
                                         <div className="space-y-4">
                                             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={[
+                                                        "label",
+                                                        "placeholder",
+                                                    ]}
                                                     label="언어"
                                                     value={lang.language || ""}
                                                     onChange={(v) => {
@@ -4496,7 +4888,12 @@ export default function ResumePanel() {
                                                     }}
                                                     placeholder="예: Korean, English"
                                                 />
-                                                <InputField
+                                                <LocalizedElement
+                                                    as={InputField}
+                                                    translatedProps={[
+                                                        "label",
+                                                        "placeholder",
+                                                    ]}
                                                     label="능숙도 (Fluency)"
                                                     value={lang.fluency || ""}
                                                     onChange={(v) => {
@@ -4525,7 +4922,18 @@ export default function ResumePanel() {
                                                         lang.language
                                                     ) ? (
                                                         <>
-                                                            <img
+                                                            <LocalizedElement
+                                                                as="img"
+                                                                messageProps={{
+                                                                    alt: {
+                                                                        text: "{0} 국기 미리보기",
+                                                                        values: [
+                                                                            lang.language || {
+                                                                                text: "언어",
+                                                                            },
+                                                                        ],
+                                                                    },
+                                                                }}
                                                                 src={
                                                                     getLanguageFlagSrc(
                                                                         lang.language
@@ -4537,18 +4945,25 @@ export default function ResumePanel() {
                                                                 className="h-6 w-8 rounded-sm object-cover shadow-sm"
                                                             />
                                                             <span className="font-medium text-(--color-muted)">
-                                                                국기 자동 적용:{" "}
-                                                                {getLanguageCountryCode(
-                                                                    lang.language
-                                                                )?.toUpperCase()}
+                                                                <LocalizedRichText
+                                                                    text={
+                                                                        "국기 자동 적용: {0}"
+                                                                    }
+                                                                    values={[
+                                                                        getLanguageCountryCode(
+                                                                            lang.language
+                                                                        )?.toUpperCase(),
+                                                                    ]}
+                                                                />
                                                             </span>
                                                         </>
                                                     ) : (
                                                         <span className="text-(--color-muted)">
-                                                            언어명 또는 BCP 47
-                                                            언어 코드를 입력하면
-                                                            대표 국가 국기 자동
-                                                            적용
+                                                            <LocalizedText
+                                                                text={
+                                                                    "언어명 또는 BCP 47 언어 코드를 입력하면 대표 국가 국기 자동 적용"
+                                                                }
+                                                            />
                                                         </span>
                                                     )}
                                                 </div>
@@ -4566,7 +4981,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg border border-(--color-border) px-4 py-1.5 text-sm font-medium text-(--color-muted) hover:text-(--color-foreground)"
                                                 >
-                                                    취소
+                                                    <LocalizedText
+                                                        text={"취소"}
+                                                    />
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -4577,7 +4994,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
-                                                    완료
+                                                    <LocalizedText
+                                                        text={"완료"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
@@ -4601,7 +5020,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                                                 >
-                                                    수정
+                                                    <LocalizedText
+                                                        text={"수정"}
+                                                    />
                                                 </button>
                                                 <button
                                                     onClick={async () => {
@@ -4638,7 +5059,9 @@ export default function ResumePanel() {
                                                     }}
                                                     className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                 >
-                                                    삭제
+                                                    <LocalizedText
+                                                        text={"삭제"}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>

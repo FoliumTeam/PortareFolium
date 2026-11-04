@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
@@ -104,7 +109,7 @@ const getFeaturedOrderByJobField = (
 };
 
 // PortfolioPanel 초기 데이터 조회
-export async function getPortfolioPanelBootstrap() {
+async function getPortfolioPanelBootstrapInLocale() {
     await requireAdminSession();
     if (!serverClient) {
         return {
@@ -193,7 +198,7 @@ export async function getPortfolioPanelBootstrap() {
     };
 }
 
-export async function getPortfolioItemContent(
+async function getPortfolioItemContentInLocale(
     id: string
 ): Promise<
     { success: true; content: string } | { success: false; error: string }
@@ -211,7 +216,7 @@ export async function getPortfolioItemContent(
 }
 
 // 포트폴리오 목록 디자인 저장
-export async function savePortfolioDesign(
+async function savePortfolioDesignInLocale(
     design: "timeline" | "cards"
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -227,7 +232,7 @@ export async function savePortfolioDesign(
 }
 
 // AI 구역 공통 설정 저장
-export async function savePortfolioAiSection(
+async function savePortfolioAiSectionInLocale(
     config: PortfolioAiSectionConfig
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -258,7 +263,7 @@ export async function savePortfolioAiSection(
 }
 
 // 포트폴리오 생성/수정
-export async function savePortfolioItem(
+async function savePortfolioItemInLocale(
     payload: PortfolioPayload,
     editTargetId?: string | null
 ): Promise<
@@ -269,7 +274,7 @@ export async function savePortfolioItem(
 
     const persistedPayload = {
         ...payload,
-        published: true,
+        published: payload.published,
         job_field: normalizeUniqueJobFieldList(payload.job_field),
         data: withoutReviewData(payload.data),
     };
@@ -305,7 +310,7 @@ export async function savePortfolioItem(
 }
 
 // 포트폴리오 삭제
-export async function deletePortfolioItemById(
+async function deletePortfolioItemByIdInLocale(
     id: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -327,7 +332,7 @@ export async function deletePortfolioItemById(
 }
 
 // 포트폴리오 Published 토글
-export async function setPortfolioPublished(
+async function setPortfolioPublishedInLocale(
     id: string,
     slug: string,
     published: boolean
@@ -346,7 +351,7 @@ export async function setPortfolioPublished(
 }
 
 // Featured 토글
-export async function setPortfolioFeatured(
+async function setPortfolioFeaturedInLocale(
     id: string,
     slug: string,
     jobField: string,
@@ -430,7 +435,7 @@ export async function setPortfolioFeatured(
 }
 
 // Featured 순서 저장
-export async function reorderFeaturedPortfolioItems(
+async function reorderFeaturedPortfolioItemsInLocale(
     updates: { id: string; order_idx: number }[],
     jobField: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -488,7 +493,7 @@ export async function reorderFeaturedPortfolioItems(
 }
 
 // 배치 Published 변경
-export async function batchSetPortfolioPublished(
+async function batchSetPortfolioPublishedInLocale(
     ids: string[],
     publish: boolean
 ): Promise<{ success: boolean; error?: string }> {
@@ -513,7 +518,7 @@ export async function batchSetPortfolioPublished(
 }
 
 // 배치 직무 분야 변경
-export async function batchSetPortfolioJobField(
+async function batchSetPortfolioJobFieldInLocale(
     updates: {
         id: string;
         job_field: string | null;
@@ -546,4 +551,213 @@ export async function batchSetPortfolioJobField(
         (slugRows ?? []).map((r) => revalidatePortfolioItem(r.slug))
     );
     return { success: true };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getPortfolioPanelBootstrap(
+    ...args: [
+        ...Parameters<typeof getPortfolioPanelBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getPortfolioPanelBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getPortfolioPanelBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getPortfolioPanelBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getPortfolioItemContent(
+    ...args: [
+        ...Parameters<typeof getPortfolioItemContentInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getPortfolioItemContentInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getPortfolioItemContentInLocale>;
+    return withContentLocale(locale, () =>
+        getPortfolioItemContentInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function savePortfolioDesign(
+    ...args: [
+        ...Parameters<typeof savePortfolioDesignInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof savePortfolioDesignInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof savePortfolioDesignInLocale>;
+    return withContentLocale(locale, () =>
+        savePortfolioDesignInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function savePortfolioAiSection(
+    ...args: [
+        ...Parameters<typeof savePortfolioAiSectionInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof savePortfolioAiSectionInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof savePortfolioAiSectionInLocale>;
+    return withContentLocale(locale, () =>
+        savePortfolioAiSectionInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function savePortfolioItem(
+    ...args: [
+        ...Parameters<typeof savePortfolioItemInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof savePortfolioItemInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof savePortfolioItemInLocale>;
+    return withContentLocale(locale, () =>
+        savePortfolioItemInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deletePortfolioItemById(
+    ...args: [
+        ...Parameters<typeof deletePortfolioItemByIdInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof deletePortfolioItemByIdInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deletePortfolioItemByIdInLocale>;
+    return withContentLocale(locale, () =>
+        deletePortfolioItemByIdInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function setPortfolioPublished(
+    ...args: [
+        ...Parameters<typeof setPortfolioPublishedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof setPortfolioPublishedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof setPortfolioPublishedInLocale>;
+    return withContentLocale(locale, () =>
+        setPortfolioPublishedInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function setPortfolioFeatured(
+    ...args: [
+        ...Parameters<typeof setPortfolioFeaturedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof setPortfolioFeaturedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof setPortfolioFeaturedInLocale>;
+    return withContentLocale(locale, () =>
+        setPortfolioFeaturedInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function reorderFeaturedPortfolioItems(
+    ...args: [
+        ...Parameters<typeof reorderFeaturedPortfolioItemsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof reorderFeaturedPortfolioItemsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof reorderFeaturedPortfolioItemsInLocale>;
+    return withContentLocale(locale, () =>
+        reorderFeaturedPortfolioItemsInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchSetPortfolioPublished(
+    ...args: [
+        ...Parameters<typeof batchSetPortfolioPublishedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchSetPortfolioPublishedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchSetPortfolioPublishedInLocale>;
+    return withContentLocale(locale, () =>
+        batchSetPortfolioPublishedInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchSetPortfolioJobField(
+    ...args: [
+        ...Parameters<typeof batchSetPortfolioJobFieldInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchSetPortfolioJobFieldInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchSetPortfolioJobFieldInLocale>;
+    return withContentLocale(locale, () =>
+        batchSetPortfolioJobFieldInLocale(...values)
+    );
 }

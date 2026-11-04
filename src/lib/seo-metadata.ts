@@ -1,3 +1,4 @@
+import { getContentLocale } from "@/lib/content-locale";
 import type { Metadata } from "next";
 import { getSiteConfig } from "@/lib/queries";
 import { resolveSeoConfig } from "@/lib/seo-config";
@@ -16,7 +17,14 @@ export async function getSeoMetadata(
 ): Promise<Metadata> {
     const seo = resolveSeoConfig(await getSiteConfig(), jobField);
     const title = options.title?.trim() || seo.title || FALLBACK_TITLE;
-    const description = seo.description || FALLBACK_DESCRIPTION;
+    const locale = getContentLocale();
+    const description =
+        seo.description ||
+        (locale === "ko"
+            ? FALLBACK_DESCRIPTION
+            : locale === "ja"
+              ? "ポートフォリオと技術ブログ"
+              : "Portfolio and technical blog");
     const images = seo.ogImage ? [seo.ogImage] : undefined;
 
     return {

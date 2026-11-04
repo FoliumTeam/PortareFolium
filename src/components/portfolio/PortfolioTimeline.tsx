@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { serverT } from "@/lib/server-i18n";
+import Link from "@/components/PublicLink";
 import { CalendarDays, ImageIcon } from "lucide-react";
 import PortfolioActions from "@/components/portfolio/PortfolioActions";
 import { SkillBadge } from "@/components/resume/SkillBadge";
@@ -67,7 +68,9 @@ export default function PortfolioTimeline({
                         <div className="card-lift group relative overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)">
                             <Link
                                 href={`${portfolioBasePath}/${project.slug}`}
-                                aria-label={`${project.title} 프로젝트 기록 보기`}
+                                aria-label={serverT("{0} 프로젝트 기록 보기", [
+                                    project.title,
+                                ])}
                                 className={`absolute inset-0 z-10 rounded-2xl ${focusClass}`}
                             />
                             <div className="tablet:p-6 overflow-hidden p-5">
@@ -78,7 +81,9 @@ export default function PortfolioTimeline({
                                                 src={imageSource}
                                                 alt={
                                                     media?.alt ??
-                                                    `${project.title} 대표 이미지`
+                                                    serverT("{0} 대표 이미지", [
+                                                        project.title,
+                                                    ])
                                                 }
                                                 width={640}
                                                 height={360}
@@ -103,7 +108,7 @@ export default function PortfolioTimeline({
                                         )}
                                         {media?.type === "video" && (
                                             <span className="absolute right-3 bottom-3 rounded-md bg-black/75 px-2.5 py-1 text-xs font-bold text-white">
-                                                Video
+                                                {serverT("Video")}
                                             </span>
                                         )}
                                     </div>
@@ -113,7 +118,7 @@ export default function PortfolioTimeline({
                                     <span
                                         className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ${projectTypeBadge.className}`}
                                     >
-                                        {projectTypeBadge.label}
+                                        {serverT(projectTypeBadge.label)}
                                     </span>
                                     <p className="flex items-center gap-1.5 text-sm font-semibold text-(--color-muted)">
                                         <CalendarDays
@@ -122,7 +127,8 @@ export default function PortfolioTimeline({
                                         />
                                         {formatPortfolioMonthRange(
                                             project.startDate,
-                                            project.endDate
+                                            project.endDate,
+                                            serverT
                                         )}
                                     </p>
                                 </div>
@@ -142,7 +148,7 @@ export default function PortfolioTimeline({
                                 {project.keywords.length > 0 && (
                                     <div
                                         className="mt-5 flex flex-wrap gap-1.5"
-                                        aria-label="사용 기술"
+                                        aria-label={serverT("사용 기술")}
                                     >
                                         {project.keywords.map((keyword) => (
                                             <SkillBadge
@@ -156,7 +162,7 @@ export default function PortfolioTimeline({
                                 {project.outcomes.length > 0 && (
                                     <ul
                                         className="tablet:grid-cols-2 mt-5 grid grid-cols-1 gap-2"
-                                        aria-label="주요 결과"
+                                        aria-label={serverT("주요 결과")}
                                     >
                                         {project.outcomes.map((outcome) => (
                                             <li

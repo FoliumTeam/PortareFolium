@@ -112,6 +112,19 @@ describe("portfolio domain", () => {
         );
     });
 
+    it("영어·일본어 본문의 heading 언어 보존", () => {
+        expect(
+            normalizePortfolioCaseStudyContent(
+                "### Implementation",
+                "web",
+                "en"
+            )
+        ).toBe("### Implementation");
+        expect(
+            normalizePortfolioCaseStudyContent("### 実装", "web", "ja")
+        ).toBe("### 実装");
+    });
+
     it("legacy와 malformed v2를 예외 없이 정규화", () => {
         const legacy = normalizePortfolioProject(
             createRow({

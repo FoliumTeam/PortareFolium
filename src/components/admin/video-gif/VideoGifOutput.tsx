@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import { Download, RotateCcw } from "lucide-react";
 import type {
@@ -38,16 +43,21 @@ export default function VideoGifOutput({
         <div className="space-y-4 rounded-2xl border border-(--color-border) bg-(--color-surface) p-4">
             <div>
                 <h3 className="text-lg font-bold text-(--color-foreground)">
-                    결과
+                    <LocalizedText text={"결과"} />
                 </h3>
                 <p className="text-sm text-(--color-muted)">
-                    예상 크기: 약 {formatBytes(estimate.bytes)} ·{" "}
-                    {estimate.frameCount} frames ·{" "}
-                    {estimate.megapixels.toFixed(1)} MP 처리
+                    <LocalizedRichText
+                        text={"예상 크기: 약 {0} · {1} frames · {2} MP 처리"}
+                        values={[
+                            formatBytes(estimate.bytes),
+                            estimate.frameCount,
+                            estimate.megapixels.toFixed(1),
+                        ]}
+                    />
                 </p>
                 {warning && (
                     <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-300">
-                        {warning}
+                        {<LocalizedText text={warning} />}
                     </p>
                 )}
             </div>
@@ -58,7 +68,11 @@ export default function VideoGifOutput({
                 disabled={disabled || converting}
                 className="w-full rounded-lg bg-(--color-accent) px-4 py-3 text-sm font-bold text-(--color-on-accent) disabled:cursor-not-allowed disabled:opacity-50"
             >
-                {converting ? "GIF 변환 중..." : "GIF 만들기"}
+                {converting ? (
+                    <LocalizedText text={"GIF 변환 중..."} />
+                ) : (
+                    <LocalizedText text={"GIF 만들기"} />
+                )}
             </button>
 
             {converting && (
@@ -70,23 +84,41 @@ export default function VideoGifOutput({
                         />
                     </div>
                     <p className="mt-1 text-xs text-(--color-muted)">
-                        {progress?.currentFrame && progress.totalFrames
-                            ? `${progress.currentFrame}/${progress.totalFrames} frames (${progress.percent}%)`
-                            : (progress?.stage ??
-                              `고품질 GIF 변환 준비 중... ${progress?.percent ?? 0}%`)}
+                        {progress?.currentFrame && progress.totalFrames ? (
+                            <LocalizedText
+                                text="{0}/{1} frames ({2}%)"
+                                values={[
+                                    progress.currentFrame,
+                                    progress.totalFrames,
+                                    progress.percent,
+                                ]}
+                            />
+                        ) : progress?.stage ? (
+                            <LocalizedText text={progress.stage} />
+                        ) : (
+                            <LocalizedText
+                                text="고품질 GIF 변환 준비 중... {0}%"
+                                values={[progress?.percent ?? 0]}
+                            />
+                        )}
                     </p>
                 </div>
             )}
 
             {result && (
                 <div className="space-y-3">
-                    <img
+                    <LocalizedElement
+                        as="img"
+                        translatedProps={["alt"]}
                         src={result.objectUrl}
                         alt="생성된 GIF 미리보기"
                         className="max-h-80 w-full rounded-xl border border-(--color-border) object-contain"
                     />
                     <p className="text-sm font-medium text-(--color-foreground)">
-                        실제 크기: {formatBytes(result.bytes)}
+                        <LocalizedRichText
+                            text={"실제 크기: {0}"}
+                            values={[formatBytes(result.bytes)]}
+                        />
                     </p>
                     <div className="flex flex-wrap gap-2">
                         <a
@@ -95,15 +127,17 @@ export default function VideoGifOutput({
                             className="inline-flex items-center gap-2 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-semibold text-(--color-on-accent)"
                         >
                             <Download className="h-4 w-4" />
-                            다운로드
+                            <LocalizedText text={"다운로드"} />
                         </a>
                         <button
                             type="button"
                             onClick={onClear}
                             className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-muted) hover:bg-(--color-surface-subtle)"
                         >
-                            <RotateCcw className="h-4 w-4" />
-                            결과 지우기
+                            <LocalizedRichText
+                                text={"{0}결과 지우기"}
+                                values={[<RotateCcw className="h-4 w-4" />]}
+                            />
                         </button>
                     </div>
                 </div>

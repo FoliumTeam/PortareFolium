@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { serverT } from "@/lib/server-i18n";
+import Link from "@/components/PublicLink";
 import {
     ArrowUpRight,
     Code2,
@@ -45,7 +46,7 @@ export default function PortfolioActions({
                     href={`${portfolioBasePath}/${slug}`}
                     className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 ${focusClass}`}
                 >
-                    프로젝트 기록 보기
+                    {serverT("프로젝트 기록 보기")}
                     <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
             )}
@@ -55,7 +56,7 @@ export default function PortfolioActions({
                 const content = (
                     <>
                         <Icon className="h-4 w-4" aria-hidden="true" />
-                        {actionLabel[link.kind]}
+                        {serverT(actionLabel[link.kind])}
                         <ArrowUpRight
                             className="h-3.5 w-3.5"
                             aria-hidden="true"

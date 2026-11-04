@@ -1,3 +1,4 @@
+import { LocalizedElement } from "@/components/LocalizedText";
 import * as simpleIcons from "simple-icons";
 import Image from "next/image";
 import React from "react";
@@ -54,7 +55,9 @@ export const SkillIcon = ({
 }: SkillIconProps) => {
     if (iconUrl) {
         return (
-            <Image
+            <LocalizedElement
+                as={Image}
+                messageProps={{ alt: { text: "{0} 로고", values: [name] } }}
                 src={iconUrl}
                 alt={`${name} 로고`}
                 width={16}
@@ -68,7 +71,11 @@ export const SkillIcon = ({
     if (!icon) return null;
 
     return (
-        <svg
+        <LocalizedElement
+            as="svg"
+            messageProps={{
+                "aria-label": { text: "{0} 로고", values: [name] },
+            }}
             role="img"
             aria-label={`${name} 로고`}
             viewBox="0 0 24 24"
@@ -77,7 +84,7 @@ export const SkillIcon = ({
             xmlns="http://www.w3.org/2000/svg"
         >
             <path d={icon.path} />
-        </svg>
+        </LocalizedElement>
     );
 };
 
@@ -127,12 +134,16 @@ export function SkillBadge({
             />
             {name}
             {level ? (
-                <span
+                <LocalizedElement
+                    as="span"
+                    messageProps={{
+                        "aria-label": { text: "숙련도 {0}", values: [level] },
+                    }}
                     className="border-l border-current/30 pl-1.5 text-[0.65rem] font-semibold tracking-normal"
                     aria-label={`숙련도 ${level}`}
                 >
                     {level}
-                </span>
+                </LocalizedElement>
             ) : null}
         </span>
     );

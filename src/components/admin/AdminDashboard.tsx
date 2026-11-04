@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useUITranslation } from "@/components/LocaleProvider";
 import { signOut } from "next-auth/react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -20,6 +21,7 @@ import PromptLibraryPanel from "@/components/admin/panels/PromptLibraryPanel";
 import DebugPanel from "@/components/admin/panels/DebugPanel";
 import ApplicationProfilesPanel from "@/components/admin/panels/ApplicationProfilesPanel";
 import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
+import { ContentLanguageSelector } from "@/components/admin/ContentLanguageSelector";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
@@ -86,6 +88,7 @@ type AdminDashboardProps = {
 export default function AdminDashboard({
     refugeMode = false,
 }: AdminDashboardProps) {
+    const uiT = useUITranslation();
     const allowedTabs: readonly TabId[] = refugeMode
         ? REFUGE_ADMIN_TABS
         : VALID_TABS;
@@ -162,7 +165,9 @@ export default function AdminDashboard({
                 if (remaining <= WARN_BEFORE_MS && !warnedRef.current) {
                     warnedRef.current = true;
                     const extend = window.confirm(
-                        "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                        uiT(
+                            "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                        )
                     );
                     if (extend) {
                         lastActivityRef.current = Date.now();
@@ -182,7 +187,7 @@ export default function AdminDashboard({
                 handleVisibilityChange
             );
         };
-    }, []);
+    }, [uiT]);
 
     // 패널에서 편집 상태 변경 시 hash 업데이트
     const handleEditPathChange = (path: string) => {
@@ -217,6 +222,11 @@ export default function AdminDashboard({
                 sidebarVisible={sidebarVisible}
                 onToggleSidebar={() => setSidebarVisible((v) => !v)}
             />
+            <div className="shrink-0 bg-(--color-surface)">
+                <ContentLanguageSelector
+                    onChange={() => setTabKey((value) => value + 1)}
+                />
+            </div>
 
             {/* 사이드바 + 메인: 헤더 아래 */}
             <div className="flex flex-1 overflow-hidden">
@@ -248,7 +258,7 @@ export default function AdminDashboard({
                                     : ""
                             }`}
                         >
-                            {activeTab === "main" && (
+                            {hashReady && activeTab === "main" && (
                                 <MainPanel
                                     key={`main-${tabKey}`}
                                     refugeMode={refugeMode}

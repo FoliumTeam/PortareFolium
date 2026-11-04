@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import type { PortfolioEditorForm } from "@/lib/portfolio-admin";
 import type {
@@ -36,7 +37,7 @@ const AddButton = ({
         onClick={onClick}
         className="rounded-lg bg-(--color-accent) px-3 py-2 text-xs font-bold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
     >
-        + {label}
+        + {<LocalizedText text={label} />}
     </button>
 );
 
@@ -46,7 +47,7 @@ const RemoveButton = ({ onClick }: { onClick: () => void }) => (
         onClick={onClick}
         className="rounded-lg bg-red-600 px-3 py-2 text-xs font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
     >
-        제거
+        <LocalizedText text={"제거"} />
     </button>
 );
 
@@ -144,7 +145,7 @@ export default function PortfolioCaseStudyFields({
                     className={labelClass}
                     htmlFor="portfolio-case-study-version"
                 >
-                    사례 연구 형식
+                    <LocalizedText text={"사례 연구 형식"} />
                 </label>
                 <select
                     id="portfolio-case-study-version"
@@ -157,18 +158,25 @@ export default function PortfolioCaseStudyFields({
                     }
                     className={inputClass}
                 >
-                    <option value="1">Legacy article</option>
-                    <option value="2">Case Study v2</option>
+                    <option value="1">
+                        <LocalizedText text={"Legacy article"} />
+                    </option>
+                    <option value="2">
+                        <LocalizedText text={"Case Study v2"} />
+                    </option>
                 </select>
                 <p className={helperClass}>
-                    v2는 개인 기여, 결과, media와 두세 개의 Deep Dive를
-                    사용합니다.
+                    <LocalizedText
+                        text={
+                            "v2는 개인 기여, 결과, media와 두세 개의 Deep Dive를 사용합니다."
+                        }
+                    />
                 </p>
             </div>
 
             <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="portfolio-project-type">
-                    프로젝트 구분
+                    <LocalizedText text={"프로젝트 구분"} />
                 </label>
                 <select
                     id="portfolio-project-type"
@@ -181,11 +189,19 @@ export default function PortfolioCaseStudyFields({
                     }
                     className={inputClass}
                 >
-                    <option value="work">기업 프로젝트</option>
-                    <option value="personal">개인 프로젝트</option>
+                    <option value="work">
+                        <LocalizedText text={"기업 프로젝트"} />
+                    </option>
+                    <option value="personal">
+                        <LocalizedText text={"개인 프로젝트"} />
+                    </option>
                 </select>
                 <p className={helperClass}>
-                    공개 Portfolio의 기업·개인 프로젝트 그룹 기준입니다.
+                    <LocalizedText
+                        text={
+                            "공개 Portfolio의 기업·개인 프로젝트 그룹 기준입니다."
+                        }
+                    />
                 </p>
             </div>
 
@@ -196,7 +212,7 @@ export default function PortfolioCaseStudyFields({
                             className={labelClass}
                             htmlFor="portfolio-one-line-pitch"
                         >
-                            한 줄 소개
+                            <LocalizedText text={"한 줄 소개"} />
                         </label>
                         <textarea
                             id="portfolio-one-line-pitch"
@@ -219,9 +235,11 @@ export default function PortfolioCaseStudyFields({
                                 className={labelClass}
                                 htmlFor="portfolio-team-composition"
                             >
-                                팀 구성
+                                <LocalizedText text={"팀 구성"} />
                             </label>
-                            <input
+                            <LocalizedElement
+                                as="input"
+                                translatedProps={["placeholder"]}
                                 id="portfolio-team-composition"
                                 value={form.teamComposition}
                                 maxLength={180}
@@ -243,7 +261,7 @@ export default function PortfolioCaseStudyFields({
                                 className={labelClass}
                                 htmlFor="portfolio-engine"
                             >
-                                Engine
+                                <LocalizedText text={"Engine"} />
                             </label>
                             <input
                                 id="portfolio-engine"
@@ -257,8 +275,12 @@ export default function PortfolioCaseStudyFields({
                         </div>
                         <div className={groupClass}>
                             <div className="flex items-center justify-between gap-2">
-                                <p className={labelClass}>Platforms</p>
-                                <AddButton
+                                <p className={labelClass}>
+                                    <LocalizedText text={"Platforms"} />
+                                </p>
+                                <LocalizedElement
+                                    as={AddButton}
+                                    translatedProps={["label"]}
                                     label="Platform"
                                     disabled={form.platforms.length >= 5}
                                     onClick={() =>
@@ -274,7 +296,14 @@ export default function PortfolioCaseStudyFields({
                                     key={index}
                                     className="flex items-center gap-2"
                                 >
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        messageProps={{
+                                            "aria-label": {
+                                                text: "Platform {0}",
+                                                values: [index + 1],
+                                            },
+                                        }}
                                         value={platform}
                                         maxLength={80}
                                         aria-label={`Platform ${index + 1}`}
@@ -300,12 +329,18 @@ export default function PortfolioCaseStudyFields({
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <p className={labelClass}>개인 기여</p>
+                                <p className={labelClass}>
+                                    <LocalizedText text={"개인 기여"} />
+                                </p>
                                 <p className={helperClass}>
-                                    팀 작업과 구분되는 소유 영역
+                                    <LocalizedText
+                                        text={"팀 작업과 구분되는 소유 영역"}
+                                    />
                                 </p>
                             </div>
-                            <AddButton
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="기여"
                                 disabled={form.ownership.length >= 5}
                                 onClick={() =>
@@ -318,7 +353,14 @@ export default function PortfolioCaseStudyFields({
                         </div>
                         {form.ownership.map((ownership, index) => (
                             <div key={index} className="flex items-start gap-2">
-                                <textarea
+                                <LocalizedElement
+                                    as="textarea"
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "개인 기여 {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
                                     value={ownership}
                                     maxLength={160}
                                     rows={2}
@@ -344,12 +386,18 @@ export default function PortfolioCaseStudyFields({
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <p className={labelClass}>결과와 근거</p>
+                                <p className={labelClass}>
+                                    <LocalizedText text={"결과와 근거"} />
+                                </p>
                                 <p className={helperClass}>
-                                    검증 가능한 내용만 입력
+                                    <LocalizedText
+                                        text={"검증 가능한 내용만 입력"}
+                                    />
                                 </p>
                             </div>
-                            <AddButton
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="결과"
                                 disabled={form.outcomes.length >= 3}
                                 onClick={() =>
@@ -365,7 +413,15 @@ export default function PortfolioCaseStudyFields({
                                 key={index}
                                 className="space-y-2 rounded-xl border border-(--color-border) p-3"
                             >
-                                <input
+                                <LocalizedElement
+                                    as="input"
+                                    translatedProps={["placeholder"]}
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "결과 {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
                                     value={outcome.result}
                                     maxLength={180}
                                     placeholder="결과"
@@ -377,7 +433,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <textarea
+                                <LocalizedElement
+                                    as="textarea"
+                                    translatedProps={["placeholder"]}
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "결과 근거 {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
                                     value={outcome.evidence ?? ""}
                                     maxLength={240}
                                     rows={2}
@@ -408,12 +472,20 @@ export default function PortfolioCaseStudyFields({
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <p className={labelClass}>Evidence Gallery</p>
+                                <p className={labelClass}>
+                                    <LocalizedText text={"Evidence Gallery"} />
+                                </p>
                                 <p className={helperClass}>
-                                    image는 alt 필수, video는 poster 필수
+                                    <LocalizedText
+                                        text={
+                                            "image는 alt 필수, video는 poster 필수"
+                                        }
+                                    />
                                 </p>
                             </div>
-                            <AddButton
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="Media"
                                 disabled={form.gallery.length >= 8}
                                 onClick={() =>
@@ -434,7 +506,14 @@ export default function PortfolioCaseStudyFields({
                                 key={index}
                                 className="space-y-2 rounded-xl border border-(--color-border) p-3"
                             >
-                                <select
+                                <LocalizedElement
+                                    as="select"
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Media 형식 {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
                                     value={media.type}
                                     aria-label={`Media 형식 ${index + 1}`}
                                     onChange={(event) =>
@@ -444,10 +523,22 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 >
-                                    <option value="image">Image</option>
-                                    <option value="video">Video</option>
-                                </select>
-                                <input
+                                    <option value="image">
+                                        <LocalizedText text={"Image"} />
+                                    </option>
+                                    <option value="video">
+                                        <LocalizedText text={"Video"} />
+                                    </option>
+                                </LocalizedElement>
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Media URL {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={media.src}
                                     placeholder="relative 또는 R2 media URL"
                                     aria-label={`Media URL ${index + 1}`}
@@ -459,7 +550,15 @@ export default function PortfolioCaseStudyFields({
                                     className={`${inputClass} font-mono`}
                                 />
                                 {media.type === "video" && (
-                                    <input
+                                    <LocalizedElement
+                                        messageProps={{
+                                            "aria-label": {
+                                                text: "Video poster {0}",
+                                                values: [index + 1],
+                                            },
+                                        }}
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         value={media.poster}
                                         placeholder="poster URL"
                                         aria-label={`Video poster ${index + 1}`}
@@ -471,7 +570,15 @@ export default function PortfolioCaseStudyFields({
                                         className={`${inputClass} font-mono`}
                                     />
                                 )}
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Media alt {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={media.alt}
                                     maxLength={180}
                                     placeholder="대체 텍스트"
@@ -483,7 +590,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <textarea
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Media caption {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="textarea"
+                                    translatedProps={["placeholder"]}
                                     value={media.caption ?? ""}
                                     maxLength={240}
                                     rows={2}
@@ -513,8 +628,12 @@ export default function PortfolioCaseStudyFields({
 
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
-                            <p className={labelClass}>Project Links</p>
-                            <AddButton
+                            <p className={labelClass}>
+                                <LocalizedText text={"Project Links"} />
+                            </p>
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="Link"
                                 disabled={form.links.length >= 4}
                                 onClick={() =>
@@ -534,7 +653,14 @@ export default function PortfolioCaseStudyFields({
                                 key={index}
                                 className="tablet:grid-cols-[8rem_minmax(0,1fr)] grid grid-cols-1 gap-2 rounded-xl border border-(--color-border) p-3"
                             >
-                                <select
+                                <LocalizedElement
+                                    as="select"
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Link kind {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
                                     value={link.kind}
                                     aria-label={`Link kind ${index + 1}`}
                                     onChange={(event) =>
@@ -545,12 +671,28 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 >
-                                    <option value="demo">Demo</option>
-                                    <option value="play">Play</option>
-                                    <option value="release">Release</option>
-                                    <option value="source">Source</option>
-                                </select>
-                                <input
+                                    <option value="demo">
+                                        <LocalizedText text={"Demo"} />
+                                    </option>
+                                    <option value="play">
+                                        <LocalizedText text={"Play"} />
+                                    </option>
+                                    <option value="release">
+                                        <LocalizedText text={"Release"} />
+                                    </option>
+                                    <option value="source">
+                                        <LocalizedText text={"Source"} />
+                                    </option>
+                                </LocalizedElement>
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Link label {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={link.label}
                                     maxLength={80}
                                     placeholder="Label"
@@ -562,7 +704,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Link URL {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={link.url}
                                     placeholder="relative 또는 HTTPS URL"
                                     aria-label={`Link URL ${index + 1}`}
@@ -590,8 +740,12 @@ export default function PortfolioCaseStudyFields({
 
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
-                            <p className={labelClass}>Devlogs</p>
-                            <AddButton
+                            <p className={labelClass}>
+                                <LocalizedText text={"Devlogs"} />
+                            </p>
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="Devlog"
                                 disabled={form.devlogs.length >= 5}
                                 onClick={() =>
@@ -607,7 +761,15 @@ export default function PortfolioCaseStudyFields({
                                 key={index}
                                 className="tablet:grid-cols-2 grid grid-cols-1 gap-2 rounded-xl border border-(--color-border) p-3"
                             >
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Devlog title {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={devlog.title}
                                     maxLength={180}
                                     placeholder="Title"
@@ -619,7 +781,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Devlog URL {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={devlog.url}
                                     placeholder="relative 또는 HTTPS URL"
                                     aria-label={`Devlog URL ${index + 1}`}
@@ -648,12 +818,20 @@ export default function PortfolioCaseStudyFields({
                     <div className={groupClass}>
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <p className={labelClass}>Credits</p>
+                                <p className={labelClass}>
+                                    <LocalizedText text={"Credits"} />
+                                </p>
                                 <p className={helperClass}>
-                                    팀 규모가 2명 이상이면 한 개 이상 필요
+                                    <LocalizedText
+                                        text={
+                                            "팀 규모가 2명 이상이면 한 개 이상 필요"
+                                        }
+                                    />
                                 </p>
                             </div>
-                            <AddButton
+                            <LocalizedElement
+                                as={AddButton}
+                                translatedProps={["label"]}
                                 label="Credit"
                                 disabled={form.credits.length >= 20}
                                 onClick={() =>
@@ -669,7 +847,15 @@ export default function PortfolioCaseStudyFields({
                                 key={index}
                                 className="tablet:grid-cols-2 grid grid-cols-1 gap-2 rounded-xl border border-(--color-border) p-3"
                             >
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Credit name {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={credit.name}
                                     maxLength={120}
                                     placeholder="Name"
@@ -681,7 +867,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Credit role {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={credit.role}
                                     maxLength={160}
                                     placeholder="Role"
@@ -693,7 +887,15 @@ export default function PortfolioCaseStudyFields({
                                     }
                                     className={inputClass}
                                 />
-                                <input
+                                <LocalizedElement
+                                    messageProps={{
+                                        "aria-label": {
+                                            text: "Credit URL {0}",
+                                            values: [index + 1],
+                                        },
+                                    }}
+                                    as="input"
+                                    translatedProps={["placeholder"]}
                                     value={credit.url ?? ""}
                                     placeholder="Optional URL"
                                     aria-label={`Credit URL ${index + 1}`}

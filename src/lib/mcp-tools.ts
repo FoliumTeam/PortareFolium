@@ -1,4 +1,13 @@
+import {
+    copyContentVariant,
+    isVariantKind,
+    validateVariantLocales,
+} from "@/lib/content-variants";
+import { revalidateLocalizedPath as revalidatePath } from "@/lib/localized-revalidate";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import { isLocale } from "@/lib/i18n";
 import { serverClient } from "@/lib/supabase";
+import { insertAboutDocument } from "@/lib/about-document";
 import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
 import { mergePortfolioDataPatch } from "@/lib/portfolio";
@@ -60,7 +69,7 @@ const toPersistedPortfolioJobField = (value: unknown): unknown => {
 };
 
 const revalidateMcpPortfolio = async (slug: string) => {
-    const { revalidatePath, revalidateTag } = await import("next/cache");
+    const { revalidateTag } = await import("next/cache");
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
     const jobFields = await getPublicJobFields();
@@ -73,8 +82,21 @@ const revalidateMcpPortfolio = async (slug: string) => {
     revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
 };
 
+const revalidateMcpPost = async (slug: string) => {
+    const { revalidateTag } = await import("next/cache");
+    revalidatePath(`/blog/${slug}`);
+    revalidatePath("/blog");
+    for (const field of await getPublicJobFields()) {
+        revalidatePath(`/${field.id}/blog/${slug}`);
+        revalidatePath(`/${field.id}/blog`);
+        revalidatePath(`/${field.id}`);
+    }
+    revalidatePath("/");
+    revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
+};
+
 const revalidateMcpResume = async () => {
-    const { revalidatePath, revalidateTag } = await import("next/cache");
+    const { revalidateTag } = await import("next/cache");
     revalidatePath("/resume");
     const jobFields = await getPublicJobFields();
     for (const jobField of jobFields) {
@@ -100,7 +122,7 @@ export const prepareMcpPortfolioCreate = (
         data: withoutPortfolioReviewData(
             mergePortfolioDataPatch({}, getPortfolioDataInput(args.data))
         ),
-        published: true,
+        published: typeof args.published === "boolean" ? args.published : true,
     });
     return createFields;
 };
@@ -127,7 +149,10 @@ export const prepareMcpPortfolioUpdate = (
     });
     const updateFields = {
         ...changedRow,
-        published: true,
+        published:
+            typeof rawFields.published === "boolean"
+                ? rawFields.published
+                : current.published,
         data: withoutPortfolioReviewData(mergedData),
     };
     const finalRow = {
@@ -152,7 +177,7 @@ export async function handleGetSchema(): Promise<unknown> {
     return {
         rules: [
             "slug must be lowercase, hyphen-separated, URL-safe (e.g. 'my-new-post')",
-            "Portfolio items are published immediately after create or update",
+            "Portfolio creation defaults to Published; updates preserve visibility unless explicitly changed",
             "No delete tool exists — use update to revise content",
             "slug collision returns error code -32000 with 'slug 중복' message — pick a different slug",
             "For update_resume: always call get_resume first, then send the FULL section (emoji + showEmoji + entries) to avoid data loss",
@@ -175,8 +200,8 @@ export async function handleGetSchema(): Promise<unknown> {
             "get_portfolio_item({ slug: string })",
             "create_portfolio_item({ slug*, title*, description?, tags?, job_field?, thumbnail?, content?, data?, featured?, order_idx? })",
             "update_portfolio_item({ slug*, ...partial_fields })",
-            "get_resume({ lang?: 'ko' })",
-            "update_resume({ lang?: 'ko', data: Partial<Resume> })",
+            "get_resume({ lang?: 'ko' | 'en' | 'ja' })",
+            "update_resume({ lang?: 'ko' | 'en' | 'ja', data: Partial<Resume> })",
         ],
         posts: {
             slug: "unique, required",
@@ -253,7 +278,7 @@ export async function handleGetSchema(): Promise<unknown> {
             v2_content:
                 "Exactly 2 or 3 ## sections. Game entries use 목표와 제약, 내 역할, 핵심 구현, 게임 효과; web entries use 배경과 목표, 담당 범위, 실행, 결과와 근거.",
             publication:
-                "Portfolio items are published immediately after create or update. Use the admin dashboard to explicitly unpublish an item.",
+                "Portfolio creation defaults to Published; updates preserve visibility unless explicitly changed. Use the admin dashboard to explicitly unpublish an item.",
         },
         resume_data: {
             _note: "Single Korean resume row only ('ko'). data column is a Resume object.",
@@ -407,7 +432,7 @@ export async function handleCreatePost(
         }
         throw new Error(`[mcp-tools::handleCreatePost] ${error.message}`);
     }
-    await revalidateMcpPortfolio(String(args.slug));
+    await revalidateMcpPost(String(args.slug));
     return data;
 }
 
@@ -440,9 +465,7 @@ export async function handleUpdatePost(args: {
     if (error)
         throw new Error(`[mcp-tools::handleUpdatePost] ${error.message}`);
 
-    const { revalidatePath } = await import("next/cache");
-    revalidatePath(`/blog/${slug}`);
-    revalidatePath("/blog");
+    await revalidateMcpPost(slug);
 
     return data;
 }
@@ -514,10 +537,10 @@ export async function handleRenamePostSlug(args: {
         throw new Error(`[mcp-tools::handleRenamePostSlug] ${error.message}`);
     }
 
-    const { revalidatePath } = await import("next/cache");
-    revalidatePath(`/blog/${currentSlug}`);
-    revalidatePath(`/blog/${newSlug}`);
-    revalidatePath("/blog");
+    await Promise.all([
+        revalidateMcpPost(currentSlug),
+        revalidateMcpPost(newSlug),
+    ]);
 
     return data;
 }
@@ -653,20 +676,18 @@ export async function handleUpdatePortfolioItem(args: {
 }
 
 // 이력서 조회
-export async function handleGetResume(args: {
-    lang?: string;
-}): Promise<unknown> {
+async function getResumeInLocale(args: { lang?: string }): Promise<unknown> {
     if (!serverClient)
         throw new Error("[mcp-tools::handleGetResume] serverClient 없음");
 
-    const lang = args.lang ?? "ko";
-    if (lang !== "ko") {
-        throw new Error("[mcp-tools::handleGetResume] ko resume만 지원");
+    const lang = args.lang ?? getContentLocale();
+    if (!isLocale(lang)) {
+        throw new Error("[mcp-tools::handleGetResume] 지원하지 않는 언어");
     }
 
     const { data, error } = await serverClient
         .from("resume_data")
-        .select("id, lang, data, updated_at")
+        .select("id, lang, data, published, updated_at")
         .eq("lang", lang)
         .single();
 
@@ -675,16 +696,17 @@ export async function handleGetResume(args: {
 }
 
 // 이력서 수정
-export async function handleUpdateResume(args: {
+async function updateResumeInLocale(args: {
     lang?: string;
     data: Partial<Resume>;
+    published?: boolean;
 }): Promise<unknown> {
     if (!serverClient)
         throw new Error("[mcp-tools::handleUpdateResume] serverClient 없음");
 
-    const lang = args.lang ?? "ko";
-    if (lang !== "ko") {
-        throw new Error("[mcp-tools::handleUpdateResume] ko resume만 지원");
+    const lang = args.lang ?? getContentLocale();
+    if (!isLocale(lang)) {
+        throw new Error("[mcp-tools::handleUpdateResume] 지원하지 않는 언어");
     }
 
     const { data: current } = await serverClient
@@ -693,16 +715,20 @@ export async function handleUpdateResume(args: {
         .eq("lang", lang)
         .single();
 
-    if (!current)
-        throw new Error(`[mcp-tools::handleUpdateResume] lang 없음: ${lang}`);
-
     // 섹션별 deep-merge: 기존 data + args.data
-    const merged = { ...(current.data as object), ...args.data };
+    const merged = { ...((current?.data ?? {}) as object), ...args.data };
 
     const { data: updated, error } = await serverClient
         .from("resume_data")
-        .update({ data: merged, updated_at: new Date().toISOString() })
-        .eq("lang", lang)
+        .upsert(
+            {
+                lang,
+                data: merged,
+                published: args.published ?? current?.published ?? true,
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: "lang" }
+        )
         .select("id, lang")
         .single();
 
@@ -918,7 +944,7 @@ const PORTFOLIO_DATA_INPUT_SCHEMA = {
     additionalProperties: true,
 } as const;
 
-export const MCP_TOOLS = [
+const BASE_MCP_TOOLS = [
     {
         name: "get_schema",
         description: "AI 에이전트용 데이터 스키마 가이드 반환",
@@ -1068,7 +1094,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko"] },
+                lang: { type: "string", enum: ["ko", "en", "ja"] },
             },
         },
     },
@@ -1078,7 +1104,7 @@ export const MCP_TOOLS = [
         inputSchema: {
             type: "object",
             properties: {
-                lang: { type: "string", enum: ["ko"] },
+                lang: { type: "string", enum: ["ko", "en", "ja"] },
                 data: {
                     type: "object",
                     description: "Resume 객체 (부분 업데이트 가능)",
@@ -1114,7 +1140,7 @@ export const MCP_TOOLS = [
 ] as const;
 
 // 툴 이름 → 핸들러 디스패치
-export async function dispatchTool(
+async function dispatchToolInLocale(
     name: string,
     args: Record<string, unknown>,
     permissions: AgentTokenPermissions | null = null
@@ -1129,6 +1155,103 @@ export async function dispatchTool(
         );
     }
     switch (name) {
+        case "get_about": {
+            if (!serverClient) throw new Error("DB unavailable");
+            const { data, error } = await serverClient
+                .from("about_data")
+                .select("*")
+                .limit(1)
+                .maybeSingle();
+            if (error) throw new Error("About read failed");
+            return data;
+        }
+        case "update_about": {
+            if (
+                !serverClient ||
+                !args.data ||
+                typeof args.data !== "object" ||
+                Array.isArray(args.data)
+            )
+                throw new Error("Invalid About data");
+            const { data: row, error: readError } = await serverClient
+                .from("about_data")
+                .select("id, data, published")
+                .limit(2)
+                .maybeSingle();
+            if (readError) throw new Error("About read failed");
+            const payload = {
+                data: { ...((row?.data ?? {}) as object), ...args.data },
+                published:
+                    typeof args.published === "boolean"
+                        ? args.published
+                        : (row?.published ?? true),
+            };
+            const result = row
+                ? await serverClient
+                      .from("about_data")
+                      .update(payload)
+                      .eq("id", row.id)
+                : await insertAboutDocument(payload);
+            if (result.error) throw new Error("About save failed");
+            revalidatePath("/", "layout");
+            const { revalidateTag } = await import("next/cache");
+            revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
+            return { success: true };
+        }
+        case "get_site_content": {
+            const { data, error } = await serverClient!
+                .from("site_config")
+                .select("key, value");
+            if (error) throw new Error("Config read failed");
+            return data;
+        }
+        case "update_site_content": {
+            const allowed = new Set([
+                "header_name",
+                "site_name",
+                "seo_config",
+                "job_fields",
+                "navigation_config",
+                "footer_config",
+            ]);
+            if (
+                !args.values ||
+                typeof args.values !== "object" ||
+                Array.isArray(args.values)
+            )
+                throw new Error("Invalid config values");
+            const rows = Object.entries(args.values).map(([key, value]) => {
+                if (!allowed.has(key))
+                    throw new Error("Unsupported content key");
+                return { key, value };
+            });
+            const { error } = await serverClient!
+                .from("site_config")
+                .upsert(rows, { onConflict: "key" });
+            if (error) throw new Error("Config save failed");
+            revalidatePath("/", "layout");
+            const { revalidateTag } = await import("next/cache");
+            revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
+            return { success: true };
+        }
+        case "copy_language_variant": {
+            if (!isVariantKind(args.kind))
+                throw new Error("Unsupported content kind");
+            const [source, target] = validateVariantLocales(
+                args.source_lang,
+                getContentLocale()
+            );
+            const result = await copyContentVariant(
+                args.kind,
+                source,
+                target,
+                typeof args.slug === "string" ? args.slug : undefined
+            );
+            revalidatePath("/", "layout");
+            const { revalidateTag } = await import("next/cache");
+            revalidateTag(PUBLIC_CONTENT_CACHE_TAG, "max");
+            return result;
+        }
         case "get_schema":
             return handleGetSchema();
         case "list_posts":
@@ -1176,4 +1299,111 @@ export async function dispatchTool(
         default:
             throw new Error(`[mcp-tools::dispatchTool] 알 수 없는 툴: ${name}`);
     }
+}
+
+const LANGUAGE_MCP_TOOLS = [
+    {
+        name: "get_about",
+        description: "선택 언어 자기소개 조회",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "update_about",
+        description: "선택 언어 자기소개 수정",
+        inputSchema: {
+            type: "object",
+            properties: {
+                data: { type: "object" },
+                published: { type: "boolean" },
+            },
+            required: ["data"],
+        },
+    },
+    {
+        name: "get_site_content",
+        description: "선택 언어 사이트 문구 조회",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "update_site_content",
+        description: "선택 언어 사이트 문구 수정",
+        inputSchema: {
+            type: "object",
+            properties: { values: { type: "object" } },
+            required: ["values"],
+        },
+    },
+    {
+        name: "copy_language_variant",
+        description: "다른 언어의 원본을 비공개 사본으로 복사",
+        inputSchema: {
+            type: "object",
+            properties: {
+                kind: {
+                    type: "string",
+                    enum: [
+                        "resume",
+                        "about",
+                        "portfolio",
+                        "post",
+                        "book",
+                        "application",
+                    ],
+                },
+                source_lang: { type: "string", enum: ["ko", "en", "ja"] },
+                slug: { type: "string" },
+            },
+            required: ["kind", "source_lang", "lang"],
+        },
+    },
+] as const;
+
+export const MCP_TOOLS = [...BASE_MCP_TOOLS, ...LANGUAGE_MCP_TOOLS].map(
+    (tool) => ({
+        ...tool,
+        inputSchema: {
+            ...tool.inputSchema,
+            properties: {
+                ...tool.inputSchema.properties,
+                ...(tool.name === "update_resume"
+                    ? { published: { type: "boolean" } }
+                    : {}),
+                lang: {
+                    type: "string",
+                    enum: ["ko", "en", "ja"],
+                    description: "콘텐츠 언어, 생략 시 ko",
+                },
+            },
+        },
+    })
+);
+
+// 도구 호출 전체의 콘텐츠 언어 격리
+export async function dispatchTool(
+    name: string,
+    args: Record<string, unknown>,
+    permissions: AgentTokenPermissions | null = null
+): Promise<unknown> {
+    const lang = args.lang ?? "ko";
+    if (!isLocale(lang)) throw new Error("Unsupported locale");
+    const { lang: _lang, ...fields } = args;
+    return withContentLocale(lang, () =>
+        dispatchToolInLocale(name, fields, permissions)
+    );
+}
+
+// 직접 호출에서도 명시한 언어의 저장 범위 유지
+export async function handleGetResume(
+    ...args: Parameters<typeof getResumeInLocale>
+) {
+    const locale = args[0].lang ?? getContentLocale();
+    if (!isLocale(locale)) throw new Error("Unsupported locale");
+    return withContentLocale(locale, () => getResumeInLocale(...args));
+}
+export async function handleUpdateResume(
+    ...args: Parameters<typeof updateResumeInLocale>
+) {
+    const locale = args[0].lang ?? getContentLocale();
+    if (!isLocale(locale)) throw new Error("Unsupported locale");
+    return withContentLocale(locale, () => updateResumeInLocale(...args));
 }

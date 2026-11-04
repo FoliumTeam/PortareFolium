@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText, LocalizedElement } from "@/components/LocalizedText";
 
 import { useState } from "react";
 import { saveGanttChartArchiveCategories } from "@/app/admin/actions/gantt-chart";
@@ -101,7 +102,7 @@ export default function GanttChartCategoryColorModal({
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-(--color-border) px-6 py-4">
                     <h2 className="text-lg font-bold text-(--color-foreground)">
-                        Category Colors
+                        <LocalizedText text={"Category Colors"} />
                     </h2>
                     <div className="flex items-center gap-2">
                         <Button
@@ -111,7 +112,11 @@ export default function GanttChartCategoryColorModal({
                             className="bg-green-600 text-white hover:bg-green-500"
                         >
                             <span className="whitespace-nowrap">
-                                {saving ? "저장 중..." : "저장"}
+                                {saving ? (
+                                    <LocalizedText text={"저장 중..."} />
+                                ) : (
+                                    <LocalizedText text={"저장"} />
+                                )}
                             </span>
                         </Button>
                         <Button
@@ -119,22 +124,25 @@ export default function GanttChartCategoryColorModal({
                             onClick={onClose}
                             className="bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
                         >
-                            닫기
+                            <LocalizedText text={"닫기"} />
                         </Button>
                     </div>
                 </div>
 
                 {error && (
                     <p className="shrink-0 border-b border-red-200 bg-red-50 px-6 py-2 text-sm font-medium text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
-                        {error}
+                        {<LocalizedText text={error} />}
                     </p>
                 )}
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-6">
                     {entries.length === 0 ? (
                         <p className="text-sm text-(--color-muted)">
-                            이 차트에 category가 없습니다. 차트를 먼저 편집하여
-                            category를 추가하세요.
+                            <LocalizedText
+                                text={
+                                    "이 차트에 category가 없습니다. 차트를 먼저 편집하여 category를 추가하세요."
+                                }
+                            />
                         </p>
                     ) : (
                         <div className="space-y-3">
@@ -143,7 +151,9 @@ export default function GanttChartCategoryColorModal({
                                     key={entry.originalName}
                                     className="flex items-center gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-subtle) px-4 py-3"
                                 >
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         type="text"
                                         value={entry.newName}
                                         onChange={(e) =>

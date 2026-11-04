@@ -3,9 +3,11 @@
  * 저장값은 KST를 그대로 저장(ISO의 시·분은 KST 기준). 표시 시 변환 없이 그대로 한국어로 포맷.
  */
 
-/** Date 객체를 KST(한국 표준시) 기준으로 한국어 날짜·시간 문자열로 포맷. AM/PM은 오전/오후 */
-export function formatPubDateKST(date: Date): string {
-    const formatter = new Intl.DateTimeFormat("ko-KR", {
+import type { Locale } from "@/lib/i18n";
+
+// 저장 시각을 유지한 표시 언어별 날짜
+export function formatPubDateKST(date: Date, locale: Locale = "ko"): string {
+    const formatter = new Intl.DateTimeFormat(locale, {
         timeZone: "Asia/Seoul",
         year: "numeric",
         month: "long",
@@ -15,7 +17,8 @@ export function formatPubDateKST(date: Date): string {
         hour12: true,
     });
     let s = formatter.format(date);
-    s = s.replace(/\bAM\b/i, "오전").replace(/\bPM\b/i, "오후");
+    if (locale === "ko")
+        s = s.replace(/\bAM\b/i, "오전").replace(/\bPM\b/i, "오후");
     return s;
 }
 

@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedElement, LocalizedText } from "@/components/LocalizedText";
 
 /**
  * CategorySelect
@@ -97,7 +98,7 @@ export default function CategorySelect({
                     )}
                 >
                     <span className="min-w-0 truncate">
-                        {value || placeholder}
+                        {value || <LocalizedText text={placeholder} />}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -107,14 +108,18 @@ export default function CategorySelect({
                 className="w-(--radix-popover-trigger-width) min-w-72 p-0"
             >
                 <Command shouldFilter>
-                    <CommandInput
+                    <LocalizedElement
+                        as={CommandInput}
+                        translatedProps={["placeholder"]}
                         value={query}
                         onValueChange={setQuery}
                         placeholder="카테고리 검색 또는 생성"
                     />
                     <CommandList>
                         <CommandEmpty className="py-3 text-center text-sm text-(--color-muted)">
-                            일치하는 카테고리가 없습니다.
+                            <LocalizedText
+                                text={"일치하는 카테고리가 없습니다."}
+                            />
                         </CommandEmpty>
                         <CommandGroup>
                             {canCreate && (
@@ -126,9 +131,16 @@ export default function CategorySelect({
                                 >
                                     <Plus className="h-4 w-4" />
                                     <span className="truncate">
-                                        {creating
-                                            ? "생성 중..."
-                                            : `새 카테고리 생성: ${createValue}`}
+                                        {creating ? (
+                                            <LocalizedText
+                                                text={"생성 중..."}
+                                            />
+                                        ) : (
+                                            <LocalizedText
+                                                text={"새 카테고리 생성: {0}"}
+                                                values={[createValue]}
+                                            />
+                                        )}
                                     </span>
                                 </CommandItem>
                             )}
@@ -155,7 +167,7 @@ export default function CategorySelect({
                                     onSelect={() => selectCategory("")}
                                     className="text-(--color-muted)"
                                 >
-                                    선택 해제
+                                    <LocalizedText text={"선택 해제"} />
                                 </CommandItem>
                             )}
                         </CommandGroup>

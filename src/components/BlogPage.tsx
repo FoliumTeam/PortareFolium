@@ -1,4 +1,11 @@
 "use client";
+import { PublicAnchor } from "@/components/PublicLink";
+
+import {
+    LocalizedElement,
+    LocalizedText,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 /**
  * Blog 목록 페이지: 좌측 카테고리/태그 필터, 포스트 카드 (썸네일 오른쪽, 텍스트 왼쪽)
@@ -198,15 +205,15 @@ export default function BlogPage({
     const updateUrl = useCallback(
         (category: string, tag: string | null) => {
             if (typeof window === "undefined") return;
-            const params = new URLSearchParams();
+            const params = new URLSearchParams(window.location.search);
             if (category && category !== ALL_CATEGORY) {
                 params.set("category", category);
-            }
+            } else params.delete("category");
             if (tag) {
                 params.set("tag", tag);
-            }
+            } else params.delete("tag");
             const query = params.toString();
-            const url = query ? `${blogBasePath}?${query}` : blogBasePath;
+            const url = `${blogBasePath}${query ? `?${query}` : ""}${window.location.hash}`;
             window.history.replaceState({ category, tag }, "", url);
         },
         [blogBasePath]
@@ -267,7 +274,9 @@ export default function BlogPage({
         <div className="tablet:flex-row flex w-full flex-col gap-8">
             {/* Hamburger + title + view toggle: mobile top row */}
             <div className="tablet:hidden sticky top-20 z-10 flex flex-wrap items-center gap-3 bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:h-20 before:bg-(--color-surface) before:content-['']">
-                <button
+                <LocalizedElement
+                    as="button"
+                    translatedProps={["aria-label"]}
                     type="button"
                     onClick={() => setSidebarOpen((o) => !o)}
                     className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-2.5 text-(--color-foreground) transition-colors hover:border-(--color-accent)"
@@ -286,27 +295,31 @@ export default function BlogPage({
                             d="M4 6h16M4 12h16M4 18h16"
                         />
                     </svg>
-                </button>
+                </LocalizedElement>
                 <h1 className="flex-1 text-2xl font-black tracking-tight text-(--color-foreground)">
-                    Blog
+                    <LocalizedText text={"Blog"} />
                 </h1>
                 <div className="flex items-center gap-1">
-                    <button
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         onClick={() => handleViewModeChange("list")}
                         aria-label="List view"
                         className={`rounded-lg p-2 transition-colors ${viewMode === "list" ? "bg-(--color-accent) text-(--color-on-accent)" : "text-(--color-muted) hover:text-(--color-foreground)"}`}
                     >
                         <ListIcon className="h-4 w-4" />
-                    </button>
-                    <button
+                    </LocalizedElement>
+                    <LocalizedElement
+                        as="button"
+                        translatedProps={["aria-label"]}
                         type="button"
                         onClick={() => handleViewModeChange("block")}
                         aria-label="Block view"
                         className={`rounded-lg p-2 transition-colors ${viewMode === "block" ? "bg-(--color-accent) text-(--color-on-accent)" : "text-(--color-muted) hover:text-(--color-foreground)"}`}
                     >
                         <GridIcon className="h-4 w-4" />
-                    </button>
+                    </LocalizedElement>
                 </div>
                 {showManagePost && (
                     <a
@@ -315,12 +328,14 @@ export default function BlogPage({
                         rel="noopener noreferrer"
                         className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
-                        포스트 관리
+                        <LocalizedText text={"포스트 관리"} />
                     </a>
                 )}
                 {/* Mobile search */}
                 <div className="w-full">
-                    <input
+                    <LocalizedElement
+                        as="input"
+                        translatedProps={["placeholder"]}
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -336,7 +351,7 @@ export default function BlogPage({
             >
                 <div className="space-y-2">
                     <h2 className="text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                        Categories
+                        <LocalizedText text={"Categories"} />
                     </h2>
                     <ul className="space-y-0.5">
                         <li>
@@ -352,7 +367,10 @@ export default function BlogPage({
                                         : "text-(--color-foreground) hover:bg-(--color-surface-subtle)"
                                 }`}
                             >
-                                All ({posts.length})
+                                <LocalizedRichText
+                                    text={"All ({0})"}
+                                    values={[posts.length]}
+                                />
                             </button>
                         </li>
                         {categories.map(({ name, count }) => (
@@ -379,7 +397,7 @@ export default function BlogPage({
                 {tags.length > 0 && (
                     <div className="space-y-2">
                         <h2 className="text-[10px] font-bold tracking-[0.15em] text-(--color-muted) uppercase">
-                            Tags
+                            <LocalizedText text={"Tags"} />
                         </h2>
                         <div className="flex flex-wrap gap-1.5">
                             {tags.map(({ slug, name, count }) => {
@@ -415,10 +433,12 @@ export default function BlogPage({
             <div className="w-full">
                 <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 sticky top-20 z-10 mb-8 hidden bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:z-0 before:h-20 before:bg-(--color-surface) before:content-['']">
                     <h1 className="z-10 text-3xl font-black tracking-tight text-(--color-foreground)">
-                        Blog
+                        <LocalizedText text={"Blog"} />
                     </h1>
                     <div className="z-10 flex items-center gap-3">
-                        <input
+                        <LocalizedElement
+                            as="input"
+                            translatedProps={["placeholder"]}
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -426,22 +446,26 @@ export default function BlogPage({
                             className="w-56 rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                         />
                         <div className="flex items-center gap-1">
-                            <button
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["aria-label"]}
                                 type="button"
                                 onClick={() => handleViewModeChange("list")}
                                 aria-label="List view"
                                 className={`rounded-lg p-2 transition-colors ${viewMode === "list" ? "bg-(--color-accent) text-(--color-on-accent)" : "text-(--color-muted) hover:text-(--color-foreground)"}`}
                             >
                                 <ListIcon className="h-4 w-4" />
-                            </button>
-                            <button
+                            </LocalizedElement>
+                            <LocalizedElement
+                                as="button"
+                                translatedProps={["aria-label"]}
                                 type="button"
                                 onClick={() => handleViewModeChange("block")}
                                 aria-label="Block view"
                                 className={`rounded-lg p-2 transition-colors ${viewMode === "block" ? "bg-(--color-accent) text-(--color-on-accent)" : "text-(--color-muted) hover:text-(--color-foreground)"}`}
                             >
                                 <GridIcon className="h-4 w-4" />
-                            </button>
+                            </LocalizedElement>
                         </div>
                         {showManagePost && (
                             <a
@@ -450,20 +474,22 @@ export default function BlogPage({
                                 rel="noopener noreferrer"
                                 className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                포스트 관리
+                                <LocalizedText text={"포스트 관리"} />
                             </a>
                         )}
                     </div>
                 </div>
                 {paginatedPosts.length === 0 ? (
                     <p className="text-(--color-muted)">
-                        No posts match the current filters.
+                        <LocalizedText
+                            text={"No posts match the current filters."}
+                        />
                     </p>
                 ) : viewMode === "block" ? (
                     // Block view: grid 카드
                     <div className="tablet:grid-cols-2 laptop:grid-cols-3 grid grid-cols-1 gap-6">
                         {paginatedPosts.map((post) => (
-                            <a
+                            <PublicAnchor
                                 key={post.slug}
                                 href={`${blogBasePath}/${post.slug}`}
                                 className="card-lift group flex flex-col overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle)"
@@ -544,7 +570,7 @@ export default function BlogPage({
                                             })}
                                     </div>
                                 </div>
-                            </a>
+                            </PublicAnchor>
                         ))}
                     </div>
                 ) : (
@@ -552,7 +578,7 @@ export default function BlogPage({
                     <ul className="space-y-4">
                         {paginatedPosts.map((post) => (
                             <li key={post.slug}>
-                                <a
+                                <PublicAnchor
                                     href={`${blogBasePath}/${post.slug}`}
                                     className="card-lift group tablet:flex-row flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                                 >
@@ -632,14 +658,16 @@ export default function BlogPage({
                                             />
                                         </div>
                                     )}
-                                </a>
+                                </PublicAnchor>
                             </li>
                         ))}
                     </ul>
                 )}
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <nav
+                    <LocalizedElement
+                        as="nav"
+                        translatedProps={["aria-label"]}
                         className="mt-10 flex items-center justify-center gap-1"
                         aria-label="Pagination"
                     >
@@ -682,7 +710,7 @@ export default function BlogPage({
                         >
                             &gt;
                         </button>
-                    </nav>
+                    </LocalizedElement>
                 )}
             </div>
         </div>

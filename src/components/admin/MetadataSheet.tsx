@@ -1,4 +1,9 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
 
 import type { ReactNode } from "react";
 import {
@@ -132,12 +137,16 @@ function SettingsSection({
         <section className={`${cardClass} ${className}`}>
             <div className="mb-4 space-y-1">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    {eyebrow}
+                    {<LocalizedText text={eyebrow} />}
                 </p>
                 <h4 className="text-base font-bold text-(--color-foreground)">
-                    {title}
+                    {<LocalizedText text={title} />}
                 </h4>
-                {description && <p className={helperClass}>{description}</p>}
+                {description && (
+                    <p className={helperClass}>
+                        {<LocalizedText text={description} />}
+                    </p>
+                )}
             </div>
             <div className="space-y-4">{children}</div>
         </section>
@@ -152,9 +161,13 @@ function FieldBlock({
 }: FieldBlockProps) {
     return (
         <div className={`space-y-1.5 ${className}`}>
-            <Label className={labelClass}>{label}</Label>
+            <Label className={labelClass}>
+                {<LocalizedText text={label} />}
+            </Label>
             {children}
-            {helper && <p className={helperClass}>{helper}</p>}
+            {helper && (
+                <p className={helperClass}>{<LocalizedText text={helper} />}</p>
+            )}
         </div>
     );
 }
@@ -189,20 +202,32 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                     <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
                         <div className="min-w-0 space-y-2">
                             <p className="text-xs font-bold tracking-[0.18em] text-(--color-muted) uppercase">
-                                {typeLabel} settings
+                                <LocalizedRichText
+                                    text={"{0} settings"}
+                                    values={[
+                                        <LocalizedText text={typeLabel} />,
+                                    ]}
+                                />
                             </p>
                             <DialogTitle className="text-2xl font-black tracking-tight text-(--color-foreground)">
-                                {title}
+                                {<LocalizedText text={title} />}
                             </DialogTitle>
                             <DialogDescription className="text-(--color-muted)">
-                                발행 상태, 분류, 미디어, SEO 정보를 한 곳에서
-                                정리합니다.
+                                <LocalizedText
+                                    text={
+                                        "발행 상태, 분류, 미디어, SEO 정보를 한 곳에서 정리합니다."
+                                    }
+                                />
                             </DialogDescription>
                         </div>
                         <span
                             className={`rounded-full border px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase ${statusBadgeClass}`}
                         >
-                            {form.published ? "Published" : "Draft"}
+                            {form.published ? (
+                                <LocalizedText text={"Published"} />
+                            ) : (
+                                <LocalizedText text={"Draft"} />
+                            )}
                         </span>
                     </div>
                 </DialogHeader>
@@ -210,7 +235,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                 <div className="laptop:px-6 max-h-[calc(88vh-8rem)] overflow-x-hidden overflow-y-auto px-4 py-5">
                     <div className="grid min-w-0 grid-cols-1 gap-4">
                         <div className="contents">
-                            <SettingsSection
+                            <LocalizedElement
+                                as={SettingsSection}
+                                translatedProps={[
+                                    "eyebrow",
+                                    "title",
+                                    "description",
+                                ]}
                                 eyebrow="Publish"
                                 title="발행 상태"
                                 description="공개 여부와 표시 우선순위를 빠르게 제어합니다."
@@ -221,14 +252,30 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
                                                 <p className={labelClass}>
-                                                    {form.published
-                                                        ? "Published"
-                                                        : "Draft"}
+                                                    {form.published ? (
+                                                        <LocalizedText
+                                                            text={"Published"}
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={"Draft"}
+                                                        />
+                                                    )}
                                                 </p>
                                                 <p className={helperClass}>
-                                                    {form.published
-                                                        ? "프론트엔드에 공개됩니다."
-                                                        : "관리자에서만 보입니다."}
+                                                    {form.published ? (
+                                                        <LocalizedText
+                                                            text={
+                                                                "프론트엔드에 공개됩니다."
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <LocalizedText
+                                                            text={
+                                                                "관리자에서만 보입니다."
+                                                            }
+                                                        />
+                                                    )}
                                                 </p>
                                             </div>
                                             {showPublishControl ? (
@@ -247,7 +294,11 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 />
                                             ) : (
                                                 <span className="text-xs font-semibold text-(--color-muted)">
-                                                    저장 시 자동 공개
+                                                    <LocalizedText
+                                                        text={
+                                                            "저장 시 자동 공개"
+                                                        }
+                                                    />
                                                 </span>
                                             )}
                                         </div>
@@ -259,11 +310,16 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
                                                     <p className={labelClass}>
-                                                        Featured
+                                                        <LocalizedText
+                                                            text={"Featured"}
+                                                        />
                                                     </p>
                                                     <p className={helperClass}>
-                                                        주요 콘텐츠 영역에
-                                                        노출합니다.
+                                                        <LocalizedText
+                                                            text={
+                                                                "주요 콘텐츠 영역에 노출합니다."
+                                                            }
+                                                        />
                                                     </p>
                                                 </div>
                                                 <Switch
@@ -284,7 +340,9 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                 </div>
 
                                 {type === "post" && (
-                                    <FieldBlock
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label", "helper"]}
                                         label="발행일"
                                         helper="KST 기준으로 저장되며 목록 정렬에 사용됩니다."
                                     >
@@ -301,17 +359,21 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             }
                                             className={inputClass}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
-                            </SettingsSection>
+                            </LocalizedElement>
 
-                            <SettingsSection
+                            <LocalizedElement
+                                as={SettingsSection}
+                                translatedProps={["title", "description"]}
                                 eyebrow="Metadata"
                                 title="기본 정보"
                                 description="URL, 요약, 도서/프로젝트 전용 필드를 관리합니다."
                                 className="order-2"
                             >
-                                <FieldBlock
+                                <LocalizedElement
+                                    as={FieldBlock}
+                                    translatedProps={["label", "helper"]}
                                     label="Slug"
                                     helper="URL과 이미지 폴더 식별자로 쓰입니다."
                                 >
@@ -323,10 +385,14 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         }
                                         className={`${inputClass} font-mono`}
                                     />
-                                </FieldBlock>
+                                </LocalizedElement>
 
                                 {type !== "book" && (
-                                    <FieldBlock label="요약">
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="요약"
+                                    >
                                         <textarea
                                             value={form.description}
                                             onChange={(e) =>
@@ -338,15 +404,19 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             rows={3}
                                             className={`${inputClass} resize-y`}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
 
                                 {type === "portfolio" && (
-                                    <FieldBlock
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label", "helper"]}
                                         label="기술 태그"
                                         helper="쉼표로 구분해 입력하며 공개 카드와 기술 스택에 반영됩니다."
                                     >
-                                        <input
+                                        <LocalizedElement
+                                            as="input"
+                                            translatedProps={["placeholder"]}
                                             type="text"
                                             value={form.tags}
                                             onChange={(e) =>
@@ -355,11 +425,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             placeholder="예: Rust, CLI, SQLite"
                                             className={inputClass}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
 
                                 {type === "portfolio" && (
-                                    <FieldBlock
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label", "helper"]}
                                         label="표시 순서"
                                         helper="Selected와 Other 그룹 안에서 낮은 숫자가 먼저 표시됩니다."
                                     >
@@ -377,13 +449,17 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             }
                                             className={inputClass}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
 
                                 {type === "book" && (
                                     <>
                                         <div className="tablet:grid-cols-[minmax(0,1fr)_8rem] grid gap-3">
-                                            <FieldBlock label="저자">
+                                            <LocalizedElement
+                                                as={FieldBlock}
+                                                translatedProps={["label"]}
+                                                label="저자"
+                                            >
                                                 <input
                                                     type="text"
                                                     value={
@@ -398,8 +474,12 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                     }
                                                     className={inputClass}
                                                 />
-                                            </FieldBlock>
-                                            <FieldBlock label="순서">
+                                            </LocalizedElement>
+                                            <LocalizedElement
+                                                as={FieldBlock}
+                                                translatedProps={["label"]}
+                                                label="순서"
+                                            >
                                                 <input
                                                     type="number"
                                                     value={
@@ -416,9 +496,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                     }
                                                     className={inputClass}
                                                 />
-                                            </FieldBlock>
+                                            </LocalizedElement>
                                         </div>
-                                        <FieldBlock label="한줄 소개">
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="한줄 소개"
+                                        >
                                             <textarea
                                                 value={form.description}
                                                 onChange={(e) =>
@@ -430,8 +514,12 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 rows={3}
                                                 className={`${inputClass} resize-y`}
                                             />
-                                        </FieldBlock>
-                                        <FieldBlock label="평점">
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="평점"
+                                        >
                                             <div className="flex items-center gap-2 rounded-xl border border-(--color-border) bg-(--color-surface) px-3 py-2">
                                                 {[1, 2, 3, 4, 5].map((n) => (
                                                     <button
@@ -463,20 +551,26 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                     </button>
                                                 ))}
                                             </div>
-                                        </FieldBlock>
+                                        </LocalizedElement>
                                     </>
                                 )}
-                            </SettingsSection>
+                            </LocalizedElement>
 
                             {type === "portfolio" && (
-                                <SettingsSection
+                                <LocalizedElement
+                                    as={SettingsSection}
+                                    translatedProps={["title", "description"]}
                                     eyebrow="Project"
                                     title="프로젝트 상세"
                                     description="기간, 역할, 목표와 성과를 포트폴리오 카드에 반영합니다."
                                     className="order-2"
                                 >
                                     <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
-                                        <FieldBlock label="시작일">
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="시작일"
+                                        >
                                             <input
                                                 type="text"
                                                 value={
@@ -492,9 +586,17 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 placeholder="2024-01-01"
                                                 className={inputClass}
                                             />
-                                        </FieldBlock>
-                                        <FieldBlock label="종료일">
-                                            <input
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="종료일"
+                                        >
+                                            <LocalizedElement
+                                                as="input"
+                                                translatedProps={[
+                                                    "placeholder",
+                                                ]}
                                                 type="text"
                                                 value={
                                                     (form as PortfolioFields)
@@ -509,10 +611,14 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 placeholder="진행 중이면 비워두세요"
                                                 className={inputClass}
                                             />
-                                        </FieldBlock>
+                                        </LocalizedElement>
                                     </div>
                                     <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
-                                        <FieldBlock label="역할">
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="역할"
+                                        >
                                             <input
                                                 type="text"
                                                 value={
@@ -527,8 +633,12 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 }
                                                 className={inputClass}
                                             />
-                                        </FieldBlock>
-                                        <FieldBlock label="팀 규모">
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="팀 규모"
+                                        >
                                             <input
                                                 type="number"
                                                 value={
@@ -543,9 +653,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 }
                                                 className={inputClass}
                                             />
-                                        </FieldBlock>
+                                        </LocalizedElement>
                                     </div>
-                                    <FieldBlock label="목표/기획 의도">
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="목표/기획 의도"
+                                    >
                                         <textarea
                                             value={
                                                 (form as PortfolioFields).goal
@@ -556,9 +670,13 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             rows={3}
                                             className={`${inputClass} resize-y`}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                     <div className="tablet:grid-cols-2 grid grid-cols-1 gap-3">
-                                        <FieldBlock label="GitHub URL">
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="GitHub URL"
+                                        >
                                             <input
                                                 type="text"
                                                 value={
@@ -573,8 +691,12 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 }
                                                 className={`${inputClass} font-mono`}
                                             />
-                                        </FieldBlock>
-                                        <FieldBlock label="라이브 URL">
+                                        </LocalizedElement>
+                                        <LocalizedElement
+                                            as={FieldBlock}
+                                            translatedProps={["label"]}
+                                            label="라이브 URL"
+                                        >
                                             <input
                                                 type="text"
                                                 value={
@@ -589,10 +711,16 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 }
                                                 className={`${inputClass} font-mono`}
                                             />
-                                        </FieldBlock>
+                                        </LocalizedElement>
                                     </div>
-                                    <FieldBlock label="성과 (한 줄에 하나씩)">
-                                        <textarea
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="성과 (한 줄에 하나씩)"
+                                    >
+                                        <LocalizedElement
+                                            as="textarea"
+                                            translatedProps={["placeholder"]}
                                             value={
                                                 (form as PortfolioFields)
                                                     .accomplishments
@@ -607,25 +735,35 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             placeholder="성과 항목을 한 줄에 하나씩 입력하세요"
                                             className={`${inputClass} resize-y`}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                     <PortfolioCaseStudyFields
                                         form={form as PortfolioFields}
                                         onChange={onChange}
                                     />
-                                </SettingsSection>
+                                </LocalizedElement>
                             )}
 
-                            <SettingsSection
+                            <LocalizedElement
+                                as={SettingsSection}
+                                translatedProps={[
+                                    "eyebrow",
+                                    "title",
+                                    "description",
+                                ]}
                                 eyebrow="SEO"
                                 title="검색 및 공유 메타데이터"
                                 description="검색 결과와 SNS 공유 카드에 표시되는 정보를 조정합니다."
                                 className="order-6"
                             >
-                                <FieldBlock
+                                <LocalizedElement
+                                    as={FieldBlock}
+                                    translatedProps={["label", "helper"]}
                                     label="SEO 제목 (Meta Title)"
                                     helper="비워두면 콘텐츠 제목이 사용됩니다."
                                 >
-                                    <input
+                                    <LocalizedElement
+                                        as="input"
+                                        translatedProps={["placeholder"]}
                                         type="text"
                                         value={form.meta_title}
                                         onChange={(e) =>
@@ -637,12 +775,16 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         placeholder="비워두면 제목이 사용됩니다"
                                         className={inputClass}
                                     />
-                                </FieldBlock>
-                                <FieldBlock
+                                </LocalizedElement>
+                                <LocalizedElement
+                                    as={FieldBlock}
+                                    translatedProps={["label", "helper"]}
                                     label="SEO 설명 (Meta Description)"
                                     helper="비워두면 요약이 사용됩니다."
                                 >
-                                    <textarea
+                                    <LocalizedElement
+                                        as="textarea"
+                                        translatedProps={["placeholder"]}
                                         value={form.meta_description}
                                         onChange={(e) =>
                                             onChange(
@@ -654,9 +796,11 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         placeholder="비워두면 요약이 사용됩니다"
                                         className={`${inputClass} resize-y`}
                                     />
-                                </FieldBlock>
+                                </LocalizedElement>
                                 {type !== "book" && (
-                                    <ThumbnailUploadField
+                                    <LocalizedElement
+                                        as={ThumbnailUploadField}
+                                        translatedProps={["placeholder"]}
                                         value={form.og_image}
                                         onChange={(url) =>
                                             onChange("og_image", url)
@@ -672,7 +816,11 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     />
                                 )}
                                 {type === "book" && (
-                                    <FieldBlock label="OG Image URL">
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="OG Image URL"
+                                    >
                                         <input
                                             type="text"
                                             value={form.og_image}
@@ -684,24 +832,30 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             }
                                             className={inputClass}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
-                            </SettingsSection>
+                            </LocalizedElement>
                         </div>
 
                         <aside className="contents">
-                            <SettingsSection
+                            <LocalizedElement
+                                as={SettingsSection}
+                                translatedProps={["title", "description"]}
                                 eyebrow="Taxonomy"
                                 title="분류"
                                 description="콘텐츠 탐색과 필터링에 쓰이는 분류 정보를 설정합니다."
                                 className="order-4"
                             >
                                 {type === "post" && (
-                                    <FieldBlock
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label", "helper"]}
                                         label="카테고리"
                                         helper="기존 카테고리를 선택하거나 새 카테고리를 즉시 생성합니다."
                                     >
-                                        <CategorySelect
+                                        <LocalizedElement
+                                            as={CategorySelect}
+                                            translatedProps={["placeholder"]}
                                             value={
                                                 (form as PostFields).category
                                             }
@@ -718,22 +872,32 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             }
                                             placeholder="선택 또는 생성"
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
 
                                 {type === "post" && (
-                                    <FieldBlock label="태그">
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="태그"
+                                    >
                                         <TagSelector
                                             value={form.tags}
                                             onChange={(v) =>
                                                 onChange("tags", v)
                                             }
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
                                 {type === "book" && (
-                                    <FieldBlock label="태그">
-                                        <input
+                                    <LocalizedElement
+                                        as={FieldBlock}
+                                        translatedProps={["label"]}
+                                        label="태그"
+                                    >
+                                        <LocalizedElement
+                                            as="input"
+                                            translatedProps={["placeholder"]}
                                             type="text"
                                             value={form.tags}
                                             onChange={(e) =>
@@ -742,7 +906,7 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                             placeholder="쉼표로 구분"
                                             className={inputClass}
                                         />
-                                    </FieldBlock>
+                                    </LocalizedElement>
                                 )}
 
                                 <JobFieldSelector
@@ -750,9 +914,15 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                     fields={jobFields}
                                     onChange={(v) => onChange("jobField", v)}
                                 />
-                            </SettingsSection>
+                            </LocalizedElement>
 
-                            <SettingsSection
+                            <LocalizedElement
+                                as={SettingsSection}
+                                translatedProps={[
+                                    "eyebrow",
+                                    "title",
+                                    "description",
+                                ]}
                                 eyebrow="Media"
                                 title="대표 이미지"
                                 description="목록 카드, 상세 페이지, 공유 썸네일의 기본 이미지를 설정합니다."
@@ -788,11 +958,16 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                         folderPath="books"
                                     />
                                 )}
-                            </SettingsSection>
+                            </LocalizedElement>
 
                             {type === "post" &&
                                 (props as PostSheetProps).onTocStyleChange && (
-                                    <SettingsSection
+                                    <LocalizedElement
+                                        as={SettingsSection}
+                                        translatedProps={[
+                                            "title",
+                                            "description",
+                                        ]}
                                         eyebrow="TOC"
                                         title="목차 표시"
                                         description="본문 목차의 위치를 선택합니다. 선택 즉시 저장되며 공개 포스트에 반영됩니다."
@@ -863,11 +1038,21 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                         </span>
                                                         <span>
                                                             <span className="block text-sm font-semibold text-(--color-foreground)">
-                                                                {option.title}
+                                                                {
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            option.title
+                                                                        }
+                                                                    />
+                                                                }
                                                             </span>
                                                             <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
                                                                 {
-                                                                    option.description
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            option.description
+                                                                        }
+                                                                    />
                                                                 }
                                                             </span>
                                                         </span>
@@ -875,15 +1060,18 @@ export default function MetadataSheet(props: MetadataSheetProps) {
                                                 );
                                             })}
                                         </div>
-                                    </SettingsSection>
+                                    </LocalizedElement>
                                 )}
                         </aside>
                     </div>
 
                     <Separator className="mt-5" />
                     <p className="px-1 pt-4 text-xs text-(--color-muted)">
-                        변경 사항은 에디터 화면의 저장 버튼을 눌러 최종
-                        반영됩니다.
+                        <LocalizedText
+                            text={
+                                "변경 사항은 에디터 화면의 저장 버튼을 눌러 최종 반영됩니다."
+                            }
+                        />
                     </p>
                 </div>
             </DialogContent>

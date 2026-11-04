@@ -1,14 +1,21 @@
 "use client";
+import {
+    LocalizedText,
+    LocalizedElement,
+    LocalizedRichText,
+} from "@/components/LocalizedText";
+
+import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 
 import { useEffect, useRef, useState } from "react";
 import {
-    addSiteJobField,
-    deleteSiteJobField,
-    getSiteConfigBootstrap,
-    saveSiteConfig,
-    updateSiteJobField,
+    addSiteJobField as raw_addSiteJobField,
+    deleteSiteJobField as raw_deleteSiteJobField,
+    getSiteConfigBootstrap as raw_getSiteConfigBootstrap,
+    saveSiteConfig as raw_saveSiteConfig,
+    updateSiteJobField as raw_updateSiteJobField,
 } from "@/app/admin/actions/site-config";
-import Picker from "@emoji-mart/react";
+import Picker from "@/components/LocalizedEmojiPicker";
 import data from "@emoji-mart/data";
 import { dedupeJobFieldsById } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
@@ -38,6 +45,12 @@ import {
     normalizeSeoConfig,
     type JobFieldSeoConfig,
 } from "@/lib/seo-config";
+import { bindContentAction } from "@/lib/admin-content-state";
+const addSiteJobField = bindContentAction(raw_addSiteJobField);
+const deleteSiteJobField = bindContentAction(raw_deleteSiteJobField);
+const getSiteConfigBootstrap = bindContentAction(raw_getSiteConfigBootstrap);
+const saveSiteConfig = bindContentAction(raw_saveSiteConfig);
+const updateSiteJobField = bindContentAction(raw_updateSiteJobField);
 
 type JobFieldItem = {
     id: string;
@@ -125,10 +138,10 @@ function ConfigSection({
                 </span>
                 <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-(--color-foreground)">
-                        {title}
+                        {<LocalizedText text={title} />}
                     </h3>
                     <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                        {description}
+                        {<LocalizedText text={description} />}
                     </p>
                 </div>
             </div>
@@ -160,11 +173,13 @@ export default function SiteConfigPanel() {
     const [headerName, setHeaderName] = useState("");
     const [seoConfig, setSeoConfig] = useState<SeoFormState>({
         defaultTitle: "",
-        defaultDescription: "포트폴리오 & 기술 블로그",
+        defaultDescription: "",
         defaultOgImage: "",
         jobFields: {},
     });
     const [saving, setSaving] = useState(false);
+    const [configLoaded, setConfigLoaded] = useState(false);
+    const savedConfigRef = useRef<string | null>(null);
     const [status, setStatus] = useState<{
         type: "error" | "success";
         msg: string;
@@ -185,6 +200,32 @@ export default function SiteConfigPanel() {
     const [editingEmoji, setEditingEmoji] = useState("");
     const [editingPickerOpen, setEditingPickerOpen] = useState(false);
     const editingPickerRef = useRef<HTMLDivElement>(null);
+
+    const configSignature = JSON.stringify([
+        headerName,
+        colorScheme,
+        plainMode,
+        themeMode,
+        seoConfig,
+    ]);
+    useEffect(() => {
+        if (configLoaded && savedConfigRef.current === null)
+            savedConfigRef.current = configSignature;
+    }, [configLoaded, configSignature]);
+    const editingField = jobFields.find(
+        (field) => field.id === editingJobFieldId
+    );
+    useUnsavedWarning(
+        (savedConfigRef.current !== null &&
+            configSignature !== savedConfigRef.current) ||
+            Boolean(newName || newHeaderTitle) ||
+            Boolean(
+                editingField &&
+                (editingName !== editingField.name ||
+                    editingEmoji !== editingField.emoji ||
+                    editingHeaderTitle !== (editingField.headerTitle ?? ""))
+            )
+    );
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
@@ -241,6 +282,8 @@ export default function SiteConfigPanel() {
                         }));
                     }
                 }
+
+                setConfigLoaded(true);
             }
         );
     }, []);
@@ -412,6 +455,7 @@ export default function SiteConfigPanel() {
             return;
         }
 
+        savedConfigRef.current = configSignature;
         localStorage.setItem("folium_plain_mode", String(plainMode));
         setStatus({
             type: "success",
@@ -423,19 +467,25 @@ export default function SiteConfigPanel() {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <div className="shrink-0 border-b border-(--color-border) pb-5">
                 <p className="text-xs font-bold tracking-[0.16em] text-(--color-muted) uppercase">
-                    Configuration
+                    <LocalizedText text={"Configuration"} />
                 </p>
                 <h2 className="mt-2 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                    사이트 설정
+                    <LocalizedText text={"사이트 설정"} />
                 </h2>
                 <p className="mt-2 text-sm text-(--color-muted)">
-                    공개 사이트의 표현 방식과 프로필 기준을 한곳에서 관리합니다.
+                    <LocalizedText
+                        text={
+                            "공개 사이트의 표현 방식과 프로필 기준을 한곳에서 관리합니다."
+                        }
+                    />
                 </p>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto pt-5">
                 <div className="space-y-5 pb-8">
-                    <ConfigSection
+                    <LocalizedElement
+                        as={ConfigSection}
+                        translatedProps={["title", "description"]}
                         Icon={Palette}
                         title="대시보드 표현"
                         description="관리자 화면에서 사용할 색상과 단순 표시 방식을 선택합니다. 저장 전에도 현재 화면에서 바로 확인할 수 있습니다."
@@ -447,7 +497,7 @@ export default function SiteConfigPanel() {
                                 ref={schemeDropdownRef}
                             >
                                 <Label className="mb-2 block text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                    Color Scheme
+                                    <LocalizedText text={"Color Scheme"} />
                                 </Label>
                                 <button
                                     type="button"
@@ -499,9 +549,19 @@ export default function SiteConfigPanel() {
                                                             opt.swatch,
                                                     }}
                                                 />
-                                                <span>{opt.label}</span>
+                                                <span>
+                                                    {
+                                                        <LocalizedText
+                                                            text={opt.label}
+                                                        />
+                                                    }
+                                                </span>
                                                 <span className="ml-auto text-xs text-(--color-muted)">
-                                                    {opt.desc}
+                                                    {
+                                                        <LocalizedText
+                                                            text={opt.desc}
+                                                        />
+                                                    }
                                                 </span>
                                             </button>
                                         ))}
@@ -515,10 +575,14 @@ export default function SiteConfigPanel() {
                                         htmlFor="plain-toggle"
                                         className="text-sm font-semibold text-(--color-foreground)"
                                     >
-                                        Plain
+                                        <LocalizedText text={"Plain"} />
                                     </Label>
                                     <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                        장식 요소를 줄인 간결한 화면
+                                        <LocalizedText
+                                            text={
+                                                "장식 요소를 줄인 간결한 화면"
+                                            }
+                                        />
                                     </span>
                                 </span>
                                 <Switch
@@ -540,9 +604,11 @@ export default function SiteConfigPanel() {
                                 />
                             </div>
                         </div>
-                    </ConfigSection>
+                    </LocalizedElement>
 
-                    <ConfigSection
+                    <LocalizedElement
+                        as={ConfigSection}
+                        translatedProps={["title", "description"]}
                         Icon={Monitor}
                         title="화면 모드"
                         description="공개 사이트 방문자에게 적용할 화면 모드 정책입니다."
@@ -593,10 +659,20 @@ export default function SiteConfigPanel() {
                                                 </span>
                                                 <span>
                                                     <span className="block text-sm font-semibold text-(--color-foreground)">
-                                                        {title}
+                                                        {
+                                                            <LocalizedText
+                                                                text={title}
+                                                            />
+                                                        }
                                                     </span>
                                                     <span className="mt-1 block text-xs leading-5 text-(--color-muted)">
-                                                        {description}
+                                                        {
+                                                            <LocalizedText
+                                                                text={
+                                                                    description
+                                                                }
+                                                            />
+                                                        }
                                                     </span>
                                                 </span>
                                             </span>
@@ -605,29 +681,35 @@ export default function SiteConfigPanel() {
                                 }
                             )}
                         </div>
-                    </ConfigSection>
+                    </LocalizedElement>
 
-                    <ConfigSection
+                    <LocalizedElement
+                        as={ConfigSection}
+                        translatedProps={["title", "description"]}
                         Icon={SlidersHorizontal}
                         title="헤더 브랜드"
                         description="공개 Header 홈 링크의 앞부분에 표시되는 전역 이름입니다. 직무 분야별 제목은 지원 프로필 패널에서 관리합니다."
                     >
                         <div className="max-w-xl rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                             <Label className="text-sm font-semibold text-(--color-foreground)">
-                                헤더 이름
+                                <LocalizedText text={"헤더 이름"} />
                             </Label>
-                            <Input
+                            <LocalizedElement
+                                as={Input}
+                                translatedProps={["placeholder"]}
                                 value={headerName}
                                 onChange={(event) =>
                                     setHeaderName(event.target.value)
                                 }
-                                placeholder="정호진"
+                                placeholder="이름"
                                 className="mt-2 border-(--color-border) bg-(--color-surface)"
                             />
                         </div>
-                    </ConfigSection>
+                    </LocalizedElement>
 
-                    <ConfigSection
+                    <LocalizedElement
+                        as={ConfigSection}
+                        translatedProps={["title", "description"]}
                         Icon={Globe2}
                         title="직무 분야 프로필"
                         description="각 분야는 독립된 공개 URL과 Resume, Portfolio, Blog, About me 기준을 가집니다."
@@ -637,7 +719,11 @@ export default function SiteConfigPanel() {
                             <div className="space-y-3">
                                 {jobFields.length === 0 ? (
                                     <div className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle)/55 px-5 py-10 text-center text-sm text-(--color-muted)">
-                                        아직 등록된 직무 분야가 없습니다
+                                        <LocalizedText
+                                            text={
+                                                "아직 등록된 직무 분야가 없습니다"
+                                            }
+                                        />
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -662,7 +748,11 @@ export default function SiteConfigPanel() {
                                                                     {field.name}
                                                                 </p>
                                                                 <span className="rounded-full bg-green-500/12 px-2 py-0.5 text-xs font-semibold text-green-700 dark:text-green-400">
-                                                                    공개 프로필
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "공개 프로필"
+                                                                        }
+                                                                    />
                                                                 </span>
                                                             </div>
                                                             <p className="mt-1 text-sm text-(--color-muted)">
@@ -670,8 +760,11 @@ export default function SiteConfigPanel() {
                                                                     /{field.id}
                                                                 </code>
                                                                 <span className="ml-2">
-                                                                    독립 공개
-                                                                    경로
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "독립 공개 경로"
+                                                                        }
+                                                                    />
                                                                 </span>
                                                             </p>
                                                         </div>
@@ -704,7 +797,11 @@ export default function SiteConfigPanel() {
                                                                 <Pencil
                                                                     size={13}
                                                                 />
-                                                                수정
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "수정"
+                                                                    }
+                                                                />
                                                             </Button>
                                                             <Button
                                                                 variant="default"
@@ -737,7 +834,11 @@ export default function SiteConfigPanel() {
                                                                 <Trash2
                                                                     size={13}
                                                                 />
-                                                                삭제
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "삭제"
+                                                                    }
+                                                                />
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -745,24 +846,39 @@ export default function SiteConfigPanel() {
                                                     <div className="tablet:grid-cols-2 grid gap-px border-y border-(--color-border) bg-(--color-border)">
                                                         <div className="tablet:px-5 bg-(--color-surface) px-4 py-3">
                                                             <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                                Header 미리보기
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "Header 미리보기"
+                                                                    }
+                                                                />
                                                             </p>
                                                             <p className="mt-1.5 text-sm font-semibold text-(--color-foreground)">
                                                                 [{" "}
-                                                                {headerName.trim() ||
-                                                                    "헤더 이름"}{" "}
+                                                                {headerName.trim() || (
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "헤더 이름"
+                                                                        }
+                                                                    />
+                                                                )}{" "}
                                                                 · {headerTitle}{" "}
                                                                 ]
                                                             </p>
                                                         </div>
                                                         <div className="tablet:px-5 bg-(--color-surface) px-4 py-3">
                                                             <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                                적용 범위
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "적용 범위"
+                                                                    }
+                                                                />
                                                             </p>
                                                             <p className="mt-1.5 text-sm text-(--color-muted)">
-                                                                Home · About ·
-                                                                Resume ·
-                                                                Portfolio · Blog
+                                                                <LocalizedText
+                                                                    text={
+                                                                        "Home · About · Resume · Portfolio · Blog"
+                                                                    }
+                                                                />
                                                             </p>
                                                         </div>
                                                     </div>
@@ -772,22 +888,29 @@ export default function SiteConfigPanel() {
                                                             <div>
                                                                 <div>
                                                                     <p className="text-sm font-semibold text-(--color-foreground)">
-                                                                        프로필
-                                                                        편집
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "프로필 편집"
+                                                                            }
+                                                                        />
                                                                     </p>
                                                                     <p className="mt-1 text-xs text-(--color-muted)">
-                                                                        Header
-                                                                        표시와
-                                                                        공개 URL
-                                                                        기준
-                                                                        정보
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "Header 표시와 공개 URL 기준 정보"
+                                                                            }
+                                                                        />
                                                                     </p>
                                                                 </div>
                                                             </div>
                                                             <div className="tablet:grid-cols-[5rem_minmax(0,1fr)_minmax(0,1fr)] grid gap-3">
                                                                 <div>
                                                                     <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                                        Emoji
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "Emoji"
+                                                                            }
+                                                                        />
                                                                     </Label>
                                                                     <div
                                                                         className="relative mt-2"
@@ -795,7 +918,11 @@ export default function SiteConfigPanel() {
                                                                             editingPickerRef
                                                                         }
                                                                     >
-                                                                        <button
+                                                                        <LocalizedElement
+                                                                            as="button"
+                                                                            translatedProps={[
+                                                                                "aria-label",
+                                                                            ]}
                                                                             type="button"
                                                                             onClick={() =>
                                                                                 setEditingPickerOpen(
@@ -814,7 +941,7 @@ export default function SiteConfigPanel() {
                                                                             {
                                                                                 editingEmoji
                                                                             }
-                                                                        </button>
+                                                                        </LocalizedElement>
                                                                         {editingPickerOpen && (
                                                                             <div className="absolute top-12 left-0 z-50">
                                                                                 <Picker
@@ -831,7 +958,6 @@ export default function SiteConfigPanel() {
                                                                                             false
                                                                                         );
                                                                                     }}
-                                                                                    locale="ko"
                                                                                     previewPosition="none"
                                                                                     skinTonePosition="none"
                                                                                 />
@@ -841,10 +967,19 @@ export default function SiteConfigPanel() {
                                                                 </div>
                                                                 <div>
                                                                     <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                                        프로필
-                                                                        이름
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "프로필 이름"
+                                                                            }
+                                                                        />
                                                                     </Label>
-                                                                    <Input
+                                                                    <LocalizedElement
+                                                                        as={
+                                                                            Input
+                                                                        }
+                                                                        translatedProps={[
+                                                                            "aria-label",
+                                                                        ]}
                                                                         value={
                                                                             editingName
                                                                         }
@@ -863,10 +998,20 @@ export default function SiteConfigPanel() {
                                                                 </div>
                                                                 <div>
                                                                     <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                                        Header
-                                                                        제목
+                                                                        <LocalizedText
+                                                                            text={
+                                                                                "Header 제목"
+                                                                            }
+                                                                        />
                                                                     </Label>
-                                                                    <Input
+                                                                    <LocalizedElement
+                                                                        as={
+                                                                            Input
+                                                                        }
+                                                                        translatedProps={[
+                                                                            "aria-label",
+                                                                            "placeholder",
+                                                                        ]}
                                                                         value={
                                                                             editingHeaderTitle
                                                                         }
@@ -902,7 +1047,11 @@ export default function SiteConfigPanel() {
                                                                         saving
                                                                     }
                                                                 >
-                                                                    취소
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "취소"
+                                                                        }
+                                                                    />
                                                                 </Button>
                                                                 <Button
                                                                     size="sm"
@@ -918,7 +1067,11 @@ export default function SiteConfigPanel() {
                                                                     }
                                                                     className="bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                                                                 >
-                                                                    저장
+                                                                    <LocalizedText
+                                                                        text={
+                                                                            "저장"
+                                                                        }
+                                                                    />
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -937,12 +1090,14 @@ export default function SiteConfigPanel() {
                                     </span>
                                     <div>
                                         <p className="text-base font-semibold text-(--color-foreground)">
-                                            새 프로필
+                                            <LocalizedText text={"새 프로필"} />
                                         </p>
                                         <p className="mt-1 text-sm leading-6 text-(--color-muted)">
-                                            이름과 Header 제목을 정한 뒤 기존
-                                            분야의 콘텐츠를 선택적으로
-                                            상속합니다.
+                                            <LocalizedText
+                                                text={
+                                                    "이름과 Header 제목을 정한 뒤 기존 분야의 콘텐츠를 선택적으로 상속합니다."
+                                                }
+                                            />
                                         </p>
                                     </div>
                                 </div>
@@ -976,7 +1131,6 @@ export default function SiteConfigPanel() {
                                                                 false
                                                             );
                                                         }}
-                                                        locale="ko"
                                                         previewPosition="none"
                                                         skinTonePosition="none"
                                                     />
@@ -985,9 +1139,15 @@ export default function SiteConfigPanel() {
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                프로필 이름
+                                                <LocalizedText
+                                                    text={"프로필 이름"}
+                                                />
                                             </Label>
-                                            <Input
+                                            <LocalizedElement
+                                                as={Input}
+                                                translatedProps={[
+                                                    "placeholder",
+                                                ]}
                                                 value={newName}
                                                 onChange={(e) =>
                                                     setNewName(e.target.value)
@@ -1003,9 +1163,16 @@ export default function SiteConfigPanel() {
                                     </div>
                                     <div>
                                         <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                            Header 제목
+                                            <LocalizedText
+                                                text={"Header 제목"}
+                                            />
                                         </Label>
-                                        <Input
+                                        <LocalizedElement
+                                            as={Input}
+                                            translatedProps={[
+                                                "aria-label",
+                                                "placeholder",
+                                            ]}
                                             value={newHeaderTitle}
                                             onChange={(event) =>
                                                 setNewHeaderTitle(
@@ -1025,7 +1192,9 @@ export default function SiteConfigPanel() {
                                     {jobFields.length > 0 && (
                                         <div>
                                             <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                상속 시작점
+                                                <LocalizedText
+                                                    text={"상속 시작점"}
+                                                />
                                             </Label>
                                             <select
                                                 value={inheritFrom}
@@ -1040,7 +1209,9 @@ export default function SiteConfigPanel() {
                                                     value=""
                                                     className="bg-(--color-surface) text-(--color-foreground)"
                                                 >
-                                                    없음
+                                                    <LocalizedText
+                                                        text={"없음"}
+                                                    />
                                                 </option>
                                                 {jobFields.map((f) => (
                                                     <option
@@ -1065,25 +1236,29 @@ export default function SiteConfigPanel() {
                                         className="w-full bg-(--color-accent) text-white hover:bg-(--color-accent)/85"
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
-                                        프로필 추가
+                                        <LocalizedText text={"프로필 추가"} />
                                     </Button>
                                 </div>
                             </aside>
                         </div>
-                    </ConfigSection>
+                    </LocalizedElement>
 
-                    <ConfigSection
+                    <LocalizedElement
+                        as={ConfigSection}
+                        translatedProps={["title", "description"]}
                         Icon={Search}
                         title="SEO 기본값"
                         description="공통 기본값과 직무 분야별 검색·공유 metadata를 관리합니다. 직무 분야 값은 해당 공개 경로 전체에 우선 적용됩니다."
                     >
                         <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                            공통 기본값
+                            <LocalizedText text={"공통 기본값"} />
                         </p>
                         <div className="tablet:grid-cols-2 grid gap-3">
                             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                                 <Label className="text-sm font-semibold text-(--color-foreground)">
-                                    기본 사이트 제목 (Title)
+                                    <LocalizedText
+                                        text={"기본 사이트 제목 (Title)"}
+                                    />
                                 </Label>
                                 <Input
                                     value={seoConfig.defaultTitle}
@@ -1098,7 +1273,9 @@ export default function SiteConfigPanel() {
                             </div>
                             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                                 <Label className="text-sm font-semibold text-(--color-foreground)">
-                                    기본 사이트 설명 (Description)
+                                    <LocalizedText
+                                        text={"기본 사이트 설명 (Description)"}
+                                    />
                                 </Label>
                                 <textarea
                                     value={seoConfig.defaultDescription}
@@ -1114,9 +1291,13 @@ export default function SiteConfigPanel() {
                             </div>
                             <div className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle)/55 p-4">
                                 <Label className="text-sm font-semibold text-(--color-foreground)">
-                                    기본 OG 이미지 URL
+                                    <LocalizedText
+                                        text={"기본 OG 이미지 URL"}
+                                    />
                                 </Label>
-                                <Input
+                                <LocalizedElement
+                                    as={Input}
+                                    translatedProps={["placeholder"]}
                                     value={seoConfig.defaultOgImage}
                                     onChange={(e) =>
                                         setSeoConfig({
@@ -1133,10 +1314,16 @@ export default function SiteConfigPanel() {
                             <div className="space-y-4 border-t border-(--color-border) pt-5">
                                 <div>
                                     <p className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                        직무 분야별 SEO
+                                        <LocalizedText
+                                            text={"직무 분야별 SEO"}
+                                        />
                                     </p>
                                     <p className="mt-1 text-sm text-(--color-muted)">
-                                        비워 둔 값은 공통 기본값을 사용합니다.
+                                        <LocalizedText
+                                            text={
+                                                "비워 둔 값은 공통 기본값을 사용합니다."
+                                            }
+                                        />
                                     </p>
                                 </div>
                                 <div className="space-y-3">
@@ -1170,18 +1357,31 @@ export default function SiteConfigPanel() {
                                                     </span>
                                                     <div>
                                                         <p className="text-sm font-semibold text-(--color-foreground)">
-                                                            {field.name} SEO
+                                                            <LocalizedRichText
+                                                                text={"{0} SEO"}
+                                                                values={[
+                                                                    field.name,
+                                                                ]}
+                                                            />
                                                         </p>
                                                         <p className="mt-1 text-xs text-(--color-muted)">
-                                                            /{field.id} 공개
-                                                            경로 전체
+                                                            <LocalizedRichText
+                                                                text={
+                                                                    "/{0} 공개 경로 전체"
+                                                                }
+                                                                values={[
+                                                                    field.id,
+                                                                ]}
+                                                            />
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="tablet:grid-cols-2 mt-4 grid gap-3">
                                                     <div>
                                                         <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                            제목
+                                                            <LocalizedText
+                                                                text={"제목"}
+                                                            />
                                                         </Label>
                                                         <Input
                                                             value={
@@ -1200,9 +1400,17 @@ export default function SiteConfigPanel() {
                                                     </div>
                                                     <div>
                                                         <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                            OG 이미지 URL
+                                                            <LocalizedText
+                                                                text={
+                                                                    "OG 이미지 URL"
+                                                                }
+                                                            />
                                                         </Label>
-                                                        <Input
+                                                        <LocalizedElement
+                                                            as={Input}
+                                                            translatedProps={[
+                                                                "placeholder",
+                                                            ]}
                                                             value={
                                                                 fieldSeo.ogImage
                                                             }
@@ -1221,7 +1429,9 @@ export default function SiteConfigPanel() {
                                                 </div>
                                                 <div className="mt-3">
                                                     <Label className="text-xs font-semibold tracking-wide text-(--color-muted) uppercase">
-                                                        설명
+                                                        <LocalizedText
+                                                            text={"설명"}
+                                                        />
                                                     </Label>
                                                     <textarea
                                                         value={
@@ -1245,7 +1455,7 @@ export default function SiteConfigPanel() {
                                 </div>
                             </div>
                         )}
-                    </ConfigSection>
+                    </LocalizedElement>
 
                     {/* Sticky 저장 바 */}
                     <AdminSaveBar>
@@ -1253,13 +1463,16 @@ export default function SiteConfigPanel() {
                             <span
                                 className={`text-sm ${status.type === "error" ? "text-red-500" : "text-green-600"}`}
                             >
-                                {status.msg}
+                                {<LocalizedText text={status.msg} />}
                             </span>
                         )}
                         {!status && (
                             <span className="text-sm text-(--color-muted)">
-                                &apos;저장&apos; 버튼을 누르면 다른
-                                사용자들에게도 배포됩니다.
+                                <LocalizedText
+                                    text={
+                                        "'저장' 버튼을 누르면 다른 사용자들에게도 배포됩니다."
+                                    }
+                                />
                             </span>
                         )}
                         <Button
@@ -1268,7 +1481,11 @@ export default function SiteConfigPanel() {
                             disabled={saving}
                             className="shrink-0 bg-green-500 px-8 text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
-                            {saving ? "저장 중..." : "설정 저장"}
+                            {saving ? (
+                                <LocalizedText text={"저장 중..."} />
+                            ) : (
+                                <LocalizedText text={"설정 저장"} />
+                            )}
                         </Button>
                     </AdminSaveBar>
                 </div>

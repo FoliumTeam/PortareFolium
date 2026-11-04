@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedText } from "@/components/LocalizedText";
 
 import { useId, useState } from "react";
 import { UploadCloud } from "lucide-react";
@@ -55,10 +56,14 @@ export default function VideoGifDropzone({
                     <UploadCloud className="h-6 w-6" />
                 </span>
                 <span className="text-base font-semibold text-(--color-foreground)">
-                    비디오 파일 선택 또는 드래그
+                    <LocalizedText text={"비디오 파일 선택 또는 드래그"} />
                 </span>
                 <span className="text-sm text-(--color-muted)">
-                    파일은 브라우저 메모리에만 올라가며 새로고침하면 사라집니다.
+                    <LocalizedText
+                        text={
+                            "파일은 브라우저 메모리에만 올라가며 새로고침하면 사라집니다."
+                        }
+                    />
                 </span>
                 {file && (
                     <span className="mt-2 rounded-full bg-(--color-accent)/10 px-3 py-1 text-sm text-(--color-accent)">

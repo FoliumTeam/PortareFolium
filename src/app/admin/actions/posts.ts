@@ -1,4 +1,9 @@
 "use server";
+import { getContentLocale, withContentLocale } from "@/lib/content-locale";
+import {
+    isContentLocaleScope,
+    type ContentLocaleScope,
+} from "@/lib/content-action";
 
 import { requireAdminSession } from "@/lib/server-admin";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
@@ -56,7 +61,7 @@ type PostsPanelBootstrap = {
 };
 
 // PostsPanel 초기 데이터 조회
-export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
+async function getPostsPanelBootstrapInLocale(): Promise<PostsPanelBootstrap> {
     await requireAdminSession();
     if (!serverClient) {
         return {
@@ -153,7 +158,7 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
 }
 
 // 포스트 목차 스타일 저장
-export async function savePostTocStyle(
+async function savePostTocStyleInLocale(
     slug: string,
     style: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -181,7 +186,7 @@ export async function savePostTocStyle(
 }
 
 // 포스트 생성/수정
-export async function savePost(
+async function savePostInLocale(
     payload: PostPayload,
     editTargetId?: string | null
 ): Promise<
@@ -219,7 +224,7 @@ export async function savePost(
 }
 
 // 포스트 삭제
-export async function deletePostById(
+async function deletePostByIdInLocale(
     id: string
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -238,7 +243,7 @@ export async function deletePostById(
 }
 
 // 포스트 Published 토글
-export async function setPostPublished(
+async function setPostPublishedInLocale(
     id: string,
     slug: string,
     published: boolean
@@ -257,7 +262,7 @@ export async function setPostPublished(
 }
 
 // 포스트 batch Published 변경
-export async function batchSetPostPublished(
+async function batchSetPostPublishedInLocale(
     ids: string[],
     publish: boolean
 ): Promise<{ success: boolean; error?: string }> {
@@ -280,7 +285,7 @@ export async function batchSetPostPublished(
 }
 
 // 포스트 batch 직무 분야 변경
-export async function batchSetPostJobField(
+async function batchSetPostJobFieldInLocale(
     ids: string[],
     jobField: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -302,7 +307,7 @@ export async function batchSetPostJobField(
     return { success: true };
 }
 
-export async function batchRenamePostTitlesByRegex(
+async function batchRenamePostTitlesByRegexInLocale(
     ids: string[],
     pattern: string,
     replacement: string,
@@ -360,7 +365,7 @@ export async function batchRenamePostTitlesByRegex(
     return { success: true, updated };
 }
 
-export async function batchDeletePostsByIds(
+async function batchDeletePostsByIdsInLocale(
     ids: string[]
 ): Promise<{ success: boolean; slugs?: string[]; error?: string }> {
     await requireAdminSession();
@@ -379,4 +384,161 @@ export async function batchDeletePostsByIds(
 
     await Promise.all(slugs.map((slug) => revalidatePost(slug)));
     return { success: true, slugs };
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function getPostsPanelBootstrap(
+    ...args: [
+        ...Parameters<typeof getPostsPanelBootstrapInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof getPostsPanelBootstrapInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof getPostsPanelBootstrapInLocale>;
+    return withContentLocale(locale, () =>
+        getPostsPanelBootstrapInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function savePostTocStyle(
+    ...args: [
+        ...Parameters<typeof savePostTocStyleInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof savePostTocStyleInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof savePostTocStyleInLocale>;
+    return withContentLocale(locale, () => savePostTocStyleInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function savePost(
+    ...args: [...Parameters<typeof savePostInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof savePostInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof savePostInLocale>;
+    return withContentLocale(locale, () => savePostInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function deletePostById(
+    ...args: [...Parameters<typeof deletePostByIdInLocale>, ContentLocaleScope?]
+): Promise<Awaited<ReturnType<typeof deletePostByIdInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof deletePostByIdInLocale>;
+    return withContentLocale(locale, () => deletePostByIdInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function setPostPublished(
+    ...args: [
+        ...Parameters<typeof setPostPublishedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof setPostPublishedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof setPostPublishedInLocale>;
+    return withContentLocale(locale, () => setPostPublishedInLocale(...values));
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchSetPostPublished(
+    ...args: [
+        ...Parameters<typeof batchSetPostPublishedInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchSetPostPublishedInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchSetPostPublishedInLocale>;
+    return withContentLocale(locale, () =>
+        batchSetPostPublishedInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchSetPostJobField(
+    ...args: [
+        ...Parameters<typeof batchSetPostJobFieldInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchSetPostJobFieldInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchSetPostJobFieldInLocale>;
+    return withContentLocale(locale, () =>
+        batchSetPostJobFieldInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchRenamePostTitlesByRegex(
+    ...args: [
+        ...Parameters<typeof batchRenamePostTitlesByRegexInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchRenamePostTitlesByRegexInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchRenamePostTitlesByRegexInLocale>;
+    return withContentLocale(locale, () =>
+        batchRenamePostTitlesByRegexInLocale(...values)
+    );
+}
+
+// 호출 시 고정한 콘텐츠 언어의 처리
+export async function batchDeletePostsByIds(
+    ...args: [
+        ...Parameters<typeof batchDeletePostsByIdsInLocale>,
+        ContentLocaleScope?,
+    ]
+): Promise<Awaited<ReturnType<typeof batchDeletePostsByIdsInLocale>>> {
+    const scope = args.at(-1);
+    const locale = isContentLocaleScope(scope)
+        ? scope.__contentLocale
+        : getContentLocale();
+    const values = (
+        isContentLocaleScope(scope) ? args.slice(0, -1) : args
+    ) as Parameters<typeof batchDeletePostsByIdsInLocale>;
+    return withContentLocale(locale, () =>
+        batchDeletePostsByIdsInLocale(...values)
+    );
 }

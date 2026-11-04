@@ -101,7 +101,7 @@ describe("MCP portfolio contract", () => {
         });
         expect(prepared.updateFields).toMatchObject({
             title: "Renamed",
-            published: true,
+            published: false,
         });
         expect(prepared.finalRow.data).toMatchObject(current.data ?? {});
     });
@@ -130,18 +130,26 @@ describe("MCP portfolio contract", () => {
         expect(data.futureKey).toEqual({ nested: { keep: true } });
         expect(data.anotherFutureKey).toEqual({ enabled: true });
         expect(data).not.toHaveProperty("published");
-        expect(prepared.finalRow.published).toBe(true);
+        expect(prepared.finalRow.published).toBe(false);
     });
 
-    it("MCP update는 Release link를 유지하며 즉시 공개한다", () => {
+    it("MCP update의 Release link와 기존 공개 상태 보존", () => {
         const prepared = prepareMcpPortfolioUpdate(current, {
             title: "Renamed",
         });
-        expect(prepared.updateFields.published).toBe(true);
-        expect(prepared.finalRow.published).toBe(true);
+        expect(prepared.updateFields.published).toBe(false);
+        expect(prepared.finalRow.published).toBe(false);
         expect(
             (prepared.finalRow.data?.links as Array<{ kind: string }>)[0]?.kind
         ).toBe("release");
+    });
+
+    it("명시적 공개 요청만 Draft를 Published로 변경", () => {
+        const prepared = prepareMcpPortfolioUpdate(current, {
+            published: true,
+        });
+        expect(prepared.finalRow.published).toBe(true);
+        expect(current.published).toBe(false);
     });
 
     it("get_schema가 v2 key와 enum을 같은 이름으로 제공", async () => {
