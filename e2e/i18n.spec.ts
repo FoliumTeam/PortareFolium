@@ -49,7 +49,7 @@ for (const [browserLocale, expected] of [
         test(`${expected} 화면 문구를 기존 공개 주소에서 제공`, async ({
             page,
         }) => {
-            await page.goto("/web/resume");
+            await page.goto("/web/resume", { waitUntil: "domcontentloaded" });
             await expect(page.locator("html")).toHaveAttribute(
                 "lang",
                 expected
@@ -66,7 +66,7 @@ test.describe("언어별 공개 화면", () => {
     test("세 언어의 실제 문구 전환 중 주소 유지와 직접 선택 복원", async ({
         page,
     }) => {
-        await page.goto("/web/resume");
+        await page.goto("/web/resume", { waitUntil: "domcontentloaded" });
         const originalURL = page.url();
         await expectHeaderLanguage(page, "ko");
 
@@ -80,7 +80,7 @@ test.describe("언어별 공개 화면", () => {
             expect(page.url()).toBe(originalURL);
         }
 
-        await page.reload();
+        await page.reload({ waitUntil: "domcontentloaded" });
         await expect(page.locator("html")).toHaveAttribute("lang", "ja");
         await expectHeaderLanguage(page, "ja");
         expect(page.url()).toBe(originalURL);
@@ -90,7 +90,7 @@ test.describe("언어별 공개 화면", () => {
         page,
     }) => {
         await page.setViewportSize({ width: 390, height: 844 });
-        await page.goto("/web/resume");
+        await page.goto("/web/resume", { waitUntil: "domcontentloaded" });
         const originalURL = page.url();
         const header = page.locator("#site-header");
         const selector = header.getByRole("button", {
@@ -120,7 +120,9 @@ test.describe("언어별 공개 화면", () => {
         await context.addCookies([
             { name: UI_LOCALE_COOKIE, value: "en", url: baseURL },
         ]);
-        await page.goto("/web/portfolio/not-written-i18n-test");
+        await page.goto("/web/portfolio/not-written-i18n-test", {
+            waitUntil: "domcontentloaded",
+        });
         await expect(page).toHaveURL(/\/web\/portfolio$/);
         await expect(page.locator("html")).toHaveAttribute("lang", "en");
         await expectHeaderLanguage(page, "en");
@@ -145,7 +147,9 @@ test.describe("주소로 지정한 공개 언어", () => {
             await context.addCookies([
                 { name: UI_LOCALE_COOKIE, value: saved, url: baseURL },
             ]);
-            await page.goto(`/web/resume?lang=${query}`);
+            await page.goto(`/web/resume?lang=${query}`, {
+                waitUntil: "domcontentloaded",
+            });
 
             await expect(page.locator("html")).toHaveAttribute("lang", locale);
             await expectHeaderLanguage(page, locale);
@@ -167,7 +171,9 @@ test.describe("주소로 지정한 공개 언어", () => {
         await context.addCookies([
             { name: UI_LOCALE_COOKIE, value: "ja", url: baseURL },
         ]);
-        await page.goto("/web/resume?lang=invalid");
+        await page.goto("/web/resume?lang=invalid", {
+            waitUntil: "domcontentloaded",
+        });
         await expect(page.locator("html")).toHaveAttribute("lang", "ja");
         await expectHeaderLanguage(page, "ja");
         expect(
@@ -178,7 +184,9 @@ test.describe("주소로 지정한 공개 언어", () => {
     });
 
     test("공개 메뉴 이동에 유효 언어만 이어 전달", async ({ page }) => {
-        await page.goto("/web/resume?lang=ja&source=mail");
+        await page.goto("/web/resume?lang=ja&source=mail", {
+            waitUntil: "domcontentloaded",
+        });
         await expectHeaderLanguage(page, "ja");
         await page
             .locator("#site-header")
@@ -203,7 +211,9 @@ test.describe("주소로 지정한 공개 언어", () => {
             await context.addCookies([
                 { name: UI_LOCALE_COOKIE, value: "ko", url: baseURL },
             ]);
-            await page.goto("/web/resume?lang=ja&source=mail#career");
+            await page.goto("/web/resume?lang=ja&source=mail#career", {
+                waitUntil: "domcontentloaded",
+            });
             await expectHeaderLanguage(page, "ja");
 
             await Promise.all([
@@ -232,7 +242,8 @@ test.describe("주소로 지정한 공개 언어", () => {
         page,
     }) => {
         await page.goto(
-            "/web/portfolio/not-written-i18n-test?lang=ja&source=mail"
+            "/web/portfolio/not-written-i18n-test?lang=ja&source=mail",
+            { waitUntil: "domcontentloaded" }
         );
         await expect(page).toHaveURL(
             (url) =>
@@ -252,7 +263,9 @@ test.describe("주소로 지정한 공개 언어", () => {
         await context.addCookies([
             { name: UI_LOCALE_COOKIE, value: "en", url: baseURL },
         ]);
-        await page.goto("/web/resume?lang=ja");
+        await page.goto("/web/resume?lang=ja", {
+            waitUntil: "domcontentloaded",
+        });
         await expectHeaderLanguage(page, "ja");
         const query = "language-scope-probe";
         const requestPromise = page.waitForRequest(
