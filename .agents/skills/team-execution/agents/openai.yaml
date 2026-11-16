@@ -1,0 +1,6 @@
+interface:
+  display_name: "Coordinate a Hive team"
+  short_description: "(team-execution) Coordinate bounded signed lanes with barriers and terminal verification."
+  default_prompt: "Use $aigent-hive:team-execution for this explicit bounded team workflow."
+policy:
+  allow_implicit_invocation: true

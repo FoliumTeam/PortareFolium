@@ -1,6 +1,6 @@
 interface:
-    display_name: "Refine prompt"
-    short_description: "Turn a request into an approval-ready prompt before execution."
-    default_prompt: "Use $aigent-hive:prompt-refine to refine this prompt without executing it."
+  display_name: "Refine prompt"
+  short_description: "(prompt-refine) Draft or refine a prompt only when the user requests prompt authoring."
+  default_prompt: "Use $aigent-hive:prompt-refine to refine this prompt without executing it."
 policy:
-    allow_implicit_invocation: false
+  allow_implicit_invocation: true

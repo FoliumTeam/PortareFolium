@@ -1,6 +1,6 @@
 ---
 name: run-handoff
-description: Record an explicitly requested persistent-role assignment and role-specific shared handoff entry through the signed Hive CLI. Use when the user or active run explicitly asks to assign a role to one existing run or save its bounded handoff; do not use for implicit orchestration, ordinary status updates, automatic delegation, or direct role-file editing.
+description: (run-handoff) Record an explicitly requested persistent-role assignment and role-specific shared handoff entry through the signed Hive CLI. Use when the user or active run explicitly asks to assign a role to one existing run or save its bounded handoff; do not use for implicit orchestration, ordinary status updates, automatic delegation, or direct role-file editing.
 ---
 
 # Hive Role Handoff

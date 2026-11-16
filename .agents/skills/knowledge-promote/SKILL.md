@@ -1,9 +1,9 @@
 ---
 name: knowledge-promote
-description: Review and promote an eligible project-neutral fact, reusable preference, or portable workflow from project knowledge into user-scope Hive knowledge.
+description: (knowledge-promote) Share a reviewed fact, preference, or workflow from one project when it can genuinely help the user's other work.
 ---
 
-# Hive knowledge promotion
+# Share Knowledge (`knowledge-promote`)
 
 Use only when the user identifies or approves an exact project Wiki page or reviewed scan claim.
 

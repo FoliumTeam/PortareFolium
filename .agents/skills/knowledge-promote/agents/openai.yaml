@@ -1,6 +1,6 @@
 interface:
-    display_name: "Share knowledge"
-    short_description: "Promote reviewed project knowledge to global Hive knowledge."
-    default_prompt: "Use $aigent-hive:knowledge-promote to review and promote this eligible knowledge explicitly."
+  display_name: "Share knowledge (knowledge-promote)"
+  short_description: "(knowledge-promote) Share a reviewed fact, preference, or workflow from one project when it can genuinely help the user's other work."
+  default_prompt: "Use $aigent-hive:knowledge-promote to review and promote this eligible knowledge explicitly."
 policy:
-    allow_implicit_invocation: false
+  allow_implicit_invocation: true

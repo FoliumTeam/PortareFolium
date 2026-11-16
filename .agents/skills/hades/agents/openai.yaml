@@ -1,0 +1,6 @@
+interface:
+  display_name: "Hades"
+  short_description: "(hades) Measures Hive storage and previews files that can be cleaned up. Use only when the user names hades, 하데스."
+  default_prompt: "Use $aigent-hive:hades as explicitly requested."
+policy:
+  allow_implicit_invocation: true

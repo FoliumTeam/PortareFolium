@@ -1,6 +1,6 @@
 ---
 name: quick-answer
-description: Answer a self-contained question after required usage and knowledge gates, without project inspection, external research, multi-step work, or mutation. Preserve reusable user statements only through the separate memory gate.
+description: (quick-answer) Answer a self-contained question after required usage and knowledge gates, without project inspection, external research, multi-step work, or mutation. Preserve reusable user statements only through the separate memory gate.
 ---
 
 # Hive Simple Question
@@ -23,6 +23,6 @@ Answer directly after the required pre-quick-answer gates complete.
 
 If an accurate quick-answer depends on repository state, fresh external data, mutation, or multi-step execution:
 
-1. Do not inspect, transition, or write automatically.
-2. State briefly that the request is outside the isolated simple-question path.
-3. Suggest the narrow owning action without starting it.
+1. End this isolated Skill route; do not guess an answer that needs evidence.
+2. Continue with relevant read-only investigation already authorized by the user's request.
+3. Ask only for a material missing user choice or new authority. A route change is not task completion.

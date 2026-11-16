@@ -1,6 +1,6 @@
 ---
 name: code-polish
-description: Clean requested AI-generated code or UI slop with a regression-first, behavior-preserving, changed-files-only workflow. Use only when the user explicitly requests cleanup, de-slopping, or simplification.
+description: (code-polish) Clean requested AI-generated code or UI slop with a regression-first, behavior-preserving, changed-files-only workflow. Use only when the user explicitly requests cleanup, de-slopping, or simplification.
 ---
 
 # AI Slop Cleaner

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apollon"
+  short_description: "(apollon) Writes and polishes text, and refines requests and prompts. Use only when the user names apollon, 아폴론, Apollo, 아폴로."
+  default_prompt: "Use $aigent-hive:apollon as explicitly requested."
+policy:
+  allow_implicit_invocation: true

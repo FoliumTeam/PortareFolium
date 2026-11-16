@@ -1,9 +1,9 @@
 ---
 name: knowledge-maintain
-description: Lint, rebuild, delete, or suppress canonical Hive knowledge through explicit CLI actions while preserving the disposable-index boundary. Use for requested knowledge repair, index rebuild, deletion, or re-ingest suppression; never combine knowledge deletion or garbage collection with a harness update transaction.
+description: (knowledge-maintain) Keep Hive knowledge trustworthy by checking it, rebuilding its search index, or carrying out an explicitly requested cleanup.
 ---
 
-# Hive Knowledge Maintenance
+# Maintain Knowledge (`knowledge-maintain`)
 
 Use the narrowest explicit maintenance action.
 
@@ -32,6 +32,14 @@ use the user root as both `--target` and `--user-root`.
     hive index rebuild --user-root <user-root> --output json
     ```
 
+- Rescan a previously imported repository with a new digest-bound review. The apply flow updates
+  source claims, automatically promotes reviewed safe-general claims, and invalidates a promoted
+  derivative when its exact source claim no longer applies:
+
+  ```text
+  hive knowledge scan --target <directory> --apply <review.json> --user-root <user-root> --output json
+  ```
+
 - Delete a canonical Wiki page and record minimal suppression metadata:
 
     ```text
@@ -44,7 +52,31 @@ use the user root as both `--target` and `--user-root`.
     hive knowledge suppress --target <project-root> --user-root <user-root> --fingerprint <sha256:digest> --source-locator <locator> --reason <reason> [--replacement <locator>] --timestamp <RFC3339> --output json
     ```
 
-## Safety
+## Optional vector maintenance
+
+- After canonical knowledge changes, refresh the ordinary FTS index first. Vector freshness is
+  checked per collection and visibility; report stale scopes instead of silently reinstalling.
+- For an explicitly requested vector setup, use `hive knowledge vector preview` with the exact
+  user root, target, collection, visibility and Python executable. Only the user's approval of
+  that exact preview permits `enable --consent-digest <digest>`. Never auto-install Python or pip.
+- For an already approved scope, use `status` then bounded `rebuild --max-seconds <1..60>
+  --workers <1..16> --rebuild-mode resume`; continue verified checkpoints until ready or cancelled.
+  A failed or unfinished generation must not replace the active one. Use `rollback` for the
+  previous verified generation or `disable` to return to FTS-only operation; preserve canonical
+  Markdown, registry and project settings.
+- For several explicitly selected, already enabled shared scopes on the same runtime, replace
+  `--collection` with `--collections <JSON-array>`. Keep `--visibility shared`; never include
+  private/confidential or source scopes. Inspect each returned scope state and retry only
+  unfinished scopes. `prepared-not-started` may have restored working files but no new calculation.
+  Increase the bounded time budget if preparation prevented progress; a failed window is not success.
+- Confidential construction needs its own current-action `authorize-build` grant for the exact
+  operation and execution budget. Never reuse query consent, broaden visibility, or build another
+  private collection. Follow CLI help for the current approval envelope rather than inventing it.
+- A source workspace uses `hive source-wiki vector` with an explicit language, never consumer
+  storage. Bundles contain canonical knowledge only; regenerate vector state on the destination
+  after separate optional setup approval.
+
+## Safety boundaries
 
 - Require explicit deletion or suppression intent; lint or rebuild intent does not authorize canonical deletion.
 - Preserve non-Hive files and all user-authored bytes outside declared Hive ownership.
@@ -52,4 +84,6 @@ use the user root as both `--target` and `--user-root`.
 - Treat `hive index rebuild --target <legacy-project>` as a `0.7.x` compatibility action only,
   never as the operational shared-index route.
 - Keep update/migration activation and knowledge deletion or garbage collection in separate transactions.
+- Never use retrieval to trigger promotion; automatic promotion belongs only to reviewed scan,
+  rescan, and maintenance apply flows.
 - Report changed paths, evidence digests, and recovery guidance from the CLI result.

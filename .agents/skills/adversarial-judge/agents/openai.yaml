@@ -1,0 +1,6 @@
+interface:
+  display_name: "Adversarial Judge"
+  short_description: "(adversarial-judge) Prepare an explicit independent clean-context Judge request."
+  default_prompt: "Use $aigent-hive:adversarial-judge to prepare independent adversarial review for this bounded subject."
+policy:
+  allow_implicit_invocation: true

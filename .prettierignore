@@ -4,3 +4,15 @@ dist
 .astro
 *.min.js
 pnpm-lock.yaml
+
+# AIGENT-HIVE:FORMAT:START
+.agents/skills/
+.agents/directives/
+.claude/skills/
+.hive/config/active-skills.yml
+.hive/config/approved-skills.yml
+.hive/config/capability-resolution.yml
+.hive/config/project-base.json
+.hive/config/project-overrides.json
+.hive/team/roles/
+# AIGENT-HIVE:FORMAT:END

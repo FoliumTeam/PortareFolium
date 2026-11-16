@@ -1,6 +1,6 @@
 interface:
-    display_name: "Maintain knowledge"
-    short_description: "Check, maintain, and rebuild the derived knowledge index."
-    default_prompt: "Use $aigent-hive:knowledge-maintain to run this explicit knowledge maintenance action."
+  display_name: "Maintain knowledge (knowledge-maintain)"
+  short_description: "(knowledge-maintain) Keep Hive knowledge trustworthy by checking it, rebuilding its search index, or carrying out an explicitly requested cleanup."
+  default_prompt: "Use $aigent-hive:knowledge-maintain to run this explicit knowledge maintenance action."
 policy:
-    allow_implicit_invocation: false
+  allow_implicit_invocation: true

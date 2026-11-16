@@ -1,6 +1,6 @@
 ---
 name: research-best-practices
-description: Research current engineering best practices through a bounded read-only evidence pass that prioritizes official and upstream sources. Use for explicit best-practice, convention, or implementation-guidance research.
+description: (research-best-practices) Research current engineering best practices through a bounded read-only evidence pass that prioritizes official and upstream sources. Use for explicit best-practice, convention, or implementation-guidance research.
 ---
 
 # Best Practice Research

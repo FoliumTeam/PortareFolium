@@ -1,6 +1,6 @@
 ---
 name: product-update
-description: Run the authenticated interactive Hive binary updater or verify, dry-run, and activate a local integrity-bound project release when the user explicitly requests a Hive update; never use for ordinary dependency updates, publication, or knowledge deletion.
+description: (product-update) Run the authenticated interactive Hive binary updater or verify, dry-run, and activate a local integrity-bound project release when the user explicitly requests a Hive update; never use for ordinary dependency updates, publication, or knowledge deletion.
 ---
 
 # Hive Update
@@ -11,7 +11,7 @@ activation logic in shell or host instructions.
 ## Workflow
 
 1. For a global Hive binary update, run only `hive update` in the user's interactive terminal.
-   The CLI checks the npm `test` distribution, authenticates the current npm or direct-install
+   The CLI checks npm `latest` by default; `test` requires explicit `--channel test`. It authenticates the current npm or direct-install
    owner, shows the exact operation in the selected language, and requires explicit confirmation.
    Do not quick-answer the confirmation on the user's behalf.
 2. For a project harness update, run `hive update --help`. If unavailable, report the installed

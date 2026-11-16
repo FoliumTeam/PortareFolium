@@ -1,0 +1,6 @@
+interface:
+  display_name: "Humanize Korean"
+  short_description: "(humanize-kor) Rewrite selected Korean text with deterministic preservation gates."
+  default_prompt: "Use $aigent-hive:humanize-kor to improve this Korean text with deterministic preservation gates."
+policy:
+  allow_implicit_invocation: true

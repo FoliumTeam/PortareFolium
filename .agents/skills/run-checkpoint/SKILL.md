@@ -1,6 +1,6 @@
 ---
 name: run-checkpoint
-description: Record the current durable Hive run state in canonical STATUS.md through the signed Hive CLI. Use when explicitly checkpointing an existing `.hive/runs/RUN_ID/PLAN.md` before compaction, handoff, verification, blocking, or session exit; do not use to create a plan, run work, retry tasks, select an orchestration owner, or start a persistence loop.
+description: (run-checkpoint) Save progress and evidence for an existing Hive run before handoff, interruption, or verification.
 ---
 
 # Hive Run Checkpoint
@@ -27,6 +27,7 @@ Record state only. Execution and continuation remain owned by the run's pinned o
 
 7. Accept only a schema-valid success result. An identical retry is a no-op; a lost revision, changed owner evidence, unsafe path, missing role handoff, or evidence digest mismatch is a stop condition.
 8. Report the committed revision, state, next action, changed path, and evidence digests.
+9. When this run contains reviewed policy-checker evidence or the user requests policy review, read [policy review](references/policy-review.md). A Stop notice is only a review reminder; it never changes completion, rules, or execution authority.
 
 ## Boundaries
 

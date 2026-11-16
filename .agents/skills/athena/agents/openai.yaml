@@ -1,0 +1,6 @@
+interface:
+  display_name: "Athena"
+  short_description: "(athena) Plans work and saves acceptance criteria before implementation, then runs a separate review of the result. Use only when the user names athena, 아테나, Minerva, 미네르바."
+  default_prompt: "Use $aigent-hive:athena as explicitly requested."
+policy:
+  allow_implicit_invocation: true

@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Prepare one or more focused, verified commits using the current repository rules. Split every independently reviewable and revertible concern, including when the user asks to ship all changes. Use when the user asks to commit, ship, stage and commit, or split a change set. Push only when explicitly authorized.
+description: (ship) Prepare one or more focused, verified commits using the current repository rules. Split every independently reviewable and revertible concern, including when the user asks to ship all changes. Use when the user asks to commit, ship, stage and commit, or split a change set. Push only when explicitly authorized.
 ---
 
 # Ship changes

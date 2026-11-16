@@ -1,0 +1,6 @@
+interface:
+  display_name: "Aither"
+  short_description: "(aither) Checks usage and manages the usage protection threshold. Use only when the user names aither, 아이테르, Aether, 에테르."
+  default_prompt: "Use $aigent-hive:aither as explicitly requested."
+policy:
+  allow_implicit_invocation: true

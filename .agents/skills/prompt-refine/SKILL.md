@@ -1,21 +1,31 @@
 ---
 name: prompt-refine
-description: Create or refine a copy-ready prompt for explicit prompt intent or materially ambiguous ordinary work; default to refine-only and stop for exact approval before execution.
+description: (prompt-refine) Write or revise a prompt when the user explicitly requests prompt authoring.
 ---
 
 # Hive Prompt Refine
 
 Preserve the user's meaning while producing a concise, copy-ready prompt.
 
+## Prompt language
+
+- Write the refined prompt in English unless the user explicitly requests another language for
+  the current prompt.
+- This rule applies only to the prompt. Use the selected interface language for surrounding
+  questions, explanations, and approval state.
+
 ## Mode
 
 - Default to `refine-only`.
 - Use `refine-and-run` only when the user explicitly asks in the same request to execute the refined prompt.
-- Automatic invocation is allowed only when normalized routing establishes material ambiguity in an ordinary work request.
+- Select for explicit prompt-authoring intent. Investigate ambiguity in ordinary work under the existing task authority instead of selecting this Skill.
 - Do not rewrite or execute a sufficiently clear ordinary task, simple question, editless question, explicit external workflow, or explicit unrelated Skill.
 - Do not treat urgency, autonomy language, or a request for a complete prompt as permission to run it.
-- In `refine-only`, return the refined prompt and its digest with state `awaiting-approval`.
-- In `refine-only`, do not execute the prompt, read project files, call tools, write files, spawn subagents, create a run, capture memory, or continue automatically.
+- In `refine-only`, the prompt-writing task completes when the prompt and digest are delivered.
+  `awaiting-approval` describes possible later execution only, not unfinished prompt writing.
+- In `refine-only`, do not execute the prompt, inspect the project, write files, spawn subagents,
+  create a run, or capture memory. A read-only local hash calculation on the exact authored prompt
+  is permitted solely to produce the approval digest; it does not authorize execution.
 - A correction returns a new refined prompt and invalidates any prior digest. A later execution requires an explicit approval naming the current exact digest and target host.
 
 ## Workflow

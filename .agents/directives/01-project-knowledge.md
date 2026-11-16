@@ -1,7 +1,15 @@
 # Project knowledge boundary
 
+- Apply the availability gate in `00-project-harness.md` first. Ordinary collaboration skips
+  Hive lookup, capture, indexing, and lint; leave canonical knowledge unchanged. Read existing
+  Markdown only as project documents and never claim a CLI operation succeeded.
 - Keep project canonical knowledge under `.hive/knowledge/{Raw,Wiki,Schema}`.
-- Treat `.hive/index/hive.sqlite3` as a disposable local projection.
+- When Wiki is enabled, Hive knowledge replaces host memory: record a fact you would otherwise keep
+  in the host's own memory as canonical Markdown here, never as a second copy in host memory. Use
+  user-root knowledge only for a fact that applies beyond this project, under the promotion rules
+  below. With Wiki disabled, say so and suggest enabling it; only then may host memory keep the fact.
+- Use the configured user-root shared SQLite index as a disposable projection. A project-local
+  `.hive/index/hive.sqlite3` belongs only to historical compatibility, not current setup.
 - When the installed harness reports Wiki enabled, run agent-reviewed task-fact autocapture before
   the final response for material work that created or substantially revised reusable knowledge.
 - Capture a bounded outcome, tool or project used, creation or acceptance criteria, and

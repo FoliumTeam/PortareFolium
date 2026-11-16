@@ -1,0 +1,6 @@
+interface:
+  display_name: "Artemis"
+  short_description: "(artemis) Researches sources and diagnoses the cause of a problem without changing code. Use only when the user names artemis, 아르테미스."
+  default_prompt: "Use $aigent-hive:artemis as explicitly requested."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Demeter"
+  short_description: "(demeter) Saves, searches and maintains Hive knowledge and moves it to another computer. Use only when the user names demeter, 데메테르."
+  default_prompt: "Use $aigent-hive:demeter as explicitly requested."
+policy:
+  allow_implicit_invocation: true

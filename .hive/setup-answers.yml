@@ -3,11 +3,69 @@ schema_version: 1
 project_name: "portare-folium"
 project_identity: "portare-folium"
 setup_mode: "expedited"
-project_kind: "general"
+project_kind: "coding"
 primary_host: "codex"
 usage_stop_remaining_percent: 30
 elevated_judge_quorum: "2/3"
 critical_judge_quorum: "3/3+human"
+project_profile:
+  languages:
+  - name: HTML
+    confidence: high
+    evidence:
+    - playwright-report/index.html
+  - name: JavaScript
+    confidence: high
+    evidence:
+    - package.json
+  - name: TypeScript
+    confidence: high
+    evidence:
+    - package.json
+    - tsconfig.json
+  frameworks:
+  - name: Next.js
+    confidence: high
+    evidence:
+    - package.json
+    - next.config.ts
+  - name: React
+    confidence: high
+    evidence:
+    - package.json
+  package_managers:
+  - name: pnpm
+    confidence: high
+    evidence:
+    - package.json
+    - pnpm-lock.yaml
+  test_tools:
+  - name: '@playwright/test'
+    confidence: high
+    evidence:
+    - package.json
+  - name: vitest
+    confidence: high
+    evidence:
+    - package.json
+  commands:
+    js:build:
+      name: pnpm run build
+      confidence: high
+      evidence:
+      - package.json
+    js:dev:
+      name: pnpm run dev
+      confidence: high
+      evidence:
+      - package.json
+    js:test:
+      name: pnpm run test
+      confidence: high
+      evidence:
+      - package.json
+  structure: []
+  category: web
 persistent_roles:
   - role_id: implementer
     display_name: Implementer
@@ -72,3 +130,14 @@ approved_optional_skills:
   []
 approved_fallback_hooks:
   []
+preference_decisions:
+  /project_kind:
+    origin: default
+    input_channel: migration
+    scope: project
+    question_id: null
+    question_revision: null
+    policy_version: 0.15.2
+    changed_in_version: 0.15.2
+    decided_at: null
+    value_digest: sha256:ac34c4a367830d919e1206c4190bf4d642e7437485048e7130ade630c56b5b1a

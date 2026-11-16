@@ -1,0 +1,6 @@
+interface:
+  display_name: "Poseidon"
+  short_description: "(poseidon) Assigns roles across several tasks and records handoffs between them. Use only when the user names poseidon, 포세이돈."
+  default_prompt: "Use $aigent-hive:poseidon as explicitly requested."
+policy:
+  allow_implicit_invocation: true
