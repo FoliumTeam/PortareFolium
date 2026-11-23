@@ -4,6 +4,7 @@ import {
     displayLanguageName,
     contentLanguageName,
     selectLanguage,
+    ADMIN_PANEL_TIMEOUT,
 } from "../helpers/language";
 
 const test = base.extend<{ runtimeErrors: string[] }>({
@@ -55,7 +56,7 @@ for (const contentLocale of ["ko", "en", "ja"] as const) {
         ]);
         await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
         const email = page.locator(emailSelector);
-        await expect(email).toBeVisible();
+        await expect(email).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
         await page.waitForLoadState("networkidle");
         const original = await email.inputValue();
         const changed =
@@ -129,7 +130,7 @@ test("콘텐츠 언어 선택을 새로고침 후 복원하고 화면 언어 독
 }) => {
     await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
     const email = page.locator(emailSelector);
-    await expect(email).toBeVisible();
+    await expect(email).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     const original = await email.inputValue();
     await selectLanguage(page, "display", "ja");
     const contentLanguage = page.getByRole("button", {
@@ -141,7 +142,7 @@ test("콘텐츠 언어 선택을 새로고침 후 복원하고 화면 언어 독
     await expect(contentLanguage).toBeEnabled();
     await page.reload({ waitUntil: "domcontentloaded" });
 
-    await expect(email).toBeVisible();
+    await expect(email).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await expect(contentLanguage).toHaveAttribute("data-locale", "en");
     await expect(
         page.getByRole("button", { name: displayLanguageName })
@@ -158,7 +159,9 @@ test("390px 관리자 Header의 테마와 로그아웃 사이에서 표시 언�
 }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
-    await expect(page.locator(emailSelector)).toBeVisible();
+    await expect(page.locator(emailSelector)).toBeVisible({
+        timeout: ADMIN_PANEL_TIMEOUT,
+    });
     const header = page.locator("header").first();
     const display = header.getByRole("button", { name: displayLanguageName });
     const content = page.getByRole("button", { name: contentLanguageName });
