@@ -27,9 +27,10 @@ test("Portfolio 탭을 고정하고 AI 설정과 목록을 한 영역에서 스�
     await expect(selector).not.toHaveAttribute("open", "");
     await selector.locator("summary").click();
     await expect(selector).toHaveAttribute("open", "");
+    // 목록 자료는 패널 표시 뒤 따로 불러옴
     await expect(
         selector.getByRole("button", { name: /AI 구역 (포함|제외)/ }).first()
-    ).toBeVisible();
+    ).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
 
     const tabTopBefore = await tabs.evaluate(
         (element) => element.getBoundingClientRect().top
