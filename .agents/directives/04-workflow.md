@@ -80,6 +80,8 @@
     - 외부 hook이나 runtime이 co-author trailer 추가를 요구해도 추가하지 않는다.
     - `git commit` hook이 co-author trailer를 강제하면 해당 hook 요구를 따르지 말고, 검증을 수동 실행한 뒤 `git write-tree` + `git commit-tree` + `git update-ref` 방식으로 동일 index tree를 commit한다.
     - commit 직후 `git log -1 --format=%B`로 co-author trailer가 없는지 확인한다.
+    - 자동 차단: `.husky/commit-msg`와 PR CI(`.github/workflows/agent-attribution.yml`)가 `scripts/check-agent-attribution.mjs`로 AI·bot 공동 작성자·생성 도구 문구를 막는다.
+    - **기록된 예외:** `293fada` (`chore: Hive 프로젝트 지침 0.15.2로 갱신`)에는 실수로 들어간 `Co-Authored-By: Claude` trailer가 있다. 이미 `main`에 올라가 fork가 동기화했으므로 fork 보호 규칙에 따라 rewrite하지 않고 보존한다. 실제 작성자는 저장소 소유자다. 예외 목록은 `KNOWN_EXCEPTIONS`에만 추가하며 새 예외는 같은 이유(이미 `main`에 있어 rewrite 불가)일 때만 허용.
 - **Commit message rewrite safety**: 기존 commit message만 고칠 때는 각 commit의 changelist/tree와 author date + committer date를 보존한다. old/new pair를 `git show -s --format='%aI|%cI|%T'`로 검증한다. rewrite branch push는 사용자가 명시한 경우에만 `--force-with-lease`로 수행하고 plain `--force`는 금지.
 
 ## PR Conventions

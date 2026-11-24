@@ -1,0 +1,24 @@
+name: Agent attribution
+
+on:
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+
+            # PR에 들어온 commit 메시지의 AI·bot 공동 작성자 표시 검사
+            - name: Check PR commit messages
+              run: node scripts/check-agent-attribution.mjs --range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
