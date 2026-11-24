@@ -145,6 +145,12 @@ export const loadUIMessages = async (locale: Locale): Promise<UIMessages> => {
             : locale === "ja"
               ? await import("@/lib/locales/language-copy-ja.json")
               : await import("@/lib/locales/language-copy-ko.json");
+    const resumePdf =
+        locale === "en"
+            ? await import("@/lib/locales/resume-pdf-en.json")
+            : locale === "ja"
+              ? await import("@/lib/locales/resume-pdf-ja.json")
+              : await import("@/lib/locales/resume-pdf-ko.json");
     return Object.assign(
         {},
         ...modules.map((module) => module.default),
@@ -152,6 +158,7 @@ export const loadUIMessages = async (locale: Locale): Promise<UIMessages> => {
         sentences.default,
         debug.default,
         training.default,
-        languageCopy.default
+        languageCopy.default,
+        resumePdf.default
     ) as UIMessages;
 };

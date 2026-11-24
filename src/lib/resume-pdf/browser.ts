@@ -49,10 +49,54 @@ const launch = async () => {
             headless: true,
         });
     }
-    // 로컬 개발: CHROME_PATH (예: Playwright chromium, 설치된 Chrome)
-    const executablePath = process.env.CHROME_PATH;
+    // 로컬 개발: CHROME_PATH → Playwright Chromium → 설치된 Chrome
+    const executablePath = process.env.CHROME_PATH ?? (await findLocalChrome());
     if (!executablePath) throw new Error("CHROME_PATH 필요 (로컬 PDF 생성)");
     return puppeteer.launch({ executablePath, headless: true });
+};
+
+const findLocalChrome = async (): Promise<string | undefined> => {
+    const home = os.homedir();
+    const playwrightRoot =
+        process.platform === "win32"
+            ? path.join(process.env.LOCALAPPDATA ?? "", "ms-playwright")
+            : process.platform === "darwin"
+              ? path.join(home, "Library", "Caches", "ms-playwright")
+              : path.join(home, ".cache", "ms-playwright");
+    const candidates: string[] = [];
+    try {
+        const dirs = (await fs.readdir(playwrightRoot))
+            .filter((d) => /^chromium-\d+$/.test(d))
+            .sort()
+            .reverse();
+        for (const d of dirs)
+            candidates.push(
+                process.platform === "win32"
+                    ? path.join(playwrightRoot, d, "chrome-win64", "chrome.exe")
+                    : process.platform === "darwin"
+                      ? path.join(
+                            playwrightRoot,
+                            d,
+                            "chrome-mac",
+                            "Chromium.app",
+                            "Contents",
+                            "MacOS",
+                            "Chromium"
+                        )
+                      : path.join(playwrightRoot, d, "chrome-linux", "chrome")
+            );
+    } catch {}
+    candidates.push(
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    );
+    for (const c of candidates) {
+        try {
+            await fs.access(c);
+            return c;
+        } catch {}
+    }
+    return undefined;
 };
 
 export const printPdf = async (

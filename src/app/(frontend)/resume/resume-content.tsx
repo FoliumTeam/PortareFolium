@@ -4,7 +4,7 @@ import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import ImageLightbox from "@/components/ImageLightbox";
-import PdfExportButton from "@/components/PdfExportButton";
+import ResumePdfButton from "@/components/resume-pdf/ResumePdfButton";
 import { createJobFieldResumeView } from "@/lib/resume-job-field";
 import { getPublicJobFields } from "@/lib/public-job-field";
 import type { AboutData } from "@/types/about";
@@ -42,6 +42,7 @@ type ResumePageContentProps = {
     aboutOverride?: AboutData;
     jobFieldTitleOverride?: string;
     portfolioBasePath?: string;
+    applicationProfileId?: string;
 };
 
 export default async function ResumePageContent({
@@ -50,6 +51,7 @@ export default async function ResumePageContent({
     aboutOverride,
     jobFieldTitleOverride,
     portfolioBasePath: portfolioBasePathOverride,
+    applicationProfileId,
 }: ResumePageContentProps) {
     let resumeLayout: "classic" | "modern" = "modern";
     let resumeDataRaw: Resume = {} as Resume;
@@ -170,7 +172,14 @@ export default async function ResumePageContent({
     };
 
     return (
-        <PdfExportButton fileName="resume">
+        <>
+            <ResumePdfButton
+                sourceKind={
+                    applicationProfileId ? "application_profile" : "job_field"
+                }
+                jobField={jobField}
+                applicationProfileId={applicationProfileId}
+            />
             {resumeLayout === "classic" && (
                 <ResumeClassic
                     resume={resumeData}
@@ -192,6 +201,6 @@ export default async function ResumePageContent({
                 />
             )}
             <ImageLightbox contentSelector=".resume-award-media" />
-        </PdfExportButton>
+        </>
     );
 }
