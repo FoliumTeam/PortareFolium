@@ -63,7 +63,9 @@ export type PdfWarningCode =
     | "unknown-project-type"
     | "unknown-country"
     | "phone-trunk-prefix"
-    | "missing-project";
+    | "missing-project"
+    | "image-skipped"
+    | "external-request-blocked";
 
 export type PdfWarning = { code: PdfWarningCode; detail?: string };
 
