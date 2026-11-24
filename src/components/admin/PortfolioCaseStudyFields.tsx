@@ -205,6 +205,56 @@ export default function PortfolioCaseStudyFields({
                 </p>
             </div>
 
+            <div className="space-y-1.5">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                        type="checkbox"
+                        checked={form.aiAgentAchievement}
+                        onChange={(event) =>
+                            onChange("aiAgentAchievement", event.target.checked)
+                        }
+                    />
+                    <LocalizedText text={"이력서 PDF의 AI 에이전트 성과"} />
+                </label>
+                <select
+                    aria-label="AI status"
+                    value={form.aiAgentStatus}
+                    onChange={(event) =>
+                        onChange(
+                            "aiAgentStatus",
+                            event.target.value === "planned"
+                                ? "planned"
+                                : "implemented"
+                        )
+                    }
+                    className={inputClass}
+                >
+                    <option value="implemented">
+                        <LocalizedText text={"구현됨"} />
+                    </option>
+                    <option value="planned">
+                        <LocalizedText text={"기획 단계 · 미구현"} />
+                    </option>
+                </select>
+                <textarea
+                    aria-label="AI summary"
+                    value={form.aiAgentSummary}
+                    maxLength={300}
+                    rows={2}
+                    onChange={(event) =>
+                        onChange("aiAgentSummary", event.target.value)
+                    }
+                    className={`${inputClass} resize-y`}
+                />
+                <p className={helperClass}>
+                    <LocalizedText
+                        text={
+                            "이력서 PDF의 자기소개·핵심 역량에 들어갈 한 줄. 비우면 설명의 첫 문장을 사용합니다."
+                        }
+                    />
+                </p>
+            </div>
+
             {form.caseStudyVersion === 2 && (
                 <>
                     <div className="space-y-1.5">

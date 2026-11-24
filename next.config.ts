@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     reactStrictMode: true,
     reactCompiler: true,
     allowedDevOrigins: ["127.0.0.1"],
+    // 이력서 PDF: pdf.js는 번들 제외, Chromium 압축 파일·PDF 글꼴·pdf.js worker를 함수에 포함
+    serverExternalPackages: ["pdfjs-dist"],
+    outputFileTracingIncludes: {
+        "/api/resume-pdf": [
+            "./node_modules/@sparticuz/chromium/bin/**/*",
+            "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+            "./src/assets/resume-pdf-fonts/**/*",
+        ],
+    },
     experimental: {
         serverActions: {
             bodySizeLimit: "4mb",

@@ -248,6 +248,9 @@ export interface ResumeProject {
     portfolioSlug?: string;
     // 자유 양식 섹션 목록. 존재하면 description/highlights 대신 렌더링
     sections?: ResumeProjectSection[];
+    // 이력서 PDF: 프로젝트 종류·인원 구성
+    projectType?: "work" | "personal";
+    teamComposition?: string;
 }
 
 // 커리어 단계 (커리어 타임라인 섹션용)
@@ -267,6 +270,8 @@ export interface ResumeCoreCompetency {
     // 설명의 Markdown 강조·줄바꿈 사용 여부
     markdown?: boolean;
     jobField?: string | string[];
+    // 이력서 PDF: 언어 간 같은 항목 식별자 (D16)
+    pdfId?: string;
 }
 
 // 섹션별 이모지 및 entries 래퍼

@@ -14,6 +14,7 @@ const TABLE_UNIQUE_KEYS: Record<string, string[][]> = {
     gantt_chart_archives: [["id"]],
     database_snapshots: [["id"]],
     application_profiles: [["id"], ["public_token"]],
+    resume_pdf_presets: [["id"]],
     admin_login_attempts: [["key_hash"]],
 };
 

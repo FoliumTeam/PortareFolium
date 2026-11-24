@@ -44,6 +44,7 @@ export default async function JobFieldResumePage({ params }: PageProps) {
             aboutOverride={profile.public_snapshot.about}
             jobFieldTitleOverride={profile.public_snapshot.resume.basics?.label}
             portfolioBasePath={`/${profile.public_token}/portfolio`}
+            applicationProfileId={profile.id}
         />
     );
 }

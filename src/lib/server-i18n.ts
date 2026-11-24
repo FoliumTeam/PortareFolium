@@ -35,6 +35,9 @@ import koTraining from "@/lib/locales/training-ko.json";
 import enLanguageCopy from "@/lib/locales/language-copy-en.json";
 import jaLanguageCopy from "@/lib/locales/language-copy-ja.json";
 import koLanguageCopy from "@/lib/locales/language-copy-ko.json";
+import enResumePdf from "@/lib/locales/resume-pdf-en.json";
+import jaResumePdf from "@/lib/locales/resume-pdf-ja.json";
+import koResumePdf from "@/lib/locales/resume-pdf-ko.json";
 
 const messages: Record<Locale, UIMessages> = {
     en: {
@@ -48,6 +51,7 @@ const messages: Record<Locale, UIMessages> = {
         ...enDebug,
         ...enTraining,
         ...enLanguageCopy,
+        ...enResumePdf,
     },
     ja: {
         ...jaA,
@@ -60,6 +64,7 @@ const messages: Record<Locale, UIMessages> = {
         ...jaDebug,
         ...jaTraining,
         ...jaLanguageCopy,
+        ...jaResumePdf,
     },
     ko: {
         ...koA,
@@ -72,6 +77,7 @@ const messages: Record<Locale, UIMessages> = {
         ...koDebug,
         ...koTraining,
         ...koLanguageCopy,
+        ...koResumePdf,
     },
 };
 

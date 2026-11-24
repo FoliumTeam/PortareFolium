@@ -66,8 +66,19 @@
 - fork 기반 Vercel deployment에서는 upstream `main` push 뒤 fork 갱신·deployment 완료 뒤에만 production 결과 판정.
 - 공개 route 변경의 필수 검증: `pnpm build`에서 대상 route `○`·`●` 확인, 공개 Chromium runtime error 0개 확인, production에서 첫 요청 `PRERENDER` 또는 `MISS` 뒤 반복 요청 `HIT`와 public `Cache-Control` 확인.
 
+## Resume PDF (PDF-C / PDF-F)
+
+- 이력서 PDF는 화면 복제가 아니라 데이터로 만든다: `src/lib/resume-pdf/` (`source` → `model` → `render` → `paginate` → `verify`). AI 생성·요약·번역 없음. 공식 상세: `docs/logic/resume-pdf-generation.md`.
+- 표시 기본값 = 사이트 설정 (`resume_section_layout`, `resume_basics_presentation`, 직무 필터, 대표 프로젝트). PDF 맞춤값은 `resume_pdf_presets`(관리자 전용 표)에 **바꾼 값만** 저장하고 사이트 설정에 쓰지 않는다.
+- 생성: `POST /api/resume-pdf` (관리자 전용, 같은 관리자 10초 대기). 요청마다 Chromium 실행(Vercel: `@sparticuz/chromium`, 로컬: `CHROME_PATH` → Playwright Chromium → 설치된 Chrome), 외부 network 차단, 글꼴은 `src/assets/resume-pdf-fonts/` woff2만 사용.
+- 그림은 R2 공개 주소 아래 파일만 저장소에서 직접 읽어 축소한다. 임의 주소 요청 금지 (SSRF).
+- 관문 V1–V5(쪽 끝 제목, 한 쪽 이하 묶음 분할, 다른 직무 데이터, ko 외 한글, ja 한자 성명) 중 하나라도 실패하거나 검사하지 못하면 PDF를 응답하지 않는다(422).
+- 글꼴 교체 시 `scripts/build-resume-pdf-fonts.py`로 康熙 부수·호환 한자 cmap을 제거해야 PDF 글자 추출이 정상이다. tabular 숫자(`font-variant-numeric`) 사용 금지 (추출 시 숫자 누락).
+- 템플릿에 외부 자원(CDN 글꼴·그림 URL) 추가 금지. 새 섹션을 PDF에 추가하면 `UNSUPPORTED_PDF_SECTIONS`, 렌더, 대화상자 표시를 함께 갱신.
+
 ## PDF Export (`data-pdf-block`) Convention
 
+- 포트폴리오 PDF(화면 복제 방식)에만 적용. 이력서는 위 Resume PDF 사용.
 - `PdfPreviewModal.tsx`의 `paginateBlocks()`가 `data-pdf-block` / `data-pdf-block-item` attribute를 기준으로 페이지 분할 처리.
 - **모든 시맨틱 블록**(`<section>`, `<header>`, `<article>`, 개별 entry `<div>`)에 `data-pdf-block` 추가 필수.
 - **grid 카드**에는 `data-pdf-block-item` 사용.

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ADMIN_PANEL_TIMEOUT } from "../helpers/language";
 
 test("Portfolio 탭을 고정하고 AI 설정과 목록을 한 영역에서 스크롤", async ({
     page,
@@ -14,7 +15,7 @@ test("Portfolio 탭을 고정하고 AI 설정과 목록을 한 영역에서 스�
 
     const tabs = page.getByTestId("portfolio-panel-tabs");
     const scrollArea = page.getByTestId("portfolio-panel-scroll");
-    await expect(tabs).toBeVisible();
+    await expect(tabs).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await expect(scrollArea).toBeVisible();
     await expect(
         scrollArea.getByText("선택된 AI 프로젝트", { exact: true })
@@ -26,9 +27,10 @@ test("Portfolio 탭을 고정하고 AI 설정과 목록을 한 영역에서 스�
     await expect(selector).not.toHaveAttribute("open", "");
     await selector.locator("summary").click();
     await expect(selector).toHaveAttribute("open", "");
+    // 목록 자료는 패널 표시 뒤 따로 불러옴
     await expect(
         selector.getByRole("button", { name: /AI 구역 (포함|제외)/ }).first()
-    ).toBeVisible();
+    ).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
 
     const tabTopBefore = await tabs.evaluate(
         (element) => element.getBoundingClientRect().top

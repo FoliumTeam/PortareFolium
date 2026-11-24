@@ -6,3 +6,6 @@ if ! pnpm exec commitlint --edit "$1" 2>/dev/null; then
 fi
 
 node scripts/check-version-lifecycle.mjs "$1"
+
+# AI·bot 공동 작성자 표시 차단 (.agents/directives/04-workflow.md)
+node scripts/check-agent-attribution.mjs "$1"

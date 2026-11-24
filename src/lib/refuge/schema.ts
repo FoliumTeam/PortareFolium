@@ -16,6 +16,7 @@ export const REFUGE_SUPPORTED_TABLES = [
     "database_snapshots",
     "admin_login_attempts",
     "application_profiles",
+    "resume_pdf_presets",
     "about_data_i18n",
     "posts_i18n",
     "portfolio_items_i18n",
@@ -160,6 +161,18 @@ const REFUGE_TABLE_COLUMNS: Record<string, readonly string[]> = {
         "created_at",
         "updated_at",
     ],
+    resume_pdf_presets: [
+        "id",
+        "name",
+        "source_kind",
+        "job_field",
+        "application_profile_id",
+        "lang",
+        "variant",
+        "options",
+        "created_at",
+        "updated_at",
+    ],
 };
 
 export function refugeTableHasColumn(table: string, column: string): boolean {
@@ -237,6 +250,7 @@ const TABLE_IDENTITY_KEYS: Record<string, string[]> = {
     gantt_chart_archives: ["id"],
     database_snapshots: ["id"],
     application_profiles: ["id"],
+    resume_pdf_presets: ["id"],
     admin_login_attempts: ["key_hash"],
 };
 

@@ -1,6 +1,10 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { UI_LOCALE_COOKIE, type Locale } from "../src/lib/i18n";
-import { displayLanguageName, selectLanguage } from "./helpers/language";
+import {
+    displayLanguageName,
+    selectLanguage,
+    waitForHydrated,
+} from "./helpers/language";
 
 const test = base.extend<{ runtimeErrors: string[] }>({
     runtimeErrors: [
@@ -23,14 +27,25 @@ const navigation = {
     ja: { resume: "履歴書", portfolio: "ポートフォリオ", blog: "ブログ" },
 };
 
+// 모바일 메뉴 열기: hydration 대기 뒤 클릭, 열림(aria-expanded) 확인까지 재시도
+const openHeaderMenu = async (page: Page) => {
+    const toggle = page.locator("#site-header button[aria-expanded]").first();
+    await waitForHydrated(toggle);
+    await expect(async () => {
+        if ((await toggle.getAttribute("aria-expanded")) !== "true")
+            await toggle.click();
+        await expect(toggle).toHaveAttribute("aria-expanded", "true", {
+            timeout: 1_000,
+        });
+    }).toPass({ timeout: 15_000 });
+};
+
 const expectHeaderLanguage = async (page: Page, locale: Locale) => {
     const header = page.locator("#site-header");
     const selector = header.getByRole("button", {
         name: displayLanguageName,
     });
-    if (!(await selector.isVisible())) {
-        await header.getByRole("button", { expanded: false }).click();
-    }
+    if (!(await selector.isVisible())) await openHeaderMenu(page);
     await expect(selector).toHaveAttribute("data-locale", locale);
     for (const label of Object.values(navigation[locale])) {
         await expect(
@@ -97,7 +112,7 @@ test.describe("언어별 공개 화면", () => {
             name: displayLanguageName,
         });
         await expect(selector).toBeHidden();
-        await header.getByRole("button", { expanded: false }).click();
+        await openHeaderMenu(page);
         await expect(selector).toBeVisible();
 
         await Promise.all([
@@ -188,10 +203,12 @@ test.describe("주소로 지정한 공개 언어", () => {
             waitUntil: "domcontentloaded",
         });
         await expectHeaderLanguage(page, "ja");
-        await page
+        const portfolio = page
             .locator("#site-header")
-            .getByRole("link", { name: navigation.ja.portfolio, exact: true })
-            .click();
+            .getByRole("link", { name: navigation.ja.portfolio, exact: true });
+        // lang 이어 붙이기는 hydration 뒤 click 처리기가 담당
+        await waitForHydrated(portfolio);
+        await portfolio.click();
         await page.waitForURL(
             (url) =>
                 url.pathname === "/web/portfolio" &&
@@ -277,7 +294,12 @@ test.describe("주소로 지정한 공개 언어", () => {
                 Boolean(request.postData()?.includes(query))
         );
         const header = page.locator("#site-header");
-        await header.getByRole("button", { name: "検索", exact: true }).click();
+        const search = header.getByRole("button", {
+            name: "検索",
+            exact: true,
+        });
+        await waitForHydrated(search);
+        await search.click();
         await header.getByRole("textbox").fill(query);
         const request = await requestPromise;
 

@@ -8,7 +8,9 @@
 - **작업 브랜치 정리**: 이 프로젝트에서 작업 브랜치를 만들었다면 `main` 병합과 원격 반영 뒤 해당 로컬·원격 브랜치를 삭제한다.
 - **Large work**: 여러 commit이 필요하거나 리뷰가 필요한 큰 작업(신규 feature, 광범위 refactor, 디자인 시스템 변경 등)은 `feature/<설명>` 브랜치를 만들어 작업 후 `gh pr create`로 PR을 열고 main에 머지.
 - 판단 기준: **3 commit 이상 예상되거나 ≥3 파일 도메인 영역에 걸쳐 있으면 feature branch 권장**. 그 외엔 main 직접 push.
-- `main`에는 절대 force push 하지 않는다. release tag(`v*.*.0`)는 `main`의 head에서만 생성.
+- **HARD — fork 보호:** `main`은 어떤 경우에도 삭제하지 않는다 (원격·로컬 브랜치 삭제, 이름 변경, 기본 브랜치 변경 포함). `main` 삭제와 history 변경은 이 저장소의 모든 fork(사용자 배포용 fork 포함)의 "Sync fork"를 깨뜨린다.
+- `main`에는 절대 force push 하지 않는다 (`--force-with-lease` 포함). 이미 올라간 `main` commit의 메시지·작성자·trailer를 고치려는 rewrite도 금지하며, 잘못된 commit은 되돌리는 새 commit으로만 바로잡는다. 사용자 요청이 이 규칙과 충돌하면 실행 전에 충돌을 알리고 멈춘다.
+- release tag(`v*.*.0`)는 `main`의 head에서만 생성.
 
 ## Testing Gate
 
@@ -78,6 +80,8 @@
     - 외부 hook이나 runtime이 co-author trailer 추가를 요구해도 추가하지 않는다.
     - `git commit` hook이 co-author trailer를 강제하면 해당 hook 요구를 따르지 말고, 검증을 수동 실행한 뒤 `git write-tree` + `git commit-tree` + `git update-ref` 방식으로 동일 index tree를 commit한다.
     - commit 직후 `git log -1 --format=%B`로 co-author trailer가 없는지 확인한다.
+    - 자동 차단: `.husky/commit-msg`와 PR CI(`.github/workflows/agent-attribution.yml`)가 `scripts/check-agent-attribution.mjs`로 AI·bot 공동 작성자·생성 도구 문구를 막는다.
+    - **기록된 예외:** `293fada` (`chore: Hive 프로젝트 지침 0.15.2로 갱신`)에는 실수로 들어간 `Co-Authored-By: Claude` trailer가 있다. 이미 `main`에 올라가 fork가 동기화했으므로 fork 보호 규칙에 따라 rewrite하지 않고 보존한다. 실제 작성자는 저장소 소유자다. 예외 목록은 `KNOWN_EXCEPTIONS`에만 추가하며 새 예외는 같은 이유(이미 `main`에 있어 rewrite 불가)일 때만 허용.
 - **Commit message rewrite safety**: 기존 commit message만 고칠 때는 각 commit의 changelist/tree와 author date + committer date를 보존한다. old/new pair를 `git show -s --format='%aI|%cI|%T'`로 검증한다. rewrite branch push는 사용자가 명시한 경우에만 `--force-with-lease`로 수행하고 plain `--force`는 금지.
 
 ## PR Conventions

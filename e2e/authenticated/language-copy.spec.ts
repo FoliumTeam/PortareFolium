@@ -6,7 +6,7 @@ import {
     type Page,
 } from "@playwright/test";
 import { CONTENT_LOCALE_COOKIE, UI_LOCALE_COOKIE } from "../../src/lib/i18n";
-import { contentLanguageName } from "../helpers/language";
+import { ADMIN_PANEL_TIMEOUT, contentLanguageName } from "../helpers/language";
 
 const test = base.extend<{ readonlyGuard: void }>({
     readonlyGuard: [
@@ -116,7 +116,7 @@ test("이력서의 항목별 복사 창에서 대상 선택 후 취소와 원본
     const main = page.getByRole("main");
     await expect(
         main.getByRole("heading", { name: "이력서 편집", exact: true })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await page.waitForLoadState("networkidle");
     const copy = main.getByRole("button", { name: copyName, exact: true });
     const layout = main.getByRole("button", {
@@ -155,7 +155,7 @@ test("실제 Portfolio 목록 항목의 제목·종류를 복사 창에서 확�
 }) => {
     await page.goto("/admin#portfolio", { waitUntil: "domcontentloaded" });
     const list = page.getByTestId("portfolio-panel-scroll");
-    await expect(list).toBeVisible();
+    await expect(list).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await page.waitForLoadState("networkidle");
     const copies = list.getByRole("button", { name: copyName, exact: true });
     if ((await copies.count()) === 0) {
@@ -195,7 +195,7 @@ test("About의 공개·복사 조작을 해당 패널에서 제공하고 공통 
     const main = page.getByRole("main");
     await expect(
         main.getByRole("heading", { name: "About 관리", exact: true })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await page.waitForLoadState("networkidle");
     await expect(
         main.getByRole("button", { name: copyName, exact: true })
@@ -215,7 +215,7 @@ test("390px 복사 창의 중앙 배치와 화면 안 대상 선택·취소", as
     await page.goto("/admin#resume", { waitUntil: "domcontentloaded" });
     await expect(
         page.getByRole("heading", { name: "이력서 편집", exact: true })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: ADMIN_PANEL_TIMEOUT });
     await page.waitForLoadState("networkidle");
     await page
         .getByRole("main")

@@ -59,6 +59,10 @@ export type PortfolioEditorForm = {
     credits: PortfolioCredit[];
     projectType: PortfolioProjectType;
     teamComposition: string;
+    // 이력서 PDF: AI 에이전트 성과 표시
+    aiAgentAchievement: boolean;
+    aiAgentStatus: "implemented" | "planned";
+    aiAgentSummary: string;
     meta_title: string;
     meta_description: string;
     og_image: string;
@@ -251,6 +255,9 @@ export const EMPTY_PORTFOLIO_FORM: PortfolioEditorForm = {
     credits: [],
     projectType: "personal",
     teamComposition: "",
+    aiAgentAchievement: false,
+    aiAgentStatus: "implemented",
+    aiAgentSummary: "",
     meta_title: "",
     meta_description: "",
     og_image: "",
@@ -366,6 +373,11 @@ export const itemToPortfolioForm = (
             typeof data.teamComposition === "string"
                 ? data.teamComposition
                 : "",
+        aiAgentAchievement: data.aiAgentAchievement === true,
+        aiAgentStatus:
+            data.aiAgentStatus === "planned" ? "planned" : "implemented",
+        aiAgentSummary:
+            typeof data.aiAgentSummary === "string" ? data.aiAgentSummary : "",
         meta_title: item.meta_title ?? "",
         meta_description: item.meta_description ?? "",
         og_image: item.og_image ?? "",
@@ -426,6 +438,10 @@ export const buildPortfolioSavePayload = (
     const jobField = normalizeUniqueJobFieldList(form.jobField);
     if (jobField.length) data.jobField = jobField;
     data.projectType = form.projectType;
+    // 이력서 PDF 표시값. 기획 단계·요약은 AI 표시와 별개로 보존
+    if (form.aiAgentAchievement) data.aiAgentAchievement = true;
+    if (form.aiAgentStatus === "planned") data.aiAgentStatus = "planned";
+    assignString(data, "aiAgentSummary", form.aiAgentSummary.trim());
 
     if (form.caseStudyVersion === 2) {
         data.caseStudyVersion = 2;
