@@ -8,7 +8,9 @@
 - **작업 브랜치 정리**: 이 프로젝트에서 작업 브랜치를 만들었다면 `main` 병합과 원격 반영 뒤 해당 로컬·원격 브랜치를 삭제한다.
 - **Large work**: 여러 commit이 필요하거나 리뷰가 필요한 큰 작업(신규 feature, 광범위 refactor, 디자인 시스템 변경 등)은 `feature/<설명>` 브랜치를 만들어 작업 후 `gh pr create`로 PR을 열고 main에 머지.
 - 판단 기준: **3 commit 이상 예상되거나 ≥3 파일 도메인 영역에 걸쳐 있으면 feature branch 권장**. 그 외엔 main 직접 push.
-- `main`에는 절대 force push 하지 않는다. release tag(`v*.*.0`)는 `main`의 head에서만 생성.
+- **HARD — fork 보호:** `main`은 어떤 경우에도 삭제하지 않는다 (원격·로컬 브랜치 삭제, 이름 변경, 기본 브랜치 변경 포함). `main` 삭제와 history 변경은 이 저장소의 모든 fork(사용자 배포용 fork 포함)의 "Sync fork"를 깨뜨린다.
+- `main`에는 절대 force push 하지 않는다 (`--force-with-lease` 포함). 이미 올라간 `main` commit의 메시지·작성자·trailer를 고치려는 rewrite도 금지하며, 잘못된 commit은 되돌리는 새 commit으로만 바로잡는다. 사용자 요청이 이 규칙과 충돌하면 실행 전에 충돌을 알리고 멈춘다.
+- release tag(`v*.*.0`)는 `main`의 head에서만 생성.
 
 ## Testing Gate
 
