@@ -275,11 +275,8 @@ export const buildResumePdfModel = (
               sections = sections.filter((s) => !hidden.has(s.title));
               if (eff.projects.compactPersonal && type !== "work")
                   sections = [];
-              const team =
-                  r?.teamComposition ||
-                  p.teamComposition ||
-                  p.teamSize ||
-                  undefined;
+              // 인원: 이력서 항목 구성 → 포트폴리오 인원 수 (시제품과 동일. 포트폴리오 구성 글은 길어 제외)
+              const team = r?.teamComposition || p.teamSize || undefined;
               const links = [
                   ...new Set(
                       [r?.url, ...p.links.map((l) => l.url)].filter(Boolean)
@@ -306,7 +303,7 @@ export const buildResumePdfModel = (
                         p.engine ||
                         p.keywords.join(" · ")
                       : "",
-                  role: p.ownership.join(" · ") || p.role,
+                  role: p.role,
                   ...(eff.details.projectTeam && team ? { team } : {}),
                   ...(p.thumbnail ? { thumb: p.thumbnail } : {}),
                   links: eff.details.projectLinks ? links : [],
@@ -380,6 +377,7 @@ export const buildResumePdfModel = (
         lang: source.lang,
         asOf,
         sections: eff.sectionOrder.filter(on),
+        shokumuSelfPr: d.shokumuSelfPr,
         basics,
         intro,
         aiRemarks,

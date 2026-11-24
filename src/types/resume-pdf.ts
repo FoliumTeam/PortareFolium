@@ -16,6 +16,8 @@ export const PDF_DETAIL_KEYS = [
     "projectTech",
     "projectLinks",
     "projectTeam",
+    // PDF-F 職務経歴書의 自己PR(핵심 역량) 블록
+    "shokumuSelfPr",
 ] as const;
 export type PdfDetailKey = (typeof PDF_DETAIL_KEYS)[number];
 
@@ -120,6 +122,8 @@ export type ResumePdfModel = {
     lang: PdfLang;
     asOf: string;
     sections: string[];
+    // PDF-F 職務経歴書 自己PR 블록 표시
+    shokumuSelfPr: boolean;
     basics: {
         name: string;
         headline: string;

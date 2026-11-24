@@ -56,5 +56,17 @@ export const firstSentence = (value: unknown): string => {
     return (text.match(/^[\s\S]*?[.。](?=\s|$)/)?.[0] ?? text).trim();
 };
 
+// 링크 scheme 허용 목록 (F13): http·https·mailto·tel만. 그 밖은 링크로 만들지 않음
+export const safeHref = (url: string): string | undefined => {
+    try {
+        const parsed = new URL(url);
+        return ["http:", "https:", "mailto:", "tel:"].includes(parsed.protocol)
+            ? parsed.href
+            : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
 export const plainUrl = (url: string): string =>
     url.replace(/^https?:\/\//, "").replace(/\/$/, "");
