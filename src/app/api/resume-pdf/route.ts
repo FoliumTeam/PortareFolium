@@ -124,7 +124,8 @@ export const POST = async (request: Request) => {
                       body.lang,
                       body.applicationProfileId!
                   );
-        if (!loaded) return json({ error: "지원 프로필 없음" }, 404);
+        if (!loaded)
+            return json({ error: "이 언어의 지원 프로필 사본 없음" }, 404);
         const result = await generateResumePdf({
             source: loaded.source,
             options: normalizePdfOptions(body.options),

@@ -55,6 +55,9 @@ const item: PortfolioAdminItem = {
         credits: [{ name: "Member", role: "Artist", url: "/about" }],
         projectType: "personal",
         teamComposition: "Programmer 1명(본인), Artist 1명",
+        aiAgentAchievement: true,
+        aiAgentStatus: "planned",
+        aiAgentSummary: "Agent summary",
         futureKey: { nested: ["keep", { order: 2 }] },
     },
     featured: true,
@@ -87,6 +90,21 @@ describe("portfolio admin projection", () => {
         expect(payload.featured).toBe(true);
         expect(payload.order_idx).toBe(3);
         expect(payload.job_field).toEqual(["game"]);
+    });
+
+    it("이력서 PDF AI 표시: 기획 단계·요약은 AI 표시와 별개로 보존, 해제 시 제거", () => {
+        const data = { ...item.data, aiAgentAchievement: undefined };
+        const form = itemToPortfolioForm({ ...item, data });
+        const payload = buildPortfolioSavePayload(form, data);
+        expect(payload.data.aiAgentAchievement).toBeUndefined();
+        expect(payload.data.aiAgentStatus).toBe("planned");
+        expect(payload.data.aiAgentSummary).toBe("Agent summary");
+        const cleared = buildPortfolioSavePayload(
+            { ...form, aiAgentStatus: "implemented", aiAgentSummary: " " },
+            data
+        );
+        expect(cleared.data.aiAgentStatus).toBeUndefined();
+        expect(cleared.data.aiAgentSummary).toBeUndefined();
     });
 
     it("row job_field를 legacy data.jobField보다 우선", () => {

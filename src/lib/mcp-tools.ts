@@ -238,6 +238,9 @@ export async function handleGetSchema(): Promise<unknown> {
                 teamSize: "number",
                 teamComposition: "string, max 180",
                 projectType: "'work' | 'personal'",
+                aiAgentAchievement: "boolean — resume PDF AI agent achievement",
+                aiAgentStatus: "'implemented' | 'planned'",
+                aiAgentSummary: "string, max 300 — resume PDF AI mention",
                 accomplishments: "string[]",
                 keywords: "string[]",
                 github: "URL string",
@@ -832,6 +835,12 @@ const PORTFOLIO_DATA_INPUT_SCHEMA = {
             type: ["string", "null"],
             enum: ["work", "personal", null],
         },
+        aiAgentAchievement: { type: ["boolean", "null"] },
+        aiAgentStatus: {
+            type: ["string", "null"],
+            enum: ["implemented", "planned", null],
+        },
+        aiAgentSummary: { type: ["string", "null"], maxLength: 300 },
         github: { type: ["string", "null"] },
         liveUrl: { type: ["string", "null"] },
         accomplishments: {

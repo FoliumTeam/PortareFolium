@@ -88,6 +88,9 @@ export const KNOWN_PORTFOLIO_DATA_KEYS = [
     "caseStudyStyle",
     "featuredByJobField",
     "featuredOrderByJobField",
+    "aiAgentAchievement",
+    "aiAgentStatus",
+    "aiAgentSummary",
 ] as const;
 
 export const PRESERVED_LEGACY_DATA_KEYS = [
